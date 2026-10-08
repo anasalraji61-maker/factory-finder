@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory-finder.dev/schemas/common.schema.json",
+  "title": "Factory Finder — shared schemas",
+  "description": "Shared shapes used by every service and by the mobile app. Owned by the architect; changes are additive only.",
+  "$defs": {
+    "Error": {
+      "type": "object",
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": {"type": "string"},
+            "message": {"type": "string"},
+            "details": {"type": "object"}
+          }
+        }
+      }
+    },
+    "CountryCode": {"type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO-3166 alpha-2"},
+    "CurrencyCode": {"type": "string", "pattern": "^[A-Z]{3}$", "description": "ISO-4217"},
+    "Money": {
+      "type": "object",
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$", "description": "Decimal as string"},
+        "currency": {"$ref": "#/$defs/CurrencyCode"}
+      }
+    },
+    "MoneyRange": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": {"$ref": "#/$defs/Money"},
+        "max": {"$ref": "#/$defs/Money"}
+      }
+    },
+    "DayRange": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {"min": {"type": "integer", "minimum": 0}, "max": {"type": "integer", "minimum": 0}}
+    },
+    "GeoPoint": {
+      "type": "object",
+      "required": ["lat", "lon"],
+      "properties": {"lat": {"type": "number"}, "lon": {"type": "number"}}
+    },
+    "Location": {
+      "type": "object",
+      "required": ["country_code"],
+      "properties": {
+        "country_code": {"$ref": "#/$defs/CountryCode"},
+        "city": {"type": "string"},
+        "point": {"$ref": "#/$defs/GeoPoint"}
+      }
+    },
+    "ListingKind": {"type": "string", "enum": ["product", "raw_material", "production_line"]},
+    "Condition": {"type": "string", "enum": ["new", "used", "refurbished"]},
+    "TransportMode": {"type": "string", "enum": ["sea_lcl", "sea_fcl_20", "sea_fcl_40", "sea_fcl_40hc", "air", "rail", "road"]},
+    "Incoterm": {"type": "string", "enum": ["EXW", "FCA", "FOB", "CFR", "CIF", "DAP", "DDP"]},
+    "TrustBand": {"type": "string", "enum": ["green", "yellow", "red", "unknown"]},
+    "SupplierSummary": {
+      "type": "object",
+      "required": ["id", "name", "location"],
+      "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "location": {"$ref": "#/$defs/Location"},
+        "years_in_business": {"type": "integer"},
+        "verified": {"type": "boolean"},
+        "trust_score": {"type": "integer", "minimum": 0, "maximum": 100},
+        "trust_band": {"$ref": "#/$defs/TrustBand"}
+      }
+    },
+    "Listing": {
+      "type": "object",
+      "required": ["id", "source", "kind", "title", "price", "supplier"],
+      "properties": {
+        "id": {"type": "string"},
+        "source": {"type": "string", "description": "adapter id, e.g. mock, alibaba"},
+        "source_url": {"type": "string"},
+        "kind": {"$ref": "#/$defs/ListingKind"},
+        "condition": {"$ref": "#/$defs/Condition"},
+        "title": {"type": "string"},
+        "title_ar": {"type": "string"},
+        "category": {"type": "string"},
+        "images": {"type": "array", "items": {"type": "string"}},
+        "price": {"$ref": "#/$defs/MoneyRange", "description": "unit price range"},
+        "unit": {"type": "string", "description": "piece, kg, ton, m, set, line"},
+        "moq": {"type": "integer", "description": "minimum order quantity in unit"},
+        "incoterm": {"$ref": "#/$defs/Incoterm"},
+        "unit_weight_kg": {"type": "number"},
+        "unit_volume_m3": {"type": "number"},
+        "hs_code": {"type": "string"},
+        "lead_time_days": {"$ref": "#/$defs/DayRange"},
+        "supplier": {"$ref": "#/$defs/SupplierSummary"},
+        "origin": {"$ref": "#/$defs/Location"}
+      }
+    },
+    "CostLine": {
+      "type": "object",
+      "required": ["stage", "description", "amount", "estimate"],
+      "properties": {
+        "stage": {"type": "string", "enum": ["goods", "origin_inland", "origin_handling", "main_leg", "insurance", "destination_handling", "duties", "taxes", "clearance", "destination_inland", "platform_fee", "other"]},
+        "description": {"type": "string"},
+        "amount": {"$ref": "#/$defs/Money"},
+        "original_amount": {"$ref": "#/$defs/Money", "description": "before FX conversion"},
+        "fx_rate": {"type": "string"},
+        "source": {"type": "string", "description": "rate table / provider used"},
+        "estimate": {"type": "boolean"}
+      }
+    },
+    "LandedCostOption": {
+      "type": "object",
+      "required": ["mode", "lines", "total", "transit_days"],
+      "properties": {
+        "mode": {"$ref": "#/$defs/TransportMode"},
+        "origin_hub": {"type": "string", "description": "hub id / UN/LOCODE"},
+        "destination_hub": {"type": "string"},
+        "route_summary": {"type": "string"},
+        "lines": {"type": "array", "items": {"$ref": "#/$defs/CostLine"}},
+        "total": {"$ref": "#/$defs/MoneyRange"},
+        "transit_days": {"$ref": "#/$defs/DayRange"},
+        "co2_kg": {"type": "number"},
+        "recommended": {"type": "boolean"},
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "LandedCostQuote": {
+      "type": "object",
+      "required": ["id", "currency", "options", "created_at"],
+      "properties": {
+        "id": {"type": "string"},
+        "currency": {"$ref": "#/$defs/CurrencyCode"},
+        "origin": {"$ref": "#/$defs/Location"},
+        "destination": {"$ref": "#/$defs/Location"},
+        "options": {"type": "array", "items": {"$ref": "#/$defs/LandedCostOption"}},
+        "assumptions": {"type": "array", "items": {"type": "string"}},
+        "created_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "TrustScore": {
+      "type": "object",
+      "required": ["supplier_id", "score", "band", "factors"],
+      "properties": {
+        "supplier_id": {"type": "string"},
+        "score": {"type": "integer", "minimum": 0, "maximum": 100},
+        "band": {"$ref": "#/$defs/TrustBand"},
+        "factors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "impact", "explanation"],
+            "properties": {
+              "key": {"type": "string"},
+              "impact": {"type": "integer", "description": "signed points contribution"},
+              "explanation": {"type": "string"},
+              "explanation_ar": {"type": "string"}
+            }
+          }
+        },
+        "computed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "Page": {
+      "type": "object",
+      "required": ["items", "total", "page", "page_size"],
+      "properties": {
+        "items": {"type": "array"},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "page_size": {"type": "integer"}
+      }
+    }
+  }
+}
