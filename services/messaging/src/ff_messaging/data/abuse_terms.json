@@ -1,0 +1,52 @@
+{
+  "_comment": "Default bilingual abuse list for the messaging content filter. Matching folds case, diacritics, Arabic letter variants and stretched letters, and works on whole words (Arabic prefixes/suffixes allowed). Words that are also legitimate trade vocabulary (e.g. dog, donkey, garbage, retarder, bastard file) are only listed as insulting phrases. Override with FF_MESSAGING_ABUSE_TERMS / FF_MESSAGING_ABUSE_TERMS_EXTRA.",
+  "terms": {
+    "en": [
+      "fuck",
+      "motherfucker",
+      "shit",
+      "bullshit",
+      "bitch",
+      "asshole",
+      "dickhead",
+      "dumbass",
+      "jackass",
+      "idiot",
+      "moron",
+      "stupid",
+      "whore",
+      "slut",
+      "cunt",
+      "scumbag",
+      "piss off",
+      "stfu",
+      "kys",
+      "kill yourself"
+    ],
+    "ar": [
+      "غبي",
+      "اغبياء",
+      "حقير",
+      "حقيرة",
+      "يا حمار",
+      "انت حمار",
+      "يا حمير",
+      "يا كلب",
+      "ابن الكلب",
+      "ابن كلب",
+      "يا حيوان",
+      "يا وسخ",
+      "ابن الحرام",
+      "يلعن",
+      "تفو",
+      "انقلع",
+      "خرا",
+      "عاهرة",
+      "قحبة",
+      "شرموطة",
+      "منيوك",
+      "كس امك",
+      "كسمك"
+    ]
+  }
+}

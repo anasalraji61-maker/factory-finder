@@ -1,0 +1,25 @@
+# Static analysis for the Factory Finder app.
+# CI runs: flutter analyze --no-fatal-infos --no-fatal-warnings (errors are always fatal).
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - lib/**.g.dart
+    - lib/**.freezed.dart
+  errors:
+    # A missing `required` argument or a wrong return type must never slip through.
+    missing_required_param: error
+    missing_return: error
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_print: true
+    cancel_subscriptions: true
+    close_sinks: true
+    prefer_final_fields: true
+    prefer_single_quotes: true
+    sort_child_properties_last: true
+    unnecessary_await_in_return: true
+    use_super_parameters: true

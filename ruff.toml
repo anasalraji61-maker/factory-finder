@@ -1,0 +1,69 @@
+# Shared Ruff config for every Python module in the repo (services/*, scripts/, infra/).
+# Owner: infra. Services must NOT add a [tool.ruff] table to their pyproject.toml
+# (Ruff would then ignore this file for that service); use `extend = "../../ruff.toml"` if
+# a service ever needs local overrides.
+#
+#   make lint            -> ruff check over every Python dir
+#   make lint-fix        -> ruff check --fix + ruff format
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+    "apps",
+    "**/alembic/versions",
+    "**/migrations/versions",
+]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade (py312 idioms)
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line length is the formatter's job; long literals (Arabic text, data rows) are fine
+    # PEP 695 / StrEnum rewrites are style-only and change runtime behaviour with pydantic,
+    # FastAPI and isinstance() (TypeAliasType, str() of enums). Allowed, not required.
+    "UP040", # TypeAlias -> `type X = ...`
+    "UP042", # (str, Enum) -> StrEnum
+    "UP046", # Generic[T] class -> class C[T]
+    "UP047", # TypeVar function -> def f[T]
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"] # re-exports
+"**/tests/**" = [
+    "B011",   # assert False
+    "B017",   # pytest.raises(Exception)
+    "B018",   # useless expression (used to trigger lazy errors)
+    "E402",   # imports after sys.path / env setup
+    "F811",   # pytest fixtures shadowing names
+    "SIM117", # nested `with` blocks read better in tests
+]
+"**/conftest.py" = ["E402", "F811"]
+
+[lint.isort]
+# Every service package is `ff_<name>`; classify it as first-party no matter where ruff runs from.
+known-first-party = ["ff_*"]
+
+[lint.flake8-bugbear]
+# FastAPI dependency markers are meant to be called in argument defaults.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.Form",
+    "fastapi.File",
+    "fastapi.Security",
+    "fastapi.params.Depends",
+    "fastapi.params.Query",
+]
+
+[format]
+quote-style = "double"

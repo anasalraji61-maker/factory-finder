@@ -1,0 +1,38 @@
+[project]
+name = "ff-assistant"
+version = "0.1.0"
+description = "Factory Finder assistant: Arabic/English natural-language sourcing assistant (text -> structured query -> one combined answer)."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "httpx>=0.27",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.5",
+    "pyyaml>=6.0",
+    "jsonschema>=4.22",
+    "referencing>=0.35",
+    "openapi-spec-validator>=0.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ff_assistant"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib -q"
+asyncio_mode = "auto"
