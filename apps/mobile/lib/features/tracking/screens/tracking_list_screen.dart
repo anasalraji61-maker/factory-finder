@@ -51,7 +51,8 @@ class TrackingListScreen extends ConsumerWidget {
           }
           return RefreshIndicator(
             onRefresh: () async {
-              await ref.refresh(shipmentsProvider.future);
+              ref.invalidate(shipmentsProvider);
+              await ref.read(shipmentsProvider.future);
             },
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(

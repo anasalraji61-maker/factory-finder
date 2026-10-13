@@ -1,0 +1,213 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: gateway
+    ports:
+    - 8000:8000
+    environment:
+      PORT: '8000'
+      FF_GATEWAY_UPSTREAMS: '{"sourcing": "http://sourcing:8101", "logistics": "http://logistics:8102", "geo": "http://geo:8103", "trust": "http://trust:8104", "rfq": "http://rfq:8105", "messaging": "http://messaging:8106",
+        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109"}'
+      FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8000/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  sourcing:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: sourcing
+    ports:
+    - 8101:8101
+    environment:
+      PORT: '8101'
+      FF_SOURCING_TRUST_MODE: http
+      FF_SOURCING_TRUST_BASE_URL: http://trust:8104
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8101/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  logistics:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: logistics
+    ports:
+    - 8102:8102
+    environment:
+      PORT: '8102'
+      FF_LOGISTICS_GEO_URL: http://geo:8103
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8102/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  geo:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: geo
+    ports:
+    - 8103:8103
+    environment:
+      PORT: '8103'
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8103/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  trust:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: trust
+    ports:
+    - 8104:8104
+    environment:
+      PORT: '8104'
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8104/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  rfq:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: rfq
+    ports:
+    - 8105:8105
+    environment:
+      PORT: '8105'
+      FF_RFQ_SOURCING_URL: http://sourcing:8101
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8105/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  messaging:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: messaging
+    ports:
+    - 8106:8106
+    environment:
+      PORT: '8106'
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8106/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  tracking:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: tracking
+    ports:
+    - 8107:8107
+    environment:
+      PORT: '8107'
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8107/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  notifications:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: notifications
+    ports:
+    - 8108:8108
+    environment:
+      PORT: '8108'
+      FF_NOTIFICATIONS_SOURCING_BASE_URL: http://sourcing:8101
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8108/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  assistant:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: assistant
+    ports:
+    - 8109:8109
+    environment:
+      PORT: '8109'
+      FF_ASSISTANT_SOURCING_URL: http://sourcing:8101
+      FF_ASSISTANT_LOGISTICS_URL: http://logistics:8102
+      FF_ASSISTANT_TRUST_URL: http://trust:8104
+      FF_ASSISTANT_TRACKING_URL: http://tracking:8107
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8109/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5

@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     trust_cache_ttl_s: float = 300.0
 
     trust_mode: str = "mock"  # mock | http | off
-    trust_base_url: str = "http://localhost:8004"
+    trust_base_url: str = "http://localhost:8104"
     trust_timeout_s: float = 0.8
 
     # Compliance (CLAUDE.md rule 6)
