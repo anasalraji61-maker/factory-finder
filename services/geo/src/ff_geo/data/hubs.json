@@ -2212,5 +2212,977 @@
 "CN"
 ],
 "notes": "Yangtze Delta LCL consolidation."
+},
+{
+"id": "CNFOC",
+"type": "sea",
+"name_en": "Fuzhou Port (Mawei/Jiangyin)",
+"name_ar": "ميناء فوتشو",
+"country_code": "CN",
+"point": {
+"lat": 25.98,
+"lon": 119.45
+},
+"unlocode": "CNFOC",
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": null
+},
+{
+"id": "CNZOS",
+"type": "sea",
+"name_en": "Zhoushan Port",
+"name_ar": "ميناء تشوشان",
+"country_code": "CN",
+"point": {
+"lat": 30.0,
+"lon": 122.1
+},
+"unlocode": "CNZOS",
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": "Close to Ningbo-Zhoushan; approximate coordinate."
+},
+{
+"id": "CNYIK",
+"type": "sea",
+"name_en": "Yingkou Port",
+"name_ar": "ميناء يينغكو",
+"country_code": "CN",
+"point": {
+"lat": 40.65,
+"lon": 122.2
+},
+"unlocode": "CNYIK",
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": null
+},
+{
+"id": "CNYTI",
+"type": "sea",
+"name_en": "Yantai Port",
+"name_ar": "ميناء يانتاي",
+"country_code": "CN",
+"point": {
+"lat": 37.55,
+"lon": 121.4
+},
+"unlocode": "CNYTI",
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": null
+},
+{
+"id": "TWKHH",
+"type": "sea",
+"name_en": "Kaohsiung Port",
+"name_ar": "ميناء كاوشيونغ",
+"country_code": "TW",
+"point": {
+"lat": 22.615,
+"lon": 120.28
+},
+"unlocode": "TWKHH",
+"iata": null,
+"serves_countries": [
+"TW"
+],
+"notes": "About 440 km from the nearest sea-lane node; distance is approximate."
+},
+{
+"id": "TWTXG",
+"type": "sea",
+"name_en": "Taichung Port",
+"name_ar": "ميناء تايتشونغ",
+"country_code": "TW",
+"point": {
+"lat": 24.28,
+"lon": 120.5
+},
+"unlocode": "TWTXG",
+"iata": null,
+"serves_countries": [
+"TW"
+],
+"notes": null
+},
+{
+"id": "KRINC",
+"type": "sea",
+"name_en": "Incheon Port",
+"name_ar": "ميناء إنتشون",
+"country_code": "KR",
+"point": {
+"lat": 37.45,
+"lon": 126.6
+},
+"unlocode": "KRINC",
+"iata": null,
+"serves_countries": [
+"KR"
+],
+"notes": "Yellow Sea; approximate access distance to lane graph."
+},
+{
+"id": "JPHKT",
+"type": "sea",
+"name_en": "Hakata Port (Fukuoka)",
+"name_ar": "ميناء هاكاتا (فوكوكا)",
+"country_code": "JP",
+"point": {
+"lat": 33.62,
+"lon": 130.4
+},
+"unlocode": "JPHKT",
+"iata": null,
+"serves_countries": [
+"JP"
+],
+"notes": "Other Japanese ports (Yokohama, Nagoya, Kobe) await lane-graph nodes; see docs/requests."
+},
+{
+"id": "VNVUT",
+"type": "sea",
+"name_en": "Cai Mep-Vung Tau Port",
+"name_ar": "ميناء كاي ميب - فونغ تاو",
+"country_code": "VN",
+"point": {
+"lat": 10.5,
+"lon": 107.03
+},
+"unlocode": "VNVUT",
+"iata": null,
+"serves_countries": [
+"VN"
+],
+"notes": null
+},
+{
+"id": "MYTPP",
+"type": "sea",
+"name_en": "Port of Tanjung Pelepas",
+"name_ar": "ميناء تانجونغ بيليباس",
+"country_code": "MY",
+"point": {
+"lat": 1.36,
+"lon": 103.55
+},
+"unlocode": "MYTPP",
+"iata": null,
+"serves_countries": [
+"MY"
+],
+"notes": null
+},
+{
+"id": "LKCMB",
+"type": "sea",
+"name_en": "Colombo Port",
+"name_ar": "ميناء كولومبو",
+"country_code": "LK",
+"point": {
+"lat": 6.94,
+"lon": 79.85
+},
+"unlocode": "LKCMB",
+"iata": null,
+"serves_countries": [
+"LK"
+],
+"notes": null
+},
+{
+"id": "INKDL",
+"type": "sea",
+"name_en": "Kandla Port (Deendayal)",
+"name_ar": "ميناء كاندلا",
+"country_code": "IN",
+"point": {
+"lat": 23.0,
+"lon": 70.22
+},
+"unlocode": "INKDL",
+"iata": null,
+"serves_countries": [
+"IN"
+],
+"notes": null
+},
+{
+"id": "INPAV",
+"type": "sea",
+"name_en": "Pipavav Port",
+"name_ar": "ميناء بيبافاف",
+"country_code": "IN",
+"point": {
+"lat": 20.92,
+"lon": 71.5
+},
+"unlocode": "INPAV",
+"iata": null,
+"serves_countries": [
+"IN"
+],
+"notes": null
+},
+{
+"id": "PKBQM",
+"type": "sea",
+"name_en": "Port Qasim (Karachi)",
+"name_ar": "ميناء قاسم (كراتشي)",
+"country_code": "PK",
+"point": {
+"lat": 24.77,
+"lon": 67.35
+},
+"unlocode": "PKBQM",
+"iata": null,
+"serves_countries": [
+"PK"
+],
+"notes": null
+},
+{
+"id": "AEAUH",
+"type": "sea",
+"name_en": "Khalifa Port (Abu Dhabi)",
+"name_ar": "ميناء خليفة (أبوظبي)",
+"country_code": "AE",
+"point": {
+"lat": 24.8,
+"lon": 54.65
+},
+"unlocode": "AEAUH",
+"iata": null,
+"serves_countries": [
+"AE"
+],
+"notes": null
+},
+{
+"id": "AEFJR",
+"type": "sea",
+"name_en": "Fujairah Port",
+"name_ar": "ميناء الفجيرة",
+"country_code": "AE",
+"point": {
+"lat": 25.17,
+"lon": 56.36
+},
+"unlocode": "AEFJR",
+"iata": null,
+"serves_countries": [
+"AE"
+],
+"notes": "East coast UAE; avoids Hormuz transit."
+},
+{
+"id": "EGDAM",
+"type": "sea",
+"name_en": "Damietta Port",
+"name_ar": "ميناء دمياط",
+"country_code": "EG",
+"point": {
+"lat": 31.46,
+"lon": 31.76
+},
+"unlocode": "EGDAM",
+"iata": null,
+"serves_countries": [
+"EG"
+],
+"notes": null
+},
+{
+"id": "SYTTS",
+"type": "sea",
+"name_en": "Tartus Port",
+"name_ar": "ميناء طرطوس",
+"country_code": "SY",
+"point": {
+"lat": 34.9,
+"lon": 35.87
+},
+"unlocode": "SYTTS",
+"iata": null,
+"serves_countries": [
+"SY"
+],
+"notes": "Trade subject to sanctions checks."
+},
+{
+"id": "TRALI",
+"type": "sea",
+"name_en": "Aliaga Port (Izmir)",
+"name_ar": "ميناء أليغا (إزمير)",
+"country_code": "TR",
+"point": {
+"lat": 38.8,
+"lon": 26.95
+},
+"unlocode": "TRALI",
+"iata": null,
+"serves_countries": [
+"TR"
+],
+"notes": null
+},
+{
+"id": "MAPTM",
+"type": "sea",
+"name_en": "Tanger Med Port",
+"name_ar": "ميناء طنجة المتوسط",
+"country_code": "MA",
+"point": {
+"lat": 35.89,
+"lon": -5.5
+},
+"unlocode": "MAPTM",
+"iata": null,
+"serves_countries": [
+"MA"
+],
+"notes": null
+},
+{
+"id": "MACAS",
+"type": "sea",
+"name_en": "Casablanca Port",
+"name_ar": "ميناء الدار البيضاء",
+"country_code": "MA",
+"point": {
+"lat": 33.6,
+"lon": -7.62
+},
+"unlocode": "MACAS",
+"iata": null,
+"serves_countries": [
+"MA"
+],
+"notes": null
+},
+{
+"id": "DZALG",
+"type": "sea",
+"name_en": "Algiers Port",
+"name_ar": "ميناء الجزائر",
+"country_code": "DZ",
+"point": {
+"lat": 36.77,
+"lon": 3.07
+},
+"unlocode": "DZALG",
+"iata": null,
+"serves_countries": [
+"DZ"
+],
+"notes": null
+},
+{
+"id": "ESALG",
+"type": "sea",
+"name_en": "Algeciras Port",
+"name_ar": "ميناء الجزيرة الخضراء",
+"country_code": "ES",
+"point": {
+"lat": 36.13,
+"lon": -5.44
+},
+"unlocode": "ESALG",
+"iata": null,
+"serves_countries": [
+"ES"
+],
+"notes": null
+},
+{
+"id": "PTLIS",
+"type": "sea",
+"name_en": "Lisbon Port",
+"name_ar": "ميناء لشبونة",
+"country_code": "PT",
+"point": {
+"lat": 38.7,
+"lon": -9.15
+},
+"unlocode": "PTLIS",
+"iata": null,
+"serves_countries": [
+"PT"
+],
+"notes": null
+},
+{
+"id": "FRMRS",
+"type": "sea",
+"name_en": "Marseille-Fos Port",
+"name_ar": "ميناء مرسيليا-فوس",
+"country_code": "FR",
+"point": {
+"lat": 43.3,
+"lon": 5.35
+},
+"unlocode": "FRMRS",
+"iata": null,
+"serves_countries": [
+"FR"
+],
+"notes": null
+},
+{
+"id": "GBSOU",
+"type": "sea",
+"name_en": "Southampton Port",
+"name_ar": "ميناء ساوثهامبتون",
+"country_code": "GB",
+"point": {
+"lat": 50.9,
+"lon": -1.42
+},
+"unlocode": "GBSOU",
+"iata": null,
+"serves_countries": [
+"GB"
+],
+"notes": null
+},
+{
+"id": "BEZEE",
+"type": "sea",
+"name_en": "Zeebrugge Port",
+"name_ar": "ميناء زيبروغه",
+"country_code": "BE",
+"point": {
+"lat": 51.33,
+"lon": 3.2
+},
+"unlocode": "BEZEE",
+"iata": null,
+"serves_countries": [
+"BE"
+],
+"notes": null
+},
+{
+"id": "DEBRV",
+"type": "sea",
+"name_en": "Bremerhaven Port",
+"name_ar": "ميناء بريمرهافن",
+"country_code": "DE",
+"point": {
+"lat": 53.55,
+"lon": 8.58
+},
+"unlocode": "DEBRV",
+"iata": null,
+"serves_countries": [
+"DE"
+],
+"notes": null
+},
+{
+"id": "NLAMS",
+"type": "sea",
+"name_en": "Amsterdam Port",
+"name_ar": "ميناء أمستردام",
+"country_code": "NL",
+"point": {
+"lat": 52.4,
+"lon": 4.88
+},
+"unlocode": "NLAMS",
+"iata": null,
+"serves_countries": [
+"NL"
+],
+"notes": null
+},
+{
+"id": "PLGDY",
+"type": "sea",
+"name_en": "Gdynia Port",
+"name_ar": "ميناء غدينيا",
+"country_code": "PL",
+"point": {
+"lat": 54.53,
+"lon": 18.54
+},
+"unlocode": "PLGDY",
+"iata": null,
+"serves_countries": [
+"PL"
+],
+"notes": null
+},
+{
+"id": "USCHS",
+"type": "sea",
+"name_en": "Charleston Port",
+"name_ar": "ميناء تشارلستون",
+"country_code": "US",
+"point": {
+"lat": 32.78,
+"lon": -79.93
+},
+"unlocode": "USCHS",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
+},
+{
+"id": "USORF",
+"type": "sea",
+"name_en": "Norfolk (Hampton Roads) Port",
+"name_ar": "ميناء نورفولك",
+"country_code": "US",
+"point": {
+"lat": 36.85,
+"lon": -76.3
+},
+"unlocode": "USORF",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
+},
+{
+"id": "USLGB",
+"type": "sea",
+"name_en": "Long Beach Port",
+"name_ar": "ميناء لونغ بيتش",
+"country_code": "US",
+"point": {
+"lat": 33.75,
+"lon": -118.2
+},
+"unlocode": "USLGB",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
+},
+{
+"id": "USTIW",
+"type": "sea",
+"name_en": "Tacoma Port",
+"name_ar": "ميناء تاكوما",
+"country_code": "US",
+"point": {
+"lat": 47.27,
+"lon": -122.41
+},
+"unlocode": "USTIW",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
+},
+{
+"id": "air:TPE",
+"type": "air",
+"name_en": "Taiwan Taoyuan Airport",
+"name_ar": "مطار تايوان تاويوان",
+"country_code": "TW",
+"point": {
+"lat": 25.0777,
+"lon": 121.2328
+},
+"unlocode": null,
+"iata": "TPE",
+"serves_countries": [
+"TW"
+],
+"notes": null
+},
+{
+"id": "air:NRT",
+"type": "air",
+"name_en": "Tokyo Narita Airport",
+"name_ar": "مطار طوكيو ناريتا",
+"country_code": "JP",
+"point": {
+"lat": 35.772,
+"lon": 140.3929
+},
+"unlocode": null,
+"iata": "NRT",
+"serves_countries": [
+"JP"
+],
+"notes": null
+},
+{
+"id": "air:BKK",
+"type": "air",
+"name_en": "Bangkok Suvarnabhumi Airport",
+"name_ar": "مطار سوفارنابومي بانكوك",
+"country_code": "TH",
+"point": {
+"lat": 13.69,
+"lon": 100.7501
+},
+"unlocode": null,
+"iata": "BKK",
+"serves_countries": [
+"TH"
+],
+"notes": null
+},
+{
+"id": "air:KUL",
+"type": "air",
+"name_en": "Kuala Lumpur International Airport",
+"name_ar": "مطار كوالالمبور الدولي",
+"country_code": "MY",
+"point": {
+"lat": 2.7456,
+"lon": 101.7099
+},
+"unlocode": null,
+"iata": "KUL",
+"serves_countries": [
+"MY"
+],
+"notes": null
+},
+{
+"id": "air:DAC",
+"type": "air",
+"name_en": "Dhaka Hazrat Shahjalal Airport",
+"name_ar": "مطار دكا",
+"country_code": "BD",
+"point": {
+"lat": 23.8433,
+"lon": 90.3978
+},
+"unlocode": null,
+"iata": "DAC",
+"serves_countries": [
+"BD"
+],
+"notes": null
+},
+{
+"id": "air:KHI",
+"type": "air",
+"name_en": "Karachi Jinnah Airport",
+"name_ar": "مطار جناح كراتشي",
+"country_code": "PK",
+"point": {
+"lat": 24.9065,
+"lon": 67.1608
+},
+"unlocode": null,
+"iata": "KHI",
+"serves_countries": [
+"PK"
+],
+"notes": null
+},
+{
+"id": "air:JNB",
+"type": "air",
+"name_en": "Johannesburg O.R. Tambo Airport",
+"name_ar": "مطار أو. آر. تامبو جوهانسبرغ",
+"country_code": "ZA",
+"point": {
+"lat": -26.1392,
+"lon": 28.246
+},
+"unlocode": null,
+"iata": "JNB",
+"serves_countries": [
+"ZA"
+],
+"notes": null
+},
+{
+"id": "air:LOS",
+"type": "air",
+"name_en": "Lagos Murtala Muhammed Airport",
+"name_ar": "مطار مرتضى محمد لاغوس",
+"country_code": "NG",
+"point": {
+"lat": 6.5774,
+"lon": 3.3212
+},
+"unlocode": null,
+"iata": "LOS",
+"serves_countries": [
+"NG"
+],
+"notes": null
+},
+{
+"id": "air:NBO",
+"type": "air",
+"name_en": "Nairobi Jomo Kenyatta Airport",
+"name_ar": "مطار جومو كينياتا نيروبي",
+"country_code": "KE",
+"point": {
+"lat": -1.3192,
+"lon": 36.9275
+},
+"unlocode": null,
+"iata": "NBO",
+"serves_countries": [
+"KE"
+],
+"notes": null
+},
+{
+"id": "air:SYD",
+"type": "air",
+"name_en": "Sydney Kingsford Smith Airport",
+"name_ar": "مطار سيدني كينغسفورد سميث",
+"country_code": "AU",
+"point": {
+"lat": -33.9399,
+"lon": 151.1753
+},
+"unlocode": null,
+"iata": "SYD",
+"serves_countries": [
+"AU"
+],
+"notes": null
+},
+{
+"id": "air:GRU",
+"type": "air",
+"name_en": "Sao Paulo Guarulhos Airport",
+"name_ar": "مطار غوارولهوس ساو باولو",
+"country_code": "BR",
+"point": {
+"lat": -23.4356,
+"lon": -46.4731
+},
+"unlocode": null,
+"iata": "GRU",
+"serves_countries": [
+"BR"
+],
+"notes": null
+},
+{
+"id": "air:SVO",
+"type": "air",
+"name_en": "Moscow Sheremetyevo Airport",
+"name_ar": "مطار شيريميتيفو موسكو",
+"country_code": "RU",
+"point": {
+"lat": 55.9726,
+"lon": 37.4146
+},
+"unlocode": null,
+"iata": "SVO",
+"serves_countries": [
+"RU"
+],
+"notes": null
+},
+{
+"id": "air:MUC",
+"type": "air",
+"name_en": "Munich Airport",
+"name_ar": "مطار ميونخ",
+"country_code": "DE",
+"point": {
+"lat": 48.3538,
+"lon": 11.7861
+},
+"unlocode": null,
+"iata": "MUC",
+"serves_countries": [
+"DE"
+],
+"notes": null
+},
+{
+"id": "air:AUH",
+"type": "air",
+"name_en": "Abu Dhabi Zayed International Airport",
+"name_ar": "مطار زايد الدولي أبوظبي",
+"country_code": "AE",
+"point": {
+"lat": 24.433,
+"lon": 54.6511
+},
+"unlocode": null,
+"iata": "AUH",
+"serves_countries": [
+"AE"
+],
+"notes": null
+},
+{
+"id": "air:CMN",
+"type": "air",
+"name_en": "Casablanca Mohammed V Airport",
+"name_ar": "مطار محمد الخامس الدار البيضاء",
+"country_code": "MA",
+"point": {
+"lat": 33.3675,
+"lon": -7.5898
+},
+"unlocode": null,
+"iata": "CMN",
+"serves_countries": [
+"MA"
+],
+"notes": null
+},
+{
+"id": "rail:WUHAN",
+"type": "rail",
+"name_en": "Wuhan Rail Hub (China-Europe Express)",
+"name_ar": "محطة ووهان للسكك الحديدية",
+"country_code": "CN",
+"point": {
+"lat": 30.6,
+"lon": 114.2
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": "China-Europe Railway Express origin; coordinate approximate."
+},
+{
+"id": "land:HAJI_OMARAN",
+"type": "land_border",
+"name_en": "Haji Omaran Border Crossing",
+"name_ar": "معبر حاج عمران",
+"country_code": "IQ",
+"point": {
+"lat": 36.64,
+"lon": 45.14
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"IQ",
+"IR"
+],
+"notes": "Iraq (Kurdistan) - Iran (Piranshahr); coordinate uncertain, verify before use."
+},
+{
+"id": "land:MEHRAN",
+"type": "land_border",
+"name_en": "Mehran Border Crossing",
+"name_ar": "معبر مهران",
+"country_code": "IR",
+"point": {
+"lat": 33.12,
+"lon": 46.16
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"IR",
+"IQ"
+],
+"notes": "Iran - Iraq (Zurbatiyah); coordinate approximate."
+},
+{
+"id": "land:WAGAH",
+"type": "land_border",
+"name_en": "Wagah-Attari Border Crossing",
+"name_ar": "معبر واغا - أتاري",
+"country_code": "IN",
+"point": {
+"lat": 31.6049,
+"lon": 74.5731
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"IN",
+"PK"
+],
+"notes": "India - Pakistan; restricted trade, verify status."
+},
+{
+"id": "consol:NINGBO",
+"type": "consolidation",
+"name_en": "Ningbo Consolidation Hub",
+"name_ar": "مركز تجميع نينغبو",
+"country_code": "CN",
+"point": {
+"lat": 29.8683,
+"lon": 121.544
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": "LCL consolidation for Zhejiang exporters."
+},
+{
+"id": "consol:QINGDAO",
+"type": "consolidation",
+"name_en": "Qingdao Consolidation Hub",
+"name_ar": "مركز تجميع تشينغداو",
+"country_code": "CN",
+"point": {
+"lat": 36.0671,
+"lon": 120.3826
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"CN"
+],
+"notes": null
+},
+{
+"id": "consol:ISTANBUL",
+"type": "consolidation",
+"name_en": "Istanbul Consolidation Hub",
+"name_ar": "مركز تجميع إسطنبول",
+"country_code": "TR",
+"point": {
+"lat": 41.01,
+"lon": 28.98
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"TR"
+],
+"notes": null
+},
+{
+"id": "consol:DUBAI",
+"type": "consolidation",
+"name_en": "Dubai (Jebel Ali/JAFZA) Consolidation Hub",
+"name_ar": "مركز تجميع دبي (جبل علي)",
+"country_code": "AE",
+"point": {
+"lat": 25.0,
+"lon": 55.1
+},
+"unlocode": null,
+"iata": null,
+"serves_countries": [
+"AE"
+],
+"notes": "Re-export and LCL consolidation hub."
 }
 ]

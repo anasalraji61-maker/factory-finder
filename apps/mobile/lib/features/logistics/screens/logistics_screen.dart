@@ -14,8 +14,8 @@ class LogisticsScreen extends ConsumerWidget {
     final last = ref.watch(lastQuoteProvider);
     final theme = Theme.of(context);
     final tools = <(IconData, String, String?)>[
-      (Icons.currency_exchange, 'logistics.tool.fx', null),
-      (Icons.directions_boat_outlined, 'logistics.tool.carriers', null),
+      (Icons.currency_exchange, 'logistics.tool.fx', '/logistics/fx'),
+      (Icons.directions_boat_outlined, 'logistics.tool.carriers', '/logistics/carriers'),
       (Icons.track_changes, 'logistics.tool.tracking', '/logistics/tracking'),
     ];
 

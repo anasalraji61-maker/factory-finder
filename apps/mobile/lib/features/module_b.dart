@@ -1,4 +1,8 @@
 import 'package:factory_finder/core/registry/feature_module.dart';
+import 'package:factory_finder/features/carriers/carriers_strings.dart';
+import 'package:factory_finder/features/carriers/screens/carriers_screen.dart';
+import 'package:factory_finder/features/fx/fx_strings.dart';
+import 'package:factory_finder/features/fx/screens/fx_screen.dart';
 import 'package:factory_finder/features/logistics/logistics_strings.dart';
 import 'package:factory_finder/features/logistics/screens/calculator_screen.dart';
 import 'package:factory_finder/features/logistics/screens/logistics_screen.dart';
@@ -46,6 +50,14 @@ final FeatureModule featureModuleB = FeatureModule(
             builder: (context, state) => const ResultsScreen(),
           ),
           GoRoute(
+            path: 'fx',
+            builder: (context, state) => const FxScreen(),
+          ),
+          GoRoute(
+            path: 'carriers',
+            builder: (context, state) => const CarriersScreen(),
+          ),
+          GoRoute(
             path: 'tracking',
             builder: (context, state) => const TrackingListScreen(),
             routes: [
@@ -77,5 +89,7 @@ final Map<String, Map<String, String>> _mergedStrings = {
       ...?logisticsStrings[lang],
       ...?messagesStrings[lang],
       ...?trackingStrings[lang],
+      ...?fxStrings[lang],
+      ...?carriersStrings[lang],
     },
 };

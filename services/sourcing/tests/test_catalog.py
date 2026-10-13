@@ -4,14 +4,15 @@ from ff_sourcing.adapters.mock import MockAdapter, load_catalog
 from ff_sourcing.domain.categories import expand_category
 from ff_sourcing.domain.models import SearchQuery
 
-COUNTRIES = {"CN", "US", "DE", "IT", "TR", "IN", "VN"}
+COUNTRIES = {"CN", "US", "DE", "IT", "TR", "IN", "VN", "KR", "JP", "ES", "PL"}
 
 
 async def test_catalog_integrity():
     cat = load_catalog()
     ids = [x["id"] for x in cat["listings"]]
-    assert len(ids) == len(set(ids)) >= 60
+    assert len(ids) == len(set(ids)) >= 150
     sup_ids = {s["id"] for s in cat["suppliers"]}
+    assert len(sup_ids) >= 75
     assert len(sup_ids) == len(cat["suppliers"])
     items = await MockAdapter().search(SearchQuery(limit=500))
     assert {i.kind for i in items} == {"product", "raw_material", "production_line"}
@@ -32,4 +33,5 @@ async def test_catalog_integrity():
     cn = sum(1 for i in items if i.origin.country_code == "CN")
     assert cn > len(items) / 2
     assert all(i.condition == "new" for i in items if i.origin.country_code == "CN")
-    assert all(i.condition != "new" for i in items if i.origin.country_code in ("DE", "IT"))
+    assert all(i.condition != "new" for i in items if i.origin.country_code in ("DE", "IT", "JP"))
+    assert {x["supplier_id"] for x in cat["listings"]} <= sup_ids

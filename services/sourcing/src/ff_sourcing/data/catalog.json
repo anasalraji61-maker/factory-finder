@@ -624,6 +624,551 @@
 "years_in_business": 7,
 "verified": false,
 "certifications": []
+},
+{
+"id": "sup_cn_032",
+"name": "Foshan Shunde Packaging Machinery Co.",
+"name_ar": "شونده لماكينات التغليف",
+"country_code": "CN",
+"city": "Foshan",
+"lat": 23.02,
+"lon": 113.12,
+"years_in_business": 11,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_033",
+"name": "Wenzhou Labeltech Machinery Co.",
+"name_ar": "لابلتك لماكينات الملصقات",
+"country_code": "CN",
+"city": "Wenzhou",
+"lat": 28.0,
+"lon": 120.7,
+"years_in_business": 8,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_034",
+"name": "Zhangjiagang Greencycle Machinery",
+"name_ar": "غرينسايكل لماكينات إعادة التدوير",
+"country_code": "CN",
+"city": "Zhangjiagang",
+"lat": 31.87,
+"lon": 120.55,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_035",
+"name": "Linyi Brickwell Machinery Co.",
+"name_ar": "بريكويل لماكينات الطوب والبلاط",
+"country_code": "CN",
+"city": "Linyi",
+"lat": 35.1,
+"lon": 118.36,
+"years_in_business": 13,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_036",
+"name": "Qingdao Crystal Glass Machinery",
+"name_ar": "كريستال لماكينات الزجاج",
+"country_code": "CN",
+"city": "Qingdao",
+"lat": 36.07,
+"lon": 120.38,
+"years_in_business": 15,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_037",
+"name": "Jinan Woodcnc Technology Co.",
+"name_ar": "وود سي إن سي لماكينات النجارة",
+"country_code": "CN",
+"city": "Jinan",
+"lat": 36.65,
+"lon": 117.12,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_038",
+"name": "Dongguan Stitchpro Garment Equipment",
+"name_ar": "ستيتش برو لمعدات الخياطة",
+"country_code": "CN",
+"city": "Dongguan",
+"lat": 23.02,
+"lon": 113.75,
+"years_in_business": 7,
+"verified": false,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_039",
+"name": "Shenzhen Printech 3D Co.",
+"name_ar": "برينتك للطباعة ثلاثية الأبعاد",
+"country_code": "CN",
+"city": "Shenzhen",
+"lat": 22.54,
+"lon": 114.06,
+"years_in_business": 6,
+"verified": true,
+"certifications": [
+"CE",
+"RoHS"
+]
+},
+{
+"id": "sup_cn_040",
+"name": "Weifang Huaxin Power Equipment",
+"name_ar": "هواشين لمعدات الطاقة والمولدات",
+"country_code": "CN",
+"city": "Weifang",
+"lat": 36.71,
+"lon": 119.16,
+"years_in_business": 14,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_041",
+"name": "Dalian Precision Lathe Works",
+"name_ar": "دالين لمخارط الدقة",
+"country_code": "CN",
+"city": "Dalian",
+"lat": 38.91,
+"lon": 121.61,
+"years_in_business": 17,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_042",
+"name": "Guangzhou Resin Trading Co.",
+"name_ar": "غوانزو لتجارة الراتنجات",
+"country_code": "CN",
+"city": "Guangzhou",
+"lat": 23.13,
+"lon": 113.26,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_043",
+"name": "Foshan Nanhai Alutech Profiles",
+"name_ar": "ألوتك لقطاعات الألمنيوم",
+"country_code": "CN",
+"city": "Foshan",
+"lat": 23.02,
+"lon": 113.12,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_044",
+"name": "Wuxi Sinosteel Stainless Co.",
+"name_ar": "سينوستيل للفولاذ المقاوم للصدأ",
+"country_code": "CN",
+"city": "Wuxi",
+"lat": 31.49,
+"lon": 120.31,
+"years_in_business": 16,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_045",
+"name": "Shanghai Packfilm Materials Co.",
+"name_ar": "باك فيلم لأفلام التغليف",
+"country_code": "CN",
+"city": "Shanghai",
+"lat": 31.23,
+"lon": 121.47,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_046",
+"name": "Ningbo Cixi Homechef Appliances",
+"name_ar": "هوم تشيف للأجهزة المنزلية",
+"country_code": "CN",
+"city": "Cixi",
+"lat": 30.17,
+"lon": 121.27,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"CE",
+"CB"
+]
+},
+{
+"id": "sup_cn_047",
+"name": "Huizhou Voltcell Energy Co.",
+"name_ar": "فولتسيل لحلول الطاقة والبطاريات",
+"country_code": "CN",
+"city": "Huizhou",
+"lat": 23.11,
+"lon": 114.42,
+"years_in_business": 8,
+"verified": true,
+"certifications": [
+"CE",
+"UN38.3"
+]
+},
+{
+"id": "sup_cn_048",
+"name": "Guangzhou Huadu Auto Components",
+"name_ar": "هواتو لقطع غيار السيارات",
+"country_code": "CN",
+"city": "Guangzhou",
+"lat": 23.13,
+"lon": 113.26,
+"years_in_business": 11,
+"verified": true,
+"certifications": [
+"IATF16949"
+]
+},
+{
+"id": "sup_cn_049",
+"name": "Weifang Agri & Water Equipment Co.",
+"name_ar": "أجري ووتر لمعدات الزراعة والمياه",
+"country_code": "CN",
+"city": "Weifang",
+"lat": 36.71,
+"lon": 119.16,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_050",
+"name": "Haining Leather Co., Ltd",
+"name_ar": "هاينينغ للجلود",
+"country_code": "CN",
+"city": "Haining",
+"lat": 30.51,
+"lon": 120.68,
+"years_in_business": 13,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_051",
+"name": "Linyi Timber & Board Trading",
+"name_ar": "لينيي للأخشاب والألواح",
+"country_code": "CN",
+"city": "Linyi",
+"lat": 35.1,
+"lon": 118.36,
+"years_in_business": 8,
+"verified": false,
+"certifications": [
+"FSC"
+]
+},
+{
+"id": "sup_cn_052",
+"name": "Shandong Kingfert Fertilizer Co.",
+"name_ar": "كينغفرت للأسمدة",
+"country_code": "CN",
+"city": "Linyi",
+"lat": 35.1,
+"lon": 118.36,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_053",
+"name": "Foshan Marblestone Ceramics Co.",
+"name_ar": "ماربلستون للسيراميك والبورسلان",
+"country_code": "CN",
+"city": "Foshan",
+"lat": 23.02,
+"lon": 113.12,
+"years_in_business": 14,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_054",
+"name": "Shenzhen Visionguard Electronics",
+"name_ar": "فيجن غارد للإلكترونيات وكاميرات المراقبة",
+"country_code": "CN",
+"city": "Shenzhen",
+"lat": 22.54,
+"lon": 114.06,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"CE",
+"FCC",
+"RoHS"
+]
+},
+{
+"id": "sup_cn_055",
+"name": "Shantou Toyland Co., Ltd",
+"name_ar": "تويلاند للألعاب",
+"country_code": "CN",
+"city": "Shantou",
+"lat": 23.35,
+"lon": 116.68,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"EN71",
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_056",
+"name": "Guangzhou Beautypack & Hygiene Co.",
+"name_ar": "بيوتي باك للتعبئة والمستلزمات الصحية",
+"country_code": "CN",
+"city": "Guangzhou",
+"lat": 23.13,
+"lon": 113.26,
+"years_in_business": 7,
+"verified": false,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_us_004",
+"name": "Texas Polymers Export LLC",
+"name_ar": "تكساس بوليمرز للتصدير",
+"country_code": "US",
+"city": "Houston",
+"lat": 29.76,
+"lon": -95.37,
+"years_in_business": 16,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_de_003",
+"name": "Bayern Verpackungsmaschinen Gebraucht GmbH",
+"name_ar": "بايرن لماكينات التغليف المستعملة",
+"country_code": "DE",
+"city": "Munich",
+"lat": 48.14,
+"lon": 11.58,
+"years_in_business": 24,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_de_004",
+"name": "Westfalen Textilmaschinen Gebraucht GmbH",
+"name_ar": "فيستفالن لماكينات النسيج المستعملة",
+"country_code": "DE",
+"city": "Bielefeld",
+"lat": 52.02,
+"lon": 8.53,
+"years_in_business": 28,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_it_003",
+"name": "Veneto Macchine Legno Usate S.r.l.",
+"name_ar": "فينيتو لماكينات النجارة المستعملة",
+"country_code": "IT",
+"city": "Vicenza",
+"lat": 45.55,
+"lon": 11.55,
+"years_in_business": 21,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_jp_001",
+"name": "Nagoya Used Machine Tools Co.",
+"name_ar": "ناغويا للعدد والماكينات المستعملة",
+"country_code": "JP",
+"city": "Nagoya",
+"lat": 35.18,
+"lon": 136.91,
+"years_in_business": 35,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_jp_002",
+"name": "Osaka Kikai Trading Co.",
+"name_ar": "أوساكا كيكاي للماكينات المستعملة",
+"country_code": "JP",
+"city": "Osaka",
+"lat": 34.69,
+"lon": 135.5,
+"years_in_business": 29,
+"verified": true,
+"certifications": []
+},
+{
+"id": "sup_kr_001",
+"name": "Incheon Polychem Co., Ltd",
+"name_ar": "إنتشون بولي كيم للبتروكيماويات",
+"country_code": "KR",
+"city": "Incheon",
+"lat": 37.46,
+"lon": 126.71,
+"years_in_business": 19,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_kr_002",
+"name": "Changwon Precision Machinery Co.",
+"name_ar": "تشانغوون لماكينات الدقة",
+"country_code": "KR",
+"city": "Changwon",
+"lat": 35.23,
+"lon": 128.68,
+"years_in_business": 23,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_tr_003",
+"name": "Gaziantep Packaging Films A.S.",
+"name_ar": "غازي عنتاب لأفلام التغليف",
+"country_code": "TR",
+"city": "Gaziantep",
+"lat": 37.07,
+"lon": 37.38,
+"years_in_business": 14,
+"verified": true,
+"certifications": [
+"TSE",
+"ISO9001"
+]
+},
+{
+"id": "sup_in_004",
+"name": "Surat Fabrics Pvt Ltd",
+"name_ar": "سورات للأقمشة",
+"country_code": "IN",
+"city": "Surat",
+"lat": 21.17,
+"lon": 72.83,
+"years_in_business": 18,
+"verified": true,
+"certifications": [
+"OEKO-TEX"
+]
+},
+{
+"id": "sup_es_001",
+"name": "Castellon Tile Machinery S.L.",
+"name_ar": "كاستيون لماكينات البلاط",
+"country_code": "ES",
+"city": "Castellon",
+"lat": 39.99,
+"lon": -0.04,
+"years_in_business": 26,
+"verified": true,
+"certifications": [
+"CE",
+"ISO9001"
+]
+},
+{
+"id": "sup_es_002",
+"name": "Murcia Agro Irrigation S.L.",
+"name_ar": "مورسيا لأنظمة الري الزراعي",
+"country_code": "ES",
+"city": "Murcia",
+"lat": 37.98,
+"lon": -1.13,
+"years_in_business": 17,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_pl_001",
+"name": "Silesia Machinery Sp. z o.o.",
+"name_ar": "سيليزيا للماكينات",
+"country_code": "PL",
+"city": "Katowice",
+"lat": 50.26,
+"lon": 19.02,
+"years_in_business": 15,
+"verified": true,
+"certifications": [
+"CE"
+]
 }
 ],
 "listings": [
@@ -1946,6 +2491,2316 @@
 40
 ],
 "supplier_id": "sup_cn_017"
+},
+{
+"id": "lst_0061",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Automatic Vertical Form-Fill-Seal Packaging Machine",
+"title_ar": "ماكينة تعبئة وتغليف عمودية أوتوماتيكية",
+"price_min": "6500.00",
+"price_max": "12000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 900,
+"unit_volume_m3": 4,
+"hs_code": "8422.40",
+"lead_time_days": [
+30,
+45
+],
+"supplier_id": "sup_cn_032"
+},
+{
+"id": "lst_0062",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Carton Strapping and Shrink Wrapping Packing Line",
+"title_ar": "خط تغليف كراتين بالتشريط والتغليف الحراري",
+"price_min": "18000.00",
+"price_max": "30000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 2800,
+"unit_volume_m3": 14,
+"hs_code": "8422.40",
+"lead_time_days": [
+40,
+60
+],
+"supplier_id": "sup_cn_032"
+},
+{
+"id": "lst_0063",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Automatic Sticker Labeling Machine for Round Bottles",
+"title_ar": "ماكينة لصق ملصقات أوتوماتيكية للقناني الدائرية",
+"price_min": "3200.00",
+"price_max": "6500.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 350,
+"unit_volume_m3": 1.5,
+"hs_code": "8422.30",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_033"
+},
+{
+"id": "lst_0064",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Hot-Melt Wrap-Around Labeling Machine for PET Bottles",
+"title_ar": "ماكينة تغليف الملصقات بالغراء الساخن لقناني PET",
+"price_min": "9000.00",
+"price_max": "16000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 800,
+"unit_volume_m3": 3.2,
+"hs_code": "8422.30",
+"lead_time_days": [
+30,
+45
+],
+"supplier_id": "sup_cn_033"
+},
+{
+"id": "lst_0065",
+"kind": "production_line",
+"condition": "new",
+"category": "plastics_machinery",
+"title": "PET Bottle Flakes Washing and Recycling Line 500kg/h",
+"title_ar": "خط غسيل وإعادة تدوير رقائق قناني PET بطاقة 500 كغ/ساعة",
+"price_min": "55000.00",
+"price_max": "85000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 12000,
+"unit_volume_m3": 45,
+"hs_code": "8477.80",
+"lead_time_days": [
+45,
+70
+],
+"supplier_id": "sup_cn_034"
+},
+{
+"id": "lst_0066",
+"kind": "production_line",
+"condition": "new",
+"category": "plastics_machinery",
+"title": "Plastic Film Granulating Pelletizing Machine 200kg/h",
+"title_ar": "ماكينة تحبيب وتدوير أغشية البلاستيك بطاقة 200 كغ/ساعة",
+"price_min": "12000.00",
+"price_max": "26000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 3200,
+"unit_volume_m3": 12,
+"hs_code": "8477.20",
+"lead_time_days": [
+30,
+50
+],
+"supplier_id": "sup_cn_034"
+},
+{
+"id": "lst_0067",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Automatic Clay Brick Production Line with Tunnel Kiln",
+"title_ar": "خط إنتاج الطوب الطيني الأوتوماتيكي مع فرن نفقي",
+"price_min": "60000.00",
+"price_max": "140000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 20000,
+"unit_volume_m3": 60,
+"hs_code": "8474.80",
+"lead_time_days": [
+60,
+90
+],
+"supplier_id": "sup_cn_035"
+},
+{
+"id": "lst_0068",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Hydraulic Concrete Paver and Interlocking Tile Press",
+"title_ar": "مكبس هيدروليكي لبلاط الإنترلوك والأرصفة الخرسانية",
+"price_min": "25000.00",
+"price_max": "48000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 6500,
+"unit_volume_m3": 18,
+"hs_code": "8474.80",
+"lead_time_days": [
+35,
+55
+],
+"supplier_id": "sup_cn_035"
+},
+{
+"id": "lst_0069",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Flat Glass Tempering Furnace Line 2500x1800mm",
+"title_ar": "خط فرن تقسية الزجاج المسطح 2500x1800 ملم",
+"price_min": "45000.00",
+"price_max": "90000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 8000,
+"unit_volume_m3": 30,
+"hs_code": "8475.29",
+"lead_time_days": [
+50,
+75
+],
+"supplier_id": "sup_cn_036"
+},
+{
+"id": "lst_0070",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Glass Washing and Drying Machine 1600mm",
+"title_ar": "ماكينة غسيل وتجفيف الزجاج عرض 1600 ملم",
+"price_min": "6000.00",
+"price_max": "12000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 1400,
+"unit_volume_m3": 6,
+"hs_code": "8479.89",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_cn_036"
+},
+{
+"id": "lst_0071",
+"kind": "production_line",
+"condition": "new",
+"category": "woodworking",
+"title": "CNC Wood Router 1325 for Furniture Cutting and Carving",
+"title_ar": "راوتر CNC للخشب 1325 لقص وحفر الأثاث",
+"price_min": "4500.00",
+"price_max": "9500.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 1200,
+"unit_volume_m3": 6,
+"hs_code": "8465.99",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_037"
+},
+{
+"id": "lst_0072",
+"kind": "production_line",
+"condition": "new",
+"category": "woodworking",
+"title": "Automatic Edge Banding Machine for Panel Furniture",
+"title_ar": "ماكينة لصق الحواف الأوتوماتيكية لأثاث الألواح",
+"price_min": "2800.00",
+"price_max": "7500.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 950,
+"unit_volume_m3": 3.5,
+"hs_code": "8465.99",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_037"
+},
+{
+"id": "lst_0073",
+"kind": "production_line",
+"condition": "new",
+"category": "textile_garment",
+"title": "Computerized Lockstitch Industrial Sewing Machine",
+"title_ar": "ماكينة خياطة صناعية كمبيوترية غرزة مستقيمة",
+"price_min": "250.00",
+"price_max": "480.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 5,
+"incoterm": "EXW",
+"unit_weight_kg": 45,
+"unit_volume_m3": 0.25,
+"hs_code": "8452.21",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_038"
+},
+{
+"id": "lst_0074",
+"kind": "production_line",
+"condition": "new",
+"category": "textile_garment",
+"title": "Complete Garment Sewing Line 20 Stations",
+"title_ar": "خط خياطة ملابس متكامل 20 محطة",
+"price_min": "8500.00",
+"price_max": "16000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 1800,
+"unit_volume_m3": 12,
+"hs_code": "8452.21",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_cn_038"
+},
+{
+"id": "lst_0075",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "Large Format Industrial FDM 3D Printer 600mm",
+"title_ar": "طابعة ثلاثية الأبعاد صناعية FDM كبيرة الحجم 600 ملم",
+"price_min": "2200.00",
+"price_max": "6500.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 95,
+"unit_volume_m3": 0.6,
+"hs_code": "8485.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_039"
+},
+{
+"id": "lst_0076",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "Industrial SLA Resin 3D Printer 450mm",
+"title_ar": "طابعة ثلاثية الأبعاد صناعية SLA بالراتنج 450 ملم",
+"price_min": "6000.00",
+"price_max": "14000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 180,
+"unit_volume_m3": 1.1,
+"hs_code": "8485.20",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_039"
+},
+{
+"id": "lst_0077",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "CNC Flat-Bed Lathe CK6140 Turning Machine",
+"title_ar": "مخرطة CNC سرير مسطح CK6140",
+"price_min": "9500.00",
+"price_max": "17000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 3200,
+"unit_volume_m3": 7,
+"hs_code": "8458.11",
+"lead_time_days": [
+30,
+45
+],
+"supplier_id": "sup_cn_041"
+},
+{
+"id": "lst_0078",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "Slant-Bed CNC Turning Center with Live Tooling",
+"title_ar": "مركز خراطة CNC بسرير مائل مع أدوات حية",
+"price_min": "21000.00",
+"price_max": "38000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 5200,
+"unit_volume_m3": 11,
+"hs_code": "8458.11",
+"lead_time_days": [
+40,
+60
+],
+"supplier_id": "sup_cn_041"
+},
+{
+"id": "lst_0079",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "CNC Turning Center 8-inch Chuck High Precision",
+"title_ar": "مركز خراطة CNC دقيق بظرف 8 بوصة",
+"price_min": "38000.00",
+"price_max": "72000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 4800,
+"unit_volume_m3": 10,
+"hs_code": "8458.11",
+"lead_time_days": [
+60,
+90
+],
+"supplier_id": "sup_kr_002"
+},
+{
+"id": "lst_0080",
+"kind": "production_line",
+"condition": "used",
+"category": "metalworking",
+"title": "Used Okuma LB3000 EX CNC Lathe (2012)",
+"title_ar": "مخرطة CNC مستعملة Okuma LB3000 EX (2012)",
+"price_min": "22000.00",
+"price_max": "34000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 6200,
+"unit_volume_m3": 13,
+"hs_code": "8458.11",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_jp_001"
+},
+{
+"id": "lst_0081",
+"kind": "production_line",
+"condition": "used",
+"category": "metalworking",
+"title": "Used Mazak Quick Turn Nexus 250 CNC Lathe (2013)",
+"title_ar": "مخرطة CNC مستعملة Mazak Quick Turn Nexus 250 (2013)",
+"price_min": "18000.00",
+"price_max": "30000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 4500,
+"unit_volume_m3": 10,
+"hs_code": "8458.11",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_jp_001"
+},
+{
+"id": "lst_0082",
+"kind": "production_line",
+"condition": "used",
+"category": "plastics_machinery",
+"title": "Used Nissei Injection Molding Machine 180 Ton (2011)",
+"title_ar": "ماكينة حقن بلاستيك مستعملة Nissei 180 طن (2011)",
+"price_min": "9500.00",
+"price_max": "16000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 6500,
+"unit_volume_m3": 14,
+"hs_code": "8477.10",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_jp_002"
+},
+{
+"id": "lst_0083",
+"kind": "production_line",
+"condition": "used",
+"category": "plastics_machinery",
+"title": "Used Toshiba Injection Molding Machine 350 Ton (2010)",
+"title_ar": "ماكينة حقن بلاستيك مستعملة Toshiba 350 طن (2010)",
+"price_min": "14000.00",
+"price_max": "24000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 13000,
+"unit_volume_m3": 22,
+"hs_code": "8477.10",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_jp_002"
+},
+{
+"id": "lst_0084",
+"kind": "production_line",
+"condition": "used",
+"category": "woodworking",
+"title": "Used SCM Olimpic K 360 Edge Banding Machine (2015)",
+"title_ar": "ماكينة لصق حواف مستعملة SCM Olimpic K 360 (2015)",
+"price_min": "8500.00",
+"price_max": "15000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 2300,
+"unit_volume_m3": 7,
+"hs_code": "8465.99",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_it_003"
+},
+{
+"id": "lst_0085",
+"kind": "production_line",
+"condition": "used",
+"category": "woodworking",
+"title": "Used Biesse Rover CNC Nesting Router (2014)",
+"title_ar": "راوتر CNC نستنغ مستعمل Biesse Rover (2014)",
+"price_min": "28000.00",
+"price_max": "48000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 4200,
+"unit_volume_m3": 14,
+"hs_code": "8465.99",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_it_003"
+},
+{
+"id": "lst_0086",
+"kind": "production_line",
+"condition": "used",
+"category": "paper_packaging",
+"title": "Used Bosch Horizontal Flow Wrapper Packaging Line (2013)",
+"title_ar": "خط تغليف أفقي مستعمل Bosch (2013)",
+"price_min": "22000.00",
+"price_max": "38000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 5200,
+"unit_volume_m3": 22,
+"hs_code": "8422.40",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_de_003"
+},
+{
+"id": "lst_0087",
+"kind": "production_line",
+"condition": "used",
+"category": "paper_packaging",
+"title": "Used Krones Rotary Labeling Machine for Bottles (2012)",
+"title_ar": "ماكينة لصق ملصقات دوارة مستعملة Krones للقناني (2012)",
+"price_min": "35000.00",
+"price_max": "60000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 4800,
+"unit_volume_m3": 16,
+"hs_code": "8422.30",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_de_003"
+},
+{
+"id": "lst_0088",
+"kind": "production_line",
+"condition": "used",
+"category": "textile_garment",
+"title": "Used Duerkopp Adler Industrial Sewing Workstations (Lot of 20)",
+"title_ar": "محطات خياطة صناعية مستعملة Duerkopp Adler (20 قطعة)",
+"price_min": "9000.00",
+"price_max": "16000.00",
+"currency": "USD",
+"unit": "lot",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 1400,
+"unit_volume_m3": 9,
+"hs_code": "8452.21",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_de_004"
+},
+{
+"id": "lst_0089",
+"kind": "production_line",
+"condition": "used",
+"category": "textile_garment",
+"title": "Used Mayer & Cie Circular Knitting Machine 30 inch (2012)",
+"title_ar": "ماكينة تريكو دائرية مستعملة Mayer & Cie 30 بوصة (2012)",
+"price_min": "15000.00",
+"price_max": "26000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 2100,
+"unit_volume_m3": 8,
+"hs_code": "8447.11",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_de_004"
+},
+{
+"id": "lst_0090",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Hydraulic Ceramic Tile Press 3000 Ton with Glazing Line",
+"title_ar": "خط مكبس بلاط سيراميك هيدروليكي 3000 طن مع خط التزجيج",
+"price_min": "150000.00",
+"price_max": "320000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 65000,
+"unit_volume_m3": 120,
+"hs_code": "8474.80",
+"lead_time_days": [
+90,
+150
+],
+"supplier_id": "sup_es_001"
+},
+{
+"id": "lst_0091",
+"kind": "production_line",
+"condition": "new",
+"category": "woodworking",
+"title": "Wood Pellet Production Line 1 Ton/Hour",
+"title_ar": "خط إنتاج حبيبات الخشب (بيليت) بطاقة 1 طن/ساعة",
+"price_min": "85000.00",
+"price_max": "140000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FCA",
+"unit_weight_kg": 22000,
+"unit_volume_m3": 70,
+"hs_code": "8479.30",
+"lead_time_days": [
+60,
+90
+],
+"supplier_id": "sup_pl_001"
+},
+{
+"id": "lst_0092",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "PVC Resin SG5 K67 Suspension Grade",
+"title_ar": "راتنج PVC نوع SG5 K67",
+"price_min": "780.00",
+"price_max": "860.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.7,
+"hs_code": "3904.10",
+"lead_time_days": [
+7,
+15
+],
+"supplier_id": "sup_cn_042"
+},
+{
+"id": "lst_0093",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "ABS Resin Injection Molding Grade Natural",
+"title_ar": "حبيبات ABS لحقن البلاستيك لون طبيعي",
+"price_min": "1550.00",
+"price_max": "1800.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3903.30",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_kr_001"
+},
+{
+"id": "lst_0094",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "GPPS General Purpose Polystyrene Granules",
+"title_ar": "حبيبات بوليستايرين GPPS عام الاستخدام",
+"price_min": "1150.00",
+"price_max": "1300.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3903.19",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_kr_001"
+},
+{
+"id": "lst_0095",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "HIPS High Impact Polystyrene Granules",
+"title_ar": "حبيبات بوليستايرين عالي المقاومة HIPS",
+"price_min": "1250.00",
+"price_max": "1400.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3903.19",
+"lead_time_days": [
+7,
+15
+],
+"supplier_id": "sup_cn_042"
+},
+{
+"id": "lst_0096",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "LLDPE Film Grade Resin Butene Copolymer",
+"title_ar": "حبيبات LLDPE لأغشية البلاستيك",
+"price_min": "950.00",
+"price_max": "1100.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 22,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3901.10",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_us_004"
+},
+{
+"id": "lst_0097",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "BOPP Transparent Packaging Film 20 Micron Jumbo Roll",
+"title_ar": "فيلم BOPP شفاف للتغليف 20 ميكرون رولات جامبو",
+"price_min": "1500.00",
+"price_max": "1900.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 5,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 2.2,
+"hs_code": "3920.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_045"
+},
+{
+"id": "lst_0098",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "Plastic Cling Stretch Film Jumbo Rolls",
+"title_ar": "فيلم تغليف بلاستيكي شفاف (ستريتش) رولات جامبو",
+"price_min": "1450.00",
+"price_max": "1700.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 5,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 2.4,
+"hs_code": "3920.10",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_045"
+},
+{
+"id": "lst_0099",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "BOPP Printing and Lamination Film 18 Micron",
+"title_ar": "فيلم BOPP للطباعة والتغليف 18 ميكرون",
+"price_min": "1650.00",
+"price_max": "2050.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 3,
+"incoterm": "FCA",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 2.2,
+"hs_code": "3920.20",
+"lead_time_days": [
+10,
+18
+],
+"supplier_id": "sup_tr_003"
+},
+{
+"id": "lst_0100",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Aluminium Extrusion Profile 6063-T5 for Windows and Doors",
+"title_ar": "قطاعات ألمنيوم مبثوقة 6063-T5 للنوافذ والأبواب",
+"price_min": "2800.00",
+"price_max": "3400.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 3,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.5,
+"hs_code": "7604.21",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_043"
+},
+{
+"id": "lst_0101",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Aluminium Sheet 1060 H24 Plain",
+"title_ar": "صفائح ألمنيوم 1060 H24 سادة",
+"price_min": "2600.00",
+"price_max": "3000.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 3,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "7606.12",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_043"
+},
+{
+"id": "lst_0102",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Stainless Steel Coil 304 2B Cold Rolled",
+"title_ar": "لفات فولاذ مقاوم للصدأ 304 2B مدرفل على البارد",
+"price_min": "1750.00",
+"price_max": "2100.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 5,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "7219.33",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_044"
+},
+{
+"id": "lst_0103",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Stainless Steel Sheet 316L 2B 2mm",
+"title_ar": "صفائح فولاذ مقاوم للصدأ 316L سماكة 2 ملم",
+"price_min": "2900.00",
+"price_max": "3400.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 3,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "7219.33",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_044"
+},
+{
+"id": "lst_0104",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Stainless Steel Welded Pipe 304 Industrial",
+"title_ar": "أنابيب فولاذ مقاوم للصدأ ملحومة 304 صناعية",
+"price_min": "2300.00",
+"price_max": "2800.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 3,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.1,
+"hs_code": "7306.40",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_044"
+},
+{
+"id": "lst_0105",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Galvanized Steel Coil GI Z120 DX51D",
+"title_ar": "لفات فولاذ مجلفن GI Z120 DX51D",
+"price_min": "560.00",
+"price_max": "650.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 25,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "7210.49",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_015"
+},
+{
+"id": "lst_0106",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "Cotton Poplin Fabric 40x40 Bleached",
+"title_ar": "قماش بوبلين قطني 40x40 مقصور",
+"price_min": "0.90",
+"price_max": "1.30",
+"currency": "USD",
+"unit": "m",
+"moq": 3000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.12,
+"unit_volume_m3": 0.0006,
+"hs_code": "5208.21",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_in_004"
+},
+{
+"id": "lst_0107",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "Polyester Nida Crepe Abaya Fabric 150cm",
+"title_ar": "قماش نيدا كريب بوليستر للعبايات عرض 150 سم",
+"price_min": "1.10",
+"price_max": "1.60",
+"currency": "USD",
+"unit": "m",
+"moq": 3000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.2,
+"unit_volume_m3": 0.0008,
+"hs_code": "5407.61",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_016"
+},
+{
+"id": "lst_0108",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "Stretch Denim Fabric 12oz Indigo",
+"title_ar": "قماش دنيم ستريتش 12 أونصة نيلي",
+"price_min": "2.20",
+"price_max": "3.20",
+"currency": "USD",
+"unit": "m",
+"moq": 3000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.35,
+"unit_volume_m3": 0.001,
+"hs_code": "5209.42",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_in_004"
+},
+{
+"id": "lst_0109",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "PU Synthetic Leather for Sofa and Upholstery",
+"title_ar": "جلد صناعي PU لتنجيد الكنب والأثاث",
+"price_min": "1.80",
+"price_max": "3.50",
+"currency": "USD",
+"unit": "m",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.6,
+"unit_volume_m3": 0.0015,
+"hs_code": "5903.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_050"
+},
+{
+"id": "lst_0110",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "Finished Cow Leather Hides Grade A",
+"title_ar": "جلود أبقار مصنّعة درجة أولى",
+"price_min": "1.40",
+"price_max": "2.40",
+"currency": "USD",
+"unit": "sqft",
+"moq": 2000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.25,
+"unit_volume_m3": 0.0005,
+"hs_code": "4107.12",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_050"
+},
+{
+"id": "lst_0111",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "MDF Board 18mm E1 Raw 1220x2440",
+"title_ar": "ألواح MDF سماكة 18 ملم E1 مقاس 1220x2440",
+"price_min": "11.00",
+"price_max": "16.00",
+"currency": "USD",
+"unit": "sheet",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 30,
+"unit_volume_m3": 0.054,
+"hs_code": "4411.13",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_051"
+},
+{
+"id": "lst_0112",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Melamine Faced Particle Board 18mm",
+"title_ar": "ألواح خشب مضغوط مكسوة بالميلامين 18 ملم",
+"price_min": "8.00",
+"price_max": "12.00",
+"currency": "USD",
+"unit": "sheet",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 28,
+"unit_volume_m3": 0.054,
+"hs_code": "4410.11",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_051"
+},
+{
+"id": "lst_0113",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Film Faced Plywood for Concrete Formwork 18mm",
+"title_ar": "خشب رقائقي مغطى بفيلم لقوالب الخرسانة 18 ملم",
+"price_min": "11.00",
+"price_max": "17.00",
+"currency": "USD",
+"unit": "sheet",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 32,
+"unit_volume_m3": 0.045,
+"hs_code": "4412.33",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_cn_051"
+},
+{
+"id": "lst_0114",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Radiata Pine Sawn Timber Kiln Dried",
+"title_ar": "أخشاب صنوبر راديتا منشورة مجففة بالفرن",
+"price_min": "260.00",
+"price_max": "340.00",
+"currency": "USD",
+"unit": "m3",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 520,
+"unit_volume_m3": 1,
+"hs_code": "4407.11",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_cn_051"
+},
+{
+"id": "lst_0115",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Grey Back Duplex Board 300gsm",
+"title_ar": "ورق دوبلكس خلفية رمادية 300 غرام",
+"price_min": "520.00",
+"price_max": "640.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 2.0,
+"hs_code": "4810.92",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_vn_001"
+},
+{
+"id": "lst_0116",
+"kind": "raw_material",
+"condition": "new",
+"category": "chemicals",
+"title": "NPK 15-15-15 Granular Compound Fertilizer",
+"title_ar": "سماد مركب NPK 15-15-15 محبب",
+"price_min": "380.00",
+"price_max": "460.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 25,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.95,
+"hs_code": "3105.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_052"
+},
+{
+"id": "lst_0117",
+"kind": "raw_material",
+"condition": "new",
+"category": "chemicals",
+"title": "Potassium Sulphate SOP 52% Granular Fertilizer",
+"title_ar": "سماد سلفات البوتاسيوم 52% محبب",
+"price_min": "520.00",
+"price_max": "640.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 25,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "3104.30",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_052"
+},
+{
+"id": "lst_0118",
+"kind": "raw_material",
+"condition": "new",
+"category": "chemicals",
+"title": "Monoammonium Phosphate MAP 11-52-0 Fertilizer",
+"title_ar": "سماد فوسفات أحادي الأمونيوم MAP 11-52-0",
+"price_min": "540.00",
+"price_max": "650.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 25,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.95,
+"hs_code": "3105.40",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_052"
+},
+{
+"id": "lst_0119",
+"kind": "raw_material",
+"condition": "new",
+"category": "building_materials",
+"title": "Glazed Porcelain Floor Tile 600x600mm",
+"title_ar": "بلاط أرضيات بورسلان مزجج 600x600 ملم",
+"price_min": "5.00",
+"price_max": "9.00",
+"currency": "USD",
+"unit": "sqm",
+"moq": 1500,
+"incoterm": "FOB",
+"unit_weight_kg": 22,
+"unit_volume_m3": 0.012,
+"hs_code": "6907.21",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_053"
+},
+{
+"id": "lst_0120",
+"kind": "raw_material",
+"condition": "new",
+"category": "building_materials",
+"title": "Polished Porcelain Tile 800x800mm",
+"title_ar": "بلاط بورسلان مصقول 800x800 ملم",
+"price_min": "7.00",
+"price_max": "12.00",
+"currency": "USD",
+"unit": "sqm",
+"moq": 1500,
+"incoterm": "FOB",
+"unit_weight_kg": 24,
+"unit_volume_m3": 0.013,
+"hs_code": "6907.21",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_053"
+},
+{
+"id": "lst_0121",
+"kind": "raw_material",
+"condition": "new",
+"category": "building_materials",
+"title": "Ceramic Wall Tile 300x600mm Glossy",
+"title_ar": "بلاط جدران سيراميك لامع 300x600 ملم",
+"price_min": "3.50",
+"price_max": "5.50",
+"currency": "USD",
+"unit": "sqm",
+"moq": 1500,
+"incoterm": "FOB",
+"unit_weight_kg": 18,
+"unit_volume_m3": 0.011,
+"hs_code": "6907.22",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_053"
+},
+{
+"id": "lst_0122",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Digital Air Fryer 5L 1500W",
+"title_ar": "قلاية هوائية رقمية 5 لتر 1500 واط",
+"price_min": "14.00",
+"price_max": "22.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 4.5,
+"unit_volume_m3": 0.04,
+"hs_code": "8516.60",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_046"
+},
+{
+"id": "lst_0123",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Electric Kettle Stainless Steel 1.8L",
+"title_ar": "غلاية كهربائية ستانلس ستيل 1.8 لتر",
+"price_min": "3.50",
+"price_max": "6.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 1,
+"unit_volume_m3": 0.012,
+"hs_code": "8516.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_046"
+},
+{
+"id": "lst_0124",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Countertop Blender 1.5L 1000W",
+"title_ar": "خلاط مطبخ 1.5 لتر 1000 واط",
+"price_min": "8.00",
+"price_max": "14.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 3,
+"unit_volume_m3": 0.025,
+"hs_code": "8509.40",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_046"
+},
+{
+"id": "lst_0125",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Digital Rice Cooker 5L",
+"title_ar": "طباخ أرز رقمي 5 لتر",
+"price_min": "11.00",
+"price_max": "18.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 4,
+"unit_volume_m3": 0.035,
+"hs_code": "8516.60",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_046"
+},
+{
+"id": "lst_0126",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Microwave Oven 20L 700W Mechanical",
+"title_ar": "فرن ميكروويف 20 لتر 700 واط",
+"price_min": "38.00",
+"price_max": "55.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 11,
+"unit_volume_m3": 0.06,
+"hs_code": "8516.50",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_046"
+},
+{
+"id": "lst_0127",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "LiFePO4 Rack Battery 48V 100Ah 5kWh",
+"title_ar": "بطارية ليثيوم LiFePO4 رف 48 فولت 100 أمبير 5 كيلوواط ساعة",
+"price_min": "420.00",
+"price_max": "560.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 10,
+"incoterm": "FOB",
+"unit_weight_kg": 45,
+"unit_volume_m3": 0.07,
+"hs_code": "8507.60",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0128",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "LiFePO4 Battery 12.8V 100Ah Deep Cycle",
+"title_ar": "بطارية ليثيوم LiFePO4 12.8 فولت 100 أمبير",
+"price_min": "150.00",
+"price_max": "220.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 12,
+"unit_volume_m3": 0.012,
+"hs_code": "8507.60",
+"lead_time_days": [
+12,
+25
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0129",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "Deep Cycle Gel Battery 12V 200Ah",
+"title_ar": "بطارية جل 12 فولت 200 أمبير للطاقة الشمسية",
+"price_min": "130.00",
+"price_max": "180.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 56,
+"unit_volume_m3": 0.03,
+"hs_code": "8507.20",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0130",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "Portable Power Station 1000W Lithium",
+"title_ar": "محطة طاقة محمولة 1000 واط ليثيوم",
+"price_min": "280.00",
+"price_max": "400.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 11,
+"unit_volume_m3": 0.02,
+"hs_code": "8507.60",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0131",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "Complete 10kW Off-Grid Solar System Kit",
+"title_ar": "نظام طاقة شمسية متكامل 10 كيلوواط منفصل عن الشبكة",
+"price_min": "3800.00",
+"price_max": "5600.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 780,
+"unit_volume_m3": 4.5,
+"hs_code": "8541.43",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0132",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "5kW Hybrid Home Solar System with 10kWh Battery",
+"title_ar": "نظام شمسي منزلي هجين 5 كيلوواط مع بطارية 10 كيلوواط ساعة",
+"price_min": "2900.00",
+"price_max": "4200.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 420,
+"unit_volume_m3": 2.6,
+"hs_code": "8504.40",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0133",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "All-in-One Solar Street Light 60W",
+"title_ar": "إنارة شوارع شمسية متكاملة 60 واط",
+"price_min": "38.00",
+"price_max": "70.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 9,
+"unit_volume_m3": 0.05,
+"hs_code": "9405.42",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_047"
+},
+{
+"id": "lst_0134",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Ventilated Brake Disc Rotor for Passenger Cars",
+"title_ar": "أقراص فرامل مهواة للسيارات الصغيرة",
+"price_min": "6.00",
+"price_max": "12.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 8,
+"unit_volume_m3": 0.01,
+"hs_code": "8708.30",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_048"
+},
+{
+"id": "lst_0135",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Aluminium Radiator for Pickup Trucks",
+"title_ar": "رديتر ألمنيوم لسيارات البيك أب",
+"price_min": "25.00",
+"price_max": "60.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 6,
+"unit_volume_m3": 0.06,
+"hs_code": "8708.91",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_048"
+},
+{
+"id": "lst_0136",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Car Battery 12V 70Ah Maintenance Free",
+"title_ar": "بطارية سيارة 12 فولت 70 أمبير خالية من الصيانة",
+"price_min": "38.00",
+"price_max": "55.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 18,
+"unit_volume_m3": 0.02,
+"hs_code": "8507.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_048"
+},
+{
+"id": "lst_0137",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Engine Oil Filter Spin-On Assorted Models",
+"title_ar": "فلاتر زيت محرك متنوعة الموديلات",
+"price_min": "0.80",
+"price_max": "1.60",
+"currency": "USD",
+"unit": "piece",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.3,
+"unit_volume_m3": 0.0008,
+"hs_code": "8421.23",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_048"
+},
+{
+"id": "lst_0138",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Iridium Spark Plugs Set for Japanese and Korean Cars",
+"title_ar": "شمعات إشعال إيريديوم لسيارات يابانية وكورية",
+"price_min": "0.70",
+"price_max": "1.50",
+"currency": "USD",
+"unit": "piece",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.06,
+"unit_volume_m3": 0.0002,
+"hs_code": "8511.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_048"
+},
+{
+"id": "lst_0139",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "HDPE Water Storage Tank 5000 Liter Vertical",
+"title_ar": "خزان مياه بلاستيك 5000 لتر عمودي",
+"price_min": "140.00",
+"price_max": "260.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 10,
+"incoterm": "FOB",
+"unit_weight_kg": 95,
+"unit_volume_m3": 6,
+"hs_code": "3925.10",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_049"
+},
+{
+"id": "lst_0140",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "Triple-Layer Water Tank 1000 Liter",
+"title_ar": "خزان مياه ثلاثي الطبقات 1000 لتر",
+"price_min": "38.00",
+"price_max": "70.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 22,
+"unit_volume_m3": 1.6,
+"hs_code": "3925.10",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_049"
+},
+{
+"id": "lst_0141",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "Battery Knapsack Agricultural Sprayer 20L",
+"title_ar": "مرشة ظهر زراعية بالبطارية 20 لتر",
+"price_min": "14.00",
+"price_max": "24.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 5,
+"unit_volume_m3": 0.05,
+"hs_code": "8424.41",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_049"
+},
+{
+"id": "lst_0142",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "Mini Power Tiller Cultivator 7HP Diesel",
+"title_ar": "محراث زراعي صغير 7 حصان ديزل",
+"price_min": "380.00",
+"price_max": "620.00",
+"currency": "USD",
+"unit": "set",
+"moq": 10,
+"incoterm": "FOB",
+"unit_weight_kg": 85,
+"unit_volume_m3": 0.45,
+"hs_code": "8432.29",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_049"
+},
+{
+"id": "lst_0143",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "Steel Round Point Shovel with Wooden Handle",
+"title_ar": "مجرفة فولاذ مدببة بمقبض خشبي",
+"price_min": "2.80",
+"price_max": "4.50",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 2,
+"unit_volume_m3": 0.01,
+"hs_code": "8201.10",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_049"
+},
+{
+"id": "lst_0144",
+"kind": "product",
+"condition": "new",
+"category": "agri_water",
+"title": "Drip Irrigation Kit 1 Hectare Complete",
+"title_ar": "طقم ري بالتنقيط لهكتار واحد متكامل",
+"price_min": "380.00",
+"price_max": "620.00",
+"currency": "USD",
+"unit": "set",
+"moq": 5,
+"incoterm": "FCA",
+"unit_weight_kg": 180,
+"unit_volume_m3": 1.2,
+"hs_code": "8424.81",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_es_002"
+},
+{
+"id": "lst_0145",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Silent Diesel Generator Set 20kVA",
+"title_ar": "مولد ديزل صامت 20 كيلو فولت أمبير",
+"price_min": "5200.00",
+"price_max": "7800.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 650,
+"unit_volume_m3": 2.4,
+"hs_code": "8502.11",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_040"
+},
+{
+"id": "lst_0146",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Open Frame Diesel Generator Set 100kVA",
+"title_ar": "مولد ديزل مكشوف 100 كيلو فولت أمبير",
+"price_min": "14500.00",
+"price_max": "21000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 1800,
+"unit_volume_m3": 5.5,
+"hs_code": "8502.12",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_cn_040"
+},
+{
+"id": "lst_0147",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Portable Gasoline Generator 5kW",
+"title_ar": "مولد بنزين محمول 5 كيلوواط",
+"price_min": "160.00",
+"price_max": "260.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 75,
+"unit_volume_m3": 0.35,
+"hs_code": "8502.20",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_040"
+},
+{
+"id": "lst_0148",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Silent Inverter Generator 3kW",
+"title_ar": "مولد إنفرتر صامت 3 كيلوواط",
+"price_min": "280.00",
+"price_max": "420.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 28,
+"unit_volume_m3": 0.12,
+"hs_code": "8502.20",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_040"
+},
+{
+"id": "lst_0149",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Industrial Evaporative Air Cooler 18000 m3/h",
+"title_ar": "مبرد هواء صناعي تبخيري 18000 م3/ساعة",
+"price_min": "260.00",
+"price_max": "420.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 60,
+"unit_volume_m3": 1.2,
+"hs_code": "8414.59",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_027"
+},
+{
+"id": "lst_0150",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "4MP PoE IP Security Camera Outdoor Bullet",
+"title_ar": "كاميرا مراقبة IP دقة 4 ميغابكسل PoE خارجية",
+"price_min": "14.00",
+"price_max": "26.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 0.5,
+"unit_volume_m3": 0.003,
+"hs_code": "8525.89",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0151",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "8-Channel NVR Network Video Recorder",
+"title_ar": "جهاز تسجيل شبكي NVR 8 قنوات",
+"price_min": "38.00",
+"price_max": "60.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 1.2,
+"unit_volume_m3": 0.008,
+"hs_code": "8521.90",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0152",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "2K Wi-Fi Smart Indoor Camera",
+"title_ar": "كاميرا ذكية داخلية 2K واي فاي",
+"price_min": "8.00",
+"price_max": "14.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 0.25,
+"unit_volume_m3": 0.002,
+"hs_code": "8525.89",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0153",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "20W USB-C PD Fast Charger",
+"title_ar": "شاحن سريع 20 واط USB-C PD",
+"price_min": "1.60",
+"price_max": "3.20",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 0.08,
+"unit_volume_m3": 0.0005,
+"hs_code": "8504.40",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0154",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "Braided USB-C Charging Cable 1m",
+"title_ar": "كابل شحن USB-C مجدول طول 1 متر",
+"price_min": "0.45",
+"price_max": "0.90",
+"currency": "USD",
+"unit": "piece",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.04,
+"unit_volume_m3": 0.0002,
+"hs_code": "8544.42",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0155",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "Power Bank 20000mAh Dual USB",
+"title_ar": "باور بانك 20000 ملي أمبير مخرجان USB",
+"price_min": "6.00",
+"price_max": "11.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 0.45,
+"unit_volume_m3": 0.0015,
+"hs_code": "8507.60",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0156",
+"kind": "product",
+"condition": "new",
+"category": "electronics",
+"title": "True Wireless Bluetooth Earbuds TWS",
+"title_ar": "سماعات بلوتوث لاسلكية TWS",
+"price_min": "5.00",
+"price_max": "10.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 0.15,
+"unit_volume_m3": 0.001,
+"hs_code": "8518.30",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_054"
+},
+{
+"id": "lst_0157",
+"kind": "product",
+"condition": "new",
+"category": "toys_gifts",
+"title": "Remote Control Off-Road Toy Car 1:16",
+"title_ar": "سيارة ألعاب بالريموت كنترول 1:16",
+"price_min": "3.50",
+"price_max": "7.50",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 0.8,
+"unit_volume_m3": 0.012,
+"hs_code": "9503.00",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_055"
+},
+{
+"id": "lst_0158",
+"kind": "product",
+"condition": "new",
+"category": "toys_gifts",
+"title": "Building Blocks Set 1000 Pieces for Kids",
+"title_ar": "مجموعة مكعبات بناء 1000 قطعة للأطفال",
+"price_min": "6.00",
+"price_max": "12.00",
+"currency": "USD",
+"unit": "set",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 1.2,
+"unit_volume_m3": 0.02,
+"hs_code": "9503.00",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_055"
+},
+{
+"id": "lst_0159",
+"kind": "product",
+"condition": "new",
+"category": "toys_gifts",
+"title": "Plush Teddy Bear Toy 30cm",
+"title_ar": "دمية دب قطنية 30 سم",
+"price_min": "1.20",
+"price_max": "2.50",
+"currency": "USD",
+"unit": "piece",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.25,
+"unit_volume_m3": 0.01,
+"hs_code": "9503.00",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_055"
+},
+{
+"id": "lst_0160",
+"kind": "product",
+"condition": "new",
+"category": "toys_gifts",
+"title": "Educational Wooden Puzzle Set for Children",
+"title_ar": "ألعاب تعليمية خشبية (بازل) للأطفال",
+"price_min": "2.00",
+"price_max": "4.00",
+"currency": "USD",
+"unit": "set",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 0.5,
+"unit_volume_m3": 0.006,
+"hs_code": "9503.00",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_055"
+},
+{
+"id": "lst_0161",
+"kind": "product",
+"condition": "new",
+"category": "health_beauty",
+"title": "Airless Pump Cosmetic Bottle 30ml",
+"title_ar": "قنينة مضخة مفرغة من الهواء لمستحضرات التجميل 30 مل",
+"price_min": "0.35",
+"price_max": "0.70",
+"currency": "USD",
+"unit": "piece",
+"moq": 5000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.04,
+"unit_volume_m3": 0.0003,
+"hs_code": "3923.30",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_056"
+},
+{
+"id": "lst_0162",
+"kind": "product",
+"condition": "new",
+"category": "health_beauty",
+"title": "Amber Glass Dropper Bottle 30ml",
+"title_ar": "قنينة زجاج عنبري بقطارة 30 مل",
+"price_min": "0.18",
+"price_max": "0.40",
+"currency": "USD",
+"unit": "piece",
+"moq": 5000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.07,
+"unit_volume_m3": 0.0002,
+"hs_code": "7010.90",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_056"
+},
+{
+"id": "lst_0163",
+"kind": "product",
+"condition": "new",
+"category": "health_beauty",
+"title": "Cotton Swabs Hygiene Box 200 Pieces",
+"title_ar": "أعواد قطن صحية علبة 200 قطعة",
+"price_min": "0.35",
+"price_max": "0.60",
+"currency": "USD",
+"unit": "box",
+"moq": 2000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.06,
+"unit_volume_m3": 0.0004,
+"hs_code": "5601.21",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_056"
+},
+{
+"id": "lst_0164",
+"kind": "product",
+"condition": "new",
+"category": "health_beauty",
+"title": "Disposable Non-Woven Bouffant Caps 100 Pack",
+"title_ar": "أغطية رأس غير منسوجة للاستعمال الواحد 100 قطعة",
+"price_min": "1.20",
+"price_max": "2.20",
+"currency": "USD",
+"unit": "pack",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.5,
+"unit_volume_m3": 0.008,
+"hs_code": "6505.00",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_056"
+},
+{
+"id": "lst_0165",
+"kind": "product",
+"condition": "new",
+"category": "health_beauty",
+"title": "Disposable PE Aprons Non-Sterile 100 Pack",
+"title_ar": "مآزر بولي إيثيلين للاستعمال الواحد غير معقمة 100 قطعة",
+"price_min": "2.00",
+"price_max": "3.50",
+"currency": "USD",
+"unit": "pack",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 1,
+"unit_volume_m3": 0.01,
+"hs_code": "3926.20",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_056"
 }
 ]
 }

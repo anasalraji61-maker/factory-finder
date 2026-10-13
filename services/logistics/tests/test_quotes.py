@@ -164,7 +164,7 @@ def test_other_endpoints(client):
     assert c["amount"] == {"amount": "131000", "currency": "IQD"}
     assert client.post("/v1/fx/convert", json={"amount": "1", "from": "USD", "to": "XXX"}).status_code == 400
     cs = client.get("/v1/carriers").json()
-    assert cs["total"] >= 12
+    assert cs["total"] >= 25
     cs = client.get("/v1/carriers?origin_country=CN&destination_country=IQ&mode=air").json()
     assert cs["items"] and all("air" in c["modes"] for c in cs["items"])
 

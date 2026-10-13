@@ -1,0 +1,25 @@
+name: e2e
+on:
+  push:
+    paths: ["services/**", "contracts/**", "scripts/**", ".github/workflows/e2e.yml"]
+  pull_request:
+    paths: ["services/**", "contracts/**", "scripts/**"]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install shared deps
+        run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets
+      - name: Install service deps
+        run: |
+          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant; do
+            python scripts/install_service.py services/$s --deps-only
+          done
+      - run: python scripts/e2e.py

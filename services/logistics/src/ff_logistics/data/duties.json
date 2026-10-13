@@ -13,7 +13,19 @@
   "metal": "73",
   "vehicles": "87",
   "auto_parts": "87",
-  "raw_material": "39"
+  "raw_material": "39",
+  "packaging": "39",
+  "film": "39",
+  "toys": "95",
+  "tiles": "69",
+  "ceramics": "69",
+  "glass": "70",
+  "wood": "44",
+  "paper": "48",
+  "fertilizer": "31",
+  "batteries": "85",
+  "generators": "85",
+  "leather": "41"
  },
  "countries": {
   "IQ": {
@@ -273,6 +285,456 @@
    },
    "vat_pct": 20,
    "clearance_fee_usd": 200
+  },
+  "SY": {
+   "default_duty_pct": 10,
+   "chapters": {
+    "39": 10,
+    "52": 5,
+    "61": 30,
+    "62": 30,
+    "72": 5,
+    "73": 15,
+    "84": 5,
+    "85": 10,
+    "87": 40,
+    "94": 30
+   },
+   "vat_pct": 0,
+   "clearance_fee_usd": 250,
+   "note": "Sanctions and conflict-zone restrictions apply; rates indicative only."
+  },
+  "LB": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 5,
+    "62": 5,
+    "72": 5,
+    "73": 5,
+    "84": 5,
+    "85": 5,
+    "87": 5,
+    "94": 5
+   },
+   "vat_pct": 11,
+   "clearance_fee_usd": 200
+  },
+  "LY": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 20,
+    "62": 20,
+    "72": 5,
+    "73": 5,
+    "84": 5,
+    "85": 5,
+    "87": 15,
+    "94": 15
+   },
+   "vat_pct": 0,
+   "clearance_fee_usd": 250,
+   "note": "Customs practice varies by port authority; rates indicative only."
+  },
+  "DZ": {
+   "default_duty_pct": 15,
+   "chapters": {
+    "39": 15,
+    "52": 15,
+    "61": 30,
+    "62": 30,
+    "72": 5,
+    "73": 15,
+    "84": 5,
+    "85": 15,
+    "87": 30,
+    "94": 30
+   },
+   "vat_pct": 19,
+   "clearance_fee_usd": 200
+  },
+  "MA": {
+   "default_duty_pct": 17.5,
+   "chapters": {
+    "39": 17.5,
+    "52": 25,
+    "61": 40,
+    "62": 40,
+    "72": 2.5,
+    "73": 10,
+    "84": 2.5,
+    "85": 10,
+    "87": 17.5,
+    "94": 25
+   },
+   "vat_pct": 20,
+   "clearance_fee_usd": 150
+  },
+  "TN": {
+   "default_duty_pct": 15,
+   "chapters": {
+    "39": 15,
+    "52": 20,
+    "61": 36,
+    "62": 36,
+    "72": 10,
+    "73": 20,
+    "84": 10,
+    "85": 15,
+    "87": 36,
+    "94": 36
+   },
+   "vat_pct": 19,
+   "clearance_fee_usd": 150
+  },
+  "PK": {
+   "default_duty_pct": 16,
+   "chapters": {
+    "39": 11,
+    "52": 11,
+    "61": 20,
+    "62": 20,
+    "72": 11,
+    "73": 16,
+    "84": 11,
+    "85": 16,
+    "87": 25,
+    "94": 20
+   },
+   "vat_pct": 18,
+   "clearance_fee_usd": 200,
+   "note": "Additional and regulatory duties not modelled."
+  },
+  "BD": {
+   "default_duty_pct": 20,
+   "chapters": {
+    "39": 25,
+    "52": 15,
+    "61": 25,
+    "62": 25,
+    "72": 10,
+    "73": 25,
+    "84": 10,
+    "85": 25,
+    "87": 25,
+    "94": 25
+   },
+   "vat_pct": 15,
+   "clearance_fee_usd": 180,
+   "note": "Supplementary duties and advance taxes not modelled; vehicles can be far higher."
+  },
+  "NG": {
+   "default_duty_pct": 15,
+   "chapters": {
+    "39": 10,
+    "52": 20,
+    "61": 20,
+    "62": 20,
+    "72": 10,
+    "73": 20,
+    "84": 10,
+    "85": 10,
+    "87": 35,
+    "94": 20
+   },
+   "vat_pct": 7.5,
+   "clearance_fee_usd": 250,
+   "note": "Levies such as CISS not modelled."
+  },
+  "KE": {
+   "default_duty_pct": 25,
+   "chapters": {
+    "39": 10,
+    "52": 10,
+    "61": 25,
+    "62": 25,
+    "72": 10,
+    "73": 25,
+    "84": 5,
+    "85": 10,
+    "87": 25,
+    "94": 25
+   },
+   "vat_pct": 16,
+   "clearance_fee_usd": 180,
+   "note": "EAC common external tariff; rates vary by goods category."
+  },
+  "ZA": {
+   "default_duty_pct": 10,
+   "chapters": {
+    "39": 5,
+    "52": 10,
+    "61": 45,
+    "62": 45,
+    "72": 5,
+    "73": 10,
+    "84": 2,
+    "85": 5,
+    "87": 25,
+    "94": 20
+   },
+   "vat_pct": 15,
+   "clearance_fee_usd": 200
+  },
+  "BR": {
+   "default_duty_pct": 14,
+   "chapters": {
+    "39": 12,
+    "52": 18,
+    "61": 35,
+    "62": 35,
+    "72": 12,
+    "73": 16,
+    "84": 14,
+    "85": 16,
+    "87": 35,
+    "94": 18
+   },
+   "vat_pct": 17,
+   "clearance_fee_usd": 300,
+   "note": "Import tax stack (IPI, PIS/COFINS, ICMS) is simplified into one VAT-like rate."
+  },
+  "PL": {
+   "default_duty_pct": 4,
+   "chapters": {
+    "39": 6.5,
+    "52": 8,
+    "61": 12,
+    "62": 12,
+    "72": 2,
+    "73": 3,
+    "84": 1.7,
+    "85": 2.5,
+    "87": 10,
+    "94": 0
+   },
+   "vat_pct": 23,
+   "clearance_fee_usd": 150
+  },
+  "ES": {
+   "default_duty_pct": 4,
+   "chapters": {
+    "39": 6.5,
+    "52": 8,
+    "61": 12,
+    "62": 12,
+    "72": 2,
+    "73": 3,
+    "84": 1.7,
+    "85": 2.5,
+    "87": 10,
+    "94": 0
+   },
+   "vat_pct": 21,
+   "clearance_fee_usd": 150
+  },
+  "NL": {
+   "default_duty_pct": 4,
+   "chapters": {
+    "39": 6.5,
+    "52": 8,
+    "61": 12,
+    "62": 12,
+    "72": 2,
+    "73": 3,
+    "84": 1.7,
+    "85": 2.5,
+    "87": 10,
+    "94": 0
+   },
+   "vat_pct": 21,
+   "clearance_fee_usd": 150
+  },
+  "CA": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 6.5,
+    "52": 8,
+    "61": 18,
+    "62": 18,
+    "72": 0,
+    "73": 6,
+    "84": 0,
+    "85": 0,
+    "87": 6.1,
+    "94": 0
+   },
+   "vat_pct": 5,
+   "clearance_fee_usd": 150,
+   "note": "Federal GST only; provincial taxes and trade-remedy surtaxes not modelled."
+  },
+  "AU": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 5,
+    "62": 5,
+    "72": 0,
+    "73": 5,
+    "84": 0,
+    "85": 3,
+    "87": 5,
+    "94": 5
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 150
+  },
+  "QA": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 5,
+    "62": 5,
+    "72": 5,
+    "73": 5,
+    "84": 5,
+    "85": 5,
+    "87": 5,
+    "94": 5
+   },
+   "vat_pct": 0,
+   "clearance_fee_usd": 100
+  },
+  "OM": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 5,
+    "62": 5,
+    "72": 5,
+    "73": 5,
+    "84": 5,
+    "85": 5,
+    "87": 5,
+    "94": 5
+   },
+   "vat_pct": 5,
+   "clearance_fee_usd": 100
+  },
+  "BH": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 5,
+    "62": 5,
+    "72": 5,
+    "73": 5,
+    "84": 5,
+    "85": 5,
+    "87": 5,
+    "94": 5
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 100
+  },
+  "VN": {
+   "default_duty_pct": 10,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 12,
+    "62": 12,
+    "72": 5,
+    "73": 10,
+    "84": 3,
+    "85": 5,
+    "87": 70,
+    "94": 20
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 150
+  },
+  "ID": {
+   "default_duty_pct": 10,
+   "chapters": {
+    "39": 10,
+    "52": 5,
+    "61": 15,
+    "62": 15,
+    "72": 10,
+    "73": 10,
+    "84": 5,
+    "85": 10,
+    "87": 40,
+    "94": 15
+   },
+   "vat_pct": 11,
+   "clearance_fee_usd": 180
+  },
+  "MY": {
+   "default_duty_pct": 5,
+   "chapters": {
+    "39": 10,
+    "52": 5,
+    "61": 20,
+    "62": 20,
+    "72": 5,
+    "73": 15,
+    "84": 0,
+    "85": 0,
+    "87": 30,
+    "94": 20
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 150
+  },
+  "TH": {
+   "default_duty_pct": 10,
+   "chapters": {
+    "39": 5,
+    "52": 5,
+    "61": 30,
+    "62": 30,
+    "72": 5,
+    "73": 10,
+    "84": 5,
+    "85": 10,
+    "87": 60,
+    "94": 20
+   },
+   "vat_pct": 7,
+   "clearance_fee_usd": 150
+  },
+  "KR": {
+   "default_duty_pct": 8,
+   "chapters": {
+    "39": 6.5,
+    "52": 8,
+    "61": 13,
+    "62": 13,
+    "72": 0,
+    "73": 8,
+    "84": 8,
+    "85": 8,
+    "87": 8,
+    "94": 8
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 150
+  },
+  "JP": {
+   "default_duty_pct": 3,
+   "chapters": {
+    "39": 3,
+    "52": 5,
+    "61": 9,
+    "62": 9,
+    "72": 0,
+    "73": 0,
+    "84": 0,
+    "85": 0,
+    "87": 0,
+    "94": 0
+   },
+   "vat_pct": 10,
+   "clearance_fee_usd": 150
   }
  }
 }

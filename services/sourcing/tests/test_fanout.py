@@ -1,7 +1,7 @@
 import asyncio
 
 from ff_sourcing.adapters.base import Health, SourceAdapter
-from ff_sourcing.adapters.mock import MockAdapter
+from ff_sourcing.adapters.mock import MockAdapter, load_catalog
 from ff_sourcing.adapters.registry import AdapterRegistry
 from ff_sourcing.clients.trust import MockTrustClient
 from ff_sourcing.domain.models import SearchQuery
@@ -57,8 +57,9 @@ async def test_timeout_and_error_are_isolated():
 
 async def test_dedupe_across_sources_keeps_cheaper():
     res = await make([MockAdapter(), Twin()]).search(SearchQuery(), 1, 100)
-    assert res.total == 60 and {i.source for i in res.items} == {"twin"}
-    assert sum(s.count for s in res.sources) == 120
+    n = len(load_catalog()["listings"])
+    assert res.total == n and {i.source for i in res.items} == {"twin"}
+    assert sum(s.count for s in res.sources) == 2 * n
 
 
 async def test_disabled_adapter_not_called():

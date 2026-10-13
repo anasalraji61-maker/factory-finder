@@ -86,7 +86,12 @@ class Assistant:
             params["max_price" if p.budget.bound == "max" else "min_price"] = str(p.budget.amount)
         elif p.budget:
             warnings.append("budget_currency_ignored")
-        return await self._guard("sourcing", self.c.sourcing.search(params), warnings)
+        res = await self._guard("sourcing", self.c.sourcing.search(params), warnings)
+        words = (p.query or "").split()
+        if res is not None and not res.items and len(words) > 1:
+            # sourcing ANDs query terms; relax to the head noun (last word) so a modifier miss still returns something
+            res = await self._guard("sourcing", self.c.sourcing.search({**params, "q": words[-1]}), warnings) or res
+        return res
 
     async def _search(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
         res = await self._search_listings(p, warnings)

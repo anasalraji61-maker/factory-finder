@@ -102,6 +102,21 @@ DateTime? _dt(Object? v) {
   return null;
 }
 
+/// Free-text place from either a plain string (mock) or a contract object:
+/// `{name, name_ar, country_code}` (event location) or
+/// `{country_code, city}` (shipment origin / destination).
+String _place(Object? v, {bool preferArabic = false}) {
+  if (v is Map) {
+    final ar = v['name_ar']?.toString() ?? '';
+    final name = (v['name'] ?? v['city'] ?? '').toString();
+    final cc = v['country_code']?.toString() ?? '';
+    final label = (preferArabic && ar.isNotEmpty) ? ar : name;
+    if (label.isEmpty) return cc;
+    return (cc.isEmpty || v['name'] != null) ? label : '$label, $cc';
+  }
+  return (v ?? '').toString();
+}
+
 class TrackingEvent {
   const TrackingEvent({
     required this.status,
@@ -117,9 +132,10 @@ class TrackingEvent {
 
   factory TrackingEvent.fromJson(Map<String, dynamic> j) => TrackingEvent(
         status: ShipmentStatusX.parse(j['status']?.toString()),
-        description: (j['description'] ?? '').toString(),
-        location: (j['location'] ?? '').toString(),
-        time: _dt(j['time'] ?? j['occurred_at']) ?? DateTime.fromMillisecondsSinceEpoch(0),
+        description: ((j['description_ar'] ?? j['description']) ?? '').toString(),
+        location: _place(j['location'], preferArabic: true),
+        time: _dt(j['time'] ?? j['timestamp'] ?? j['occurred_at']) ??
+            DateTime.fromMillisecondsSinceEpoch(0),
       );
 
   Map<String, dynamic> toJson() => {
@@ -175,13 +191,20 @@ class Shipment {
       id: j['id'].toString(),
       reference: (j['reference'] ?? '').toString(),
       referenceType: ReferenceTypeX.parse(j['reference_type']?.toString()),
-      carrier: j['carrier']?.toString(),
+      carrier: j['carrier'] is Map
+          ? (j['carrier'] as Map)['name']?.toString()
+          : j['carrier']?.toString(),
       status: status,
-      origin: (j['origin'] ?? '').toString(),
-      destination: (j['destination'] ?? '').toString(),
-      vesselName: j['vessel_name']?.toString(),
+      origin: _place(j['origin']),
+      destination: _place(j['destination']),
+      vesselName: (j['vessel_name'] ??
+              (j['vessel'] is Map ? (j['vessel'] as Map)['name'] : null))
+          ?.toString(),
       eta: _dt(j['eta']),
-      progress: (j['progress'] as num?)?.toDouble(),
+      progress: (j['progress'] as num?)?.toDouble() ??
+          (j['progress_percent'] is num
+              ? (j['progress_percent'] as num).toDouble() / 100
+              : null),
       events: events,
       updatedAt: _dt(j['updated_at']),
     );

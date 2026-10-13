@@ -16,6 +16,10 @@ _T = [
             ("apparel", "Apparel & modest wear", "ملابس وأزياء محتشمة"),
             ("tools", "Tools", "عدد وأدوات"),
             ("pumps_hvac", "Pumps & air conditioning", "مضخات وتكييف"),
+            ("electronics", "Electronics & security", "إلكترونيات وأنظمة أمان"),
+            ("toys_gifts", "Toys & gifts", "ألعاب وهدايا"),
+            ("agri_water", "Agriculture & water storage", "زراعة وخزانات مياه"),
+            ("health_beauty", "Health & beauty supplies", "مستلزمات صحية وتجميل"),
         ],
     ),
     (
@@ -27,6 +31,8 @@ _T = [
             ("metals", "Metals", "معادن"),
             ("textiles", "Textiles & yarn", "منسوجات وخيوط"),
             ("paper_wood", "Paper & wood", "ورق وخشب"),
+            ("building_materials", "Building materials", "مواد بناء"),
+            ("chemicals", "Fertilizers & chemicals", "أسمدة وكيماويات"),
         ],
     ),
     (
@@ -39,6 +45,8 @@ _T = [
             ("metalworking", "Metalworking & CNC", "تشغيل المعادن وCNC"),
             ("construction_machinery", "Construction materials machinery", "ماكينات مواد البناء"),
             ("paper_packaging", "Paper & packaging lines", "خطوط الورق والتغليف"),
+            ("textile_garment", "Textile & garment machinery", "ماكينات النسيج والملابس"),
+            ("woodworking", "Woodworking machinery", "ماكينات النجارة"),
         ],
     ),
 ]

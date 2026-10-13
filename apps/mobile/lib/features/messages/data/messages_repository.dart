@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,13 +28,19 @@ List<T> _items<T>(dynamic data, T Function(Map<String, dynamic>) parse) {
 
 /// REST implementation per ARCHITECTURE §4 (polling is the realtime fallback).
 class LiveMessagingRepository implements MessagingRepository {
-  LiveMessagingRepository(this._api);
+  LiveMessagingRepository(this._api, [this._myId]);
   final ApiClient _api;
+
+  /// Id of the signed-in user (to tell own messages / the other participant).
+  final String? Function()? _myId;
+
+  String? get _me => _myId?.call();
 
   @override
   Future<List<Conversation>> conversations() async {
     final data = await _api.get('/v1/conversations');
-    final list = _items(data, Conversation.fromJson);
+    final me = _me;
+    final list = _items(data, (m) => Conversation.fromJson(m, myUserId: me));
     list.sort((a, b) => b.lastAt.compareTo(a.lastAt));
     return list;
   }
@@ -41,16 +48,22 @@ class LiveMessagingRepository implements MessagingRepository {
   @override
   Future<List<ChatMessage>> messages(String id) async {
     final data = await _api.get('/v1/conversations/$id/messages');
-    final list = _items(data, ChatMessage.fromJson);
-    list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    return list;
+    final me = _me;
+    final list = _items(data, (m) => ChatMessage.fromJson(m, myUserId: me));
+    // The contract returns newest first; the chat screen wants oldest first.
+    return list.reversed.toList();
   }
 
   @override
   Future<ChatMessage> send(String id, String text) async {
     final data = await _api.post('/v1/conversations/$id/messages',
-        body: {'kind': 'text', 'body': text});
-    return ChatMessage.fromJson(Map<String, dynamic>.from(data as Map));
+        body: {
+          'type': 'text',
+          'text': text,
+          'client_message_id': 'app_${DateTime.now().microsecondsSinceEpoch}',
+        });
+    return ChatMessage.fromJson(Map<String, dynamic>.from(data as Map),
+        myUserId: _me);
   }
 
   @override
@@ -65,12 +78,19 @@ class LiveMessagingRepository implements MessagingRepository {
     String? firstMessage,
   }) async {
     final data = await _api.post('/v1/conversations', body: {
-      'participant_id': supplierId,
-      if (listingId != null) 'context': {'type': 'listing', 'id': listingId},
-      if (firstMessage != null && firstMessage.trim().isNotEmpty)
-        'initial_message': firstMessage.trim(),
+      'participants': [
+        {'user_id': supplierId, 'role': 'supplier'},
+      ],
+      'my_role': 'buyer',
+      if (listingId != null) 'context': {'type': 'listing', 'ref_id': listingId},
     });
-    return Conversation.fromJson(Map<String, dynamic>.from(data as Map));
+    final conv = Conversation.fromJson(Map<String, dynamic>.from(data as Map),
+        myUserId: _me);
+    if (firstMessage != null && firstMessage.trim().isNotEmpty) {
+      await send(conv.id, firstMessage.trim());
+      return conv.copyWith(lastMessage: firstMessage.trim(), lastAt: DateTime.now());
+    }
+    return conv;
   }
 }
 
@@ -274,7 +294,9 @@ class MockMessagingRepository implements MessagingRepository {
 
 final messagingRepositoryProvider = Provider<MessagingRepository>((ref) {
   final api = ref.watch(apiClientProvider);
-  return api.isMock ? MockMessagingRepository() : LiveMessagingRepository(api);
+  return api.isMock
+      ? MockMessagingRepository()
+      : LiveMessagingRepository(api, () => ref.read(authProvider)?.id);
 });
 
 final conversationsProvider = FutureProvider.autoDispose<List<Conversation>>(

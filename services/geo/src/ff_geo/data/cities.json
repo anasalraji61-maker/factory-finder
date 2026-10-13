@@ -2242,5 +2242,2469 @@
 "lon": 44.8271
 },
 "industrial": false
+},
+{
+"id": "IQ-HALABJA",
+"name_en": "Halabja",
+"name_ar": "حلبجة",
+"country_code": "IQ",
+"point": {
+"lat": 35.1778,
+"lon": 45.9861
+},
+"industrial": false
+},
+{
+"id": "IQ-RANYA",
+"name_en": "Ranya",
+"name_ar": "رانية",
+"country_code": "IQ",
+"point": {
+"lat": 36.2556,
+"lon": 44.8833
+},
+"industrial": false
+},
+{
+"id": "IQ-KOYA",
+"name_en": "Koya",
+"name_ar": "كويسنجق",
+"country_code": "IQ",
+"point": {
+"lat": 36.0833,
+"lon": 44.6333
+},
+"industrial": false
+},
+{
+"id": "IQ-SORAN",
+"name_en": "Soran",
+"name_ar": "سوران",
+"country_code": "IQ",
+"point": {
+"lat": 36.6514,
+"lon": 44.5436
+},
+"industrial": false
+},
+{
+"id": "IQ-SHAQLAWA",
+"name_en": "Shaqlawa",
+"name_ar": "شقلاوة",
+"country_code": "IQ",
+"point": {
+"lat": 36.4,
+"lon": 44.3167
+},
+"industrial": false
+},
+{
+"id": "IQ-AKRE",
+"name_en": "Akre",
+"name_ar": "عقرة",
+"country_code": "IQ",
+"point": {
+"lat": 36.7447,
+"lon": 43.8917
+},
+"industrial": false
+},
+{
+"id": "IQ-SINJAR",
+"name_en": "Sinjar",
+"name_ar": "سنجار",
+"country_code": "IQ",
+"point": {
+"lat": 36.32,
+"lon": 41.87
+},
+"industrial": false
+},
+{
+"id": "IQ-TAL_AFAR",
+"name_en": "Tal Afar",
+"name_ar": "تلعفر",
+"country_code": "IQ",
+"point": {
+"lat": 36.37,
+"lon": 42.45
+},
+"industrial": false
+},
+{
+"id": "IQ-HAMDANIYA",
+"name_en": "Hamdaniya",
+"name_ar": "الحمدانية",
+"country_code": "IQ",
+"point": {
+"lat": 36.27,
+"lon": 43.38
+},
+"industrial": false
+},
+{
+"id": "IQ-HIT",
+"name_en": "Hit",
+"name_ar": "هيت",
+"country_code": "IQ",
+"point": {
+"lat": 33.6417,
+"lon": 42.8267
+},
+"industrial": false
+},
+{
+"id": "IQ-HADITHA",
+"name_en": "Haditha",
+"name_ar": "حديثة",
+"country_code": "IQ",
+"point": {
+"lat": 34.1333,
+"lon": 42.3833
+},
+"industrial": false
+},
+{
+"id": "IQ-AL_QAIM",
+"name_en": "Al-Qaim",
+"name_ar": "القائم",
+"country_code": "IQ",
+"point": {
+"lat": 34.3833,
+"lon": 41.0167
+},
+"industrial": false
+},
+{
+"id": "IQ-RUTBA",
+"name_en": "Rutba",
+"name_ar": "الرطبة",
+"country_code": "IQ",
+"point": {
+"lat": 33.0333,
+"lon": 40.2833
+},
+"industrial": false
+},
+{
+"id": "IQ-BAIJI",
+"name_en": "Baiji",
+"name_ar": "بيجي",
+"country_code": "IQ",
+"point": {
+"lat": 34.93,
+"lon": 43.49
+},
+"industrial": true
+},
+{
+"id": "IQ-BALAD",
+"name_en": "Balad",
+"name_ar": "بلد",
+"country_code": "IQ",
+"point": {
+"lat": 34.0167,
+"lon": 44.15
+},
+"industrial": false
+},
+{
+"id": "IQ-TUZ_KHURMATU",
+"name_en": "Tuz Khurmatu",
+"name_ar": "طوزخورماتو",
+"country_code": "IQ",
+"point": {
+"lat": 34.8833,
+"lon": 44.6333
+},
+"industrial": false
+},
+{
+"id": "IQ-KALAR",
+"name_en": "Kalar",
+"name_ar": "كلار",
+"country_code": "IQ",
+"point": {
+"lat": 34.625,
+"lon": 45.3167
+},
+"industrial": false
+},
+{
+"id": "IQ-CHAMCHAMAL",
+"name_en": "Chamchamal",
+"name_ar": "جمجمال",
+"country_code": "IQ",
+"point": {
+"lat": 35.5333,
+"lon": 44.8333
+},
+"industrial": false
+},
+{
+"id": "IQ-MANDALI",
+"name_en": "Mandali",
+"name_ar": "مندلي",
+"country_code": "IQ",
+"point": {
+"lat": 33.75,
+"lon": 45.55
+},
+"industrial": false
+},
+{
+"id": "IQ-SHATRAH",
+"name_en": "Shatrah",
+"name_ar": "الشطرة",
+"country_code": "IQ",
+"point": {
+"lat": 31.4119,
+"lon": 46.1783
+},
+"industrial": false
+},
+{
+"id": "IQ-SUQ_AL_SHUYUKH",
+"name_en": "Suq al-Shuyukh",
+"name_ar": "سوق الشيوخ",
+"country_code": "IQ",
+"point": {
+"lat": 30.8833,
+"lon": 46.6333
+},
+"industrial": false
+},
+{
+"id": "IQ-KUFA",
+"name_en": "Kufa",
+"name_ar": "الكوفة",
+"country_code": "IQ",
+"point": {
+"lat": 32.0333,
+"lon": 44.4
+},
+"industrial": false
+},
+{
+"id": "IQ-ABU_GHRAIB",
+"name_en": "Abu Ghraib",
+"name_ar": "أبو غريب",
+"country_code": "IQ",
+"point": {
+"lat": 33.3,
+"lon": 44.1833
+},
+"industrial": true
+},
+{
+"id": "IQ-MAHMUDIYAH",
+"name_en": "Mahmudiyah",
+"name_ar": "المحمودية",
+"country_code": "IQ",
+"point": {
+"lat": 33.0667,
+"lon": 44.3667
+},
+"industrial": true
+},
+{
+"id": "IQ-KHALIS",
+"name_en": "Khalis",
+"name_ar": "الخالص",
+"country_code": "IQ",
+"point": {
+"lat": 33.85,
+"lon": 44.5333
+},
+"industrial": false
+},
+{
+"id": "IQ-ZUBAIR",
+"name_en": "Zubair",
+"name_ar": "الزبير",
+"country_code": "IQ",
+"point": {
+"lat": 30.3833,
+"lon": 47.7167
+},
+"industrial": true
+},
+{
+"id": "IQ-SAFWAN",
+"name_en": "Safwan",
+"name_ar": "صفوان",
+"country_code": "IQ",
+"point": {
+"lat": 30.1,
+"lon": 47.7
+},
+"industrial": false
+},
+{
+"id": "IQ-FAW",
+"name_en": "Faw",
+"name_ar": "الفاو",
+"country_code": "IQ",
+"point": {
+"lat": 29.9731,
+"lon": 48.4725
+},
+"industrial": true
+},
+{
+"id": "IQ-ABU_AL_KHASIB",
+"name_en": "Abu Al-Khasib",
+"name_ar": "أبو الخصيب",
+"country_code": "IQ",
+"point": {
+"lat": 30.44,
+"lon": 48.02
+},
+"industrial": false
+},
+{
+"id": "IQ-QALAT_SUKKAR",
+"name_en": "Qalat Sukkar",
+"name_ar": "قلعة سكر",
+"country_code": "IQ",
+"point": {
+"lat": 31.85,
+"lon": 46.0667
+},
+"industrial": false
+},
+{
+"id": "IQ-BADRA",
+"name_en": "Badra",
+"name_ar": "بدرة",
+"country_code": "IQ",
+"point": {
+"lat": 33.0833,
+"lon": 45.95
+},
+"industrial": false
+},
+{
+"id": "IQ-MUSSAIB",
+"name_en": "Mussaib",
+"name_ar": "المسيب",
+"country_code": "IQ",
+"point": {
+"lat": 32.7833,
+"lon": 44.3
+},
+"industrial": true
+},
+{
+"id": "CN-HARBIN",
+"name_en": "Harbin",
+"name_ar": "هاربين",
+"country_code": "CN",
+"point": {
+"lat": 45.8038,
+"lon": 126.535
+},
+"industrial": true
+},
+{
+"id": "CN-SHENYANG",
+"name_en": "Shenyang",
+"name_ar": "شنيانغ",
+"country_code": "CN",
+"point": {
+"lat": 41.8057,
+"lon": 123.4315
+},
+"industrial": true
+},
+{
+"id": "CN-TAIYUAN",
+"name_en": "Taiyuan",
+"name_ar": "تاييوان",
+"country_code": "CN",
+"point": {
+"lat": 37.8706,
+"lon": 112.5489
+},
+"industrial": true
+},
+{
+"id": "CN-NANCHANG",
+"name_en": "Nanchang",
+"name_ar": "نانتشانغ",
+"country_code": "CN",
+"point": {
+"lat": 28.682,
+"lon": 115.8579
+},
+"industrial": true
+},
+{
+"id": "CN-GUIYANG",
+"name_en": "Guiyang",
+"name_ar": "قويانغ",
+"country_code": "CN",
+"point": {
+"lat": 26.647,
+"lon": 106.6302
+},
+"industrial": false
+},
+{
+"id": "CN-NANNING",
+"name_en": "Nanning",
+"name_ar": "نانينغ",
+"country_code": "CN",
+"point": {
+"lat": 22.817,
+"lon": 108.3665
+},
+"industrial": false
+},
+{
+"id": "CN-LANZHOU",
+"name_en": "Lanzhou",
+"name_ar": "لانتشو",
+"country_code": "CN",
+"point": {
+"lat": 36.0611,
+"lon": 103.8343
+},
+"industrial": true
+},
+{
+"id": "CN-YANTAI",
+"name_en": "Yantai",
+"name_ar": "يانتاي",
+"country_code": "CN",
+"point": {
+"lat": 37.4638,
+"lon": 121.4479
+},
+"industrial": true
+},
+{
+"id": "CN-WEIFANG",
+"name_en": "Weifang",
+"name_ar": "ويفانغ",
+"country_code": "CN",
+"point": {
+"lat": 36.7069,
+"lon": 119.1619
+},
+"industrial": true
+},
+{
+"id": "CN-ZIBO",
+"name_en": "Zibo",
+"name_ar": "زيبو",
+"country_code": "CN",
+"point": {
+"lat": 36.8131,
+"lon": 118.0548
+},
+"industrial": true
+},
+{
+"id": "CN-JIANGMEN",
+"name_en": "Jiangmen",
+"name_ar": "جيانغمن",
+"country_code": "CN",
+"point": {
+"lat": 22.579,
+"lon": 113.0815
+},
+"industrial": true
+},
+{
+"id": "CN-JIEYANG",
+"name_en": "Jieyang",
+"name_ar": "جييانغ",
+"country_code": "CN",
+"point": {
+"lat": 23.5438,
+"lon": 116.3728
+},
+"industrial": true
+},
+{
+"id": "CN-HANDAN",
+"name_en": "Handan",
+"name_ar": "هاندان",
+"country_code": "CN",
+"point": {
+"lat": 36.6256,
+"lon": 114.5391
+},
+"industrial": true
+},
+{
+"id": "CN-TANGSHAN",
+"name_en": "Tangshan",
+"name_ar": "تانغشان",
+"country_code": "CN",
+"point": {
+"lat": 39.6309,
+"lon": 118.1802
+},
+"industrial": true
+},
+{
+"id": "CN-KASHGAR",
+"name_en": "Kashgar",
+"name_ar": "كاشغر",
+"country_code": "CN",
+"point": {
+"lat": 39.4704,
+"lon": 75.9898
+},
+"industrial": false
+},
+{
+"id": "CN-LUOYANG",
+"name_en": "Luoyang",
+"name_ar": "لويانغ",
+"country_code": "CN",
+"point": {
+"lat": 34.6197,
+"lon": 112.454
+},
+"industrial": true
+},
+{
+"id": "CN-YANGZHOU",
+"name_en": "Yangzhou",
+"name_ar": "يانغتشو",
+"country_code": "CN",
+"point": {
+"lat": 32.3947,
+"lon": 119.4126
+},
+"industrial": true
+},
+{
+"id": "CN-NANTONG",
+"name_en": "Nantong",
+"name_ar": "نانتونغ",
+"country_code": "CN",
+"point": {
+"lat": 31.9802,
+"lon": 120.8943
+},
+"industrial": true
+},
+{
+"id": "CN-SHAOXING",
+"name_en": "Shaoxing",
+"name_ar": "شاوشينغ",
+"country_code": "CN",
+"point": {
+"lat": 30.0303,
+"lon": 120.5802
+},
+"industrial": true
+},
+{
+"id": "CN-QUANZHOU",
+"name_en": "Quanzhou",
+"name_ar": "تشوانتشو",
+"country_code": "CN",
+"point": {
+"lat": 24.8741,
+"lon": 118.6757
+},
+"industrial": true
+},
+{
+"id": "CN-PUTIAN",
+"name_en": "Putian",
+"name_ar": "بوتيان",
+"country_code": "CN",
+"point": {
+"lat": 25.4541,
+"lon": 119.0077
+},
+"industrial": true
+},
+{
+"id": "CN-HAIKOU",
+"name_en": "Haikou",
+"name_ar": "هايكو",
+"country_code": "CN",
+"point": {
+"lat": 20.044,
+"lon": 110.1999
+},
+"industrial": false
+},
+{
+"id": "CN-PINGXIANG",
+"name_en": "Pingxiang",
+"name_ar": "بينغشيانغ",
+"country_code": "CN",
+"point": {
+"lat": 22.1086,
+"lon": 106.755
+},
+"industrial": false
+},
+{
+"id": "CN-LIANYUNGANG",
+"name_en": "Lianyungang",
+"name_ar": "ليانيونغانغ",
+"country_code": "CN",
+"point": {
+"lat": 34.5967,
+"lon": 119.2216
+},
+"industrial": true
+},
+{
+"id": "CN-ZHANGJIAGANG",
+"name_en": "Zhangjiagang",
+"name_ar": "تشانغجياغانغ",
+"country_code": "CN",
+"point": {
+"lat": 31.8754,
+"lon": 120.5553
+},
+"industrial": true
+},
+{
+"id": "CN-YUYAO",
+"name_en": "Yuyao",
+"name_ar": "يويياو",
+"country_code": "CN",
+"point": {
+"lat": 30.0372,
+"lon": 121.1543
+},
+"industrial": true
+},
+{
+"id": "CN-WENLING",
+"name_en": "Wenling",
+"name_ar": "وينلينغ",
+"country_code": "CN",
+"point": {
+"lat": 28.3722,
+"lon": 121.36
+},
+"industrial": true
+},
+{
+"id": "CN-YONGKANG",
+"name_en": "Yongkang",
+"name_ar": "يونغكانغ",
+"country_code": "CN",
+"point": {
+"lat": 28.8884,
+"lon": 120.0366
+},
+"industrial": true
+},
+{
+"id": "CN-HAINING",
+"name_en": "Haining",
+"name_ar": "هاينينغ",
+"country_code": "CN",
+"point": {
+"lat": 30.5106,
+"lon": 120.6806
+},
+"industrial": true
+},
+{
+"id": "TW-TAIPEI",
+"name_en": "Taipei",
+"name_ar": "تايبيه",
+"country_code": "TW",
+"point": {
+"lat": 25.033,
+"lon": 121.5654
+},
+"industrial": true
+},
+{
+"id": "TW-KAOHSIUNG",
+"name_en": "Kaohsiung",
+"name_ar": "كاوشيونغ",
+"country_code": "TW",
+"point": {
+"lat": 22.6273,
+"lon": 120.3014
+},
+"industrial": true
+},
+{
+"id": "TW-TAICHUNG",
+"name_en": "Taichung",
+"name_ar": "تايتشونغ",
+"country_code": "TW",
+"point": {
+"lat": 24.1477,
+"lon": 120.6736
+},
+"industrial": true
+},
+{
+"id": "KR-INCHEON",
+"name_en": "Incheon",
+"name_ar": "إنتشون",
+"country_code": "KR",
+"point": {
+"lat": 37.4563,
+"lon": 126.7052
+},
+"industrial": true
+},
+{
+"id": "KR-DAEGU",
+"name_en": "Daegu",
+"name_ar": "دايغو",
+"country_code": "KR",
+"point": {
+"lat": 35.8714,
+"lon": 128.6014
+},
+"industrial": true
+},
+{
+"id": "KR-ULSAN",
+"name_en": "Ulsan",
+"name_ar": "أولسان",
+"country_code": "KR",
+"point": {
+"lat": 35.5384,
+"lon": 129.3114
+},
+"industrial": true
+},
+{
+"id": "KR-CHANGWON",
+"name_en": "Changwon",
+"name_ar": "تشانغوون",
+"country_code": "KR",
+"point": {
+"lat": 35.2281,
+"lon": 128.6811
+},
+"industrial": true
+},
+{
+"id": "JP-OSAKA",
+"name_en": "Osaka",
+"name_ar": "أوساكا",
+"country_code": "JP",
+"point": {
+"lat": 34.6937,
+"lon": 135.5023
+},
+"industrial": true
+},
+{
+"id": "JP-NAGOYA",
+"name_en": "Nagoya",
+"name_ar": "ناغويا",
+"country_code": "JP",
+"point": {
+"lat": 35.1815,
+"lon": 136.9066
+},
+"industrial": true
+},
+{
+"id": "JP-YOKOHAMA",
+"name_en": "Yokohama",
+"name_ar": "يوكوهاما",
+"country_code": "JP",
+"point": {
+"lat": 35.4437,
+"lon": 139.638
+},
+"industrial": true
+},
+{
+"id": "JP-KOBE",
+"name_en": "Kobe",
+"name_ar": "كوبي",
+"country_code": "JP",
+"point": {
+"lat": 34.6901,
+"lon": 135.1956
+},
+"industrial": true
+},
+{
+"id": "JP-FUKUOKA",
+"name_en": "Fukuoka",
+"name_ar": "فوكوكا",
+"country_code": "JP",
+"point": {
+"lat": 33.5904,
+"lon": 130.4017
+},
+"industrial": false
+},
+{
+"id": "TH-CHONBURI",
+"name_en": "Chonburi",
+"name_ar": "تشونبوري",
+"country_code": "TH",
+"point": {
+"lat": 13.3611,
+"lon": 100.9847
+},
+"industrial": true
+},
+{
+"id": "TH-SAMUT_PRAKAN",
+"name_en": "Samut Prakan",
+"name_ar": "ساموت براكان",
+"country_code": "TH",
+"point": {
+"lat": 13.5991,
+"lon": 100.5998
+},
+"industrial": true
+},
+{
+"id": "MY-JOHOR_BAHRU",
+"name_en": "Johor Bahru",
+"name_ar": "جوهور بارو",
+"country_code": "MY",
+"point": {
+"lat": 1.4927,
+"lon": 103.7414
+},
+"industrial": true
+},
+{
+"id": "MY-PORT_KLANG",
+"name_en": "Port Klang",
+"name_ar": "بورت كلانغ",
+"country_code": "MY",
+"point": {
+"lat": 3.0,
+"lon": 101.4
+},
+"industrial": true
+},
+{
+"id": "ID-SURABAYA",
+"name_en": "Surabaya",
+"name_ar": "سورابايا",
+"country_code": "ID",
+"point": {
+"lat": -7.2575,
+"lon": 112.7521
+},
+"industrial": true
+},
+{
+"id": "ID-BANDUNG",
+"name_en": "Bandung",
+"name_ar": "باندونغ",
+"country_code": "ID",
+"point": {
+"lat": -6.9175,
+"lon": 107.6191
+},
+"industrial": true
+},
+{
+"id": "ID-SEMARANG",
+"name_en": "Semarang",
+"name_ar": "سيمارانغ",
+"country_code": "ID",
+"point": {
+"lat": -6.9667,
+"lon": 110.4167
+},
+"industrial": true
+},
+{
+"id": "ID-MEDAN",
+"name_en": "Medan",
+"name_ar": "ميدان",
+"country_code": "ID",
+"point": {
+"lat": 3.5952,
+"lon": 98.6722
+},
+"industrial": false
+},
+{
+"id": "PH-MANILA",
+"name_en": "Manila",
+"name_ar": "مانيلا",
+"country_code": "PH",
+"point": {
+"lat": 14.5995,
+"lon": 120.9842
+},
+"industrial": true
+},
+{
+"id": "VN-CAN_THO",
+"name_en": "Can Tho",
+"name_ar": "كان ثو",
+"country_code": "VN",
+"point": {
+"lat": 10.0452,
+"lon": 105.7469
+},
+"industrial": false
+},
+{
+"id": "VN-THU_DAU_MOT",
+"name_en": "Thu Dau Mot",
+"name_ar": "ثو داو موت",
+"country_code": "VN",
+"point": {
+"lat": 10.9804,
+"lon": 106.6519
+},
+"industrial": true
+},
+{
+"id": "VN-BIEN_HOA",
+"name_en": "Bien Hoa",
+"name_ar": "بيان هوا",
+"country_code": "VN",
+"point": {
+"lat": 10.9574,
+"lon": 106.8426
+},
+"industrial": true
+},
+{
+"id": "LK-COLOMBO",
+"name_en": "Colombo",
+"name_ar": "كولومبو",
+"country_code": "LK",
+"point": {
+"lat": 6.9271,
+"lon": 79.8612
+},
+"industrial": false
+},
+{
+"id": "BD-CHITTAGONG",
+"name_en": "Chittagong",
+"name_ar": "شيتاغونغ",
+"country_code": "BD",
+"point": {
+"lat": 22.3569,
+"lon": 91.7832
+},
+"industrial": true
+},
+{
+"id": "BD-NARAYANGANJ",
+"name_en": "Narayanganj",
+"name_ar": "نارايانغانج",
+"country_code": "BD",
+"point": {
+"lat": 23.6238,
+"lon": 90.5
+},
+"industrial": true
+},
+{
+"id": "BD-GAZIPUR",
+"name_en": "Gazipur",
+"name_ar": "غازيبور",
+"country_code": "BD",
+"point": {
+"lat": 23.9999,
+"lon": 90.4203
+},
+"industrial": true
+},
+{
+"id": "PK-LAHORE",
+"name_en": "Lahore",
+"name_ar": "لاهور",
+"country_code": "PK",
+"point": {
+"lat": 31.5204,
+"lon": 74.3587
+},
+"industrial": true
+},
+{
+"id": "PK-ISLAMABAD",
+"name_en": "Islamabad",
+"name_ar": "إسلام آباد",
+"country_code": "PK",
+"point": {
+"lat": 33.6844,
+"lon": 73.0479
+},
+"industrial": false
+},
+{
+"id": "PK-FAISALABAD",
+"name_en": "Faisalabad",
+"name_ar": "فيصل آباد",
+"country_code": "PK",
+"point": {
+"lat": 31.4504,
+"lon": 73.135
+},
+"industrial": true
+},
+{
+"id": "PK-SIALKOT",
+"name_en": "Sialkot",
+"name_ar": "سيالكوت",
+"country_code": "PK",
+"point": {
+"lat": 32.4945,
+"lon": 74.5229
+},
+"industrial": true
+},
+{
+"id": "PK-GWADAR",
+"name_en": "Gwadar",
+"name_ar": "غوادر",
+"country_code": "PK",
+"point": {
+"lat": 25.1216,
+"lon": 62.3254
+},
+"industrial": false
+},
+{
+"id": "IN-HYDERABAD",
+"name_en": "Hyderabad",
+"name_ar": "حيدر آباد",
+"country_code": "IN",
+"point": {
+"lat": 17.385,
+"lon": 78.4867
+},
+"industrial": true
+},
+{
+"id": "IN-KANPUR",
+"name_en": "Kanpur",
+"name_ar": "كانبور",
+"country_code": "IN",
+"point": {
+"lat": 26.4499,
+"lon": 80.3319
+},
+"industrial": true
+},
+{
+"id": "IN-COIMBATORE",
+"name_en": "Coimbatore",
+"name_ar": "كويمباتور",
+"country_code": "IN",
+"point": {
+"lat": 11.0168,
+"lon": 76.9558
+},
+"industrial": true
+},
+{
+"id": "IN-TIRUPPUR",
+"name_en": "Tiruppur",
+"name_ar": "تيروبور",
+"country_code": "IN",
+"point": {
+"lat": 11.1085,
+"lon": 77.3411
+},
+"industrial": true
+},
+{
+"id": "IN-KOCHI",
+"name_en": "Kochi",
+"name_ar": "كوتشي",
+"country_code": "IN",
+"point": {
+"lat": 9.9312,
+"lon": 76.2673
+},
+"industrial": false
+},
+{
+"id": "IN-VISAKHAPATNAM",
+"name_en": "Visakhapatnam",
+"name_ar": "فيساخاباتنام",
+"country_code": "IN",
+"point": {
+"lat": 17.6868,
+"lon": 83.2185
+},
+"industrial": true
+},
+{
+"id": "IN-INDORE",
+"name_en": "Indore",
+"name_ar": "إندور",
+"country_code": "IN",
+"point": {
+"lat": 22.7196,
+"lon": 75.8577
+},
+"industrial": true
+},
+{
+"id": "IN-RAJKOT",
+"name_en": "Rajkot",
+"name_ar": "راجكوت",
+"country_code": "IN",
+"point": {
+"lat": 22.3039,
+"lon": 70.8022
+},
+"industrial": true
+},
+{
+"id": "IN-NOIDA",
+"name_en": "Noida",
+"name_ar": "نويدا",
+"country_code": "IN",
+"point": {
+"lat": 28.5355,
+"lon": 77.391
+},
+"industrial": true
+},
+{
+"id": "RU-MOSCOW",
+"name_en": "Moscow",
+"name_ar": "موسكو",
+"country_code": "RU",
+"point": {
+"lat": 55.7558,
+"lon": 37.6173
+},
+"industrial": true
+},
+{
+"id": "RU-SAINT_PETERSBURG",
+"name_en": "Saint Petersburg",
+"name_ar": "سانت بطرسبرغ",
+"country_code": "RU",
+"point": {
+"lat": 59.9311,
+"lon": 30.3609
+},
+"industrial": true
+},
+{
+"id": "RU-NOVOSIBIRSK",
+"name_en": "Novosibirsk",
+"name_ar": "نوفوسيبيرسك",
+"country_code": "RU",
+"point": {
+"lat": 55.0084,
+"lon": 82.9357
+},
+"industrial": true
+},
+{
+"id": "RU-VLADIVOSTOK",
+"name_en": "Vladivostok",
+"name_ar": "فلاديفوستوك",
+"country_code": "RU",
+"point": {
+"lat": 43.1155,
+"lon": 131.8855
+},
+"industrial": false
+},
+{
+"id": "RU-KAZAN",
+"name_en": "Kazan",
+"name_ar": "قازان",
+"country_code": "RU",
+"point": {
+"lat": 55.7887,
+"lon": 49.1221
+},
+"industrial": true
+},
+{
+"id": "RU-YEKATERINBURG",
+"name_en": "Yekaterinburg",
+"name_ar": "يكاترينبورغ",
+"country_code": "RU",
+"point": {
+"lat": 56.8389,
+"lon": 60.6057
+},
+"industrial": true
+},
+{
+"id": "UZ-TASHKENT",
+"name_en": "Tashkent",
+"name_ar": "طشقند",
+"country_code": "UZ",
+"point": {
+"lat": 41.2995,
+"lon": 69.2401
+},
+"industrial": true
+},
+{
+"id": "KZ-SHYMKENT",
+"name_en": "Shymkent",
+"name_ar": "شيمكنت",
+"country_code": "KZ",
+"point": {
+"lat": 42.3417,
+"lon": 69.5901
+},
+"industrial": true
+},
+{
+"id": "KZ-AKTAU",
+"name_en": "Aktau",
+"name_ar": "أكتاو",
+"country_code": "KZ",
+"point": {
+"lat": 43.65,
+"lon": 51.15
+},
+"industrial": false
+},
+{
+"id": "GE-BATUMI",
+"name_en": "Batumi",
+"name_ar": "باتومي",
+"country_code": "GE",
+"point": {
+"lat": 41.6168,
+"lon": 41.6367
+},
+"industrial": false
+},
+{
+"id": "GE-POTI",
+"name_en": "Poti",
+"name_ar": "بوتي",
+"country_code": "GE",
+"point": {
+"lat": 42.1462,
+"lon": 41.6719
+},
+"industrial": false
+},
+{
+"id": "AE-RAS_AL_KHAIMAH",
+"name_en": "Ras Al Khaimah",
+"name_ar": "رأس الخيمة",
+"country_code": "AE",
+"point": {
+"lat": 25.7895,
+"lon": 55.9432
+},
+"industrial": true
+},
+{
+"id": "AE-FUJAIRAH",
+"name_en": "Fujairah",
+"name_ar": "الفجيرة",
+"country_code": "AE",
+"point": {
+"lat": 25.1288,
+"lon": 56.3265
+},
+"industrial": false
+},
+{
+"id": "AE-AJMAN",
+"name_en": "Ajman",
+"name_ar": "عجمان",
+"country_code": "AE",
+"point": {
+"lat": 25.4052,
+"lon": 55.5136
+},
+"industrial": true
+},
+{
+"id": "SA-TABUK",
+"name_en": "Tabuk",
+"name_ar": "تبوك",
+"country_code": "SA",
+"point": {
+"lat": 28.3835,
+"lon": 36.5662
+},
+"industrial": false
+},
+{
+"id": "SA-YANBU",
+"name_en": "Yanbu",
+"name_ar": "ينبع",
+"country_code": "SA",
+"point": {
+"lat": 24.0895,
+"lon": 38.0618
+},
+"industrial": true
+},
+{
+"id": "OM-SALALAH",
+"name_en": "Salalah",
+"name_ar": "صلالة",
+"country_code": "OM",
+"point": {
+"lat": 17.0151,
+"lon": 54.0924
+},
+"industrial": false
+},
+{
+"id": "OM-DUQM",
+"name_en": "Duqm",
+"name_ar": "الدقم",
+"country_code": "OM",
+"point": {
+"lat": 19.6667,
+"lon": 57.7167
+},
+"industrial": true
+},
+{
+"id": "TR-SILOPI",
+"name_en": "Silopi",
+"name_ar": "سيلوبي",
+"country_code": "TR",
+"point": {
+"lat": 37.25,
+"lon": 42.4667
+},
+"industrial": false
+},
+{
+"id": "TR-SAMSUN",
+"name_en": "Samsun",
+"name_ar": "سامسون",
+"country_code": "TR",
+"point": {
+"lat": 41.2867,
+"lon": 36.33
+},
+"industrial": false
+},
+{
+"id": "TR-TRABZON",
+"name_en": "Trabzon",
+"name_ar": "طرابزون",
+"country_code": "TR",
+"point": {
+"lat": 41.0027,
+"lon": 39.7168
+},
+"industrial": false
+},
+{
+"id": "TR-ESKISEHIR",
+"name_en": "Eskisehir",
+"name_ar": "إسكي شهير",
+"country_code": "TR",
+"point": {
+"lat": 39.7767,
+"lon": 30.5206
+},
+"industrial": true
+},
+{
+"id": "TR-TEKIRDAG",
+"name_en": "Tekirdag",
+"name_ar": "تكيرداغ",
+"country_code": "TR",
+"point": {
+"lat": 40.978,
+"lon": 27.511
+},
+"industrial": true
+},
+{
+"id": "TR-KAHRAMANMARAS",
+"name_en": "Kahramanmaras",
+"name_ar": "قهرمان مرعش",
+"country_code": "TR",
+"point": {
+"lat": 37.5858,
+"lon": 36.9371
+},
+"industrial": true
+},
+{
+"id": "IR-ABADAN",
+"name_en": "Abadan",
+"name_ar": "عبادان",
+"country_code": "IR",
+"point": {
+"lat": 30.3392,
+"lon": 48.3043
+},
+"industrial": true
+},
+{
+"id": "IR-KHORRAMSHAHR",
+"name_en": "Khorramshahr",
+"name_ar": "خرمشهر",
+"country_code": "IR",
+"point": {
+"lat": 30.4256,
+"lon": 48.1892
+},
+"industrial": false
+},
+{
+"id": "IR-ZAHEDAN",
+"name_en": "Zahedan",
+"name_ar": "زاهدان",
+"country_code": "IR",
+"point": {
+"lat": 29.4963,
+"lon": 60.8629
+},
+"industrial": false
+},
+{
+"id": "IR-ARAK",
+"name_en": "Arak",
+"name_ar": "أراك",
+"country_code": "IR",
+"point": {
+"lat": 34.0954,
+"lon": 49.7013
+},
+"industrial": true
+},
+{
+"id": "IR-QAZVIN",
+"name_en": "Qazvin",
+"name_ar": "قزوين",
+"country_code": "IR",
+"point": {
+"lat": 36.2797,
+"lon": 50.0049
+},
+"industrial": true
+},
+{
+"id": "IR-CHABAHAR",
+"name_en": "Chabahar",
+"name_ar": "تشابهار",
+"country_code": "IR",
+"point": {
+"lat": 25.2919,
+"lon": 60.643
+},
+"industrial": false
+},
+{
+"id": "IR-BUSHEHR",
+"name_en": "Bushehr",
+"name_ar": "بوشهر",
+"country_code": "IR",
+"point": {
+"lat": 28.9234,
+"lon": 50.8203
+},
+"industrial": false
+},
+{
+"id": "SY-HOMS",
+"name_en": "Homs",
+"name_ar": "حمص",
+"country_code": "SY",
+"point": {
+"lat": 34.7324,
+"lon": 36.7137
+},
+"industrial": false
+},
+{
+"id": "SY-LATAKIA",
+"name_en": "Latakia",
+"name_ar": "اللاذقية",
+"country_code": "SY",
+"point": {
+"lat": 35.5317,
+"lon": 35.79
+},
+"industrial": false
+},
+{
+"id": "SY-TARTUS",
+"name_en": "Tartus",
+"name_ar": "طرطوس",
+"country_code": "SY",
+"point": {
+"lat": 34.889,
+"lon": 35.8866
+},
+"industrial": false
+},
+{
+"id": "SY-QAMISHLI",
+"name_en": "Qamishli",
+"name_ar": "القامشلي",
+"country_code": "SY",
+"point": {
+"lat": 37.0522,
+"lon": 41.2278
+},
+"industrial": false
+},
+{
+"id": "LB-TRIPOLI",
+"name_en": "Tripoli",
+"name_ar": "طرابلس (لبنان)",
+"country_code": "LB",
+"point": {
+"lat": 34.4367,
+"lon": 35.8497
+},
+"industrial": false
+},
+{
+"id": "EG-GIZA",
+"name_en": "Giza",
+"name_ar": "الجيزة",
+"country_code": "EG",
+"point": {
+"lat": 30.0131,
+"lon": 31.2089
+},
+"industrial": true
+},
+{
+"id": "EG-DAMIETTA",
+"name_en": "Damietta",
+"name_ar": "دمياط",
+"country_code": "EG",
+"point": {
+"lat": 31.4165,
+"lon": 31.8133
+},
+"industrial": true
+},
+{
+"id": "EG-AIN_SOKHNA",
+"name_en": "Ain Sokhna",
+"name_ar": "العين السخنة",
+"country_code": "EG",
+"point": {
+"lat": 29.6,
+"lon": 32.3167
+},
+"industrial": true
+},
+{
+"id": "EG-SADAT_CITY",
+"name_en": "Sadat City",
+"name_ar": "مدينة السادات",
+"country_code": "EG",
+"point": {
+"lat": 30.3667,
+"lon": 30.55
+},
+"industrial": true
+},
+{
+"id": "EG-ASYUT",
+"name_en": "Asyut",
+"name_ar": "أسيوط",
+"country_code": "EG",
+"point": {
+"lat": 27.1809,
+"lon": 31.1837
+},
+"industrial": false
+},
+{
+"id": "EG-ASWAN",
+"name_en": "Aswan",
+"name_ar": "أسوان",
+"country_code": "EG",
+"point": {
+"lat": 24.0889,
+"lon": 32.8998
+},
+"industrial": false
+},
+{
+"id": "EG-BORG_EL_ARAB",
+"name_en": "Borg El Arab",
+"name_ar": "برج العرب",
+"country_code": "EG",
+"point": {
+"lat": 30.85,
+"lon": 29.58
+},
+"industrial": true
+},
+{
+"id": "EG-TANTA",
+"name_en": "Tanta",
+"name_ar": "طنطا",
+"country_code": "EG",
+"point": {
+"lat": 30.7865,
+"lon": 31.0004
+},
+"industrial": true
+},
+{
+"id": "LY-TRIPOLI",
+"name_en": "Tripoli",
+"name_ar": "طرابلس (ليبيا)",
+"country_code": "LY",
+"point": {
+"lat": 32.8872,
+"lon": 13.1913
+},
+"industrial": false
+},
+{
+"id": "LY-BENGHAZI",
+"name_en": "Benghazi",
+"name_ar": "بنغازي",
+"country_code": "LY",
+"point": {
+"lat": 32.1167,
+"lon": 20.0667
+},
+"industrial": false
+},
+{
+"id": "LY-MISRATA",
+"name_en": "Misrata",
+"name_ar": "مصراتة",
+"country_code": "LY",
+"point": {
+"lat": 32.3754,
+"lon": 15.0925
+},
+"industrial": true
+},
+{
+"id": "LY-TOBRUK",
+"name_en": "Tobruk",
+"name_ar": "طبرق",
+"country_code": "LY",
+"point": {
+"lat": 32.0836,
+"lon": 23.9764
+},
+"industrial": false
+},
+{
+"id": "DZ-ALGIERS",
+"name_en": "Algiers",
+"name_ar": "الجزائر العاصمة",
+"country_code": "DZ",
+"point": {
+"lat": 36.7538,
+"lon": 3.0588
+},
+"industrial": true
+},
+{
+"id": "DZ-ORAN",
+"name_en": "Oran",
+"name_ar": "وهران",
+"country_code": "DZ",
+"point": {
+"lat": 35.6971,
+"lon": -0.6308
+},
+"industrial": true
+},
+{
+"id": "DZ-CONSTANTINE",
+"name_en": "Constantine",
+"name_ar": "قسنطينة",
+"country_code": "DZ",
+"point": {
+"lat": 36.365,
+"lon": 6.6147
+},
+"industrial": true
+},
+{
+"id": "DZ-ANNABA",
+"name_en": "Annaba",
+"name_ar": "عنابة",
+"country_code": "DZ",
+"point": {
+"lat": 36.9,
+"lon": 7.7667
+},
+"industrial": true
+},
+{
+"id": "DZ-SETIF",
+"name_en": "Setif",
+"name_ar": "سطيف",
+"country_code": "DZ",
+"point": {
+"lat": 36.19,
+"lon": 5.41
+},
+"industrial": true
+},
+{
+"id": "DZ-SKIKDA",
+"name_en": "Skikda",
+"name_ar": "سكيكدة",
+"country_code": "DZ",
+"point": {
+"lat": 36.8762,
+"lon": 6.9092
+},
+"industrial": true
+},
+{
+"id": "MA-CASABLANCA",
+"name_en": "Casablanca",
+"name_ar": "الدار البيضاء",
+"country_code": "MA",
+"point": {
+"lat": 33.5731,
+"lon": -7.5898
+},
+"industrial": true
+},
+{
+"id": "MA-TANGIER",
+"name_en": "Tangier",
+"name_ar": "طنجة",
+"country_code": "MA",
+"point": {
+"lat": 35.7595,
+"lon": -5.834
+},
+"industrial": true
+},
+{
+"id": "MA-RABAT",
+"name_en": "Rabat",
+"name_ar": "الرباط",
+"country_code": "MA",
+"point": {
+"lat": 34.0209,
+"lon": -6.8416
+},
+"industrial": false
+},
+{
+"id": "MA-MARRAKESH",
+"name_en": "Marrakesh",
+"name_ar": "مراكش",
+"country_code": "MA",
+"point": {
+"lat": 31.6295,
+"lon": -7.9811
+},
+"industrial": false
+},
+{
+"id": "TN-TUNIS",
+"name_en": "Tunis",
+"name_ar": "تونس",
+"country_code": "TN",
+"point": {
+"lat": 36.8065,
+"lon": 10.1815
+},
+"industrial": true
+},
+{
+"id": "TN-SFAX",
+"name_en": "Sfax",
+"name_ar": "صفاقس",
+"country_code": "TN",
+"point": {
+"lat": 34.7406,
+"lon": 10.7603
+},
+"industrial": true
+},
+{
+"id": "TN-SOUSSE",
+"name_en": "Sousse",
+"name_ar": "سوسة",
+"country_code": "TN",
+"point": {
+"lat": 35.8256,
+"lon": 10.6369
+},
+"industrial": true
+},
+{
+"id": "NG-LAGOS",
+"name_en": "Lagos",
+"name_ar": "لاغوس",
+"country_code": "NG",
+"point": {
+"lat": 6.5244,
+"lon": 3.3792
+},
+"industrial": true
+},
+{
+"id": "NG-ABUJA",
+"name_en": "Abuja",
+"name_ar": "أبوجا",
+"country_code": "NG",
+"point": {
+"lat": 9.0765,
+"lon": 7.3986
+},
+"industrial": false
+},
+{
+"id": "NG-KANO",
+"name_en": "Kano",
+"name_ar": "كانو",
+"country_code": "NG",
+"point": {
+"lat": 12.0022,
+"lon": 8.592
+},
+"industrial": true
+},
+{
+"id": "NG-PORT_HARCOURT",
+"name_en": "Port Harcourt",
+"name_ar": "بورت هاركورت",
+"country_code": "NG",
+"point": {
+"lat": 4.8156,
+"lon": 7.0498
+},
+"industrial": true
+},
+{
+"id": "KE-NAIROBI",
+"name_en": "Nairobi",
+"name_ar": "نيروبي",
+"country_code": "KE",
+"point": {
+"lat": -1.2921,
+"lon": 36.8219
+},
+"industrial": true
+},
+{
+"id": "KE-MOMBASA",
+"name_en": "Mombasa",
+"name_ar": "مومباسا",
+"country_code": "KE",
+"point": {
+"lat": -4.0435,
+"lon": 39.6682
+},
+"industrial": true
+},
+{
+"id": "ZA-JOHANNESBURG",
+"name_en": "Johannesburg",
+"name_ar": "جوهانسبرغ",
+"country_code": "ZA",
+"point": {
+"lat": -26.2041,
+"lon": 28.0473
+},
+"industrial": true
+},
+{
+"id": "ZA-DURBAN",
+"name_en": "Durban",
+"name_ar": "ديربان",
+"country_code": "ZA",
+"point": {
+"lat": -29.8587,
+"lon": 31.0218
+},
+"industrial": true
+},
+{
+"id": "ZA-CAPE_TOWN",
+"name_en": "Cape Town",
+"name_ar": "كيب تاون",
+"country_code": "ZA",
+"point": {
+"lat": -33.9249,
+"lon": 18.4241
+},
+"industrial": true
+},
+{
+"id": "ZA-PRETORIA",
+"name_en": "Pretoria",
+"name_ar": "بريتوريا",
+"country_code": "ZA",
+"point": {
+"lat": -25.7479,
+"lon": 28.188
+},
+"industrial": true
+},
+{
+"id": "AU-SYDNEY",
+"name_en": "Sydney",
+"name_ar": "سيدني",
+"country_code": "AU",
+"point": {
+"lat": -33.8688,
+"lon": 151.2093
+},
+"industrial": true
+},
+{
+"id": "AU-MELBOURNE",
+"name_en": "Melbourne",
+"name_ar": "ملبورن",
+"country_code": "AU",
+"point": {
+"lat": -37.8136,
+"lon": 144.9631
+},
+"industrial": true
+},
+{
+"id": "AU-BRISBANE",
+"name_en": "Brisbane",
+"name_ar": "بريسبان",
+"country_code": "AU",
+"point": {
+"lat": -27.4698,
+"lon": 153.0251
+},
+"industrial": false
+},
+{
+"id": "AR-BUENOS_AIRES",
+"name_en": "Buenos Aires",
+"name_ar": "بوينس آيرس",
+"country_code": "AR",
+"point": {
+"lat": -34.6037,
+"lon": -58.3816
+},
+"industrial": true
+},
+{
+"id": "CL-SANTIAGO",
+"name_en": "Santiago",
+"name_ar": "سانتياغو",
+"country_code": "CL",
+"point": {
+"lat": -33.4489,
+"lon": -70.6693
+},
+"industrial": true
+},
+{
+"id": "CO-BOGOTA",
+"name_en": "Bogota",
+"name_ar": "بوغوتا",
+"country_code": "CO",
+"point": {
+"lat": 4.711,
+"lon": -74.0721
+},
+"industrial": true
+},
+{
+"id": "BR-SANTOS",
+"name_en": "Santos",
+"name_ar": "سانتوس",
+"country_code": "BR",
+"point": {
+"lat": -23.9608,
+"lon": -46.3336
+},
+"industrial": true
+},
+{
+"id": "BR-RIO_DE_JANEIRO",
+"name_en": "Rio de Janeiro",
+"name_ar": "ريو دي جانيرو",
+"country_code": "BR",
+"point": {
+"lat": -22.9068,
+"lon": -43.1729
+},
+"industrial": true
+},
+{
+"id": "BR-CURITIBA",
+"name_en": "Curitiba",
+"name_ar": "كوريتيبا",
+"country_code": "BR",
+"point": {
+"lat": -25.4284,
+"lon": -49.2733
+},
+"industrial": true
+},
+{
+"id": "MX-MONTERREY",
+"name_en": "Monterrey",
+"name_ar": "مونتيري",
+"country_code": "MX",
+"point": {
+"lat": 25.6866,
+"lon": -100.3161
+},
+"industrial": true
+},
+{
+"id": "MX-GUADALAJARA",
+"name_en": "Guadalajara",
+"name_ar": "غوادالاخارا",
+"country_code": "MX",
+"point": {
+"lat": 20.6597,
+"lon": -103.3496
+},
+"industrial": true
+},
+{
+"id": "MX-TIJUANA",
+"name_en": "Tijuana",
+"name_ar": "تيخوانا",
+"country_code": "MX",
+"point": {
+"lat": 32.5149,
+"lon": -117.0382
+},
+"industrial": true
+},
+{
+"id": "US-PHILADELPHIA",
+"name_en": "Philadelphia",
+"name_ar": "فيلادلفيا",
+"country_code": "US",
+"point": {
+"lat": 39.9526,
+"lon": -75.1652
+},
+"industrial": true
+},
+{
+"id": "US-BALTIMORE",
+"name_en": "Baltimore",
+"name_ar": "بالتيمور",
+"country_code": "US",
+"point": {
+"lat": 39.2904,
+"lon": -76.6122
+},
+"industrial": true
+},
+{
+"id": "US-MINNEAPOLIS",
+"name_en": "Minneapolis",
+"name_ar": "مينيابوليس",
+"country_code": "US",
+"point": {
+"lat": 44.9778,
+"lon": -93.265
+},
+"industrial": true
+},
+{
+"id": "US-COLUMBUS",
+"name_en": "Columbus",
+"name_ar": "كولومبوس",
+"country_code": "US",
+"point": {
+"lat": 39.9612,
+"lon": -82.9988
+},
+"industrial": true
+},
+{
+"id": "US-OAKLAND",
+"name_en": "Oakland",
+"name_ar": "أوكلاند",
+"country_code": "US",
+"point": {
+"lat": 37.8044,
+"lon": -122.2712
+},
+"industrial": true
+},
+{
+"id": "US-LONG_BEACH",
+"name_en": "Long Beach",
+"name_ar": "لونغ بيتش",
+"country_code": "US",
+"point": {
+"lat": 33.7701,
+"lon": -118.1937
+},
+"industrial": false
+},
+{
+"id": "US-CHARLESTON",
+"name_en": "Charleston",
+"name_ar": "تشارلستون",
+"country_code": "US",
+"point": {
+"lat": 32.7765,
+"lon": -79.9311
+},
+"industrial": false
+},
+{
+"id": "US-MEMPHIS",
+"name_en": "Memphis",
+"name_ar": "ممفيس",
+"country_code": "US",
+"point": {
+"lat": 35.1495,
+"lon": -90.049
+},
+"industrial": true
+},
+{
+"id": "CA-VANCOUVER",
+"name_en": "Vancouver",
+"name_ar": "فانكوفر",
+"country_code": "CA",
+"point": {
+"lat": 49.2827,
+"lon": -123.1207
+},
+"industrial": false
+},
+{
+"id": "CA-MONTREAL",
+"name_en": "Montreal",
+"name_ar": "مونتريال",
+"country_code": "CA",
+"point": {
+"lat": 45.5017,
+"lon": -73.5673
+},
+"industrial": true
+},
+{
+"id": "DE-BREMEN",
+"name_en": "Bremen",
+"name_ar": "بريمن",
+"country_code": "DE",
+"point": {
+"lat": 53.0793,
+"lon": 8.8017
+},
+"industrial": true
+},
+{
+"id": "DE-LEIPZIG",
+"name_en": "Leipzig",
+"name_ar": "لايبزيغ",
+"country_code": "DE",
+"point": {
+"lat": 51.3397,
+"lon": 12.3731
+},
+"industrial": true
+},
+{
+"id": "DE-DORTMUND",
+"name_en": "Dortmund",
+"name_ar": "دورتموند",
+"country_code": "DE",
+"point": {
+"lat": 51.5136,
+"lon": 7.4653
+},
+"industrial": true
+},
+{
+"id": "DE-ESSEN",
+"name_en": "Essen",
+"name_ar": "إيسن",
+"country_code": "DE",
+"point": {
+"lat": 51.4556,
+"lon": 7.0116
+},
+"industrial": true
+},
+{
+"id": "DE-BIELEFELD",
+"name_en": "Bielefeld",
+"name_ar": "بيليفلد",
+"country_code": "DE",
+"point": {
+"lat": 52.0302,
+"lon": 8.5325
+},
+"industrial": true
+},
+{
+"id": "IT-TRIESTE",
+"name_en": "Trieste",
+"name_ar": "تريستا",
+"country_code": "IT",
+"point": {
+"lat": 45.6495,
+"lon": 13.7768
+},
+"industrial": false
+},
+{
+"id": "IT-PADUA",
+"name_en": "Padua",
+"name_ar": "بادوفا",
+"country_code": "IT",
+"point": {
+"lat": 45.4064,
+"lon": 11.8768
+},
+"industrial": true
+},
+{
+"id": "IT-MODENA",
+"name_en": "Modena",
+"name_ar": "مودينا",
+"country_code": "IT",
+"point": {
+"lat": 44.6471,
+"lon": 10.9252
+},
+"industrial": true
+},
+{
+"id": "FR-BORDEAUX",
+"name_en": "Bordeaux",
+"name_ar": "بوردو",
+"country_code": "FR",
+"point": {
+"lat": 44.8378,
+"lon": -0.5792
+},
+"industrial": false
+},
+{
+"id": "BE-BRUSSELS",
+"name_en": "Brussels",
+"name_ar": "بروكسل",
+"country_code": "BE",
+"point": {
+"lat": 50.8503,
+"lon": 4.3517
+},
+"industrial": false
+},
+{
+"id": "AT-GRAZ",
+"name_en": "Graz",
+"name_ar": "غراتس",
+"country_code": "AT",
+"point": {
+"lat": 47.0707,
+"lon": 15.4395
+},
+"industrial": true
+},
+{
+"id": "PL-KATOWICE",
+"name_en": "Katowice",
+"name_ar": "كاتوفيتسه",
+"country_code": "PL",
+"point": {
+"lat": 50.2649,
+"lon": 19.0238
+},
+"industrial": true
+},
+{
+"id": "ES-ZARAGOZA",
+"name_en": "Zaragoza",
+"name_ar": "سرقسطة",
+"country_code": "ES",
+"point": {
+"lat": 41.6488,
+"lon": -0.8891
+},
+"industrial": true
+},
+{
+"id": "ES-CASTELLON",
+"name_en": "Castellon",
+"name_ar": "كاستيون",
+"country_code": "ES",
+"point": {
+"lat": 39.9864,
+"lon": -0.0513
+},
+"industrial": true
+},
+{
+"id": "HU-BUDAPEST",
+"name_en": "Budapest",
+"name_ar": "بودابست",
+"country_code": "HU",
+"point": {
+"lat": 47.4979,
+"lon": 19.0402
+},
+"industrial": true
+},
+{
+"id": "BG-SOFIA",
+"name_en": "Sofia",
+"name_ar": "صوفيا",
+"country_code": "BG",
+"point": {
+"lat": 42.6977,
+"lon": 23.3219
+},
+"industrial": false
+},
+{
+"id": "BG-VARNA",
+"name_en": "Varna",
+"name_ar": "فارنا",
+"country_code": "BG",
+"point": {
+"lat": 43.2141,
+"lon": 27.9147
+},
+"industrial": false
+},
+{
+"id": "RS-BELGRADE",
+"name_en": "Belgrade",
+"name_ar": "بلغراد",
+"country_code": "RS",
+"point": {
+"lat": 44.7866,
+"lon": 20.4489
+},
+"industrial": false
+},
+{
+"id": "PT-LISBON",
+"name_en": "Lisbon",
+"name_ar": "لشبونة",
+"country_code": "PT",
+"point": {
+"lat": 38.7223,
+"lon": -9.1393
+},
+"industrial": false
+},
+{
+"id": "PT-PORTO",
+"name_en": "Porto",
+"name_ar": "بورتو",
+"country_code": "PT",
+"point": {
+"lat": 41.1579,
+"lon": -8.6291
+},
+"industrial": true
+},
+{
+"id": "SE-STOCKHOLM",
+"name_en": "Stockholm",
+"name_ar": "ستوكهولم",
+"country_code": "SE",
+"point": {
+"lat": 59.3293,
+"lon": 18.0686
+},
+"industrial": false
+},
+{
+"id": "SE-GOTHENBURG",
+"name_en": "Gothenburg",
+"name_ar": "غوتنبرغ",
+"country_code": "SE",
+"point": {
+"lat": 57.7089,
+"lon": 11.9746
+},
+"industrial": true
+},
+{
+"id": "CH-ZURICH",
+"name_en": "Zurich",
+"name_ar": "زيورخ",
+"country_code": "CH",
+"point": {
+"lat": 47.3769,
+"lon": 8.5417
+},
+"industrial": false
+},
+{
+"id": "UA-KYIV",
+"name_en": "Kyiv",
+"name_ar": "كييف",
+"country_code": "UA",
+"point": {
+"lat": 50.4501,
+"lon": 30.5234
+},
+"industrial": false
+},
+{
+"id": "UA-ODESA",
+"name_en": "Odesa",
+"name_ar": "أوديسا",
+"country_code": "UA",
+"point": {
+"lat": 46.4825,
+"lon": 30.7233
+},
+"industrial": false
+},
+{
+"id": "CZ-BRNO",
+"name_en": "Brno",
+"name_ar": "برنو",
+"country_code": "CZ",
+"point": {
+"lat": 49.1951,
+"lon": 16.6068
+},
+"industrial": true
+},
+{
+"id": "RO-CONSTANTA",
+"name_en": "Constanta",
+"name_ar": "كونستانتسا",
+"country_code": "RO",
+"point": {
+"lat": 44.1598,
+"lon": 28.6348
+},
+"industrial": false
+},
+{
+"id": "GR-THESSALONIKI",
+"name_en": "Thessaloniki",
+"name_ar": "سالونيك",
+"country_code": "GR",
+"point": {
+"lat": 40.6401,
+"lon": 22.9444
+},
+"industrial": false
 }
 ]

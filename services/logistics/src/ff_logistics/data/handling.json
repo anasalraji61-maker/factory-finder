@@ -62,6 +62,33 @@
    "docs": 60,
    "air_per_kg": 0.2,
    "air_min": 40
+  },
+  "AFR": {
+   "thc_20": 220,
+   "thc_40": 330,
+   "lcl_per_wm": 15,
+   "clearance": 120,
+   "docs": 90,
+   "air_per_kg": 0.25,
+   "air_min": 55
+  },
+  "LAM": {
+   "thc_20": 250,
+   "thc_40": 370,
+   "lcl_per_wm": 14,
+   "clearance": 110,
+   "docs": 80,
+   "air_per_kg": 0.22,
+   "air_min": 50
+  },
+  "OCE": {
+   "thc_20": 280,
+   "thc_40": 420,
+   "lcl_per_wm": 15,
+   "clearance": 100,
+   "docs": 70,
+   "air_per_kg": 0.22,
+   "air_min": 50
   }
  },
  "destination": {
@@ -127,6 +154,33 @@
    "docs": 100,
    "air_per_kg": 0.2,
    "air_min": 40
+  },
+  "AFR": {
+   "thc_20": 380,
+   "thc_40": 560,
+   "lcl_per_wm": 20,
+   "clearance": 0,
+   "docs": 170,
+   "air_per_kg": 0.25,
+   "air_min": 60
+  },
+  "LAM": {
+   "thc_20": 340,
+   "thc_40": 510,
+   "lcl_per_wm": 19,
+   "clearance": 0,
+   "docs": 150,
+   "air_per_kg": 0.24,
+   "air_min": 55
+  },
+  "OCE": {
+   "thc_20": 300,
+   "thc_40": 450,
+   "lcl_per_wm": 16,
+   "clearance": 0,
+   "docs": 100,
+   "air_per_kg": 0.22,
+   "air_min": 50
   }
  },
  "dest_clearance_days": {
@@ -161,6 +215,70 @@
   "AE": [
    1,
    3
+  ],
+  "SY": [
+   5,
+   14
+  ],
+  "LB": [
+   3,
+   8
+  ],
+  "LY": [
+   5,
+   14
+  ],
+  "DZ": [
+   5,
+   12
+  ],
+  "MA": [
+   2,
+   6
+  ],
+  "NG": [
+   6,
+   15
+  ],
+  "KE": [
+   3,
+   8
+  ],
+  "ZA": [
+   3,
+   8
+  ],
+  "BR": [
+   5,
+   12
+  ],
+  "PK": [
+   4,
+   10
+  ],
+  "BD": [
+   5,
+   12
+  ],
+  "PL": [
+   1,
+   3
+  ],
+  "ES": [
+   1,
+   3
+  ],
+  "NL": [
+   1,
+   3
+  ],
+  "CA": [
+   2,
+   5
+  ],
+  "AU": [
+   2,
+   5
   ]
  },
  "road_rate_per_km_usd": {
@@ -180,7 +298,33 @@
   "IT": 1.7,
   "IN": 0.8,
   "RU": 1.0,
-  "default": 1.3
+  "default": 1.3,
+  "LB": 1.4,
+  "SY": 1.6,
+  "LY": 1.6,
+  "DZ": 1.1,
+  "MA": 1.1,
+  "TN": 1.1,
+  "PK": 0.9,
+  "BD": 0.8,
+  "NG": 1.6,
+  "KE": 1.5,
+  "ZA": 1.3,
+  "BR": 1.5,
+  "PL": 1.5,
+  "ES": 1.6,
+  "NL": 1.9,
+  "CA": 1.9,
+  "AU": 2.0,
+  "QA": 1.3,
+  "OM": 1.3,
+  "BH": 1.3,
+  "VN": 0.9,
+  "ID": 0.9,
+  "MY": 1.0,
+  "TH": 1.0,
+  "KR": 1.6,
+  "JP": 2.0
  },
  "road_min_haul_usd": 60,
  "border_fee_usd": 150,

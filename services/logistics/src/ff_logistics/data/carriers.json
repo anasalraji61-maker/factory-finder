@@ -225,6 +225,255 @@
     "GULF"
    ],
    "rating": 3.9
+  },
+  {
+   "id": "car_evergreen",
+   "name": "Evergreen Line",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc",
+    "sea_lcl"
+   ],
+   "origin_regions": [
+    "EAS"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_one",
+   "name": "Ocean Network Express (ONE)",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_hmm",
+   "name": "HMM",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "EAS",
+    "SAS"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "NAM"
+   ],
+   "rating": 4.1
+  },
+  {
+   "id": "car_yangming",
+   "name": "Yang Ming Marine Transport",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "EAS"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "NAM",
+    "SAS"
+   ],
+   "rating": 4.1
+  },
+  {
+   "id": "car_pil",
+   "name": "Pacific International Lines",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc",
+    "sea_lcl"
+   ],
+   "origin_regions": [
+    "EAS",
+    "SAS"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "AFR",
+    "OCE",
+    "LAM"
+   ],
+   "rating": 4.0
+  },
+  {
+   "id": "car_arkas",
+   "name": "Arkas Line",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_lcl"
+   ],
+   "origin_regions": [
+    "MED",
+    "EUR"
+   ],
+   "destination_regions": [
+    "MED",
+    "EUR",
+    "GULF"
+   ],
+   "rating": 3.9
+  },
+  {
+   "id": "car_zim",
+   "name": "ZIM Integrated Shipping",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "NAM",
+    "MED",
+    "EUR",
+    "EAS"
+   ],
+   "rating": 4.0
+  },
+  {
+   "id": "car_ceva",
+   "name": "CEVA Logistics",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "sea_fcl_40",
+    "road"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.2
+  },
+  {
+   "id": "car_expeditors",
+   "name": "Expeditors",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "sea_fcl_40"
+   ],
+   "origin_regions": [
+    "EAS",
+    "NAM",
+    "EUR"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.2
+  },
+  {
+   "id": "car_agility",
+   "name": "Agility Logistics",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "sea_fcl_40",
+    "road"
+   ],
+   "origin_regions": [
+    "EAS",
+    "GULF",
+    "MED"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "AFR"
+   ],
+   "rating": 4.0
+  },
+  {
+   "id": "car_fedex",
+   "name": "FedEx Express",
+   "kind": "airline",
+   "modes": [
+    "air"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.2
+  },
+  {
+   "id": "car_qatar",
+   "name": "Qatar Airways Cargo",
+   "kind": "airline",
+   "modes": [
+    "air"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "EAS",
+    "SAS",
+    "AFR"
+   ],
+   "rating": 4.4
+  },
+  {
+   "id": "car_cathay",
+   "name": "Cathay Cargo",
+   "kind": "airline",
+   "modes": [
+    "air"
+   ],
+   "origin_regions": [
+    "EAS"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
   }
  ]
 }

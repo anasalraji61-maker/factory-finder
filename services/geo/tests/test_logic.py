@@ -20,8 +20,7 @@ def test_normalize_arabic():
 def test_city_search_arabic_variants():
     assert search_cities(ds, "اربيل")[0].name_en == "Erbil"
     assert search_cities(ds, "الحله")[0].name_en == "Hillah"
-    assert search_cities(ds, "ba")[0].name_en in {"Baghdad", "Baqubah", "Basra", "Bangalore", "Baku",
-                                                  "Bandar Abbas", "Bangkok"}
+    assert search_cities(ds, "ba")[0].name_en.lower().startswith("ba")
     assert {c.name_en for c in search_cities(ds, "baghdad", "IQ")} == {"Baghdad"}
     assert search_cities(ds, "baghdad", "CN") == []
     assert len(search_cities(ds, None, "IQ")) >= 18

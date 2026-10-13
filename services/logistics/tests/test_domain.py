@@ -90,3 +90,33 @@ async def test_ecb_fallback_and_cache(respx_mock):
     respx_mock.get(url).respond(500)
     r2 = await EcbFx(url).usd_rates()
     assert r2.source == "mock-fallback"
+
+
+NEW_DESTINATIONS = ["SY", "LB", "LY", "DZ", "MA", "TN", "PK", "BD", "NG", "KE", "ZA", "BR", "PL", "ES", "NL",
+                    "CA", "AU", "QA", "OM", "BH", "VN", "ID", "MY", "TH", "KR", "JP"]
+
+
+def test_extended_duty_tables_valid():
+    countries = DATA.duties["countries"]
+    assert len(countries) >= 30 and set(NEW_DESTINATIONS) <= set(countries)
+    for cc, c in countries.items():
+        assert 0 <= c["default_duty_pct"] <= 100 and 0 <= c["vat_pct"] <= 30, cc
+        assert c["clearance_fee_usd"] > 0, cc
+        assert set(c["chapters"]) >= {"39", "84", "85", "87"}, cc
+        assert all(0 <= v <= 100 for v in c["chapters"].values()), cc
+    assert "approximate" in DATA.duties["note"]
+    assert duty_rule(DATA.duties, "BR", "8501", None).vat_pct == D(17)
+
+
+def test_every_known_region_has_handling_and_lanes():
+    regions = set(DATA.lanes["regions"].values())
+    assert {"AFR", "LAM", "OCE"} <= regions
+    for r in regions:
+        assert r in DATA.handling["origin"] and r in DATA.handling["destination"], r
+    for key, lane in DATA.lanes["lanes"].items():
+        a, b = key.split(">")
+        assert a in regions and b in regions, key
+        assert lane["fcl_20"] < lane["fcl_40"] <= lane["fcl_40hc"]
+        assert lane["sea_days"][0] < lane["sea_days"][1]
+        assert [x[0] for x in lane["air_breaks"]] == sorted(x[0] for x in lane["air_breaks"])
+    assert set(DATA.lanes["continents"]) == set(DATA.lanes["regions"])

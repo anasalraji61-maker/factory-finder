@@ -1,3 +1,4 @@
+from ff_sourcing.adapters.mock import load_catalog
 from ff_sourcing.domain.models import SearchQuery
 
 
@@ -72,7 +73,7 @@ async def test_filter_moq_and_verified(service):
     res = await titles(service, verified_only=True)
     assert res.total > 0 and all(i.supplier.verified for i in res.items)
     allr = await titles(service)
-    assert allr.total == 60 and res.total < allr.total
+    assert allr.total == len(load_catalog()["listings"]) and res.total < allr.total
 
 
 async def test_ranking_prefers_trust_and_price(service):
@@ -101,7 +102,9 @@ async def test_pagination(service):
     p1 = await service.search(SearchQuery(), 1, 25)
     p3 = await service.search(SearchQuery(), 3, 25)
     p4 = await service.search(SearchQuery(), 4, 25)
-    assert (p1.total, len(p1.items), len(p3.items), p4.items) == (60, 25, 10, [])
+    n = len(load_catalog()["listings"])
+    assert (p1.total, len(p1.items), len(p3.items)) == (n, 25, 25)
+    assert len(p4.items) == min(25, n - 75) and n > 75
     ids = [i.id for i in p1.items] + [
         i.id for i in (await service.search(SearchQuery(), 2, 25)).items
     ]

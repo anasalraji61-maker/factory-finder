@@ -35,7 +35,7 @@ class ConversationContext {
 
   factory ConversationContext.fromJson(Map<String, dynamic> j) => ConversationContext(
         type: (j['type'] ?? j['kind'] ?? 'listing').toString(),
-        id: (j['id'] ?? '').toString(),
+        id: (j['id'] ?? j['ref_id'] ?? '').toString(),
         title: j['title']?.toString(),
       );
 
@@ -79,22 +79,49 @@ class Conversation {
         unread: unread ?? this.unread,
       );
 
-  factory Conversation.fromJson(Map<String, dynamic> j) {
+  /// [myUserId] (live mode) is used to pick the *other* participant of the
+  /// contract's `participants: [{user_id, role}]` list.
+  factory Conversation.fromJson(Map<String, dynamic> j, {String? myUserId}) {
     final participant = j['participant'];
+    final participants = j['participants'];
+    String otherId = '';
+    if (participant is Map) {
+      otherId = (participant['id'] ?? '').toString();
+    } else if (participants is List) {
+      for (final p in participants) {
+        if (p is Map) {
+          final uid = (p['user_id'] ?? '').toString();
+          if (uid.isNotEmpty && uid != myUserId) {
+            otherId = uid;
+            break;
+          }
+        }
+      }
+    } else {
+      otherId = (j['participant_id'] ?? '').toString();
+    }
     final last = j['last_message'];
     final ctx = j['context'];
-    final updated = _date(j['updated_at'] ?? (last is Map ? last['created_at'] : null));
+    final updated = _date(
+      j['updated_at'] ??
+          (last is Map ? last['created_at'] : null) ??
+          j['created_at'],
+    );
+    final lastText =
+        last is Map ? (last['body'] ?? last['preview']) : last;
+    final ctxTitle = ctx is Map ? ctx['title'] : null;
+    final title = (j['title'] ??
+            (participant is Map ? participant['name'] : null) ??
+            ctxTitle ??
+            otherId)
+        .toString();
     return Conversation(
       id: j['id'].toString(),
-      title: (j['title'] ??
-              (participant is Map ? participant['name'] : null) ??
-              '')
-          .toString(),
-      participantId:
-          (participant is Map ? participant['id'] : j['participant_id'] ?? '').toString(),
+      title: title,
+      participantId: otherId,
       avatarUrl: participant is Map ? participant['avatar_url']?.toString() : null,
       context: ctx is Map ? ConversationContext.fromJson(Map<String, dynamic>.from(ctx)) : null,
-      lastMessage: (last is Map ? last['body'] : last ?? '').toString(),
+      lastMessage: (lastText ?? '').toString(),
       lastAt: updated,
       unread: (j['unread_count'] as num?)?.toInt() ?? 0,
     );
@@ -147,15 +174,22 @@ class ChatMessage {
         status: status ?? this.status,
       );
 
-  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
-        id: j['id'].toString(),
-        conversationId: (j['conversation_id'] ?? '').toString(),
-        senderId: (j['sender_id'] ?? '').toString(),
-        kind: _kindFrom(j['kind']?.toString()),
-        body: (j['body'] ?? j['text'] ?? '').toString(),
-        attachmentUrl: j['attachment_url']?.toString(),
-        createdAt: _date(j['created_at']),
-      );
+  /// Accepts both the mock shape (`kind`, `body`) and the messaging contract
+  /// (`type`, `text`, `attachment.url`). With [myUserId], messages sent by the
+  /// signed-in user get [currentUserId] as sender so `isMine` works.
+  factory ChatMessage.fromJson(Map<String, dynamic> j, {String? myUserId}) {
+    final att = j['attachment'];
+    final sender = (j['sender_id'] ?? '').toString();
+    return ChatMessage(
+      id: j['id'].toString(),
+      conversationId: (j['conversation_id'] ?? '').toString(),
+      senderId: (myUserId != null && sender == myUserId) ? currentUserId : sender,
+      kind: _kindFrom((j['type'] ?? j['kind'])?.toString()),
+      body: (j['body'] ?? j['text'] ?? '').toString(),
+      attachmentUrl: (att is Map ? att['url'] : j['attachment_url'])?.toString(),
+      createdAt: _date(j['created_at']),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,

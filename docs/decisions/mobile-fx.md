@@ -1,0 +1,2 @@
+- 2026-10-13: FX/carriers UI use double math with decimal strings on the wire (no decimal package allowed); contract mode enum is mapped client-side to sea/air/rail/road chips and filtering is done locally after one GET /v1/carriers, since the directory is small.
+- 2026-10-13: Carrier origin/destination_regions are rendered as country flags when they are 2-letter codes, else plain chips.

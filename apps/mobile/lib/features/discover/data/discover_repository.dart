@@ -4,6 +4,25 @@ import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// UI category chip keys -> real sourcing category slugs (GET /v1/categories).
+/// A null slug means the backend has no equivalent: the key is sent as a
+/// keyword instead of a category filter.
+const Map<String, String?> kLiveCategorySlugs = {
+  'electronics': null,
+  'textiles': 'apparel',
+  'furniture': 'furniture',
+  'packaging': null,
+  'steel': 'metals',
+  'plastic_resin': 'plastics',
+  'aluminum': 'metals',
+  'cotton': 'textiles',
+  'chemicals': null,
+  'food_processing': 'food_beverage',
+  'plastics_machinery': 'plastics_machinery',
+  'packaging_machinery': 'paper_packaging',
+  'metalworking': 'metalworking',
+};
+
 class DiscoverRepository {
   DiscoverRepository(this._api);
 
@@ -14,14 +33,22 @@ class DiscoverRepository {
       await mockDelay();
       return filterMockListings(q);
     }
+    final cat = q.category;
+    final hasSlugMap = cat != null && kLiveCategorySlugs.containsKey(cat);
+    final categorySlug = cat == null
+        ? null
+        : (hasSlugMap ? kLiveCategorySlugs[cat] : cat);
+    final keyword = (hasSlugMap && categorySlug == null && q.query.isEmpty)
+        ? cat!.replaceAll('_', ' ')
+        : q.query;
     final json = await _api.get('/v1/search', query: {
-      if (q.query.isNotEmpty) 'q': q.query,
+      if (keyword.isNotEmpty) 'q': keyword,
       if (q.kind != null) 'kind': q.kind!.json,
       if (q.condition != null) 'condition': q.condition!.json,
       if (q.originCountry != null) 'origin_country': q.originCountry,
       if (q.maxMoq != null) 'moq_max': q.maxMoq,
       if (q.verifiedOnly) 'verified_only': true,
-      if (q.category != null) 'category': q.category,
+      if (categorySlug != null) 'category': categorySlug,
       'page': 1,
       'page_size': 50,
     });
