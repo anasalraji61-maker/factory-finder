@@ -27,6 +27,8 @@ jobs:
           if [ ! -d android ]; then
             flutter create . --platforms=android,ios --org com.factoryfinder --project-name factory_finder
           fi
+      - name: Remove default template test
+        run: rm -f test/widget_test.dart
       - run: flutter pub get
       - name: Analyze
         shell: bash
