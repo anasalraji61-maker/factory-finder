@@ -119,6 +119,9 @@ class ApiClient {
     }
   }
 
+  /// Public hook for the chat socket: refresh tokens once, true on success.
+  Future<bool> refreshSession() => _refreshOnce();
+
   Future<bool> _refreshOnce() {
     return _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
   }

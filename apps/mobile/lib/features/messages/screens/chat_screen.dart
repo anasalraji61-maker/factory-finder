@@ -4,6 +4,8 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/messages/data/chat_logic.dart';
+import 'package:factory_finder/features/messages/data/chat_socket.dart';
+import 'package:factory_finder/features/messages/data/chat_socket_provider.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:factory_finder/features/messages/data/messages_repository.dart';
 import 'package:factory_finder/features/messages/screens/conversations_screen.dart';
@@ -26,6 +28,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Object? _error;
   Timer? _poll;
   int _seq = 0;
+  ChatSocket? _socket;
+  ProviderSubscription<ChatSocket>? _keepAlive;
+  StreamSubscription<ChatMessage>? _wsMsgs;
+  StreamSubscription<ChatSocketStatus>? _wsStatus;
+  ChatSocketStatus _wsState = ChatSocketStatus.idle;
 
   MessagingRepository get _repo => ref.read(messagingRepositoryProvider);
 
@@ -34,11 +41,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     _load();
     _poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
+    // Keep the autoDispose provider alive while this screen is open.
+    _keepAlive = ref.listenManual(chatSocketProvider(widget.conversationId), (_, __) {});
+    final socket = _keepAlive!.read();
+    _socket = socket;
+    _wsMsgs = socket.messages.listen((m) {
+      if (!mounted) return;
+      setState(() => _messages = appendIncoming(_messages, m));
+    });
+    _wsStatus = socket.statuses.listen((s) {
+      if (!mounted) return;
+      setState(() => _wsState = s);
+    });
+    _wsState = socket.status;
+    socket.connect();
   }
 
   @override
   void dispose() {
     _poll?.cancel();
+    _wsMsgs?.cancel();
+    _wsStatus?.cancel();
+    _keepAlive?.close();
     _input.dispose();
     super.dispose();
   }
@@ -142,12 +166,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+        actions: [_statusChip(context)],
       ),
       body: Column(
         children: [
           Expanded(child: _body(context, items)),
           _composer(context),
         ],
+      ),
+    );
+  }
+
+  Widget _statusChip(BuildContext context) {
+    final String key;
+    final Color color;
+    switch (_wsState) {
+      case ChatSocketStatus.idle:
+        return const SizedBox.shrink();
+      case ChatSocketStatus.connected:
+        key = 'messages.conn.live';
+        color = Colors.green;
+        break;
+      case ChatSocketStatus.connecting:
+        key = 'messages.conn.connecting';
+        color = Colors.orange;
+        break;
+      case ChatSocketStatus.reconnecting:
+        key = 'messages.conn.reconnecting';
+        color = Colors.orange;
+        break;
+      case ChatSocketStatus.failed:
+        key = 'messages.conn.failed';
+        color = Colors.grey;
+        break;
+    }
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.md),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 4),
+            Text(context.tr(key), style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
       ),
     );
   }
