@@ -20,11 +20,17 @@ def current_user(x_user_id: Annotated[str | None, Header()] = None) -> str:
     return x_user_id.strip()
 
 
+def verified_supplier(x_supplier_id: Annotated[str | None, Header()] = None) -> str | None:
+    """Gateway-verified supplier id (only forwarded for admin-verified claims); never taken from the body."""
+    return x_supplier_id.strip() if x_supplier_id and x_supplier_id.strip() else None
+
+
 def svc(request: Request) -> RfqService:
     return request.app.state.service
 
 
 User = Annotated[str, Depends(current_user)]
+Supplier = Annotated[str | None, Depends(verified_supplier)]
 Svc = Annotated[RfqService, Depends(svc)]
 Page = Annotated[int, Query(ge=1)]
 Size = Annotated[int, Query(ge=1, le=100)]
@@ -61,8 +67,8 @@ async def suggestions(request_id: str, user: User, s: Svc,
 
 
 @router.post("/requests/{request_id}/offers", status_code=201)
-async def create_offer(request_id: str, body: OfferCreate, user: User, s: Svc) -> dict[str, Any]:
-    return await s.create_offer(user, request_id, body)
+async def create_offer(request_id: str, body: OfferCreate, user: User, supplier: Supplier, s: Svc) -> dict[str, Any]:
+    return await s.create_offer(user, request_id, body, supplier_id=supplier)
 
 
 @router.get("/requests/{request_id}/offers")

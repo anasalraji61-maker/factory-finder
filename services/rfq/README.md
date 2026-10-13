@@ -16,3 +16,5 @@ the buyer accepts one and a Deal with platform commission is created.
 | `FF_RFQ_SOURCING_CLIENT` | `http` (or `mock`) |
 | `FF_RFQ_COMMISSION_PRODUCT` / `_RAW_MATERIAL` / `_PRODUCTION_LINE` | `0.03` / `0.02` / `0.04` |
 | `FF_RFQ_MIN_COMMISSION_USD` | `25` |
+
+Offer identity: owner = `X-User-Id`; `supplier_ref` = gateway-verified `X-Supplier-Id` (else null, `supplier_verified=false`). A `supplier_ref` in the request body is ignored; `supplier_name` is a display label only.

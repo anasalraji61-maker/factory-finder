@@ -143,3 +143,18 @@ def test_private_request_hidden_from_strangers(client):
     assert client.get(f"/v1/requests/{req['id']}", headers=SUP_A).status_code == 404
     new_offer(client, req["id"], headers=SUP_A)  # link-holder who offered keeps access
     assert client.get(f"/v1/requests/{req['id']}", headers=SUP_A).status_code == 200
+
+
+def test_offer_identity_comes_from_headers_not_body(client):
+    rid = new_request(client)["id"]
+    # client claims someone else's supplier id: ignored
+    o = new_offer(client, rid, supplier_ref="sup_victim", supplier_name="Victim Co")
+    assert o["supplier_user_id"] == "supA"  # owner is the caller
+    assert o["supplier_ref"] is None and o["supplier_verified"] is False
+    # verified id forwarded by the gateway is used; body ref still ignored
+    o2 = new_offer(client, rid, headers={**SUP_B, "X-Supplier-Id": "sup_real"}, supplier_ref="sup_victim")
+    assert o2["supplier_ref"] == "sup_real" and o2["supplier_verified"] is True
+    assert o2["supplier_user_id"] == SUP_B["X-User-Id"]
+    listed = client.get(f"/v1/requests/{rid}/offers", headers=BUYER).json()
+    refs = {x["id"]: x["supplier_ref"] for x in listed["items"]}
+    assert refs[o["id"]] is None and refs[o2["id"]] == "sup_real"

@@ -54,6 +54,7 @@ def offer_dict(o: OfferRow) -> dict[str, Any]:
     return {
         "id": o.id, "request_id": o.request_id, "supplier_user_id": o.supplier_user_id,
         "supplier_ref": o.supplier_ref, "supplier_name": o.supplier_name,
+        "supplier_verified": o.supplier_ref is not None,
         "price": _money(o.price_amount, o.price_currency), "moq": o.moq, "lead_time_days": o.lead_time_days,
         "incoterm": o.incoterm, "valid_until": _iso(o.valid_until), "notes": o.notes, "status": o.status,
         "created_at": _iso(o.created_at), "updated_at": _iso(o.updated_at),
@@ -209,7 +210,9 @@ class RfqService:
         return {"request_id": request_id, "items": items[:limit]}
 
     # ---- offers --------------------------------------------------------------------------
-    async def create_offer(self, user: str, request_id: str, body: OfferCreate) -> dict[str, Any]:
+    async def create_offer(self, user: str, request_id: str, body: OfferCreate, supplier_id: str | None = None) -> dict[str, Any]:
+        """Offer owner is the caller (X-User-Id). supplier_ref is the gateway-verified X-Supplier-Id or None;
+        a client-supplied body.supplier_ref is ignored. supplier_name is only a display label."""
         now = self.clock()
         self._check_currency(body.price.currency)
         if body.valid_until and body.valid_until.astimezone(UTC) <= now:
@@ -222,7 +225,7 @@ class RfqService:
             r.status = request_transition(RequestStatus(r.status), "receive_offer", r.id).value
             r.updated_at = now
             o = OfferRow(
-                id=_id("off"), request_id=r.id, supplier_user_id=user, supplier_ref=body.supplier_ref,
+                id=_id("off"), request_id=r.id, supplier_user_id=user, supplier_ref=supplier_id,
                 supplier_name=body.supplier_name, price_amount=format(body.price.amount, "f"),
                 price_currency=body.price.currency, moq=body.moq, lead_time_days=body.lead_time_days,
                 incoterm=body.incoterm.value if body.incoterm else None, valid_until=body.valid_until,

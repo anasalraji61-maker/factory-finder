@@ -46,7 +46,7 @@ class OfferCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     price: Money = Field(description="Per unit")
     supplier_name: str = Field(min_length=1, max_length=200)
-    supplier_ref: str | None = Field(default=None, max_length=64, description="Sourcing supplier id, e.g. sup_...")
+    supplier_ref: str | None = Field(default=None, max_length=64, description="Deprecated and ignored: identity comes from the verified X-Supplier-Id header")
     moq: int | None = Field(default=None, ge=0)
     lead_time_days: int | None = Field(default=None, ge=0, le=1000)
     incoterm: Incoterm | None = None

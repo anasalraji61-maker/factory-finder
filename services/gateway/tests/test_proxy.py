@@ -103,7 +103,7 @@ def test_request_id_cors_and_rate_limit(make_client, mock_upstream):
     c = make_client(rate_limit_per_minute=3)
     mock_upstream.get("http://localhost:8103/v1/countries").mock(return_value=httpx.Response(200, json=[]))
     r = c.get("/health", headers={"Origin": "http://app.example"})
-    assert r.headers["x-request-id"] and r.headers["access-control-allow-origin"] == "*"
+    assert r.headers["x-request-id"] and "access-control-allow-origin" not in r.headers
     codes = [c.get("/v1/countries").status_code for _ in range(5)]
     assert codes == [200, 200, 200, 429, 429]
     limited = c.get("/v1/countries")
@@ -156,3 +156,20 @@ def test_internal_only_route_not_exposed(client, mock_upstream, hdr):
     route = mock_upstream.post("http://localhost:8108/v1/alerts/evaluate").mock(return_value=httpx.Response(200, json={}))
     r = client.post("/v1/alerts/evaluate", headers=hdr, json={})
     assert r.status_code == 404 and not route.called
+
+
+def test_cors_default_denies_and_env_allows(make_client):
+    c = make_client()
+    r = c.options("/v1/countries", headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "GET"})
+    assert "access-control-allow-origin" not in r.headers
+    c2 = make_client(cors_origins=["http://localhost:3000"])
+    ok = c2.get("/health", headers={"Origin": "http://localhost:3000"})
+    assert ok.headers["access-control-allow-origin"] == "http://localhost:3000"
+    bad = c2.get("/health", headers={"Origin": "http://evil.example"})
+    assert "access-control-allow-origin" not in bad.headers
+
+
+def test_rfq_gets_verified_supplier_header_only(client, auth, hdr, mock_upstream):
+    route = mock_upstream.post("http://localhost:8105/v1/requests/req_1/offers").mock(return_value=httpx.Response(201, json={}))
+    client.post("/v1/requests/req_1/offers", json={}, headers={**hdr, "X-Supplier-Id": "sup_spoof"})
+    assert "x-supplier-id" not in route.calls.last.request.headers

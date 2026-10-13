@@ -13,7 +13,7 @@ services:
         "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109"}'
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
-      FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-["*"]}
+      FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-[]}
     restart: unless-stopped
     healthcheck:
       test:

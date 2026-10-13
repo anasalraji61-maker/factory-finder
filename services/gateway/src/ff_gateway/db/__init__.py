@@ -39,6 +39,19 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 
+class RefreshToken(Base):
+    """One row per issued refresh token; only the hash of its jti is stored."""
+
+    __tablename__ = "refresh_tokens"
+
+    jti_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    family: Mapped[str] = mapped_column(String(40), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 def make_engine(url: str) -> AsyncEngine:
     if ":memory:" in url or url.endswith("sqlite+aiosqlite://"):
         return create_async_engine(url, poolclass=StaticPool, connect_args={"check_same_thread": False})

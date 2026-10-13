@@ -54,7 +54,7 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
-    if upstream == "messaging" and user_id:  # verified claim from our DB, never from the client
+    if upstream in ("messaging", "rfq") and user_id:  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
             claimed = await s.scalar(select(User.supplier_id).where(User.id == user_id, User.supplier_claim_status == "verified")
             )

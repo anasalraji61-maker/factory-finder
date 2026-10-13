@@ -14,3 +14,9 @@ Gaps: no WebSocket proxy, stateless refresh tokens, in-memory rate limiter.
 ## Supplier claims
 
 `PATCH /v1/me {supplier_id}` records a **pending** claim (`supplier_claim_status`: none|pending|verified); pending/verified ids are unique (409). The gateway forwards `X-Supplier-Id` (HTTP and WS) to messaging only when status is `verified`. Admins (header `X-Admin-Token` == `FF_GATEWAY_ADMIN_TOKEN`, constant-time compare; 404 if unset, 401 if wrong) use `GET /v1/admin/supplier-claims?status=pending|verified`, `POST /v1/admin/supplier-claims/{user_id}/approve|reject`. Reject and `supplier_id: null` release the id and reset status to none. Startup adds the column on existing sqlite DBs; pre-existing claims become pending.
+
+## Security notes
+- Refresh tokens are single-use and tracked in `refresh_tokens` (hashed jti + family). Reusing a rotated token revokes the family; `POST /v1/auth/logout` revokes it explicitly.
+- CORS: no origins allowed unless `FF_GATEWAY_CORS_ORIGINS` (JSON list) is set.
+- WebSocket auth accepts `?token=<access jwt>` (clients cannot set headers); uvicorn access logs are redacted, any proxy in front must scrub it too.
+- Verified `X-Supplier-Id` (admin-verified claims only) is forwarded to messaging and rfq; client-sent values are never forwarded.

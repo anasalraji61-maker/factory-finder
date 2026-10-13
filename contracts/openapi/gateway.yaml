@@ -26,11 +26,20 @@ paths:
   /v1/auth/refresh:
     post:
       operationId: refresh
+      summary: Rotating refresh - each refresh token is single-use; replaying a used one revokes the family (401)
       security: []
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
       responses:
         "200": {description: New token pair, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
         "401": {$ref: "#/components/responses/Error"}
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke the refresh token's whole family (idempotent; always 204)
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
+      responses:
+        "204": {description: Revoked}
   /v1/me:
     get:
       operationId: getMe

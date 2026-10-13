@@ -201,7 +201,7 @@ components:
       properties:
         price: {$ref: "#/components/schemas/Money"}
         supplier_name: {type: string}
-        supplier_ref: {type: string, description: "Sourcing supplier id (sup_...)"}
+        supplier_ref: {type: string, deprecated: true, description: "Ignored. The offer owner is X-User-Id; supplier_ref in responses is the gateway-verified X-Supplier-Id (null if none)."}
         moq: {type: integer, minimum: 0}
         lead_time_days: {type: integer, minimum: 0}
         incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
@@ -216,6 +216,7 @@ components:
             id: {type: string, description: "off_..."}
             request_id: {type: string}
             supplier_user_id: {type: string}
+            supplier_verified: {type: boolean, description: "true when supplier_ref came from a gateway-verified X-Supplier-Id"}
             status: {$ref: "#/components/schemas/OfferStatus"}
             created_at: {type: string, format: date-time}
             updated_at: {type: string, format: date-time}
