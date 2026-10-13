@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway import SERVICE_NAME, __version__
-from ff_gateway.api import auth, me, proxy
+from ff_gateway.api import auth, me, proxy, ws
 from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
@@ -109,6 +109,7 @@ def create_app(
 
     app.include_router(auth.router)
     app.include_router(me.router)
+    app.include_router(ws.router)
     app.include_router(proxy.router)  # catch-all, must be last
     app.add_middleware(
         CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"],

@@ -6,3 +6,7 @@ Run: `uvicorn ff_gateway.main:app --port 8000`. Test: `../../.venv/bin/python -m
 
 Env (prefix `FF_GATEWAY_`): `JWT_SECRET` (unset -> ephemeral secret + warning), `DATABASE_URL` (sqlite+aiosqlite:///./gateway.db), `UPSTREAMS` (JSON overrides, e.g. `{"trust":"http://trust:8104"}`), `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`, `CORS_ORIGINS` (JSON list), `HOME_CLIENT` (http|mock), `UPSTREAM_TIMEOUT_SECONDS`; plus `FF_INTERNAL_TOKEN`.
 Gaps: no WebSocket proxy, stateless refresh tokens, in-memory rate limiter.
+
+## WebSocket proxy
+
+`WS /v1/ws/conversations/{id}` is proxied to messaging (same path). Auth: `Authorization: Bearer <access>` or `?token=<access>`. Only the verified `X-User-Id` / `X-Supplier-Id` (and `X-Internal-Token` if configured) go upstream; client-supplied `user_id` and the token are never forwarded. Close codes: 4401 unauthenticated, 4403/4429 from messaging, 4404 unknown path, 1011 upstream unavailable. Note: access logs of the ASGI server may record `?token=`; prefer the header where possible.

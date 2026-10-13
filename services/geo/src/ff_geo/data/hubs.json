@@ -2347,7 +2347,7 @@
 "serves_countries": [
 "JP"
 ],
-"notes": "Other Japanese ports (Yokohama, Nagoya, Kobe) await lane-graph nodes; see docs/requests."
+"notes": null
 },
 {
 "id": "VNVUT",
@@ -3184,5 +3184,345 @@
 "AE"
 ],
 "notes": "Re-export and LCL consolidation hub."
+},
+{
+"id": "KEMBA",
+"type": "sea",
+"name_en": "Mombasa Port",
+"name_ar": "ميناء مومباسا",
+"country_code": "KE",
+"point": {
+"lat": -4.06,
+"lon": 39.67
+},
+"unlocode": "KEMBA",
+"iata": null,
+"serves_countries": [
+"KE"
+],
+"notes": null
+},
+{
+"id": "ZADUR",
+"type": "sea",
+"name_en": "Durban Port",
+"name_ar": "ميناء ديربان",
+"country_code": "ZA",
+"point": {
+"lat": -29.87,
+"lon": 31.03
+},
+"unlocode": "ZADUR",
+"iata": null,
+"serves_countries": [
+"ZA"
+],
+"notes": null
+},
+{
+"id": "ZACPT",
+"type": "sea",
+"name_en": "Cape Town Port",
+"name_ar": "ميناء كيب تاون",
+"country_code": "ZA",
+"point": {
+"lat": -33.91,
+"lon": 18.43
+},
+"unlocode": "ZACPT",
+"iata": null,
+"serves_countries": [
+"ZA"
+],
+"notes": null
+},
+{
+"id": "NGAPP",
+"type": "sea",
+"name_en": "Lagos Apapa Port",
+"name_ar": "ميناء لاغوس (أباباً)",
+"country_code": "NG",
+"point": {
+"lat": 6.44,
+"lon": 3.36
+},
+"unlocode": "NGAPP",
+"iata": null,
+"serves_countries": [
+"NG"
+],
+"notes": "Lagos main port complex is Apapa (UN/LOCODE NGAPP); Tin Can Island (NGTIN) is adjacent; NGLOS is the city code."
+},
+{
+"id": "GHTEM",
+"type": "sea",
+"name_en": "Tema Port",
+"name_ar": "ميناء تيما",
+"country_code": "GH",
+"point": {
+"lat": 5.63,
+"lon": 0.01
+},
+"unlocode": "GHTEM",
+"iata": null,
+"serves_countries": [
+"GH"
+],
+"notes": null
+},
+{
+"id": "SNDKR",
+"type": "sea",
+"name_en": "Dakar Port",
+"name_ar": "ميناء داكار",
+"country_code": "SN",
+"point": {
+"lat": 14.68,
+"lon": -17.43
+},
+"unlocode": "SNDKR",
+"iata": null,
+"serves_countries": [
+"SN"
+],
+"notes": null
+},
+{
+"id": "UAODS",
+"type": "sea",
+"name_en": "Odesa Port",
+"name_ar": "ميناء أوديسا",
+"country_code": "UA",
+"point": {
+"lat": 46.49,
+"lon": 30.75
+},
+"unlocode": "UAODS",
+"iata": null,
+"serves_countries": [
+"UA"
+],
+"notes": "Coordinates approximate (Odesa seaport area). Operations may be disrupted by war; verify availability."
+},
+{
+"id": "ROCND",
+"type": "sea",
+"name_en": "Constanta Port",
+"name_ar": "ميناء كونستانتا",
+"country_code": "RO",
+"point": {
+"lat": 44.17,
+"lon": 28.66
+},
+"unlocode": "ROCND",
+"iata": null,
+"serves_countries": [
+"RO"
+],
+"notes": null
+},
+{
+"id": "RUNVS",
+"type": "sea",
+"name_en": "Novorossiysk Port",
+"name_ar": "ميناء نوفوروسيسك",
+"country_code": "RU",
+"point": {
+"lat": 44.72,
+"lon": 37.78
+},
+"unlocode": "RUNVS",
+"iata": null,
+"serves_countries": [
+"RU"
+],
+"notes": "Sanctions/compliance screening required for Russian ports."
+},
+{
+"id": "JPYOK",
+"type": "sea",
+"name_en": "Yokohama Port",
+"name_ar": "ميناء يوكوهاما",
+"country_code": "JP",
+"point": {
+"lat": 35.45,
+"lon": 139.66
+},
+"unlocode": "JPYOK",
+"iata": null,
+"serves_countries": [
+"JP"
+],
+"notes": null
+},
+{
+"id": "JPOSA",
+"type": "sea",
+"name_en": "Osaka Port",
+"name_ar": "ميناء أوساكا",
+"country_code": "JP",
+"point": {
+"lat": 34.65,
+"lon": 135.43
+},
+"unlocode": "JPOSA",
+"iata": null,
+"serves_countries": [
+"JP"
+],
+"notes": null
+},
+{
+"id": "JPUKB",
+"type": "sea",
+"name_en": "Kobe Port",
+"name_ar": "ميناء كوبي",
+"country_code": "JP",
+"point": {
+"lat": 34.67,
+"lon": 135.2
+},
+"unlocode": "JPUKB",
+"iata": null,
+"serves_countries": [
+"JP"
+],
+"notes": null
+},
+{
+"id": "JPNGO",
+"type": "sea",
+"name_en": "Nagoya Port",
+"name_ar": "ميناء ناغويا",
+"country_code": "JP",
+"point": {
+"lat": 35.06,
+"lon": 136.88
+},
+"unlocode": "JPNGO",
+"iata": null,
+"serves_countries": [
+"JP"
+],
+"notes": null
+},
+{
+"id": "BRSSZ",
+"type": "sea",
+"name_en": "Santos Port",
+"name_ar": "ميناء سانتوس",
+"country_code": "BR",
+"point": {
+"lat": -23.98,
+"lon": -46.3
+},
+"unlocode": "BRSSZ",
+"iata": null,
+"serves_countries": [
+"BR"
+],
+"notes": null
+},
+{
+"id": "ARBUE",
+"type": "sea",
+"name_en": "Buenos Aires Port",
+"name_ar": "ميناء بوينس آيرس",
+"country_code": "AR",
+"point": {
+"lat": -34.6,
+"lon": -58.37
+},
+"unlocode": "ARBUE",
+"iata": null,
+"serves_countries": [
+"AR"
+],
+"notes": "River-port: distance includes up-river access from the River Plate approach node (approximate)."
+},
+{
+"id": "PECLL",
+"type": "sea",
+"name_en": "Callao Port",
+"name_ar": "ميناء كايّاو",
+"country_code": "PE",
+"point": {
+"lat": -12.05,
+"lon": -77.15
+},
+"unlocode": "PECLL",
+"iata": null,
+"serves_countries": [
+"PE"
+],
+"notes": null
+},
+{
+"id": "COCTG",
+"type": "sea",
+"name_en": "Cartagena Port",
+"name_ar": "ميناء قرطاجنة (كولومبيا)",
+"country_code": "CO",
+"point": {
+"lat": 10.4,
+"lon": -75.53
+},
+"unlocode": "COCTG",
+"iata": null,
+"serves_countries": [
+"CO"
+],
+"notes": null
+},
+{
+"id": "AUSYD",
+"type": "sea",
+"name_en": "Sydney Port (Port Botany)",
+"name_ar": "ميناء سيدني (بورت بوتاني)",
+"country_code": "AU",
+"point": {
+"lat": -33.97,
+"lon": 151.22
+},
+"unlocode": "AUSYD",
+"iata": null,
+"serves_countries": [
+"AU"
+],
+"notes": null
+},
+{
+"id": "AUMEL",
+"type": "sea",
+"name_en": "Melbourne Port",
+"name_ar": "ميناء ملبورن",
+"country_code": "AU",
+"point": {
+"lat": -37.83,
+"lon": 144.92
+},
+"unlocode": "AUMEL",
+"iata": null,
+"serves_countries": [
+"AU"
+],
+"notes": "Lane node is at Port Phillip heads; access distance is approximate."
+},
+{
+"id": "AUFRE",
+"type": "sea",
+"name_en": "Fremantle Port",
+"name_ar": "ميناء فريمانتل",
+"country_code": "AU",
+"point": {
+"lat": -32.05,
+"lon": 115.74
+},
+"unlocode": "AUFRE",
+"iata": null,
+"serves_countries": [
+"AU"
+],
+"notes": null
 }
 ]

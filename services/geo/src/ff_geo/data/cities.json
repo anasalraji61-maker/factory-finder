@@ -4706,5 +4706,38 @@
 "lon": 22.9444
 },
 "industrial": false
+},
+{
+"id": "GH-ACCRA",
+"name_en": "Accra",
+"name_ar": "أكرا",
+"country_code": "GH",
+"point": {
+"lat": 5.6037,
+"lon": -0.187
+},
+"industrial": true
+},
+{
+"id": "SN-DAKAR",
+"name_en": "Dakar",
+"name_ar": "داكار",
+"country_code": "SN",
+"point": {
+"lat": 14.7167,
+"lon": -17.4677
+},
+"industrial": true
+},
+{
+"id": "PE-LIMA",
+"name_en": "Lima",
+"name_ar": "ليما",
+"country_code": "PE",
+"point": {
+"lat": -12.0464,
+"lon": -77.0428
+},
+"industrial": true
 }
 ]

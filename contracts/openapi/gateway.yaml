@@ -82,6 +82,15 @@ paths:
         "200": {description: Upstream response passed through}
         "401": {$ref: "#/components/responses/Error"}
         "502": {$ref: "#/components/responses/Error"}
+  /v1/ws/conversations/{conversation_id}:
+    get:
+      operationId: wsConversation
+      description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: Authorization Bearer access token or ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections, 1011 upstream unavailable."
+      parameters:
+        - {name: conversation_id, in: path, required: true, schema: {type: string}}
+        - {name: token, in: query, required: false, schema: {type: string}}
+      responses:
+        "101": {description: Switching Protocols}
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}

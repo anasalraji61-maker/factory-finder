@@ -1,0 +1,3 @@
+2026-10-13 | Extended sea-lane graph (~70 nodes: Japan Pacific, Black Sea, West/Cape/East Africa, South America + Panama/Hawaii, Australia/Indonesia) and added 20 sea hubs + countries GH/SN/PE (with one city each) | requested in docs/requests/data-geo-sea-nodes.md; hubs only added where lane nodes keep distances within ~15% of real.
+2026-10-13 | Durban-Mombasa test uses ~3,230 km (1,745 nm sea) not 2,900 km | 2,900 km is the straight-line; ships must round the Mozambique bulge.
+2026-10-13 | Not added yet: Bay of Bengal, Thailand, Philippines, Indonesia ports, Tunisia/Libya, Adriatic, Baltic north, MXZLO, Prince Rupert/Oakland, USMSY | outside the requested set; need more nodes/edges.

@@ -9,7 +9,7 @@ IRAQ = ["Baghdad", "Basra", "Erbil", "Mosul", "Najaf", "Karbala", "Sulaymaniyah"
 
 def test_sizes_and_uniqueness():
     ds = get_dataset()
-    assert len(ds.countries) >= 60 and len(ds.cities) >= 300 and len(ds.hubs) >= 170
+    assert len(ds.countries) >= 60 and len(ds.cities) >= 300 and len(ds.hubs) >= 200
     assert len({h.id for h in ds.hubs}) == len(ds.hubs)
     assert len({c.id for c in ds.cities}) == len(ds.cities)
 
