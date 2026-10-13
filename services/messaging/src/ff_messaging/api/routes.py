@@ -61,6 +61,7 @@ class ConversationCreate(_Body):
     my_role: Role | None = None
     context: ContextIn | None = None
     title: str | None = None
+    supplier_ref: str | None = Field(default=None, pattern=r"^sup_[A-Za-z0-9_.:\-]{1,59}$")
 
 
 class AttachmentIn(_Body):
@@ -106,7 +107,19 @@ def current_user(
     return x_user_id
 
 
+def supplier_claim(
+    _user: Annotated[str, Depends(current_user)],
+    x_supplier_id: Annotated[str | None, Header()] = None,
+) -> str | None:
+    """Supplier id the gateway verified for the caller (never client-supplied; the internal
+    token check in ``current_user`` guards this header when a token is configured)."""
+    if x_supplier_id and is_valid_user_id(x_supplier_id) and x_supplier_id.startswith("sup_"):
+        return x_supplier_id
+    return None
+
+
 User = Annotated[str, Depends(current_user)]
+Supplier = Annotated[str | None, Depends(supplier_claim)]
 Service = Annotated[MessagingService, Depends(get_service)]
 
 
@@ -121,6 +134,7 @@ async def create_conversation(
         my_role=body.my_role,
         context=context,
         title=body.title,
+        supplier_ref=body.supplier_ref,
     )
     if not created:
         response.status_code = 200
@@ -136,6 +150,7 @@ async def list_conversations(
     context_type: ContextType | None = None,
     context_ref_id: str | None = None,
     unread_only: bool = False,
+    supplier: Supplier = None,
 ) -> dict[str, Any]:
     result = await svc.list_conversations(
         user,
@@ -144,13 +159,17 @@ async def list_conversations(
         context_type=context_type,
         context_ref_id=context_ref_id,
         unread_only=unread_only,
+        supplier_id=supplier,
     )
-    return conversation_page_json(result, user)
+    return conversation_page_json(result, user, supplier)
 
 
 @router.get("/conversations/{conversation_id}")
-async def get_conversation(conversation_id: str, user: User, svc: Service) -> dict[str, Any]:
-    return conversation_json(await svc.get_conversation(user, conversation_id), user)
+async def get_conversation(
+    conversation_id: str, user: User, svc: Service, supplier: Supplier
+) -> dict[str, Any]:
+    conv = await svc.get_conversation(user, conversation_id, supplier)
+    return conversation_json(conv, user, supplier)
 
 
 @router.get("/conversations/{conversation_id}/messages")
@@ -158,17 +177,25 @@ async def list_messages(
     conversation_id: str,
     user: User,
     svc: Service,
+    supplier: Supplier,
     cursor: str | None = None,
     limit: Annotated[int | None, Query(ge=1)] = None,
 ) -> dict[str, Any]:
     return message_page_json(
-        await svc.list_messages(user, conversation_id, cursor=cursor, limit=limit)
+        await svc.list_messages(
+            user, conversation_id, cursor=cursor, limit=limit, supplier_id=supplier
+        )
     )
 
 
 @router.post("/conversations/{conversation_id}/messages", status_code=201)
 async def send_message(
-    conversation_id: str, body: MessageCreate, user: User, svc: Service, response: Response
+    conversation_id: str,
+    body: MessageCreate,
+    user: User,
+    svc: Service,
+    response: Response,
+    supplier: Supplier,
 ) -> dict[str, Any]:
     draft = MessageDraft(
         type=MessageType(body.type),
@@ -177,7 +204,7 @@ async def send_message(
         offer_ref=OfferRef(**body.offer_ref.model_dump()) if body.offer_ref else None,
         client_message_id=body.client_message_id,
     )
-    message, created = await svc.send_message(user, conversation_id, draft)
+    message, created = await svc.send_message(user, conversation_id, draft, supplier)
     if not created:
         response.status_code = 200
     return message_json(message)
@@ -185,9 +212,9 @@ async def send_message(
 
 @router.post("/conversations/{conversation_id}/read")
 async def mark_read(
-    conversation_id: str, user: User, svc: Service, body: ReadIn | None = None
+    conversation_id: str, user: User, svc: Service, supplier: Supplier, body: ReadIn | None = None
 ) -> dict[str, Any]:
-    state = await svc.mark_read(user, conversation_id, body.message_id if body else None)
+    state = await svc.mark_read(user, conversation_id, body.message_id if body else None, supplier)
     return read_state_json(state)
 
 
@@ -210,7 +237,11 @@ async def conversation_socket(
             websocket.headers.get("x-internal-token", ""), token
         ):
             raise UnauthenticatedError("bad token")
-        await svc.check_access(uid, conversation_id)
+        sup = websocket.headers.get("x-supplier-id")
+        sup = sup if sup and sup.startswith("sup_") and is_valid_user_id(sup) else None
+        conv = await svc.check_access(uid, conversation_id, sup)
+        if not conv.is_participant(uid):
+            uid = sup or uid
     except UnauthenticatedError:
         await websocket.close(code=4401)
         return

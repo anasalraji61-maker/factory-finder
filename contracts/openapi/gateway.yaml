@@ -123,6 +123,7 @@ components:
         default_destination: {oneOf: [{$ref: "../schemas/common.schema.json#/$defs/Location"}, {type: "null"}]}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
         language: {type: string, enum: [ar, en]}
+        supplier_id: {type: [string, "null"], description: "Catalog supplier (sup_*) this user has claimed; lets them answer chats addressed to it"}
         created_at: {type: string, format: date-time}
     MePatch:
       type: object
@@ -136,3 +137,4 @@ components:
         default_destination: {$ref: "../schemas/common.schema.json#/$defs/Location"}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
         language: {type: string, enum: [ar, en]}
+        supplier_id: {type: [string, "null"], pattern: "^sup_[A-Za-z0-9_.:-]{1,59}$", description: "Claim a catalog supplier. First claimer wins (409 supplier_claimed otherwise); null releases it."}

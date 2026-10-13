@@ -108,9 +108,16 @@ class Conversation:
     def is_participant(self, user_id: str) -> bool:
         return self.participant(user_id) is not None
 
-    def unread_count_for(self, user_id: str | None) -> int:
+    def unread_count_for(self, user_id: str | None, alias: str | None = None) -> int:
         participant = self.participant(user_id) if user_id is not None else None
+        if participant is None and alias is not None:
+            participant = self.participant(alias)
         return participant.unread_count if participant else 0
+
+    @property
+    def supplier_ref(self) -> str | None:
+        """Catalog supplier (``sup_*``) this conversation is addressed to, if any."""
+        return next((p.user_id for p in self.participants if p.user_id.startswith("sup_")), None)
 
 
 @dataclass(frozen=True, slots=True)

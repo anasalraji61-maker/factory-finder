@@ -40,8 +40,15 @@ class LiveTrackingRepository implements TrackingRepository {
       }));
 
   @override
-  Future<Shipment> refresh(String id) async =>
-      _one(await _api.post('/v1/shipments/$id/refresh'));
+  Future<Shipment> refresh(String id) async {
+    try {
+      return _one(await _api.post('/v1/shipments/$id/refresh'));
+    } on ApiException catch (e) {
+      // Refreshing right after create is throttled server-side: not an error.
+      if (e.code == 'refresh_throttled') return shipment(id);
+      rethrow;
+    }
+  }
 }
 
 /// One step of a mock journey: status, Arabic text, location.

@@ -96,6 +96,12 @@ class AccountExists(GatewayError):
         self.field = field
 
 
+class SupplierClaimed(GatewayError):
+    status_code = 409
+    code = "supplier_claimed"
+    default_message = "This supplier is already claimed by another account"
+
+
 class RateLimited(GatewayError):
     status_code = 429
     code = "rate_limited"

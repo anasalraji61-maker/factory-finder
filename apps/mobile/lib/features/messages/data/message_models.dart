@@ -113,6 +113,7 @@ class Conversation {
     final title = (j['title'] ??
             (participant is Map ? participant['name'] : null) ??
             ctxTitle ??
+            j['supplier_name'] ??
             otherId)
         .toString();
     return Conversation(

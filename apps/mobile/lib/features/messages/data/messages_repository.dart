@@ -82,6 +82,7 @@ class LiveMessagingRepository implements MessagingRepository {
         {'user_id': supplierId, 'role': 'supplier'},
       ],
       'my_role': 'buyer',
+      if (supplierId.startsWith('sup_')) 'supplier_ref': supplierId,
       if (listingId != null) 'context': {'type': 'listing', 'ref_id': listingId},
     });
     final conv = Conversation.fromJson(Map<String, dynamic>.from(data as Map),

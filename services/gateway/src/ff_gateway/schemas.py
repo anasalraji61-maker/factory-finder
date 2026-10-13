@@ -83,6 +83,7 @@ class MeOut(BaseModel):
     company: str | None = None
     role: Role
     default_destination: Location | None = None
+    supplier_id: str | None = None
     display_currency: str
     language: Language
     created_at: datetime
@@ -106,6 +107,7 @@ class MePatch(BaseModel):
     default_destination: Location | None = None
     display_currency: Annotated[str | None, Field(pattern=r"^[A-Z]{3}$")] = None
     language: Language | None = None
+    supplier_id: Annotated[str | None, Field(pattern=r"^sup_[A-Za-z0-9_.:\-]{1,59}$")] = None
 
     @field_validator("phone")
     @classmethod

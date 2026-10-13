@@ -84,3 +84,24 @@ async def test_trust_failure_falls_back_to_listing_score():
     c = Clients(sourcing=MockSourcingClient(), logistics=MockLogisticsClient(), trust=MockTrustClient(fail=True), tracking=MockTrackingClient())
     r = await Assistant(c, Settings(clients="mock")).handle("ابي كراسي بلاستك من الصين")
     assert r.trust.score == 64 and "trust_unavailable" in r.warnings
+
+
+async def test_multiword_miss_retries_with_head_noun(clients):
+    """Sourcing ANDs terms: a miss on 'modifier noun' retries with the last word only."""
+    inner = clients.sourcing
+    seen: list[str | None] = []
+
+    class AndSourcing:
+        async def search(self, params):
+            seen.append(params.get("q"))
+            if params.get("q") and len(str(params["q"]).split()) > 1:
+                return await inner.search({"q": "zzzz-no-match"})
+            return await inner.search(params)
+
+    clients.sourcing = AndSourcing()
+    a = Assistant(clients, Settings(clients="mock"))
+    res = await a._search_listings(
+        (await a.handle("أريد خط إنتاج معجنات مستعمل من الصين")).parsed_query.model_copy(update={"query": "plastic machine"}), []
+    )
+    assert seen[-2:] == ["plastic machine", "machine"]
+    assert res is not None

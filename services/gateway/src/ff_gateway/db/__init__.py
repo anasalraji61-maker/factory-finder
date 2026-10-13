@@ -30,6 +30,7 @@ class User(Base):
     company: Mapped[str | None] = mapped_column(String(200), nullable=True)
     role: Mapped[str] = mapped_column(String(10), default="buyer")
     default_destination: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    supplier_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
     display_currency: Mapped[str] = mapped_column(String(3), default="USD")
     language: Mapped[str] = mapped_column(String(2), default="ar")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

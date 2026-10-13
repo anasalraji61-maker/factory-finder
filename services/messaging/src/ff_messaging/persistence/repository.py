@@ -185,13 +185,14 @@ class Repository:
 
     def _user_filters(
         self,
-        user_id: str,
+        user_id: str | Sequence[str],
         *,
         context_type: ContextType | None,
         context_ref_id: str | None,
         unread_only: bool,
     ) -> list[ColumnElement[bool]]:
-        filters: list[ColumnElement[bool]] = [participants_t.c.user_id == user_id]
+        ids = [user_id] if isinstance(user_id, str) else list(user_id)
+        filters: list[ColumnElement[bool]] = [participants_t.c.user_id.in_(ids)]
         if context_type is not None:
             filters.append(conversations_t.c.context_type == context_type.value)
         if context_ref_id is not None:
@@ -202,7 +203,7 @@ class Repository:
 
     async def list_user_conversations(
         self,
-        user_id: str,
+        user_id: str | Sequence[str],
         *,
         offset: int,
         limit: int,
@@ -235,7 +236,8 @@ class Repository:
         participant_rows = await self._participant_rows([row["id"] for row in rows])
         return [_to_conversation(row, participant_rows[row["id"]]) for row in rows], int(total)
 
-    async def unread_total(self, user_id: str) -> int:
+    async def unread_total(self, user_id: str | Sequence[str]) -> int:
+        ids = [user_id] if isinstance(user_id, str) else list(user_id)
         joined = participants_t.join(
             conversations_t, conversations_t.c.id == participants_t.c.conversation_id
         )
@@ -246,7 +248,7 @@ class Repository:
                 )
             )
             .select_from(joined)
-            .where(participants_t.c.user_id == user_id)
+            .where(participants_t.c.user_id.in_(ids))
         )
         return int((await self.conn.execute(stmt)).scalar_one())
 

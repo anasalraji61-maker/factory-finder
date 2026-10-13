@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversations and messages between buyers/suppliers. All /v1 routes need X-User-Id (401 if missing); non-participants get 403. Realtime: WebSocket /v1/ws/conversations/{id}?user_id= (dev) pushes message.created, read.updated, typing; client frames: ping, typing{is_typing}, read{message_id}. Close codes 4401 unauthenticated, 4403 forbidden, 4429 too many connections."}
+info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversations and messages between buyers/suppliers. All /v1 routes need X-User-Id (401 if missing); non-participants get 403 (a gateway-set X-Supplier-Id lets the user who claimed that sup_* supplier act as its participant). Realtime: WebSocket /v1/ws/conversations/{id}?user_id= (dev) pushes message.created, read.updated, typing; client frames: ping, typing{is_typing}, read{message_id}. Close codes 4401 unauthenticated, 4403 forbidden, 4429 too many connections."}
 servers: [{url: http://localhost:8106}]
 paths:
   /health:
@@ -90,6 +90,7 @@ components:
         my_role: {$ref: "#/components/schemas/Role"}
         context: {$ref: "#/components/schemas/Context"}
         title: {type: [string, "null"]}
+        supplier_ref: {type: [string, "null"], pattern: "^sup_[A-Za-z0-9_.:-]{1,59}$", description: "Catalog supplier id; added as a supplier participant. Whoever claims that supplier (gateway-set X-Supplier-Id) can read and answer the conversation."}
     Participant:
       type: object
       required: [user_id, role]
@@ -104,6 +105,7 @@ components:
         id: {type: string}
         context: {oneOf: [{$ref: "#/components/schemas/Context"}, {type: "null"}]}
         title: {type: [string, "null"]}
+        supplier_ref: {type: [string, "null"], description: "Catalog supplier (sup_*) the conversation is addressed to, if any"}
         created_by: {type: string}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}

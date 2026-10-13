@@ -39,3 +39,17 @@ def test_home_feed_with_mock_client(client, hdr):
     body = r.json()
     assert body["user"]["name"] == "Anas" and body["categories"] and body["trending"] and body["warnings"] == []
     assert client.get("/v1/home").status_code == 401
+
+
+def test_claim_supplier_first_wins(client, hdr):
+    r = client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
+    assert r.status_code == 200 and r.json()["supplier_id"] == "sup_cn_018"
+    assert client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"}).status_code == 200  # idempotent
+    other = client.post("/v1/auth/register", json={"email": "o@example.com", "password": "password123", "name": "O"}).json()
+    oh = {"Authorization": f"Bearer {other['access_token']}"}
+    r = client.patch("/v1/me", headers=oh, json={"supplier_id": "sup_cn_018"})
+    assert r.status_code == 409 and r.json()["error"]["code"] == "supplier_claimed"
+    assert client.patch("/v1/me", headers=oh, json={"supplier_id": "usr_x"}).status_code == 422
+    # release lets someone else claim
+    assert client.patch("/v1/me", headers=hdr, json={"supplier_id": None}).json()["supplier_id"] is None
+    assert client.patch("/v1/me", headers=oh, json={"supplier_id": "sup_cn_018"}).status_code == 200

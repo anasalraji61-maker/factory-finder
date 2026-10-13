@@ -60,7 +60,9 @@ def read_state_json(s: ReadState) -> dict[str, Any]:
     }
 
 
-def conversation_json(c: Conversation, viewer: str | None = None) -> dict[str, Any]:
+def conversation_json(
+    c: Conversation, viewer: str | None = None, alias: str | None = None
+) -> dict[str, Any]:
     lm = c.last_message
     return {
         "id": c.id,
@@ -68,6 +70,7 @@ def conversation_json(c: Conversation, viewer: str | None = None) -> dict[str, A
         if c.context
         else None,
         "title": c.title,
+        "supplier_ref": c.supplier_ref,
         "created_by": c.created_by,
         "created_at": _ts(c.created_at),
         "updated_at": _ts(c.updated_at),
@@ -81,7 +84,7 @@ def conversation_json(c: Conversation, viewer: str | None = None) -> dict[str, A
             }
             for p in c.participants
         ],
-        "unread_count": c.unread_count_for(viewer),
+        "unread_count": c.unread_count_for(viewer, alias),
         "last_message": (
             {
                 "id": lm.id,
@@ -99,9 +102,11 @@ def conversation_json(c: Conversation, viewer: str | None = None) -> dict[str, A
     }
 
 
-def conversation_page_json(p: ConversationPage, viewer: str) -> dict[str, Any]:
+def conversation_page_json(
+    p: ConversationPage, viewer: str, alias: str | None = None
+) -> dict[str, Any]:
     return {
-        "items": [conversation_json(c, viewer) for c in p.items],
+        "items": [conversation_json(c, viewer, alias) for c in p.items],
         "total": p.total,
         "page": p.page,
         "page_size": p.page_size,

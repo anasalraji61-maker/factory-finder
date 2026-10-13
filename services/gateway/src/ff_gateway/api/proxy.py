@@ -2,8 +2,10 @@
 
 import httpx
 from fastapi import APIRouter, Request, Response
+from sqlalchemy import select
 
 from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers
+from ff_gateway.db import User
 from ff_gateway.domain.errors import (
     InvalidPath,
     PayloadTooLarge,
@@ -47,6 +49,11 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
+    if upstream == "messaging" and user_id:  # verified claim from our DB, never from the client
+        async with request.app.state.sessionmaker() as s:
+            claimed = await s.scalar(select(User.supplier_id).where(User.id == user_id))
+        if claimed:
+            headers["X-Supplier-Id"] = claimed
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")
     try:
         resp = await request.app.state.http.request(

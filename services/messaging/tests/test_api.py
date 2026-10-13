@@ -251,3 +251,62 @@ def test_websocket_access():
                 with c.websocket_connect(f"/v1/ws/conversations/{cid}{q}"):
                     pass
             assert ei.value.code == code
+
+
+def S(user: str, sup: str | None = None) -> dict:
+    h = {"X-User-Id": user}
+    if sup:
+        h["X-Supplier-Id"] = sup
+    return h
+
+
+def test_supplier_claim_can_answer(client):
+    r = client.post(
+        "/v1/conversations",
+        headers=H("buyer1"),
+        json={"supplier_ref": "sup_cn_018", "context": {"type": "listing", "ref_id": "lst_9"}},
+    )
+    assert r.status_code == 201, r.text
+    conv = r.json()
+    cid = conv["id"]
+    assert conv["supplier_ref"] == "sup_cn_018"
+    assert (
+        client.post(
+            f"/v1/conversations/{cid}/messages", headers=H("buyer1"), json={"text": "hi"}
+        ).status_code
+        == 201
+    )
+
+    # claimer (a different user id) sees, reads, answers
+    claimer = S("usr_owner", "sup_cn_018")
+    lst = client.get("/v1/conversations", headers=claimer).json()
+    assert [c["id"] for c in lst["items"]] == [cid] and lst["unread_total"] == 1
+    assert lst["items"][0]["unread_count"] == 1
+    assert client.get(f"/v1/conversations/{cid}", headers=claimer).status_code == 200
+    assert client.get(f"/v1/conversations/{cid}/messages", headers=claimer).status_code == 200
+    assert client.post(f"/v1/conversations/{cid}/read", headers=claimer).json()["unread_count"] == 0
+    m = client.post(f"/v1/conversations/{cid}/messages", headers=claimer, json={"text": "hello"})
+    assert m.status_code == 201 and m.json()["sender_id"] == "sup_cn_018"
+    assert (
+        client.get("/v1/conversations", headers=H("buyer1")).json()["items"][0]["unread_count"] == 1
+    )
+
+    # third parties stay locked out, even claiming another supplier
+    for h in (H("intruder"), S("intruder", "sup_other"), S("intruder")):
+        assert client.get("/v1/conversations", headers=h).json()["total"] == 0
+        assert client.get(f"/v1/conversations/{cid}", headers=h).status_code == 403
+        assert client.get(f"/v1/conversations/{cid}/messages", headers=h).status_code == 403
+        assert (
+            client.post(
+                f"/v1/conversations/{cid}/messages", headers=h, json={"text": "x"}
+            ).status_code
+            == 403
+        )
+        assert client.post(f"/v1/conversations/{cid}/read", headers=h).status_code == 403
+    # malformed / non-supplier header is ignored
+    assert (
+        client.get(
+            f"/v1/conversations/{cid}", headers={**H("intruder"), "X-Supplier-Id": "buyer1"}
+        ).status_code
+        == 403
+    )

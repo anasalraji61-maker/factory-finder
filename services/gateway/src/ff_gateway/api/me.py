@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ff_gateway.api.deps import current_user, internal_headers, to_me
 from ff_gateway.db import User
-from ff_gateway.domain.errors import AccountExists, ValidationFailed
+from ff_gateway.domain.errors import AccountExists, SupplierClaimed, ValidationFailed
 from ff_gateway.schemas import MeOut, MePatch
 
 router = APIRouter(tags=["me"])
@@ -32,6 +32,11 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             changed = bool(data.get(field)) and data[field] != getattr(db_user, field)
             if changed and await s.scalar(select(User).where(getattr(User, field) == data[field])):
                 raise AccountExists(field)
+        sid = data.get("supplier_id")
+        if sid and sid != db_user.supplier_id:
+            holder = await s.scalar(select(User).where(User.supplier_id == sid))
+            if holder is not None and holder.id != db_user.id:
+                raise SupplierClaimed()
         if ("email" in data and data["email"] is None and not (db_user.phone or data.get("phone"))) or (
             "phone" in data and data["phone"] is None and not (db_user.email or data.get("email"))
         ):
@@ -41,6 +46,9 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
         try:
             await s.commit()
         except IntegrityError as e:
+            await s.rollback()
+            if sid:
+                raise SupplierClaimed() from e
             raise AccountExists() from e
         return to_me(db_user)
 

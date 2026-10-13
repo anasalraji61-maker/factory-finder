@@ -68,10 +68,13 @@ class MessagingService:
         my_role: Role | None,
         context: ConversationContext | None,
         title: str | None,
+        supplier_ref: str | None = None,
     ) -> tuple[Conversation, bool]:
         if context is not None and context.type is not ContextType.SUPPORT and not context.ref_id:
             raise InvalidInputError("context.ref_id is required", code="context_ref_required")
         s = self.settings
+        if supplier_ref and not any(p.user_id == supplier_ref for p in participants):
+            participants = [*participants, ParticipantSpec(supplier_ref, Role.SUPPLIER)]
         specs = resolve_participants(
             caller=caller,
             requested=participants,
@@ -102,9 +105,13 @@ class MessagingService:
         assert conv is not None
         return conv, True
 
-    async def get_conversation(self, caller: str, conversation_id: str) -> Conversation:
+    async def get_conversation(
+        self, caller: str, conversation_id: str, supplier_id: str | None = None
+    ) -> Conversation:
         async with self.db.read() as conn:
-            return await self._require_access(Repository(conn), caller, conversation_id)
+            return await self._require_access(
+                Repository(conn), caller, conversation_id, supplier_id=supplier_id
+            )
 
     async def list_conversations(
         self,
@@ -115,6 +122,7 @@ class MessagingService:
         context_type: ContextType | None = None,
         context_ref_id: str | None = None,
         unread_only: bool = False,
+        supplier_id: str | None = None,
     ) -> ConversationPage:
         size = min(
             page_size or self.settings.conversations_page_size,
@@ -122,33 +130,43 @@ class MessagingService:
         )
         async with self.db.read() as conn:
             repo = Repository(conn)
+            ids = (caller, supplier_id) if supplier_id else (caller,)
             items, total = await repo.list_user_conversations(
-                caller,
+                ids,
                 offset=(page - 1) * size,
                 limit=size,
                 context_type=context_type,
                 context_ref_id=context_ref_id,
                 unread_only=unread_only,
             )
-            unread = await repo.unread_total(caller)
+            unread = await repo.unread_total(ids)
         return ConversationPage(tuple(items), total, page, size, unread)
 
     # ------------------------------------------------------------ messages
 
     async def send_message(
-        self, caller: str, conversation_id: str, draft: MessageDraft
+        self,
+        caller: str,
+        conversation_id: str,
+        draft: MessageDraft,
+        supplier_id: str | None = None,
     ) -> tuple[Message, bool]:
         checked = self.policy.check_message(draft)
         decision = self.limiter.hit(caller)
         if not decision.allowed:
             raise RateLimitedError("Too many messages", retry_after_seconds=decision.retry_after)
         d = checked.draft
-        dedupe = (
-            user_message_dedupe_key(caller, d.client_message_id) if d.client_message_id else None
-        )
         async with self.db.transaction() as conn:
             repo = Repository(conn)
-            conv = await self._require_access(repo, caller, conversation_id, lock=True)
+            conv = await self._require_access(
+                repo, caller, conversation_id, lock=True, supplier_id=supplier_id
+            )
+            caller = self._acting_id(conv, caller, supplier_id)
+            dedupe = (
+                user_message_dedupe_key(caller, d.client_message_id)
+                if d.client_message_id
+                else None
+            )
             if dedupe:
                 prior = await repo.find_message_by_dedupe_key(conversation_id, dedupe)
                 if prior is not None:
@@ -182,13 +200,21 @@ class MessagingService:
         return message, True
 
     async def list_messages(
-        self, caller: str, conversation_id: str, *, cursor: str | None, limit: int | None
+        self,
+        caller: str,
+        conversation_id: str,
+        *,
+        cursor: str | None,
+        limit: int | None,
+        supplier_id: str | None = None,
     ) -> MessagePage:
         size = min(limit or self.settings.messages_page_size, self.settings.messages_page_size_max)
         before = decode_cursor(cursor) if cursor else None
         async with self.db.read() as conn:
             repo = Repository(conn)
-            conv = await self._require_access(repo, caller, conversation_id)
+            conv = await self._require_access(
+                repo, caller, conversation_id, supplier_id=supplier_id
+            )
             rows = await repo.list_messages(conversation_id, before_seq=before, limit=size + 1)
         has_more = len(rows) > size
         rows = rows[:size]
@@ -197,11 +223,18 @@ class MessagingService:
         return MessagePage(items, next_cursor, has_more)
 
     async def mark_read(
-        self, caller: str, conversation_id: str, message_id: str | None = None
+        self,
+        caller: str,
+        conversation_id: str,
+        message_id: str | None = None,
+        supplier_id: str | None = None,
     ) -> ReadState:
         async with self.db.transaction() as conn:
             repo = Repository(conn)
-            conv = await self._require_access(repo, caller, conversation_id, lock=True)
+            conv = await self._require_access(
+                repo, caller, conversation_id, lock=True, supplier_id=supplier_id
+            )
+            caller = self._acting_id(conv, caller, supplier_id)
             if message_id is not None:
                 target = await repo.get_message(conversation_id, message_id)
                 if target is None:
@@ -233,14 +266,27 @@ class MessagingService:
     # ------------------------------------------------------------ helpers
 
     async def _require_access(
-        self, repo: Repository, caller: str, conversation_id: str, *, lock: bool = False
+        self,
+        repo: Repository,
+        caller: str,
+        conversation_id: str,
+        *,
+        lock: bool = False,
+        supplier_id: str | None = None,
     ) -> Conversation:
         conv = await repo.get_conversation(conversation_id, lock=lock)
         if conv is None:
             raise NotFoundError("Conversation not found", code="conversation_not_found")
-        if not conv.is_participant(caller):
+        if not (conv.is_participant(caller) or (supplier_id and conv.is_participant(supplier_id))):
             raise ForbiddenError("You are not a participant of this conversation")
         return conv
+
+    @staticmethod
+    def _acting_id(conv: Conversation, caller: str, supplier_id: str | None) -> str:
+        """Participant id the caller acts as: themselves, else their claimed supplier id."""
+        if conv.is_participant(caller) or not supplier_id:
+            return caller
+        return supplier_id
 
     @staticmethod
     def _with_read_by(message: Message, conv: Conversation) -> Message:
@@ -248,8 +294,10 @@ class MessagingService:
 
         return replace(message, read_by=compute_read_by(message, conv.participants))
 
-    async def check_access(self, caller: str, conversation_id: str) -> Conversation:
-        return await self.get_conversation(caller, conversation_id)
+    async def check_access(
+        self, caller: str, conversation_id: str, supplier_id: str | None = None
+    ) -> Conversation:
+        return await self.get_conversation(caller, conversation_id, supplier_id)
 
 
 __all__ = ["MessagingService", "MessageType"]
