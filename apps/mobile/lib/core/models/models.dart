@@ -123,8 +123,8 @@ class Money {
   }
 
   factory Money.fromJson(Map<String, dynamic> j) => Money(
-        amount: j['amount'].toString(),
-        currency: j['currency'] as String,
+        amount: (j['amount'] ?? '0').toString(),
+        currency: (j['currency'] as String?) ?? 'USD',
       );
 
   Map<String, dynamic> toJson() => {'amount': amount, 'currency': currency};
@@ -217,9 +217,11 @@ class SupplierSummary {
   final TrustBand trustBand;
 
   factory SupplierSummary.fromJson(Map<String, dynamic> j) => SupplierSummary(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        location: Location.fromJson(_map(j['location'])),
+        id: j['id'].toString(),
+        name: (j['name'] as String?) ?? '',
+        location: _mapOrNull(j['location']) == null
+            ? const Location(countryCode: 'XX')
+            : Location.fromJson(_map(j['location'])),
         yearsInBusiness: _int(j['years_in_business']),
         verified: (j['verified'] as bool?) ?? false,
         trustScore: _int(j['trust_score']),
@@ -290,20 +292,25 @@ class Listing {
   }
 
   factory Listing.fromJson(Map<String, dynamic> j) => Listing(
-        id: j['id'] as String,
-        source: j['source'] as String,
+        id: j['id'].toString(),
+        source: (j['source'] as String?) ?? 'unknown',
         sourceUrl: j['source_url'] as String?,
-        kind: listingKindFromJson(j['kind'] as String),
+        kind: listingKindFromJson((j['kind'] as String?) ?? 'product'),
         condition: j['condition'] == null
             ? ItemCondition.brandNew
             : itemConditionFromJson(j['condition'] as String),
-        title: j['title'] as String,
+        title: (j['title'] as String?) ?? '',
         titleAr: j['title_ar'] as String?,
         category: j['category'] as String?,
         images: ((j['images'] as List?) ?? const [])
             .map((e) => e.toString())
             .toList(),
-        price: MoneyRange.fromJson(_map(j['price'])),
+        price: _mapOrNull(j['price']) == null
+            ? const MoneyRange(
+                min: Money(amount: '0', currency: 'USD'),
+                max: Money(amount: '0', currency: 'USD'),
+              )
+            : MoneyRange.fromJson(_map(j['price'])),
         unit: (j['unit'] as String?) ?? 'piece',
         moq: _int(j['moq']),
         incoterm: j['incoterm'] == null
@@ -362,10 +369,10 @@ class CostLine {
   final String? fxRate;
 
   factory CostLine.fromJson(Map<String, dynamic> j) => CostLine(
-        stage: j['stage'] as String,
-        description: j['description'] as String,
+        stage: (j['stage'] as String?) ?? 'other',
+        description: (j['description'] as String?) ?? '',
         amount: Money.fromJson(_map(j['amount'])),
-        estimate: j['estimate'] as bool,
+        estimate: (j['estimate'] as bool?) ?? true,
         source: j['source'] as String?,
         fxRate: j['fx_rate']?.toString(),
       );
@@ -406,7 +413,7 @@ class LandedCostOption {
   final List<String> warnings;
 
   factory LandedCostOption.fromJson(Map<String, dynamic> j) => LandedCostOption(
-        mode: transportModeFromJson(j['mode'] as String),
+        mode: transportModeFromJson((j['mode'] as String?) ?? ''),
         lines: ((j['lines'] as List?) ?? const [])
             .map((e) => CostLine.fromJson(_map(e)))
             .toList(),
@@ -456,12 +463,13 @@ class LandedCostQuote {
   final List<String> assumptions;
 
   factory LandedCostQuote.fromJson(Map<String, dynamic> j) => LandedCostQuote(
-        id: j['id'] as String,
-        currency: j['currency'] as String,
+        id: j['id'].toString(),
+        currency: (j['currency'] as String?) ?? 'USD',
         options: ((j['options'] as List?) ?? const [])
             .map((e) => LandedCostOption.fromJson(_map(e)))
             .toList(),
-        createdAt: DateTime.parse(j['created_at'] as String),
+        createdAt: DateTime.tryParse((j['created_at'] ?? '').toString()) ??
+            DateTime.now().toUtc(),
         origin: _mapOrNull(j['origin']) == null
             ? null
             : Location.fromJson(_map(j['origin'])),
@@ -498,9 +506,9 @@ class TrustFactor {
   final String? explanationAr;
 
   factory TrustFactor.fromJson(Map<String, dynamic> j) => TrustFactor(
-        key: j['key'] as String,
+        key: (j['key'] as String?) ?? '',
         impact: _int(j['impact']) ?? 0,
-        explanation: j['explanation'] as String,
+        explanation: (j['explanation'] as String?) ?? '',
         explanationAr: j['explanation_ar'] as String?,
       );
 
@@ -528,7 +536,7 @@ class TrustScore {
   factory TrustScore.fromJson(Map<String, dynamic> j) => TrustScore(
         supplierId: j['supplier_id'] as String,
         score: _int(j['score']) ?? 0,
-        band: trustBandFromJson(j['band'] as String),
+        band: trustBandFromJson((j['band'] as String?) ?? ''),
         factors: ((j['factors'] as List?) ?? const [])
             .map((e) => TrustFactor.fromJson(_map(e)))
             .toList(),

@@ -66,7 +66,7 @@ class LogisticsRepository {
       await mockDelay(700);
       return MockQuoteGenerator.generate(r, lang: lang);
     }
-    final json = await _api.post('/v1/quotes', body: r.toJson());
+    final json = await _api.post('/v1/quotes/landed-cost', body: r.toJson());
     return LandedCostQuote.fromJson(Map<String, dynamic>.from(json as Map));
   }
 

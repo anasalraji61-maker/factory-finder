@@ -33,19 +33,34 @@ class QuoteRequest {
   /// Empty = consider every mode.
   final Set<TransportMode> modes;
 
+  /// Body of POST /v1/quotes/landed-cost (contracts/openapi/logistics.yaml).
   Map<String, dynamic> toJson() => {
-        'goods_value': {'amount': goodsValue.toStringAsFixed(2), 'currency': goodsCurrency},
-        'weight_kg': weightKg,
-        'volume_m3': volumeM3,
-        if (hsCode != null) 'hs_code': hsCode,
-        'dangerous_goods': dangerousGoods,
+        'goods': {
+          'total_value': {
+            'amount': goodsValue.toStringAsFixed(2),
+            'currency': goodsCurrency,
+          },
+          'total_weight_kg': decimalString(weightKg),
+          if (volumeM3 > 0) 'total_volume_m3': decimalString(volumeM3),
+          if (hsCode != null && hsCode!.isNotEmpty) 'hs_code': hsCode,
+          'dangerous_goods': dangerousGoods,
+        },
         'origin': origin.toJson(),
         'destination': destination.toJson(),
-        'incoterm': incoterm.json,
+        'supplier_incoterm': incoterm.json,
         'display_currency': displayCurrency,
         'insurance': insurance,
         'modes': modes.map((m) => m.json).toList(),
       };
+}
+
+/// Plain decimal string (no exponent, no trailing zeros): 12.5 -> "12.5".
+String decimalString(double v) {
+  var s = v.toStringAsFixed(4);
+  if (s.contains('.')) {
+    s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+  }
+  return s.isEmpty ? '0' : s;
 }
 
 /// Fixture used to prefill the calculator from a listing in mock mode

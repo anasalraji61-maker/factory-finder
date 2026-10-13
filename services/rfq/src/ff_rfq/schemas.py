@@ -1,0 +1,54 @@
+"""Request-body models (responses are plain dicts built by the service)."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from ff_rfq.domain.enums import Incoterm, ListingKind, RequestCondition, Visibility
+
+
+class Money(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    amount: Annotated[Decimal, Field(gt=0, max_digits=18, decimal_places=4)]
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+
+    @field_serializer("amount")
+    def _amount(self, v: Decimal) -> str:
+        return format(v, "f")
+
+
+class Destination(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    country_code: str = Field(pattern=r"^[A-Z]{2}$")
+    city: str | None = Field(default=None, max_length=100)
+
+
+class RequestCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: ListingKind
+    title: str = Field(min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=5000)
+    quantity: Annotated[Decimal, Field(gt=0, max_digits=18, decimal_places=4)]
+    unit: str = Field(default="piece", min_length=1, max_length=24)
+    condition: RequestCondition = RequestCondition.ANY
+    target_price: Money | None = Field(default=None, description="Per unit")
+    destination: Destination | None = None
+    deadline: datetime | None = None
+    attachments: list[str] = Field(default_factory=list, max_length=10)
+    visibility: Visibility = Visibility.PUBLIC
+
+
+class OfferCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    price: Money = Field(description="Per unit")
+    supplier_name: str = Field(min_length=1, max_length=200)
+    supplier_ref: str | None = Field(default=None, max_length=64, description="Sourcing supplier id, e.g. sup_...")
+    moq: int | None = Field(default=None, ge=0)
+    lead_time_days: int | None = Field(default=None, ge=0, le=1000)
+    incoterm: Incoterm | None = None
+    valid_until: datetime | None = None
+    notes: str | None = Field(default=None, max_length=2000)

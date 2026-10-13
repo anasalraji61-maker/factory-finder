@@ -1,0 +1,159 @@
+openapi: 3.1.0
+info: {title: Factory Finder notifications, version: 0.1.0, description: "Watchlist, rule-based alerts (price_drop, below_target, cheaper_equivalent, back_in_stock, new_results), alerts inbox and device push tokens. User routes need X-User-Id (401 otherwise); other users' resources give 403. POST /v1/alerts/evaluate is internal (X-Internal-Token when FF_INTERNAL_TOKEN is set)."}
+servers: [{url: http://localhost:8108}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /v1/watchlist:
+    get:
+      operationId: listWatchlist
+      responses:
+        "200": {description: Caller's watches, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Watch"}}, total: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+    post:
+      operationId: addWatch
+      description: Exactly one of listing_id or search. Idempotent per owner and target (200 returns the existing watch, 201 a new one).
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WatchCreate"}}}}
+      responses:
+        "200": {description: Existing watch, content: {application/json: {schema: {$ref: "#/components/schemas/Watch"}}}}
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Watch"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/watchlist/{id}:
+    delete:
+      operationId: deleteWatch
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/alerts:
+    get:
+      operationId: listAlerts
+      parameters:
+        - {name: unread_only, in: query, schema: {type: boolean, default: false}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1}}
+      responses:
+        "200": {description: Inbox, newest first, content: {application/json: {schema: {$ref: "#/components/schemas/AlertPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/alerts/evaluate:
+    post:
+      operationId: evaluateAlerts
+      description: Internal. Evaluates active watches against sourcing, applies cooldown/dedupe, stores alerts and sends push summaries.
+      requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {owner_id: {type: [string, "null"]}, watch_id: {type: [string, "null"]}}}}}}
+      responses:
+        "200": {description: Run report, content: {application/json: {schema: {$ref: "#/components/schemas/EvaluationReport"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/alerts/read-all:
+    post:
+      operationId: markAllAlertsRead
+      responses:
+        "200": {description: Count marked, content: {application/json: {schema: {type: object, properties: {marked: {type: integer}}}}}}
+  /v1/alerts/{id}/read:
+    post:
+      operationId: markAlertRead
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Alert, content: {application/json: {schema: {$ref: "#/components/schemas/Alert"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/devices:
+    get:
+      operationId: listDevices
+      responses:
+        "200": {description: Caller's devices, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/Device"}}}}}}}
+    post:
+      operationId: registerDevice
+      description: Upsert by token (a token moves to the latest registering user).
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/DeviceCreate"}}}}
+      responses:
+        "200": {description: Updated, content: {application/json: {schema: {$ref: "#/components/schemas/Device"}}}}
+        "201": {description: Registered, content: {application/json: {schema: {$ref: "#/components/schemas/Device"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/devices/{id}:
+    delete:
+      operationId: deleteDevice
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "204": {description: Deleted}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    Id: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties: {amount: {type: string, description: decimal string}, currency: {type: string}}
+    SearchQuery:
+      type: object
+      properties: {q: {type: string}, kind: {type: string}, condition: {type: string}, origin_country: {type: string}, category: {type: string}, min_price: {type: string}, max_price: {type: string}, moq_max: {type: integer}, verified_only: {type: boolean}}
+    WatchCreate:
+      type: object
+      properties:
+        listing_id: {type: string}
+        search: {$ref: "#/components/schemas/SearchQuery"}
+        target_price: {$ref: "#/components/schemas/Money"}
+        drop_threshold_pct: {type: string, description: "percent, default 5"}
+    Watch:
+      type: object
+      required: [id, type, drop_threshold_pct, active]
+      properties:
+        id: {type: string}
+        type: {type: string, enum: [listing, search]}
+        listing_id: {type: [string, "null"]}
+        search: {oneOf: [{$ref: "#/components/schemas/SearchQuery"}, {type: "null"}]}
+        target_price: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}]}
+        drop_threshold_pct: {type: string}
+        active: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        title: {type: [string, "null"]}
+        title_ar: {type: [string, "null"]}
+        baseline_price: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}]}
+        current_price: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}]}
+        available: {type: [boolean, "null"]}
+        result_count: {type: [integer, "null"]}
+        last_checked_at: {type: [string, "null"], format: date-time}
+    Alert:
+      type: object
+      required: [id, watch_id, rule, title, title_ar, body, body_ar, read]
+      properties:
+        id: {type: string}
+        watch_id: {type: string}
+        rule: {type: string, enum: [price_drop, below_target, cheaper_equivalent, back_in_stock, new_results]}
+        title: {type: string}
+        title_ar: {type: string}
+        body: {type: string}
+        body_ar: {type: string}
+        payload: {type: object, description: "listing_ids, old_price, new_price, drop_pct, target_price, result_count"}
+        read: {type: boolean}
+        created_at: {type: string, format: date-time}
+        read_at: {type: [string, "null"], format: date-time}
+    AlertPage:
+      type: object
+      required: [items, total, page, page_size, unread_total]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Alert"}}, total: {type: integer}, page: {type: integer}, page_size: {type: integer}, unread_total: {type: integer}}
+    EvaluationReport:
+      type: object
+      properties:
+        evaluated: {type: integer}
+        alerts_created: {type: integer}
+        pushes_sent: {type: integer}
+        skipped: {type: array, items: {type: object, properties: {watch_id: {type: string}, rule: {type: string}, reason: {type: string, enum: [duplicate, cooldown]}}}}
+        errors: {type: array, items: {type: object}}
+        alerts: {type: array, items: {$ref: "#/components/schemas/Alert"}}
+    DeviceCreate:
+      type: object
+      required: [platform, token]
+      properties: {platform: {type: string, enum: [android, ios]}, token: {type: string}, locale: {type: string, enum: [ar, en], default: ar}}
+    Device:
+      type: object
+      properties: {id: {type: string}, platform: {type: string}, locale: {type: string}, token: {type: string}, created_at: {type: string, format: date-time}}

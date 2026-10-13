@@ -1,0 +1,246 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - rfq
+  version: 0.1.0
+  description: |
+    Reverse marketplace. Auth: `X-User-Id` required on every /v1 route (missing -> 401).
+    Request status machine: open -> negotiating (first offer) -> awarded | closed | expired; negotiating -> open when the last active offer goes.
+    Offer status: active -> accepted | rejected | withdrawn | expired. Invalid transitions answer 409 `invalid_<entity>_transition`.
+    Commission (on accept): kind rate (product 3%, raw_material 2%, production_line 4%), min fee 25 USD (converted with static reference rates).
+servers:
+  - url: http://localhost:8105
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {type: string, const: ok}
+                  service: {type: string, const: rfq}
+                  version: {type: string}
+  /v1/requests:
+    post:
+      summary: Post a buyer request
+      parameters: [{$ref: "#/components/parameters/UserId"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RequestCreate"}}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Request"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    get:
+      summary: My requests (scope=mine, default) or the public feed of others' live requests (scope=public)
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {name: scope, in: query, schema: {type: string, enum: [mine, public], default: mine}}
+        - {name: status, in: query, description: Only with scope=mine, schema: {$ref: "#/components/schemas/RequestStatus"}}
+        - {name: kind, in: query, schema: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200": {$ref: "#/components/responses/RequestPage"}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/requests/{id}:
+    get:
+      summary: Request detail (link-accessible, including private ones)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Request"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/requests/{id}/close:
+    post:
+      summary: Buyer closes the request (active offers are rejected)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Closed, content: {application/json: {schema: {$ref: "#/components/schemas/Request"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/requests/{id}/suggestions:
+    get:
+      summary: Matching listings from sourcing (buyer only)
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 20, default: 5}}
+      responses:
+        "200":
+          description: Listings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [request_id, items]
+                properties:
+                  request_id: {type: string}
+                  items: {type: array, items: {$ref: ../schemas/common.schema.json#/$defs/Listing}}
+        "403": {$ref: "#/components/responses/Error"}
+        "502": {$ref: "#/components/responses/Error"}
+  /v1/requests/{id}/offers:
+    post:
+      summary: Supplier submits an offer (not on own request; request must be open/negotiating)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/OfferCreate"}}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Offer"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    get:
+      summary: Offers on a request (buyer sees all, a supplier only their own)
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/OfferStatus"}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    properties:
+                      items: {type: array, items: {$ref: "#/components/schemas/Offer"}}
+  /v1/offers/{id}/accept:
+    post:
+      summary: Buyer accepts an offer -> Deal with commission; other offers are rejected, request becomes awarded
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Deal, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/offers/{id}/reject:
+    post:
+      summary: Buyer rejects an offer
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Rejected, content: {application/json: {schema: {$ref: "#/components/schemas/Offer"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/offers/{id}/withdraw:
+    post:
+      summary: Supplier withdraws their offer
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Withdrawn, content: {application/json: {schema: {$ref: "#/components/schemas/Offer"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}:
+    get:
+      summary: Deal (buyer or supplier only; others get 404)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    UserId: {name: X-User-Id, in: header, required: true, schema: {type: string}}
+    Id: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error body
+      content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}
+    RequestPage:
+      description: One page
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../schemas/common.schema.json#/$defs/Page
+              - type: object
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/Request"}}
+  schemas:
+    RequestStatus: {type: string, enum: [open, negotiating, awarded, closed, expired, cancelled]}
+    OfferStatus: {type: string, enum: [active, withdrawn, accepted, rejected, expired]}
+    DealStatus: {type: string, enum: [pending_payment, paid, in_fulfilment, completed, disputed, cancelled]}
+    Money: {$ref: ../schemas/common.schema.json#/$defs/Money}
+    RequestCreate:
+      type: object
+      required: [kind, title, quantity]
+      additionalProperties: false
+      properties:
+        kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
+        title: {type: string, minLength: 3, maxLength: 200}
+        description: {type: string}
+        quantity: {type: [string, number], description: Positive decimal}
+        unit: {type: string, default: piece}
+        condition: {type: string, enum: [new, used, any], default: any}
+        target_price: {$ref: "#/components/schemas/Money"}
+        destination: {type: object, required: [country_code], properties: {country_code: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}, city: {type: string}}}
+        deadline: {type: string, format: date-time, description: Must be in the future}
+        attachments: {type: array, items: {type: string}, maxItems: 10}
+        visibility: {type: string, enum: [public, private], default: public}
+    Request:
+      allOf:
+        - $ref: "#/components/schemas/RequestCreate"
+        - type: object
+          required: [id, owner_id, status, offers_count, created_at, updated_at]
+          properties:
+            id: {type: string, description: "req_..."}
+            owner_id: {type: string}
+            quantity: {type: string}
+            status: {$ref: "#/components/schemas/RequestStatus"}
+            offers_count: {type: integer}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
+    OfferCreate:
+      type: object
+      required: [price, supplier_name]
+      additionalProperties: false
+      properties:
+        price: {$ref: "#/components/schemas/Money"}
+        supplier_name: {type: string}
+        supplier_ref: {type: string, description: "Sourcing supplier id (sup_...)"}
+        moq: {type: integer, minimum: 0}
+        lead_time_days: {type: integer, minimum: 0}
+        incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
+        valid_until: {type: string, format: date-time}
+        notes: {type: string}
+    Offer:
+      allOf:
+        - $ref: "#/components/schemas/OfferCreate"
+        - type: object
+          required: [id, request_id, supplier_user_id, status, created_at, updated_at]
+          properties:
+            id: {type: string, description: "off_..."}
+            request_id: {type: string}
+            supplier_user_id: {type: string}
+            status: {$ref: "#/components/schemas/OfferStatus"}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
+    Deal:
+      type: object
+      required: [id, request_id, offer_id, buyer_id, supplier_user_id, kind, quantity, unit_price, subtotal, commission, supplier_net, status]
+      properties:
+        id: {type: string, description: "deal_..."}
+        request_id: {type: string}
+        offer_id: {type: string}
+        buyer_id: {type: string}
+        supplier_user_id: {type: string}
+        kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
+        quantity: {type: string}
+        unit_price: {$ref: "#/components/schemas/Money"}
+        subtotal: {$ref: "#/components/schemas/Money"}
+        commission:
+          type: object
+          required: [rate, amount, min_fee_applied]
+          properties:
+            rate: {type: string, description: Decimal fraction, e.g. "0.03"}
+            amount: {$ref: "#/components/schemas/Money"}
+            min_fee_applied: {type: boolean}
+            is_estimate: {type: boolean}
+        supplier_net: {$ref: "#/components/schemas/Money"}
+        status: {$ref: "#/components/schemas/DealStatus"}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}

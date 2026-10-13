@@ -1,0 +1,192 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - tracking
+  version: 0.1.0
+servers:
+  - url: http://localhost:8107
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {type: string, const: ok}
+                  service: {type: string, const: tracking}
+                  version: {type: string}
+  /v1/shipments:
+    post:
+      summary: Track a container / bill of lading / air waybill / vessel IMO (idempotent per user+reference -> 409 duplicate_shipment)
+      parameters: [{$ref: "#/components/parameters/UserId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ShipmentCreate"}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Shipment"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    get:
+      summary: My shipments, newest first
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/ShipmentStatus"}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    properties:
+                      items: {type: array, items: {$ref: "#/components/schemas/Shipment"}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/shipments/{id}:
+    parameters:
+      - {$ref: "#/components/parameters/UserId"}
+      - {name: id, in: path, required: true, schema: {type: string}}
+    get:
+      summary: Shipment with its event timeline (404 if not owned by the caller)
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Shipment"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+    delete:
+      summary: Stop tracking
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/shipments/{id}/refresh:
+    post:
+      summary: Pull the latest events from the provider
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Refreshed, content: {application/json: {schema: {$ref: "#/components/schemas/Shipment"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+        "429":
+          description: Refreshed too recently (code refresh_throttled, details.retry_after_seconds)
+          headers: {Retry-After: {schema: {type: integer}}}
+          content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}
+        "502": {$ref: "#/components/responses/Error"}
+  /v1/validate/{reference_type}/{reference}:
+    get:
+      summary: Validate a reference (ISO 6346 / AWB mod-7 / IMO check digit / basic B/L) and detect the carrier
+      parameters:
+        - {name: reference_type, in: path, required: true, schema: {$ref: "#/components/schemas/ReferenceType"}}
+        - {name: reference, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Always 200; see `valid`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reference, reference_type, valid, normalized]
+                properties:
+                  reference: {type: string}
+                  reference_type: {$ref: "#/components/schemas/ReferenceType"}
+                  valid: {type: boolean}
+                  normalized: {type: string}
+                  reason: {type: [string, "null"], description: "format... | check_digit"}
+                  mode: {type: string, enum: [sea, air]}
+                  carrier: {oneOf: [{$ref: "#/components/schemas/Carrier"}, {type: "null"}]}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    UserId:
+      name: X-User-Id
+      in: header
+      required: true
+      schema: {type: string}
+  responses:
+    Error:
+      description: Error body
+      content:
+        application/json:
+          schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
+  schemas:
+    ReferenceType: {type: string, enum: [container, bl, awb, vessel_imo]}
+    ShipmentStatus:
+      type: string
+      enum: [booked, gate_in, loaded, departed, in_transit, transshipment, arrived, discharged, customs_hold, released, out_for_delivery, delivered, exception]
+    ShipmentCreate:
+      type: object
+      required: [reference, reference_type]
+      additionalProperties: false
+      properties:
+        reference: {type: string}
+        reference_type: {$ref: "#/components/schemas/ReferenceType"}
+        carrier: {type: string, description: Optional carrier code or name; detected from the reference when omitted}
+        label: {type: string}
+    Carrier:
+      type: object
+      required: [name]
+      properties:
+        code: {type: [string, "null"]}
+        name: {type: string}
+        name_ar: {type: [string, "null"]}
+        scac: {type: [string, "null"]}
+        iata_code: {type: [string, "null"]}
+        awb_prefix: {type: [string, "null"]}
+    EventLocation:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        name_ar: {type: [string, "null"]}
+        country_code: {type: [string, "null"]}
+        hub_id: {type: [string, "null"], description: UN/LOCODE or IATA}
+        point: {oneOf: [{$ref: ../schemas/common.schema.json#/$defs/GeoPoint}, {type: "null"}]}
+    TrackingEvent:
+      type: object
+      required: [id, status, description, description_ar, timestamp, source]
+      properties:
+        id: {type: string}
+        status: {$ref: "#/components/schemas/ShipmentStatus"}
+        description: {type: string}
+        description_ar: {type: string}
+        location: {oneOf: [{$ref: "#/components/schemas/EventLocation"}, {type: "null"}]}
+        timestamp: {type: string, format: date-time}
+        vessel: {type: [object, "null"], properties: {name: {type: string}, imo: {type: [string, "null"]}, voyage: {type: [string, "null"]}}}
+        flight: {type: [object, "null"], properties: {number: {type: string}, carrier_code: {type: [string, "null"]}}}
+        source: {type: string}
+    Shipment:
+      type: object
+      required: [id, owner_id, reference, reference_type, mode, status, progress_percent, events, created_at, updated_at]
+      properties:
+        id: {type: string, description: "shp_..."}
+        owner_id: {type: string}
+        reference: {type: string, description: Normalized reference}
+        reference_type: {$ref: "#/components/schemas/ReferenceType"}
+        mode: {type: string, enum: [sea, air]}
+        carrier: {oneOf: [{$ref: "#/components/schemas/Carrier"}, {type: "null"}]}
+        label: {type: [string, "null"]}
+        status: {$ref: "#/components/schemas/ShipmentStatus"}
+        progress_percent: {type: integer, minimum: 0, maximum: 100}
+        eta: {type: [string, "null"], format: date-time}
+        origin: {oneOf: [{$ref: ../schemas/common.schema.json#/$defs/Location}, {type: "null"}]}
+        origin_hub_id: {type: [string, "null"]}
+        destination: {oneOf: [{$ref: ../schemas/common.schema.json#/$defs/Location}, {type: "null"}]}
+        destination_hub_id: {type: [string, "null"]}
+        vessel: {type: [object, "null"]}
+        flight: {type: [object, "null"]}
+        events: {type: array, items: {$ref: "#/components/schemas/TrackingEvent"}}
+        provider: {type: [string, "null"]}
+        last_refreshed_at: {type: [string, "null"], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}

@@ -54,3 +54,16 @@ extension TrX on BuildContext {
     return AppStrings.lookup(code, key, args);
   }
 }
+
+/// Merges several `{'ar': {...}, 'en': {...}}` tables into one.
+Map<String, Map<String, String>> mergeStringTables(
+  List<Map<String, Map<String, String>>> tables,
+) {
+  final out = <String, Map<String, String>>{};
+  for (final t in tables) {
+    t.forEach((lang, entries) {
+      out.putIfAbsent(lang, () => <String, String>{}).addAll(entries);
+    });
+  }
+  return out;
+}

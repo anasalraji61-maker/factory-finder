@@ -197,8 +197,7 @@ def below_target_search(
         title=f"Target price reached for {label}",
         title_ar=f"وصل السعر إلى هدفك في {label_ar}",
         body=(
-            f"{item} is offered at {price.format()}, "
-            f"at or below your target of {target.format()}."
+            f"{item} is offered at {price.format()}, at or below your target of {target.format()}."
         ),
         body_ar=(
             f"{item_ar} معروض بسعر {price.format()}، "

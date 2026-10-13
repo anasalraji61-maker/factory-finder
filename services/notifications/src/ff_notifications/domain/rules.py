@@ -195,10 +195,7 @@ def target_check(target: Money | None, price: Money, reached: bool) -> tuple[boo
 def is_target_met(target: Money | None, price: Money | None) -> bool:
     """True when a known price is at or below the target (same currency, no FX)."""
     return (
-        target is not None
-        and price is not None
-        and target.same_currency(price)
-        and price <= target
+        target is not None and price is not None and target.same_currency(price) and price <= target
     )
 
 
@@ -249,9 +246,7 @@ def _price_facts(watch: Watch, state: WatchState, item: ListingView, now: dateti
     if baseline is None or not baseline.same_currency(current):
         # First snapshot (or the currency changed): start the baseline silently; a drop can
         # only be measured from the next check on.
-        state = replace(
-            state, baseline_price=current, baseline_listing_id=item.id, baseline_at=now
-        )
+        state = replace(state, baseline_price=current, baseline_listing_id=item.id, baseline_at=now)
         baseline = None
     raise_target, reached = target_check(watch.target_price, current, watch.target_reached)
     state = replace(state, target_reached=reached)

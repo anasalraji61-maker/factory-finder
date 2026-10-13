@@ -1,14 +1,19 @@
 import 'package:factory_finder/core/registry/feature_module.dart';
-import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/features/auth/auth_screens.dart';
+import 'package:factory_finder/features/auth/auth_strings.dart';
+import 'package:factory_finder/features/requests/requests_strings.dart';
+import 'package:factory_finder/features/requests/screens/create_request_screen.dart';
+import 'package:factory_finder/features/requests/screens/request_detail_screen.dart';
+import 'package:factory_finder/features/requests/screens/requests_screen.dart';
 import 'package:factory_finder/features/discover/discover_strings.dart';
 import 'package:factory_finder/features/discover/screens/discover_screen.dart';
 import 'package:factory_finder/features/discover/screens/listing_detail_screen.dart';
 import 'package:factory_finder/features/discover/screens/search_screen.dart';
 import 'package:factory_finder/features/discover/screens/supplier_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Discover tab, listing detail, supplier page, and the Requests placeholder.
+/// Discover tab, listing detail, supplier page, Requests & Offers, auth screens.
 final FeatureModule featureModuleA = FeatureModule(
   branchRoutes: {
     'discover': [
@@ -28,14 +33,24 @@ final FeatureModule featureModuleA = FeatureModule(
     'requests': [
       GoRoute(
         path: '/requests',
-        builder: (context, state) => const ComingSoonScreen(
-          titleKey: 'nav.requests',
-          icon: Icons.request_quote_outlined,
-        ),
+        builder: (context, state) => const RequestsScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const CreateRequestScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) =>
+                RequestDetailScreen(requestId: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
   },
   overlayRoutes: [
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
     GoRoute(
       path: '/listing/:id',
       builder: (context, state) =>
@@ -47,5 +62,5 @@ final FeatureModule featureModuleA = FeatureModule(
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: discoverStrings,
+  strings: mergeStringTables([discoverStrings, requestsStrings, authStrings]),
 );

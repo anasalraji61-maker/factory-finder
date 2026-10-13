@@ -1,0 +1,20 @@
+from __future__ import annotations
+
+from decimal import Decimal
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Env prefix FF_RFQ_."""
+
+    model_config = SettingsConfigDict(env_prefix="FF_RFQ_", env_file=".env", extra="ignore")
+
+    database_url: str = "sqlite+aiosqlite:///./rfq.db"
+    sourcing_url: str = "http://localhost:8101"
+    sourcing_client: str = "http"  # http | mock
+    commission_product: Decimal = Decimal("0.03")
+    commission_raw_material: Decimal = Decimal("0.02")
+    commission_production_line: Decimal = Decimal("0.04")
+    min_commission_usd: Decimal = Decimal("25")
+    internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured

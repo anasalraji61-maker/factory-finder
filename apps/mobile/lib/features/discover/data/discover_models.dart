@@ -92,3 +92,30 @@ const Map<ListingKind, List<String>> kCategoriesByKind = {
     'metalworking',
   ],
 };
+
+/// Node of GET /v1/categories (bilingual tree; top level = listing kinds).
+class CategoryNode {
+  const CategoryNode({
+    required this.slug,
+    required this.name,
+    required this.nameAr,
+    this.children = const [],
+  });
+
+  final String slug;
+  final String name;
+  final String nameAr;
+  final List<CategoryNode> children;
+
+  String label(String languageCode) =>
+      languageCode == 'ar' && nameAr.isNotEmpty ? nameAr : name;
+
+  factory CategoryNode.fromJson(Map<String, dynamic> j) => CategoryNode(
+        slug: (j['slug'] ?? '').toString(),
+        name: (j['name'] ?? '').toString(),
+        nameAr: (j['name_ar'] ?? '').toString(),
+        children: ((j['children'] as List?) ?? const [])
+            .map((e) => CategoryNode.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+      );
+}

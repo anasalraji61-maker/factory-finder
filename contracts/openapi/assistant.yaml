@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - assistant
+  version: 0.1.0
+servers:
+  - url: http://localhost:8109
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {type: string, const: ok}
+                  service: {type: string, const: assistant}
+                  version: {type: string}
+  /v1/assistant/query:
+    post:
+      summary: Arabic/English natural-language query -> intent, structured query and one combined answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AssistantRequest"}
+      responses:
+        "200":
+          description: Answer (downstream failures are reported in warnings, not as errors)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssistantResponse"}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  responses:
+    Error:
+      description: Error body
+      content:
+        application/json:
+          schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
+  schemas:
+    AssistantRequest:
+      type: object
+      required: [text]
+      properties:
+        text: {type: string, minLength: 1, maxLength: 1000}
+        locale: {type: string, enum: [ar, en], default: ar}
+        destination:
+          description: Fallback destination when the text names none
+          $ref: ../schemas/common.schema.json#/$defs/Location
+    ParsedQuery:
+      type: object
+      required: [intent]
+      properties:
+        intent: {type: string, enum: [search, quote, trust, track, help]}
+        language: {type: string, enum: [ar, en]}
+        kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
+        condition: {type: string, enum: [new, used, refurbished]}
+        keywords: {type: array, items: {type: string}}
+        query: {type: string}
+        category: {type: string}
+        quantity: {type: string, description: decimal}
+        unit: {type: string}
+        budget:
+          type: object
+          required: [amount, currency, bound]
+          properties:
+            amount: {type: string}
+            currency: {$ref: ../schemas/common.schema.json#/$defs/CurrencyCode}
+            bound: {type: string, enum: [max, min]}
+        origin: {$ref: ../schemas/common.schema.json#/$defs/Location}
+        origin_region: {type: string}
+        destination: {$ref: ../schemas/common.schema.json#/$defs/Location}
+        supplier_id: {type: string}
+        reference: {type: string}
+        reference_type: {type: string, enum: [container, awb, vessel_imo]}
+        confidence: {type: number, minimum: 0, maximum: 1}
+    AssistantResponse:
+      type: object
+      required: [intent, parsed_query, answer_text, listings, warnings]
+      properties:
+        intent: {type: string, enum: [search, quote, trust, track, help]}
+        parsed_query: {$ref: "#/components/schemas/ParsedQuery"}
+        answer_text: {type: string, description: Concise Arabic answer}
+        listings: {type: array, items: {$ref: ../schemas/common.schema.json#/$defs/Listing}}
+        quote: {$ref: ../schemas/common.schema.json#/$defs/LandedCostQuote}
+        trust: {$ref: ../schemas/common.schema.json#/$defs/TrustScore}
+        warnings:
+          type: array
+          description: "e.g. sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
+          items: {type: string}

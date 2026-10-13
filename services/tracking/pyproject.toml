@@ -35,7 +35,7 @@ build-backend = "hatchling.build"
 packages = ["src/ff_tracking"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "tests"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib -q"
 asyncio_mode = "auto"

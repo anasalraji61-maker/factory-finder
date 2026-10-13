@@ -1,0 +1,154 @@
+openapi: 3.1.0
+info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversations and messages between buyers/suppliers. All /v1 routes need X-User-Id (401 if missing); non-participants get 403. Realtime: WebSocket /v1/ws/conversations/{id}?user_id= (dev) pushes message.created, read.updated, typing; client frames: ping, typing{is_typing}, read{message_id}. Close codes 4401 unauthenticated, 4403 forbidden, 4429 too many connections."}
+servers: [{url: http://localhost:8106}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /v1/conversations:
+    get:
+      operationId: listConversations
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1}}
+        - {name: context_type, in: query, schema: {$ref: "#/components/schemas/ContextType"}}
+        - {name: context_ref_id, in: query, schema: {type: string}}
+        - {name: unread_only, in: query, schema: {type: boolean, default: false}}
+      responses:
+        "200": {description: "Caller's conversations, newest activity first", content: {application/json: {schema: {$ref: "#/components/schemas/ConversationPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+    post:
+      operationId: createConversation
+      description: Idempotent per (participant set, context). 201 when created, 200 when it already existed.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConversationCreate"}}}}
+      responses:
+        "200": {description: Existing conversation, content: {application/json: {schema: {$ref: "#/components/schemas/Conversation"}}}}
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Conversation"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/conversations/{id}:
+    get:
+      operationId: getConversation
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Conversation, content: {application/json: {schema: {$ref: "#/components/schemas/Conversation"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/conversations/{id}/messages:
+    get:
+      operationId: listMessages
+      description: Newest first. Pass next_cursor as cursor to get older messages.
+      parameters:
+        - {$ref: "#/components/parameters/Id"}
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1}}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/MessagePage"}}}}
+        "400": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+    post:
+      operationId: sendMessage
+      description: With client_message_id the call is idempotent (200 on replay, 201 on first send). Abuse words flag (default), mask or reject the message.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MessageCreate"}}}}
+      responses:
+        "200": {description: Replay of an earlier send, content: {application/json: {schema: {$ref: "#/components/schemas/Message"}}}}
+        "201": {description: Sent, content: {application/json: {schema: {$ref: "#/components/schemas/Message"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/conversations/{id}/read:
+    post:
+      operationId: markRead
+      description: Moves the caller's read pointer to message_id (default newest). Never moves backwards.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {message_id: {type: [string, "null"]}}}}}}
+      responses:
+        "200": {description: Read state, content: {application/json: {schema: {$ref: "#/components/schemas/ReadState"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    Id: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    Role: {type: string, enum: [buyer, supplier, platform]}
+    ContextType: {type: string, enum: [listing, request, deal, support]}
+    Context:
+      type: object
+      required: [type]
+      properties: {type: {$ref: "#/components/schemas/ContextType"}, ref_id: {type: [string, "null"]}}
+    ConversationCreate:
+      type: object
+      properties:
+        participants: {type: array, items: {type: object, required: [user_id], properties: {user_id: {type: string}, role: {$ref: "#/components/schemas/Role"}}}}
+        my_role: {$ref: "#/components/schemas/Role"}
+        context: {$ref: "#/components/schemas/Context"}
+        title: {type: [string, "null"]}
+    Participant:
+      type: object
+      required: [user_id, role]
+      properties: {user_id: {type: string}, role: {$ref: "#/components/schemas/Role"}, joined_at: {type: string, format: date-time}, last_read_seq: {type: integer}, last_read_at: {type: [string, "null"], format: date-time}}
+    LastMessage:
+      type: object
+      properties: {id: {type: string}, seq: {type: integer}, type: {type: string}, sender_id: {type: [string, "null"]}, preview: {type: [string, "null"]}, event: {type: [string, "null"]}, flagged: {type: boolean}, created_at: {type: string, format: date-time}}
+    Conversation:
+      type: object
+      required: [id, participants, unread_count]
+      properties:
+        id: {type: string}
+        context: {oneOf: [{$ref: "#/components/schemas/Context"}, {type: "null"}]}
+        title: {type: [string, "null"]}
+        created_by: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        participants: {type: array, items: {$ref: "#/components/schemas/Participant"}}
+        unread_count: {type: integer, description: "for the caller"}
+        last_message: {oneOf: [{$ref: "#/components/schemas/LastMessage"}, {type: "null"}]}
+    ConversationPage:
+      type: object
+      required: [items, total, page, page_size, unread_total]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Conversation"}}, total: {type: integer}, page: {type: integer}, page_size: {type: integer}, unread_total: {type: integer}}
+    Attachment:
+      type: object
+      required: [url, mime, size]
+      properties: {url: {type: string}, mime: {type: string}, size: {type: integer}, name: {type: [string, "null"]}}
+    MessageCreate:
+      type: object
+      properties:
+        type: {type: string, enum: [text, attachment, offer_ref], default: text}
+        text: {type: [string, "null"]}
+        attachment: {$ref: "#/components/schemas/Attachment"}
+        offer_ref: {type: object, required: [offer_id], properties: {offer_id: {type: string}, request_id: {type: [string, "null"]}}}
+        client_message_id: {type: string, maxLength: 64}
+    Message:
+      type: object
+      required: [id, conversation_id, seq, type, created_at]
+      properties:
+        id: {type: string}
+        conversation_id: {type: string}
+        seq: {type: integer}
+        sender_id: {type: [string, "null"]}
+        type: {type: string, enum: [text, attachment, offer_ref, system]}
+        text: {type: [string, "null"]}
+        attachment: {oneOf: [{$ref: "#/components/schemas/Attachment"}, {type: "null"}]}
+        offer_ref: {type: [object, "null"]}
+        event: {type: [string, "null"]}
+        event_data: {type: [object, "null"]}
+        flags: {type: array, items: {type: string}}
+        flagged: {type: boolean}
+        client_message_id: {type: [string, "null"]}
+        created_at: {type: string, format: date-time}
+        read_by: {type: array, items: {type: string}}
+    MessagePage:
+      type: object
+      required: [items, has_more]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Message"}}, next_cursor: {type: [string, "null"]}, has_more: {type: boolean}}
+    ReadState:
+      type: object
+      properties: {conversation_id: {type: string}, user_id: {type: string}, last_read_seq: {type: integer}, last_read_message_id: {type: [string, "null"]}, read_at: {type: [string, "null"], format: date-time}, unread_count: {type: integer}}

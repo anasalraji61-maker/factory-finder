@@ -406,7 +406,8 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _snack(context.tr('common.coming_soon')),
+                      onPressed: () => context.push(
+                          '/messages/new?supplier_id=${l.supplier.id}&listing_id=${l.id}'),
                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
                       label: Text(context.tr('listing.message_supplier')),
                     ),

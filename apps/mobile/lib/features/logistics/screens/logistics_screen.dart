@@ -13,10 +13,10 @@ class LogisticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final last = ref.watch(lastQuoteProvider);
     final theme = Theme.of(context);
-    final tools = <(IconData, String)>[
-      (Icons.currency_exchange, 'logistics.tool.fx'),
-      (Icons.directions_boat_outlined, 'logistics.tool.carriers'),
-      (Icons.track_changes, 'logistics.tool.tracking'),
+    final tools = <(IconData, String, String?)>[
+      (Icons.currency_exchange, 'logistics.tool.fx', null),
+      (Icons.directions_boat_outlined, 'logistics.tool.carriers', null),
+      (Icons.track_changes, 'logistics.tool.tracking', '/logistics/tracking'),
     ];
 
     return Scaffold(
@@ -107,16 +107,21 @@ class LogisticsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: AppCard(
+                onTap: tool.$3 == null ? null : () => context.push(tool.$3!),
                 child: Row(
                   children: [
                     Icon(tool.$1, color: AppColors.textSecondary),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(child: Text(context.tr(tool.$2))),
-                    Text(
-                      context.tr('common.coming_soon'),
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
-                    ),
+                    if (tool.$3 == null)
+                      Text(
+                        context.tr('common.coming_soon'),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
+                      )
+                    else
+                      const Icon(Icons.chevron_left,
+                          color: AppColors.textSecondary),
                   ],
                 ),
               ),

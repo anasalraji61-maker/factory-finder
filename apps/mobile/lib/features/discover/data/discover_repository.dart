@@ -14,20 +14,57 @@ class DiscoverRepository {
       await mockDelay();
       return filterMockListings(q);
     }
-    final json = await _api.get('/v1/listings/search', query: {
+    final json = await _api.get('/v1/search', query: {
       if (q.query.isNotEmpty) 'q': q.query,
       if (q.kind != null) 'kind': q.kind!.json,
       if (q.condition != null) 'condition': q.condition!.json,
       if (q.originCountry != null) 'origin_country': q.originCountry,
-      if (q.maxMoq != null) 'max_moq': q.maxMoq,
+      if (q.maxMoq != null) 'moq_max': q.maxMoq,
       if (q.verifiedOnly) 'verified_only': true,
       if (q.category != null) 'category': q.category,
-      if (q.supplierId != null) 'supplier_id': q.supplierId,
+      'page': 1,
+      'page_size': 50,
     });
-    return PageResult.fromJson<Listing>(
+    final page = PageResult.fromJson<Listing>(
       Map<String, dynamic>.from(json as Map),
       Listing.fromJson,
     );
+    return applyClientSort(page, q);
+  }
+
+  /// The search contract has no sort/supplier params: handled client-side.
+  static PageResult<Listing> applyClientSort(PageResult<Listing> page, ListingQuery q) {
+    final items = page.items
+        .where((l) => q.supplierId == null || l.supplier.id == q.supplierId)
+        .toList();
+    switch (q.sort) {
+      case SortOption.relevance:
+        break;
+      case SortOption.priceLow:
+        items.sort((a, b) => a.price.min.value.compareTo(b.price.min.value));
+      case SortOption.priceHigh:
+        items.sort((a, b) => b.price.max.value.compareTo(a.price.max.value));
+      case SortOption.trust:
+        items.sort((a, b) =>
+            (b.supplier.trustScore ?? 0).compareTo(a.supplier.trustScore ?? 0));
+    }
+    return PageResult<Listing>(
+      items: items,
+      total: q.supplierId == null ? page.total : items.length,
+      page: page.page,
+      pageSize: page.pageSize,
+    );
+  }
+
+  Future<List<CategoryNode>> categories() async {
+    if (_api.isMock) {
+      await mockDelay(150);
+      return const <CategoryNode>[];
+    }
+    final json = await _api.get('/v1/categories');
+    return ((json as List?) ?? const [])
+        .map((e) => CategoryNode.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   Future<List<Listing>> trending() async {
@@ -87,7 +124,7 @@ class DiscoverRepository {
       }
       return mockTrustFor(s);
     }
-    final json = await _api.get('/v1/suppliers/$supplierId/trust');
+    final json = await _api.get('/v1/trust/suppliers/$supplierId');
     return TrustScore.fromJson(Map<String, dynamic>.from(json as Map));
   }
 }

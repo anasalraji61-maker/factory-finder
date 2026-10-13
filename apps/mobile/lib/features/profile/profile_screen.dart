@@ -1,3 +1,5 @@
+import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
@@ -5,6 +7,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 const List<String> kDisplayCurrencies = [
   'USD', 'EUR', 'CNY', 'IQD', 'TRY', 'AED', 'SAR',
@@ -20,6 +23,8 @@ class ProfileScreen extends ConsumerWidget {
     final destination = ref.watch(destinationProvider);
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
+    final me = ref.watch(authProvider);
+    final serverUrl = ref.watch(serverUrlProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('profile.title'))),
@@ -49,7 +54,7 @@ class ProfileScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.tr('profile.mock_user'),
+                        me?.name ?? context.tr('auth.guest'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -58,7 +63,9 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        context.tr('profile.mock_email'),
+                        me == null
+                            ? context.tr('auth.guest_hint')
+                            : (me.email ?? me.phone ?? ''),
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -67,6 +74,33 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          if (me == null)
+            Row(
+              children: [
+                Expanded(
+                  child: PrimaryButton(
+                    label: context.tr('auth.login'),
+                    icon: Icons.login,
+                    onPressed: () => context.push('/login'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(64, 50)),
+                    onPressed: () => context.push('/register'),
+                    child: Text(context.tr('auth.register')),
+                  ),
+                ),
+              ],
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: () => ref.read(authProvider.notifier).logout(),
+              icon: const Icon(Icons.logout),
+              label: Text(context.tr('auth.logout')),
+            ),
           const SizedBox(height: AppSpacing.lg),
           AppCard(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -148,6 +182,21 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.dns_outlined),
+                  title: Text(context.tr('profile.server_url')),
+                  subtitle: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      kMockMode
+                          ? context.tr('profile.server_mock')
+                          : serverUrl,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.edit_outlined, size: 20),
+                  onTap: () => _editServerUrl(context, ref, serverUrl),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.bookmark_border),
                   title: Text(context.tr('profile.watchlist')),
                   trailing: Text(
@@ -171,5 +220,51 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _editServerUrl(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('profile.server_url')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.url,
+              textDirection: TextDirection.ltr,
+              decoration: const InputDecoration(hintText: kDefaultBaseUrl),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              ctx.tr('profile.server_hint'),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.tr('common.cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: Text(ctx.tr('common.save')),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result != null && result.isNotEmpty) {
+      ref.read(serverUrlProvider.notifier).state =
+          result.endsWith('/') ? result.substring(0, result.length - 1) : result;
+    }
   }
 }
