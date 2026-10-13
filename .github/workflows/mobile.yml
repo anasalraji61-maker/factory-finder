@@ -28,8 +28,24 @@ jobs:
             flutter create . --platforms=android,ios --org com.factoryfinder --project-name factory_finder
           fi
       - run: flutter pub get
-      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
-      - run: flutter test
+      - name: Analyze
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.txt
+          code=${PIPESTATUS[0]}
+          msg=$(grep -E "^\s*(error|warning)" analyze.txt | head -80 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          if [ -n "$msg" ]; then echo "::error title=analyze::$msg"; fi
+          exit $code
+      - name: Test
+        shell: bash
+        run: |
+          set +e
+          flutter test 2>&1 | tee test.txt
+          code=${PIPESTATUS[0]}
+          msg=$(grep -vE "^\s*$" test.txt | grep -iE "fail|error|expected|actual|exception|\.dart" | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=test::$msg"; fi
+          exit $code
       - name: Build debug APK
         run: flutter build apk --debug --dart-define=FF_MOCK=true
       - uses: actions/upload-artifact@v4
