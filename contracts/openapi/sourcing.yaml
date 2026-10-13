@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - sourcing
+  version: 0.1.0
+servers:
+  - url: http://localhost:8002
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {type: string, const: ok}
+                  service: {type: string, const: sourcing}
+                  version: {type: string}
+  /v1/search:
+    get:
+      summary: Search listings across enabled sources (Arabic or English query)
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 200}}
+        - {name: kind, in: query, schema: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}}
+        - {name: condition, in: query, schema: {type: string, enum: [new, used, refurbished, any], default: any}}
+        - {name: origin_country, in: query, schema: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}}
+        - {name: category, in: query, description: Category or kind slug from /v1/categories, schema: {type: string}}
+        - {name: min_price, in: query, description: Unit price floor in USD, schema: {type: number, minimum: 0}}
+        - {name: max_price, in: query, description: Unit price cap in USD, schema: {type: number, minimum: 0}}
+        - {name: moq_max, in: query, schema: {type: integer, minimum: 0}}
+        - {name: verified_only, in: query, schema: {type: boolean, default: false}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page of ranked results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    required: [sources]
+                    properties:
+                      items:
+                        type: array
+                        items: {$ref: ../schemas/common.schema.json#/$defs/Listing}
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          required: [source, status, count]
+                          properties:
+                            source: {type: string}
+                            status: {type: string, enum: [ok, timeout, error]}
+                            count: {type: integer}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/listings/{id}:
+    get:
+      summary: Listing detail
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Listing with description and specs
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ListingDetail"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/suppliers/{id}:
+    get:
+      summary: Supplier profile (with trust band)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Supplier
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Supplier"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/categories:
+    get:
+      summary: Bilingual category tree (top level = listing kinds)
+      responses:
+        "200":
+          description: Tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/CategoryNode"}
+  /v1/sources:
+    get:
+      summary: Registered sources, enabled flag, health and compliance note
+      responses:
+        "200":
+          description: Sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name, mode, enabled, configured, status, compliance]
+                  properties:
+                    id: {type: string}
+                    name: {type: string}
+                    mode: {type: string, enum: [mock, official_api, licensed_feed]}
+                    enabled: {type: boolean}
+                    configured: {type: boolean}
+                    status: {type: string, enum: [ok, error, timeout, disabled]}
+                    compliance: {type: string}
+components:
+  responses:
+    Error:
+      description: Error body
+      content:
+        application/json:
+          schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
+  schemas:
+    ListingDetail:
+      allOf:
+        - $ref: ../schemas/common.schema.json#/$defs/Listing
+        - type: object
+          properties:
+            description: {type: string}
+            description_ar: {type: string}
+            specs: {type: object, additionalProperties: {type: string}}
+    Supplier:
+      allOf:
+        - $ref: ../schemas/common.schema.json#/$defs/SupplierSummary
+        - type: object
+          properties:
+            name_ar: {type: string}
+            certifications: {type: array, items: {type: string}}
+            listing_count: {type: integer}
+            source: {type: string}
+    CategoryNode:
+      type: object
+      required: [slug, name, name_ar, children]
+      properties:
+        slug: {type: string}
+        name: {type: string}
+        name_ar: {type: string}
+        children:
+          type: array
+          items: {$ref: "#/components/schemas/CategoryNode"}

@@ -1,0 +1,362 @@
+[
+{
+"iso2": "CN",
+"name_en": "China",
+"name_ar": "الصين",
+"currency": "CNY",
+"region": "East Asia",
+"road_factor": 1.3
+},
+{
+"iso2": "IQ",
+"name_en": "Iraq",
+"name_ar": "العراق",
+"currency": "IQD",
+"region": "Middle East",
+"road_factor": 1.3
+},
+{
+"iso2": "TR",
+"name_en": "Turkey",
+"name_ar": "تركيا",
+"currency": "TRY",
+"region": "Middle East",
+"road_factor": 1.35
+},
+{
+"iso2": "IR",
+"name_en": "Iran",
+"name_ar": "إيران",
+"currency": "IRR",
+"region": "Middle East",
+"road_factor": 1.4
+},
+{
+"iso2": "AE",
+"name_en": "United Arab Emirates",
+"name_ar": "الإمارات العربية المتحدة",
+"currency": "AED",
+"region": "Middle East",
+"road_factor": 1.2
+},
+{
+"iso2": "SA",
+"name_en": "Saudi Arabia",
+"name_ar": "السعودية",
+"currency": "SAR",
+"region": "Middle East",
+"road_factor": 1.2
+},
+{
+"iso2": "KW",
+"name_en": "Kuwait",
+"name_ar": "الكويت",
+"currency": "KWD",
+"region": "Middle East",
+"road_factor": 1.2
+},
+{
+"iso2": "QA",
+"name_en": "Qatar",
+"name_ar": "قطر",
+"currency": "QAR",
+"region": "Middle East",
+"road_factor": 1.2
+},
+{
+"iso2": "BH",
+"name_en": "Bahrain",
+"name_ar": "البحرين",
+"currency": "BHD",
+"region": "Middle East",
+"road_factor": 1.2
+},
+{
+"iso2": "OM",
+"name_en": "Oman",
+"name_ar": "عُمان",
+"currency": "OMR",
+"region": "Middle East",
+"road_factor": 1.3
+},
+{
+"iso2": "JO",
+"name_en": "Jordan",
+"name_ar": "الأردن",
+"currency": "JOD",
+"region": "Middle East",
+"road_factor": 1.3
+},
+{
+"iso2": "EG",
+"name_en": "Egypt",
+"name_ar": "مصر",
+"currency": "EGP",
+"region": "Africa",
+"road_factor": 1.3
+},
+{
+"iso2": "SY",
+"name_en": "Syria",
+"name_ar": "سوريا",
+"currency": "SYP",
+"region": "Middle East",
+"road_factor": 1.4
+},
+{
+"iso2": "LB",
+"name_en": "Lebanon",
+"name_ar": "لبنان",
+"currency": "LBP",
+"region": "Middle East",
+"road_factor": 1.45
+},
+{
+"iso2": "US",
+"name_en": "United States",
+"name_ar": "الولايات المتحدة",
+"currency": "USD",
+"region": "North America",
+"road_factor": 1.2
+},
+{
+"iso2": "DE",
+"name_en": "Germany",
+"name_ar": "ألمانيا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.2
+},
+{
+"iso2": "IT",
+"name_en": "Italy",
+"name_ar": "إيطاليا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.3
+},
+{
+"iso2": "FR",
+"name_en": "France",
+"name_ar": "فرنسا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.2
+},
+{
+"iso2": "GB",
+"name_en": "United Kingdom",
+"name_ar": "المملكة المتحدة",
+"currency": "GBP",
+"region": "Europe",
+"road_factor": 1.3
+},
+{
+"iso2": "NL",
+"name_en": "Netherlands",
+"name_ar": "هولندا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.2
+},
+{
+"iso2": "ES",
+"name_en": "Spain",
+"name_ar": "إسبانيا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.25
+},
+{
+"iso2": "PL",
+"name_en": "Poland",
+"name_ar": "بولندا",
+"currency": "PLN",
+"region": "Europe",
+"road_factor": 1.25
+},
+{
+"iso2": "IN",
+"name_en": "India",
+"name_ar": "الهند",
+"currency": "INR",
+"region": "South Asia",
+"road_factor": 1.35
+},
+{
+"iso2": "VN",
+"name_en": "Vietnam",
+"name_ar": "فيتنام",
+"currency": "VND",
+"region": "Southeast Asia",
+"road_factor": 1.45
+},
+{
+"iso2": "PK",
+"name_en": "Pakistan",
+"name_ar": "باكستان",
+"currency": "PKR",
+"region": "South Asia",
+"road_factor": 1.4
+},
+{
+"iso2": "BD",
+"name_en": "Bangladesh",
+"name_ar": "بنغلاديش",
+"currency": "BDT",
+"region": "South Asia",
+"road_factor": 1.4
+},
+{
+"iso2": "TH",
+"name_en": "Thailand",
+"name_ar": "تايلاند",
+"currency": "THB",
+"region": "Southeast Asia",
+"road_factor": 1.3
+},
+{
+"iso2": "MY",
+"name_en": "Malaysia",
+"name_ar": "ماليزيا",
+"currency": "MYR",
+"region": "Southeast Asia",
+"road_factor": 1.3
+},
+{
+"iso2": "ID",
+"name_en": "Indonesia",
+"name_ar": "إندونيسيا",
+"currency": "IDR",
+"region": "Southeast Asia",
+"road_factor": 1.45
+},
+{
+"iso2": "KR",
+"name_en": "South Korea",
+"name_ar": "كوريا الجنوبية",
+"currency": "KRW",
+"region": "East Asia",
+"road_factor": 1.3
+},
+{
+"iso2": "JP",
+"name_en": "Japan",
+"name_ar": "اليابان",
+"currency": "JPY",
+"region": "East Asia",
+"road_factor": 1.4
+},
+{
+"iso2": "HK",
+"name_en": "Hong Kong",
+"name_ar": "هونغ كونغ",
+"currency": "HKD",
+"region": "East Asia",
+"road_factor": 1.2
+},
+{
+"iso2": "SG",
+"name_en": "Singapore",
+"name_ar": "سنغافورة",
+"currency": "SGD",
+"region": "Southeast Asia",
+"road_factor": 1.2
+},
+{
+"iso2": "KZ",
+"name_en": "Kazakhstan",
+"name_ar": "كازاخستان",
+"currency": "KZT",
+"region": "Central Asia",
+"road_factor": 1.25
+},
+{
+"iso2": "RU",
+"name_en": "Russia",
+"name_ar": "روسيا",
+"currency": "RUB",
+"region": "Europe",
+"road_factor": 1.3
+},
+{
+"iso2": "GR",
+"name_en": "Greece",
+"name_ar": "اليونان",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.4
+},
+{
+"iso2": "BE",
+"name_en": "Belgium",
+"name_ar": "بلجيكا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.2
+},
+{
+"iso2": "RO",
+"name_en": "Romania",
+"name_ar": "رومانيا",
+"currency": "RON",
+"region": "Europe",
+"road_factor": 1.3
+},
+{
+"iso2": "CZ",
+"name_en": "Czechia",
+"name_ar": "التشيك",
+"currency": "CZK",
+"region": "Europe",
+"road_factor": 1.25
+},
+{
+"iso2": "AT",
+"name_en": "Austria",
+"name_ar": "النمسا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.3
+},
+{
+"iso2": "CA",
+"name_en": "Canada",
+"name_ar": "كندا",
+"currency": "CAD",
+"region": "North America",
+"road_factor": 1.2
+},
+{
+"iso2": "MX",
+"name_en": "Mexico",
+"name_ar": "المكسيك",
+"currency": "MXN",
+"region": "Latin America",
+"road_factor": 1.3
+},
+{
+"iso2": "BR",
+"name_en": "Brazil",
+"name_ar": "البرازيل",
+"currency": "BRL",
+"region": "Latin America",
+"road_factor": 1.35
+},
+{
+"iso2": "AZ",
+"name_en": "Azerbaijan",
+"name_ar": "أذربيجان",
+"currency": "AZN",
+"region": "Central Asia",
+"road_factor": 1.35
+},
+{
+"iso2": "GE",
+"name_en": "Georgia",
+"name_ar": "جورجيا",
+"currency": "GEL",
+"region": "Central Asia",
+"road_factor": 1.45
+}
+]

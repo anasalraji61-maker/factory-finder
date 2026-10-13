@@ -1,0 +1,118 @@
+"""Request/response models for gateway-owned endpoints."""
+
+import re
+from datetime import datetime
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+
+Role = Literal["buyer", "supplier", "both"]
+Language = Literal["ar", "en"]
+_PHONE = re.compile(r"^\+?\d{7,15}$")
+
+
+def normalize_phone(v: str) -> str:
+    cleaned = re.sub(r"[\s\-().]", "", v)
+    if not _PHONE.match(cleaned):
+        raise ValueError("phone must be 7-15 digits, optional leading +")
+    return cleaned
+
+
+class GeoPoint(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+
+
+class Location(BaseModel):
+    country_code: Annotated[str, Field(pattern=r"^[A-Z]{2}$")]
+    city: str | None = Field(default=None, max_length=120)
+    point: GeoPoint | None = None
+
+
+class RegisterIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: EmailStr | None = None
+    phone: str | None = None
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        return normalize_phone(v) if v else None
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str | None) -> str | None:
+        return v.lower() if v else None
+
+    @model_validator(mode="after")
+    def _one_contact(self) -> "RegisterIn":
+        if not self.email and not self.phone:
+            raise ValueError("either email or phone is required")
+        return self
+
+
+class LoginIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: EmailStr | None = None
+    phone: str | None = None
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        return normalize_phone(v) if v else None
+
+    @model_validator(mode="after")
+    def _one_contact(self) -> "LoginIn":
+        if not self.email and not self.phone:
+            raise ValueError("either email or phone is required")
+        return self
+
+
+class RefreshIn(BaseModel):
+    refresh_token: str
+
+
+class MeOut(BaseModel):
+    id: str
+    name: str
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    role: Role
+    default_destination: Location | None = None
+    display_currency: str
+    language: Language
+    created_at: datetime
+
+
+class TokensOut(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int
+    user: MeOut | None = None
+
+
+class MePatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    phone: str | None = None
+    email: EmailStr | None = None
+    company: str | None = Field(default=None, max_length=200)
+    role: Role | None = None
+    default_destination: Location | None = None
+    display_currency: Annotated[str | None, Field(pattern=r"^[A-Z]{3}$")] = None
+    language: Language | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        return normalize_phone(v) if v else v
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str | None) -> str | None:
+        return v.lower() if v else v

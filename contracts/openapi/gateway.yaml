@@ -1,0 +1,138 @@
+openapi: 3.1.0
+info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost."}
+servers: [{url: http://localhost:8000}]
+security: [{bearer: []}]
+paths:
+  /health:
+    get: {operationId: health, security: [], responses: {"200": {description: ok}}}
+  /v1/auth/register:
+    post:
+      operationId: register
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RegisterIn"}}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/auth/login:
+    post:
+      operationId: login
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/LoginIn"}}}}
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/auth/refresh:
+    post:
+      operationId: refresh
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
+      responses:
+        "200": {description: New token pair, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/me:
+    get:
+      operationId: getMe
+      responses:
+        "200": {description: Profile, content: {application/json: {schema: {$ref: "#/components/schemas/Me"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+    patch:
+      operationId: patchMe
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MePatch"}}}}
+      responses:
+        "200": {description: Updated profile, content: {application/json: {schema: {$ref: "#/components/schemas/Me"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/home:
+    get:
+      operationId: getHome
+      description: Aggregated feed. A failing section is null and listed in warnings.
+      responses:
+        "200":
+          description: Feed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: {type: object}
+                  categories: {type: [array, "null"]}
+                  trending: {type: [array, "null"]}
+                  fx: {type: [object, "null"]}
+                  warnings: {type: array, items: {type: object, properties: {section: {type: string}, message: {type: string}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/{proxied_path}:
+    x-proxy:
+      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources]
+      logistics: [/v1/quotes, /v1/fx, /v1/carriers]
+      geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
+      trust: [/v1/trust]
+      rfq: [/v1/requests, /v1/offers, /v1/deals]
+      messaging: [/v1/conversations]
+      tracking: [/v1/shipments, /v1/validate]
+      notifications: [/v1/watchlist, /v1/alerts, /v1/devices]
+      assistant: [/v1/assistant]
+    get:
+      operationId: proxy
+      description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504."
+      parameters: [{name: proxied_path, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Upstream response passed through}
+        "401": {$ref: "#/components/responses/Error"}
+        "502": {$ref: "#/components/responses/Error"}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+  responses:
+    Error: {description: Error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+  schemas:
+    RegisterIn:
+      type: object
+      required: [password, name]
+      description: At least one of email or phone is required.
+      properties:
+        email: {type: string, format: email}
+        phone: {type: string, description: "7-15 digits, optional +"}
+        password: {type: string, minLength: 8}
+        name: {type: string}
+    LoginIn:
+      type: object
+      required: [password]
+      properties: {email: {type: string, format: email}, phone: {type: string}, password: {type: string}}
+    Tokens:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token: {type: string}
+        refresh_token: {type: string}
+        token_type: {type: string, enum: [bearer]}
+        expires_in: {type: integer}
+        user: {$ref: "#/components/schemas/Me"}
+    Me:
+      type: object
+      required: [id, name, role, display_currency, language, created_at]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        email: {type: [string, "null"]}
+        phone: {type: [string, "null"]}
+        company: {type: [string, "null"]}
+        role: {type: string, enum: [buyer, supplier, both]}
+        default_destination: {oneOf: [{$ref: "../schemas/common.schema.json#/$defs/Location"}, {type: "null"}]}
+        display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
+        language: {type: string, enum: [ar, en]}
+        created_at: {type: string, format: date-time}
+    MePatch:
+      type: object
+      additionalProperties: false
+      properties:
+        name: {type: string}
+        phone: {type: string}
+        email: {type: string, format: email}
+        company: {type: string}
+        role: {type: string, enum: [buyer, supplier, both]}
+        default_destination: {$ref: "../schemas/common.schema.json#/$defs/Location"}
+        display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
+        language: {type: string, enum: [ar, en]}

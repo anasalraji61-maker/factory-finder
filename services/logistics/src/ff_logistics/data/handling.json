@@ -1,0 +1,193 @@
+{
+ "origin": {
+  "EAS": {
+   "thc_20": 110,
+   "thc_40": 170,
+   "lcl_per_wm": 8,
+   "clearance": 60,
+   "docs": 40,
+   "air_per_kg": 0.12,
+   "air_min": 30
+  },
+  "SAS": {
+   "thc_20": 130,
+   "thc_40": 190,
+   "lcl_per_wm": 9,
+   "clearance": 70,
+   "docs": 45,
+   "air_per_kg": 0.15,
+   "air_min": 35
+  },
+  "GULF": {
+   "thc_20": 260,
+   "thc_40": 380,
+   "lcl_per_wm": 14,
+   "clearance": 90,
+   "docs": 60,
+   "air_per_kg": 0.2,
+   "air_min": 45
+  },
+  "MED": {
+   "thc_20": 180,
+   "thc_40": 270,
+   "lcl_per_wm": 12,
+   "clearance": 90,
+   "docs": 55,
+   "air_per_kg": 0.18,
+   "air_min": 40
+  },
+  "EUR": {
+   "thc_20": 210,
+   "thc_40": 310,
+   "lcl_per_wm": 13,
+   "clearance": 90,
+   "docs": 60,
+   "air_per_kg": 0.2,
+   "air_min": 45
+  },
+  "NAM": {
+   "thc_20": 300,
+   "thc_40": 450,
+   "lcl_per_wm": 16,
+   "clearance": 100,
+   "docs": 70,
+   "air_per_kg": 0.22,
+   "air_min": 50
+  },
+  "RUS": {
+   "thc_20": 200,
+   "thc_40": 300,
+   "lcl_per_wm": 12,
+   "clearance": 90,
+   "docs": 60,
+   "air_per_kg": 0.2,
+   "air_min": 40
+  }
+ },
+ "destination": {
+  "EAS": {
+   "thc_20": 110,
+   "thc_40": 170,
+   "lcl_per_wm": 8,
+   "clearance": 60,
+   "docs": 40,
+   "air_per_kg": 0.12,
+   "air_min": 30
+  },
+  "SAS": {
+   "thc_20": 150,
+   "thc_40": 220,
+   "lcl_per_wm": 10,
+   "clearance": 70,
+   "docs": 50,
+   "air_per_kg": 0.15,
+   "air_min": 35
+  },
+  "GULF": {
+   "thc_20": 330,
+   "thc_40": 490,
+   "lcl_per_wm": 18,
+   "clearance": 0,
+   "docs": 150,
+   "air_per_kg": 0.22,
+   "air_min": 60
+  },
+  "MED": {
+   "thc_20": 190,
+   "thc_40": 290,
+   "lcl_per_wm": 13,
+   "clearance": 0,
+   "docs": 110,
+   "air_per_kg": 0.18,
+   "air_min": 45
+  },
+  "EUR": {
+   "thc_20": 230,
+   "thc_40": 340,
+   "lcl_per_wm": 14,
+   "clearance": 0,
+   "docs": 90,
+   "air_per_kg": 0.2,
+   "air_min": 45
+  },
+  "NAM": {
+   "thc_20": 320,
+   "thc_40": 480,
+   "lcl_per_wm": 17,
+   "clearance": 0,
+   "docs": 100,
+   "air_per_kg": 0.22,
+   "air_min": 50
+  },
+  "RUS": {
+   "thc_20": 220,
+   "thc_40": 330,
+   "lcl_per_wm": 13,
+   "clearance": 0,
+   "docs": 100,
+   "air_per_kg": 0.2,
+   "air_min": 40
+  }
+ },
+ "dest_clearance_days": {
+  "default": [
+   2,
+   5
+  ],
+  "IQ": [
+   4,
+   10
+  ],
+  "IR": [
+   5,
+   12
+  ],
+  "EG": [
+   4,
+   10
+  ],
+  "IN": [
+   3,
+   8
+  ],
+  "US": [
+   2,
+   5
+  ],
+  "DE": [
+   1,
+   3
+  ],
+  "AE": [
+   1,
+   3
+  ]
+ },
+ "road_rate_per_km_usd": {
+  "CN": 0.85,
+  "IQ": 1.4,
+  "TR": 1.1,
+  "IR": 1.0,
+  "JO": 1.2,
+  "SA": 1.2,
+  "AE": 1.3,
+  "KW": 1.3,
+  "EG": 1.0,
+  "US": 1.9,
+  "DE": 1.9,
+  "FR": 1.8,
+  "GB": 1.9,
+  "IT": 1.7,
+  "IN": 0.8,
+  "RU": 1.0,
+  "default": 1.3
+ },
+ "road_min_haul_usd": 60,
+ "border_fee_usd": 150,
+ "dg_factor": {
+  "sea": 1.35,
+  "air": 1.6,
+  "road": 1.2,
+  "rail": 1.3
+ }
+}

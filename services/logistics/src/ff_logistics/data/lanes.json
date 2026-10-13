@@ -1,0 +1,1200 @@
+{
+ "regions": {
+  "CN": "EAS",
+  "HK": "EAS",
+  "TW": "EAS",
+  "JP": "EAS",
+  "KR": "EAS",
+  "VN": "EAS",
+  "TH": "EAS",
+  "MY": "EAS",
+  "ID": "EAS",
+  "SG": "EAS",
+  "PH": "EAS",
+  "IN": "SAS",
+  "PK": "SAS",
+  "BD": "SAS",
+  "LK": "SAS",
+  "AE": "GULF",
+  "SA": "GULF",
+  "KW": "GULF",
+  "IQ": "GULF",
+  "IR": "GULF",
+  "JO": "GULF",
+  "QA": "GULF",
+  "OM": "GULF",
+  "BH": "GULF",
+  "TR": "MED",
+  "EG": "MED",
+  "IL": "MED",
+  "LB": "MED",
+  "SY": "MED",
+  "DE": "EUR",
+  "FR": "EUR",
+  "IT": "EUR",
+  "GB": "EUR",
+  "ES": "EUR",
+  "NL": "EUR",
+  "BE": "EUR",
+  "PL": "EUR",
+  "SE": "EUR",
+  "AT": "EUR",
+  "CH": "EUR",
+  "PT": "EUR",
+  "GR": "EUR",
+  "US": "NAM",
+  "CA": "NAM",
+  "MX": "NAM",
+  "RU": "RUS",
+  "KZ": "RUS",
+  "UA": "RUS"
+ },
+ "continents": {
+  "CN": "EA",
+  "HK": "EA",
+  "TW": "EA",
+  "JP": "EA",
+  "KR": "EA",
+  "VN": "EA",
+  "TH": "EA",
+  "MY": "EA",
+  "ID": "EA",
+  "SG": "EA",
+  "PH": "EA",
+  "IN": "EA",
+  "PK": "EA",
+  "BD": "EA",
+  "LK": "EA",
+  "AE": "EA",
+  "SA": "EA",
+  "KW": "EA",
+  "IQ": "EA",
+  "IR": "EA",
+  "JO": "EA",
+  "QA": "EA",
+  "OM": "EA",
+  "BH": "EA",
+  "TR": "EA",
+  "EG": "EA",
+  "IL": "EA",
+  "LB": "EA",
+  "SY": "EA",
+  "DE": "EA",
+  "FR": "EA",
+  "IT": "EA",
+  "GB": "EA",
+  "ES": "EA",
+  "NL": "EA",
+  "BE": "EA",
+  "PL": "EA",
+  "SE": "EA",
+  "AT": "EA",
+  "CH": "EA",
+  "PT": "EA",
+  "GR": "EA",
+  "US": "NA",
+  "CA": "NA",
+  "MX": "NA",
+  "RU": "EA",
+  "KZ": "EA",
+  "UA": "EA"
+ },
+ "lanes": {
+  "EAS>GULF": {
+   "fcl_20": 1670.0,
+   "fcl_40": 2700,
+   "fcl_40hc": 2860.0,
+   "lcl_per_wm": 97,
+   "air_breaks": [
+    [
+     0,
+     5.5
+    ],
+    [
+     45,
+     4.84
+    ],
+    [
+     100,
+     4.4
+    ],
+    [
+     300,
+     3.87
+    ],
+    [
+     500,
+     3.52
+    ],
+    [
+     1000,
+     3.17
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 4400,
+   "sea_days": [
+    24,
+    34
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": [
+    20,
+    28
+   ]
+  },
+  "EAS>MED": {
+   "fcl_20": 1920.0,
+   "fcl_40": 3100,
+   "fcl_40hc": 3290.0,
+   "lcl_per_wm": 109,
+   "air_breaks": [
+    [
+     0,
+     5.75
+    ],
+    [
+     45,
+     5.06
+    ],
+    [
+     100,
+     4.6
+    ],
+    [
+     300,
+     4.05
+    ],
+    [
+     500,
+     3.68
+    ],
+    [
+     1000,
+     3.31
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 4800,
+   "sea_days": [
+    26,
+    36
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": [
+    18,
+    26
+   ]
+  },
+  "EAS>EUR": {
+   "fcl_20": 2050.0,
+   "fcl_40": 3300,
+   "fcl_40hc": 3500.0,
+   "lcl_per_wm": 115,
+   "air_breaks": [
+    [
+     0,
+     5.75
+    ],
+    [
+     45,
+     5.06
+    ],
+    [
+     100,
+     4.6
+    ],
+    [
+     300,
+     4.05
+    ],
+    [
+     500,
+     3.68
+    ],
+    [
+     1000,
+     3.31
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 5500,
+   "sea_days": [
+    30,
+    40
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": [
+    16,
+    22
+   ]
+  },
+  "EAS>NAM": {
+   "fcl_20": 2670.0,
+   "fcl_40": 4300,
+   "fcl_40hc": 4560.0,
+   "lcl_per_wm": 145,
+   "air_breaks": [
+    [
+     0,
+     6.5
+    ],
+    [
+     45,
+     5.72
+    ],
+    [
+     100,
+     5.2
+    ],
+    [
+     300,
+     4.58
+    ],
+    [
+     500,
+     4.16
+    ],
+    [
+     1000,
+     3.74
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    16,
+    28
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "EAS>SAS": {
+   "fcl_20": 930.0,
+   "fcl_40": 1500,
+   "fcl_40hc": 1590.0,
+   "lcl_per_wm": 60,
+   "air_breaks": [
+    [
+     0,
+     4.75
+    ],
+    [
+     45,
+     4.18
+    ],
+    [
+     100,
+     3.8
+    ],
+    [
+     300,
+     3.34
+    ],
+    [
+     500,
+     3.04
+    ],
+    [
+     1000,
+     2.74
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    12,
+    20
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "EAS>RUS": {
+   "fcl_20": 2230.0,
+   "fcl_40": 3600,
+   "fcl_40hc": 3820.0,
+   "lcl_per_wm": 124,
+   "air_breaks": [
+    [
+     0,
+     6.0
+    ],
+    [
+     45,
+     5.28
+    ],
+    [
+     100,
+     4.8
+    ],
+    [
+     300,
+     4.22
+    ],
+    [
+     500,
+     3.84
+    ],
+    [
+     1000,
+     3.46
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 4800,
+   "sea_days": [
+    25,
+    38
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": [
+    14,
+    20
+   ]
+  },
+  "EAS>EAS": {
+   "fcl_20": 560.0,
+   "fcl_40": 900,
+   "fcl_40hc": 950.0,
+   "lcl_per_wm": 42,
+   "air_breaks": [
+    [
+     0,
+     2.5
+    ],
+    [
+     45,
+     2.2
+    ],
+    [
+     100,
+     2.0
+    ],
+    [
+     300,
+     1.76
+    ],
+    [
+     500,
+     1.6
+    ],
+    [
+     1000,
+     1.44
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    4,
+    10
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "EUR>GULF": {
+   "fcl_20": 1550.0,
+   "fcl_40": 2500,
+   "fcl_40hc": 2650.0,
+   "lcl_per_wm": 91,
+   "air_breaks": [
+    [
+     0,
+     4.5
+    ],
+    [
+     45,
+     3.96
+    ],
+    [
+     100,
+     3.6
+    ],
+    [
+     300,
+     3.17
+    ],
+    [
+     500,
+     2.88
+    ],
+    [
+     1000,
+     2.59
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    18,
+    28
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "EUR>MED": {
+   "fcl_20": 740.0,
+   "fcl_40": 1200,
+   "fcl_40hc": 1270.0,
+   "lcl_per_wm": 51,
+   "air_breaks": [
+    [
+     0,
+     3.0
+    ],
+    [
+     45,
+     2.64
+    ],
+    [
+     100,
+     2.4
+    ],
+    [
+     300,
+     2.11
+    ],
+    [
+     500,
+     1.92
+    ],
+    [
+     1000,
+     1.73
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 3200,
+   "sea_days": [
+    6,
+    12
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": [
+    6,
+    10
+   ]
+  },
+  "EUR>NAM": {
+   "fcl_20": 1430.0,
+   "fcl_40": 2300,
+   "fcl_40hc": 2440.0,
+   "lcl_per_wm": 85,
+   "air_breaks": [
+    [
+     0,
+     4.75
+    ],
+    [
+     45,
+     4.18
+    ],
+    [
+     100,
+     3.8
+    ],
+    [
+     300,
+     3.34
+    ],
+    [
+     500,
+     3.04
+    ],
+    [
+     1000,
+     2.74
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    12,
+    20
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "EUR>EUR": {
+   "fcl_20": 430.0,
+   "fcl_40": 700,
+   "fcl_40hc": 740.0,
+   "lcl_per_wm": 36,
+   "air_breaks": [
+    [
+     0,
+     2.0
+    ],
+    [
+     45,
+     1.76
+    ],
+    [
+     100,
+     1.6
+    ],
+    [
+     300,
+     1.41
+    ],
+    [
+     500,
+     1.28
+    ],
+    [
+     1000,
+     1.15
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 1500,
+   "sea_days": [
+    3,
+    8
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": [
+    3,
+    6
+   ]
+  },
+  "EUR>EAS": {
+   "fcl_20": 870.0,
+   "fcl_40": 1400,
+   "fcl_40hc": 1480.0,
+   "lcl_per_wm": 57,
+   "air_breaks": [
+    [
+     0,
+     5.5
+    ],
+    [
+     45,
+     4.84
+    ],
+    [
+     100,
+     4.4
+    ],
+    [
+     300,
+     3.87
+    ],
+    [
+     500,
+     3.52
+    ],
+    [
+     1000,
+     3.17
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": 5200,
+   "sea_days": [
+    30,
+    40
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": [
+    16,
+    22
+   ]
+  },
+  "NAM>GULF": {
+   "fcl_20": 2290.0,
+   "fcl_40": 3700,
+   "fcl_40hc": 3920.0,
+   "lcl_per_wm": 127,
+   "air_breaks": [
+    [
+     0,
+     6.0
+    ],
+    [
+     45,
+     5.28
+    ],
+    [
+     100,
+     4.8
+    ],
+    [
+     300,
+     4.22
+    ],
+    [
+     500,
+     3.84
+    ],
+    [
+     1000,
+     3.46
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    28,
+    38
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "NAM>EUR": {
+   "fcl_20": 1240.0,
+   "fcl_40": 2000,
+   "fcl_40hc": 2120.0,
+   "lcl_per_wm": 76,
+   "air_breaks": [
+    [
+     0,
+     4.75
+    ],
+    [
+     45,
+     4.18
+    ],
+    [
+     100,
+     3.8
+    ],
+    [
+     300,
+     3.34
+    ],
+    [
+     500,
+     3.04
+    ],
+    [
+     1000,
+     2.74
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    12,
+    20
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "NAM>MED": {
+   "fcl_20": 1550.0,
+   "fcl_40": 2500,
+   "fcl_40hc": 2650.0,
+   "lcl_per_wm": 91,
+   "air_breaks": [
+    [
+     0,
+     5.25
+    ],
+    [
+     45,
+     4.62
+    ],
+    [
+     100,
+     4.2
+    ],
+    [
+     300,
+     3.7
+    ],
+    [
+     500,
+     3.36
+    ],
+    [
+     1000,
+     3.02
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    16,
+    26
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "NAM>EAS": {
+   "fcl_20": 870.0,
+   "fcl_40": 1400,
+   "fcl_40hc": 1480.0,
+   "lcl_per_wm": 57,
+   "air_breaks": [
+    [
+     0,
+     5.5
+    ],
+    [
+     45,
+     4.84
+    ],
+    [
+     100,
+     4.4
+    ],
+    [
+     300,
+     3.87
+    ],
+    [
+     500,
+     3.52
+    ],
+    [
+     1000,
+     3.17
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    18,
+    30
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "SAS>GULF": {
+   "fcl_20": 620.0,
+   "fcl_40": 1000,
+   "fcl_40hc": 1060.0,
+   "lcl_per_wm": 45,
+   "air_breaks": [
+    [
+     0,
+     3.25
+    ],
+    [
+     45,
+     2.86
+    ],
+    [
+     100,
+     2.6
+    ],
+    [
+     300,
+     2.29
+    ],
+    [
+     500,
+     2.08
+    ],
+    [
+     1000,
+     1.87
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    8,
+    16
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "SAS>EUR": {
+   "fcl_20": 1490.0,
+   "fcl_40": 2400,
+   "fcl_40hc": 2540.0,
+   "lcl_per_wm": 88,
+   "air_breaks": [
+    [
+     0,
+     4.75
+    ],
+    [
+     45,
+     4.18
+    ],
+    [
+     100,
+     3.8
+    ],
+    [
+     300,
+     3.34
+    ],
+    [
+     500,
+     3.04
+    ],
+    [
+     1000,
+     2.74
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    22,
+    32
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "MED>GULF": {
+   "fcl_20": 1180.0,
+   "fcl_40": 1900,
+   "fcl_40hc": 2010.0,
+   "lcl_per_wm": 73,
+   "air_breaks": [
+    [
+     0,
+     3.5
+    ],
+    [
+     45,
+     3.08
+    ],
+    [
+     100,
+     2.8
+    ],
+    [
+     300,
+     2.46
+    ],
+    [
+     500,
+     2.24
+    ],
+    [
+     1000,
+     2.02
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    12,
+    22
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "MED>EUR": {
+   "fcl_20": 620.0,
+   "fcl_40": 1000,
+   "fcl_40hc": 1060.0,
+   "lcl_per_wm": 45,
+   "air_breaks": [
+    [
+     0,
+     2.75
+    ],
+    [
+     45,
+     2.42
+    ],
+    [
+     100,
+     2.2
+    ],
+    [
+     300,
+     1.94
+    ],
+    [
+     500,
+     1.76
+    ],
+    [
+     1000,
+     1.58
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    5,
+    10
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "GULF>MED": {
+   "fcl_20": 990.0,
+   "fcl_40": 1600,
+   "fcl_40hc": 1700.0,
+   "lcl_per_wm": 63,
+   "air_breaks": [
+    [
+     0,
+     3.5
+    ],
+    [
+     45,
+     3.08
+    ],
+    [
+     100,
+     2.8
+    ],
+    [
+     300,
+     2.46
+    ],
+    [
+     500,
+     2.24
+    ],
+    [
+     1000,
+     2.02
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    10,
+    18
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "GULF>EUR": {
+   "fcl_20": 1430.0,
+   "fcl_40": 2300,
+   "fcl_40hc": 2440.0,
+   "lcl_per_wm": 85,
+   "air_breaks": [
+    [
+     0,
+     4.5
+    ],
+    [
+     45,
+     3.96
+    ],
+    [
+     100,
+     3.6
+    ],
+    [
+     300,
+     3.17
+    ],
+    [
+     500,
+     2.88
+    ],
+    [
+     1000,
+     2.59
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    18,
+    28
+   ],
+   "air_days": [
+    3,
+    7
+   ],
+   "rail_days": null
+  },
+  "GULF>GULF": {
+   "fcl_20": 370.0,
+   "fcl_40": 600,
+   "fcl_40hc": 640.0,
+   "lcl_per_wm": 33,
+   "air_breaks": [
+    [
+     0,
+     2.0
+    ],
+    [
+     45,
+     1.76
+    ],
+    [
+     100,
+     1.6
+    ],
+    [
+     300,
+     1.41
+    ],
+    [
+     500,
+     1.28
+    ],
+    [
+     1000,
+     1.15
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    2,
+    6
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  },
+  "MED>MED": {
+   "fcl_20": 500.0,
+   "fcl_40": 800,
+   "fcl_40hc": 850.0,
+   "lcl_per_wm": 39,
+   "air_breaks": [
+    [
+     0,
+     2.25
+    ],
+    [
+     45,
+     1.98
+    ],
+    [
+     100,
+     1.8
+    ],
+    [
+     300,
+     1.58
+    ],
+    [
+     500,
+     1.44
+    ],
+    [
+     1000,
+     1.3
+    ]
+   ],
+   "air_min": 90,
+   "air_surcharge_per_kg": 0.55,
+   "rail_40": null,
+   "sea_days": [
+    3,
+    8
+   ],
+   "air_days": [
+    2,
+    4
+   ],
+   "rail_days": null
+  }
+ },
+ "default": {
+  "sea_fcl_40_per_1000km": 330,
+  "sea_fcl_40_base": 600,
+  "lcl_ratio": 0.03,
+  "air_per_kg_per_1000km": 0.55,
+  "air_base_per_kg": 2.2,
+  "air_min": 90,
+  "sea_km_per_day": 650,
+  "air_days": [
+   3,
+   8
+  ]
+ },
+ "co2_kg_per_tonne_km": {
+  "sea": 0.016,
+  "air": 0.6,
+  "rail": 0.03,
+  "road": 0.1
+ }
+}

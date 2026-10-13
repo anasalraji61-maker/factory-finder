@@ -1,0 +1,1951 @@
+{
+"suppliers": [
+{
+"id": "sup_cn_001",
+"name": "Jinan Hualong Food Machinery Co., Ltd",
+"name_ar": "شركة جينان هوالونغ لماكينات الأغذية",
+"country_code": "CN",
+"city": "Jinan",
+"lat": 36.65,
+"lon": 117.12,
+"years_in_business": 14,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_002",
+"name": "Suzhou Baolin Bakery Equipment Co.",
+"name_ar": "سوتشو باولين لمعدات المخابز",
+"country_code": "CN",
+"city": "Suzhou",
+"lat": 31.3,
+"lon": 120.58,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_003",
+"name": "Shijiazhuang Tianyu Food Machinery",
+"name_ar": "تيانيو لماكينات الأغذية",
+"country_code": "CN",
+"city": "Shijiazhuang",
+"lat": 38.04,
+"lon": 114.51,
+"years_in_business": 11,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_004",
+"name": "Taizhou Huangyan Plasmach Co.",
+"name_ar": "هوانغيان بلاسماك",
+"country_code": "CN",
+"city": "Taizhou",
+"lat": 28.66,
+"lon": 121.42,
+"years_in_business": 7,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_005",
+"name": "Zhangjiagang Eceng Machinery",
+"name_ar": "زانغجياغانغ ايسنغ للماكينات",
+"country_code": "CN",
+"city": "Zhangjiagang",
+"lat": 31.87,
+"lon": 120.55,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_006",
+"name": "Wenzhou Hengsheng Beverage Machinery",
+"name_ar": "وينتشو هنغشنغ لماكينات المشروبات",
+"country_code": "CN",
+"city": "Wenzhou",
+"lat": 28.0,
+"lon": 120.7,
+"years_in_business": 5,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_cn_007",
+"name": "Ningbo Zhenhai Injection Machinery",
+"name_ar": "نينغبو لماكينات الحقن",
+"country_code": "CN",
+"city": "Ningbo",
+"lat": 29.87,
+"lon": 121.54,
+"years_in_business": 18,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_008",
+"name": "Qingdao Hongda Plastic Machinery",
+"name_ar": "تشينغداو هونغدا لماكينات البلاستيك",
+"country_code": "CN",
+"city": "Qingdao",
+"lat": 36.07,
+"lon": 120.38,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_009",
+"name": "Changzhou Jinsheng CNC Technology",
+"name_ar": "تشانغتشو جينشنغ للتحكم الرقمي CNC",
+"country_code": "CN",
+"city": "Changzhou",
+"lat": 31.81,
+"lon": 119.97,
+"years_in_business": 8,
+"verified": false,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_010",
+"name": "Jinan Lasertech Equipment Co.",
+"name_ar": "جينان لتقنيات الليزر",
+"country_code": "CN",
+"city": "Jinan",
+"lat": 36.65,
+"lon": 117.12,
+"years_in_business": 13,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_011",
+"name": "Zhengzhou Rongsheng Block Machinery",
+"name_ar": "تشنغتشو رونغشنغ لماكينات البلوك",
+"country_code": "CN",
+"city": "Zhengzhou",
+"lat": 34.75,
+"lon": 113.63,
+"years_in_business": 6,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_cn_012",
+"name": "Xinxiang Grain Machinery Group",
+"name_ar": "مجموعة شينشيانغ لماكينات الحبوب",
+"country_code": "CN",
+"city": "Xinxiang",
+"lat": 35.3,
+"lon": 113.93,
+"years_in_business": 20,
+"verified": true,
+"certifications": [
+"ISO9001",
+"CE"
+]
+},
+{
+"id": "sup_cn_013",
+"name": "Baoding Paper Machinery Co.",
+"name_ar": "باودينغ لماكينات الورق",
+"country_code": "CN",
+"city": "Baoding",
+"lat": 38.87,
+"lon": 115.46,
+"years_in_business": 15,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_014",
+"name": "Foshan Nanhai Carton Machinery",
+"name_ar": "فوشان نانهاي لماكينات الكرتون",
+"country_code": "CN",
+"city": "Foshan",
+"lat": 23.02,
+"lon": 113.12,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_015",
+"name": "Tangshan Steel Trading Co.",
+"name_ar": "تانغشان لتجارة الصلب",
+"country_code": "CN",
+"city": "Tangshan",
+"lat": 39.63,
+"lon": 118.18,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_016",
+"name": "Shaoxing Keqiao Textile Co.",
+"name_ar": "شاوشينغ كيتشياو للمنسوجات",
+"country_code": "CN",
+"city": "Shaoxing",
+"lat": 30.0,
+"lon": 120.58,
+"years_in_business": 11,
+"verified": true,
+"certifications": [
+"OEKO-TEX"
+]
+},
+{
+"id": "sup_cn_017",
+"name": "Foshan Furniture Export Co.",
+"name_ar": "فوشان لتصدير الأثاث",
+"country_code": "CN",
+"city": "Foshan",
+"lat": 23.02,
+"lon": 113.12,
+"years_in_business": 8,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_018",
+"name": "Zhongshan Lumina Lighting",
+"name_ar": "تشونغشان لومينا للإضاءة",
+"country_code": "CN",
+"city": "Zhongshan",
+"lat": 22.52,
+"lon": 113.39,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"CE",
+"RoHS"
+]
+},
+{
+"id": "sup_cn_019",
+"name": "Changzhou Sunbright Solar",
+"name_ar": "تشانغتشو صن برايت للطاقة الشمسية",
+"country_code": "CN",
+"city": "Changzhou",
+"lat": 31.81,
+"lon": 119.97,
+"years_in_business": 7,
+"verified": true,
+"certifications": [
+"IEC",
+"CE"
+]
+},
+{
+"id": "sup_cn_020",
+"name": "Shenzhen PowerEdge Energy",
+"name_ar": "شنتشن باوراج للطاقة",
+"country_code": "CN",
+"city": "Shenzhen",
+"lat": 22.54,
+"lon": 114.06,
+"years_in_business": 6,
+"verified": false,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_021",
+"name": "Yiwu Homeware Trading Co.",
+"name_ar": "ييوو لتجارة الأدوات المنزلية",
+"country_code": "CN",
+"city": "Yiwu",
+"lat": 29.31,
+"lon": 120.08,
+"years_in_business": 4,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_cn_022",
+"name": "Qingdao Seastar Tire Co.",
+"name_ar": "تشينغداو سيستار للإطارات",
+"country_code": "CN",
+"city": "Qingdao",
+"lat": 36.07,
+"lon": 120.38,
+"years_in_business": 16,
+"verified": true,
+"certifications": [
+"DOT",
+"ECE"
+]
+},
+{
+"id": "sup_cn_023",
+"name": "Guangzhou Noor Fashion Garments",
+"name_ar": "غوانغتشو نور للأزياء",
+"country_code": "CN",
+"city": "Guangzhou",
+"lat": 23.13,
+"lon": 113.26,
+"years_in_business": 5,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_cn_024",
+"name": "Yongkang Toolmaster Co.",
+"name_ar": "يونغكانغ تولماستر للعدد",
+"country_code": "CN",
+"city": "Yongkang",
+"lat": 28.89,
+"lon": 120.04,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_cn_025",
+"name": "Xingtai Auto Parts Factory",
+"name_ar": "شينغتاي لقطع غيار السيارات",
+"country_code": "CN",
+"city": "Xingtai",
+"lat": 37.07,
+"lon": 114.5,
+"years_in_business": 7,
+"verified": false,
+"certifications": [
+"IATF16949"
+]
+},
+{
+"id": "sup_cn_026",
+"name": "Taizhou Aquaflow Pumps",
+"name_ar": "تايتشو أكوافلو للمضخات",
+"country_code": "CN",
+"city": "Taizhou",
+"lat": 28.66,
+"lon": 121.42,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"CE",
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_027",
+"name": "Zhuhai Coolwind Appliances",
+"name_ar": "تشوهاي كول ويند للأجهزة",
+"country_code": "CN",
+"city": "Zhuhai",
+"lat": 22.27,
+"lon": 113.58,
+"years_in_business": 14,
+"verified": true,
+"certifications": [
+"CE",
+"SASO"
+]
+},
+{
+"id": "sup_cn_028",
+"name": "Zhengzhou Kunlun Aluminium",
+"name_ar": "تشنغتشو كونلون للألمنيوم",
+"country_code": "CN",
+"city": "Zhengzhou",
+"lat": 34.75,
+"lon": 113.63,
+"years_in_business": 10,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_029",
+"name": "Ningbo Tianli Metals",
+"name_ar": "نينغبو تيانلي للمعادن",
+"country_code": "CN",
+"city": "Ningbo",
+"lat": 29.87,
+"lon": 121.54,
+"years_in_business": 13,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_030",
+"name": "Dongying Polychem Co.",
+"name_ar": "دونغيينغ بوليكيم",
+"country_code": "CN",
+"city": "Dongying",
+"lat": 37.43,
+"lon": 118.67,
+"years_in_business": 8,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_cn_031",
+"name": "Nantong PolyPET Materials",
+"name_ar": "نانتونغ بولي بيت للمواد",
+"country_code": "CN",
+"city": "Nantong",
+"lat": 31.98,
+"lon": 120.89,
+"years_in_business": 6,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_us_001",
+"name": "Midwest Machinery Exchange",
+"name_ar": "ميدويست لتبادل الماكينات",
+"country_code": "US",
+"city": "Chicago",
+"lat": 41.88,
+"lon": -87.63,
+"years_in_business": 25,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_us_002",
+"name": "Texas Industrial Surplus",
+"name_ar": "تكساس للفائض الصناعي",
+"country_code": "US",
+"city": "Houston",
+"lat": 29.76,
+"lon": -95.37,
+"years_in_business": 18,
+"verified": true,
+"certifications": []
+},
+{
+"id": "sup_us_003",
+"name": "Ohio Machine Tool Refurb Center",
+"name_ar": "مركز أوهايو لتجديد ماكينات التشغيل",
+"country_code": "US",
+"city": "Cleveland",
+"lat": 41.5,
+"lon": -81.69,
+"years_in_business": 22,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_de_001",
+"name": "Süddeutsche Maschinenhandel GmbH",
+"name_ar": "ماشينينهاندل جنوب ألمانيا",
+"country_code": "DE",
+"city": "Stuttgart",
+"lat": 48.78,
+"lon": 9.18,
+"years_in_business": 30,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_de_002",
+"name": "Rhein Gebrauchtmaschinen GmbH",
+"name_ar": "راين للماكينات المستعملة",
+"country_code": "DE",
+"city": "Duesseldorf",
+"lat": 51.23,
+"lon": 6.78,
+"years_in_business": 22,
+"verified": true,
+"certifications": [
+"ISO9001"
+]
+},
+{
+"id": "sup_it_001",
+"name": "Emilia Macchine Usate S.r.l.",
+"name_ar": "إميليا للماكينات المستعملة",
+"country_code": "IT",
+"city": "Bologna",
+"lat": 44.49,
+"lon": 11.34,
+"years_in_business": 27,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_it_002",
+"name": "Lombardia Food Tech Usato S.r.l.",
+"name_ar": "لومبارديا لتقنيات الأغذية المستعملة",
+"country_code": "IT",
+"city": "Brescia",
+"lat": 45.54,
+"lon": 10.22,
+"years_in_business": 19,
+"verified": true,
+"certifications": [
+"CE"
+]
+},
+{
+"id": "sup_tr_001",
+"name": "Istanbul Modest Fashion A.S.",
+"name_ar": "إسطنبول للأزياء المحتشمة",
+"country_code": "TR",
+"city": "Istanbul",
+"lat": 41.01,
+"lon": 28.98,
+"years_in_business": 11,
+"verified": true,
+"certifications": [
+"OEKO-TEX"
+]
+},
+{
+"id": "sup_tr_002",
+"name": "Iskenderun Steel & Rebar",
+"name_ar": "اسكندرون للحديد والصلب",
+"country_code": "TR",
+"city": "Iskenderun",
+"lat": 36.59,
+"lon": 36.17,
+"years_in_business": 17,
+"verified": true,
+"certifications": [
+"TSE"
+]
+},
+{
+"id": "sup_in_001",
+"name": "Tirupur Cotton Mills Ltd",
+"name_ar": "مصانع تيروبور للقطن",
+"country_code": "IN",
+"city": "Tirupur",
+"lat": 11.11,
+"lon": 77.34,
+"years_in_business": 21,
+"verified": true,
+"certifications": [
+"GOTS"
+]
+},
+{
+"id": "sup_in_002",
+"name": "Gujarat Polymers Pvt Ltd",
+"name_ar": "غوجارات للبوليمرات",
+"country_code": "IN",
+"city": "Ahmedabad",
+"lat": 23.02,
+"lon": 72.57,
+"years_in_business": 15,
+"verified": false,
+"certifications": []
+},
+{
+"id": "sup_in_003",
+"name": "Rajkot Pumps & Motors",
+"name_ar": "راجكوت للمضخات والمحركات",
+"country_code": "IN",
+"city": "Rajkot",
+"lat": 22.3,
+"lon": 70.8,
+"years_in_business": 12,
+"verified": true,
+"certifications": [
+"ISI"
+]
+},
+{
+"id": "sup_vn_001",
+"name": "Binh Duong Paper & Pulp",
+"name_ar": "بينه دونغ للورق واللب",
+"country_code": "VN",
+"city": "Thu Dau Mot",
+"lat": 10.99,
+"lon": 106.65,
+"years_in_business": 9,
+"verified": true,
+"certifications": [
+"FSC"
+]
+},
+{
+"id": "sup_vn_002",
+"name": "Saigon Plywood Export",
+"name_ar": "سايغون لتصدير الخشب الرقائقي",
+"country_code": "VN",
+"city": "Ho Chi Minh City",
+"lat": 10.82,
+"lon": 106.63,
+"years_in_business": 7,
+"verified": false,
+"certifications": []
+}
+],
+"listings": [
+{
+"id": "lst_0001",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Automatic Bakery Bread Production Line, Tunnel Oven",
+"title_ar": "خط إنتاج مخبوزات أوتوماتيكي مع فرن نفقي",
+"price_min": "45000.00",
+"price_max": "68000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 6500,
+"unit_volume_m3": 28,
+"hs_code": "8438.10",
+"lead_time_days": [
+45,
+70
+],
+"supplier_id": "sup_cn_001"
+},
+{
+"id": "lst_0002",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Pastry and Croissant Production Line, Laminating Dough Sheeter",
+"title_ar": "خط إنتاج معجنات وكرواسون",
+"price_min": "85000.00",
+"price_max": "120000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 9200,
+"unit_volume_m3": 36,
+"hs_code": "8438.10",
+"lead_time_days": [
+50,
+75
+],
+"supplier_id": "sup_cn_002"
+},
+{
+"id": "lst_0003",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Biscuit and Cookie Production Line 250kg/h",
+"title_ar": "خط إنتاج البسكويت 250 كغم بالساعة",
+"price_min": "150000.00",
+"price_max": "260000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 14000,
+"unit_volume_m3": 60,
+"hs_code": "8438.10",
+"lead_time_days": [
+60,
+90
+],
+"supplier_id": "sup_cn_003"
+},
+{
+"id": "lst_0004",
+"kind": "production_line",
+"condition": "new",
+"category": "plastics_machinery",
+"title": "Automatic PET Bottle Blowing Machine 4 Cavity",
+"title_ar": "ماكنة نفخ قناني PET أوتوماتيكية 4 فتحات",
+"price_min": "18000.00",
+"price_max": "32000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 2800,
+"unit_volume_m3": 12,
+"hs_code": "8477.30",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_cn_004"
+},
+{
+"id": "lst_0005",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Mineral Water Bottling Filling Line 5000 BPH",
+"title_ar": "خط تعبئة مياه معدنية 5000 قنينة بالساعة",
+"price_min": "38000.00",
+"price_max": "62000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 7500,
+"unit_volume_m3": 40,
+"hs_code": "8422.30",
+"lead_time_days": [
+40,
+60
+],
+"supplier_id": "sup_cn_005"
+},
+{
+"id": "lst_0006",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Fruit Juice Processing and Filling Production Line",
+"title_ar": "خط إنتاج وتعبئة العصائر",
+"price_min": "55000.00",
+"price_max": "95000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "CIF",
+"unit_weight_kg": 8800,
+"unit_volume_m3": 38,
+"hs_code": "8435.10",
+"lead_time_days": [
+45,
+65
+],
+"supplier_id": "sup_cn_006"
+},
+{
+"id": "lst_0007",
+"kind": "production_line",
+"condition": "new",
+"category": "plastics_machinery",
+"title": "Plastic Injection Molding Machine 250 Ton Servo",
+"title_ar": "ماكنة حقن بلاستيك 250 طن",
+"price_min": "22000.00",
+"price_max": "38000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 9500,
+"unit_volume_m3": 18,
+"hs_code": "8477.10",
+"lead_time_days": [
+30,
+45
+],
+"supplier_id": "sup_cn_007"
+},
+{
+"id": "lst_0008",
+"kind": "production_line",
+"condition": "new",
+"category": "plastics_machinery",
+"title": "PVC/PE Plastic Pipe Extrusion Line 16-110mm",
+"title_ar": "خط بثق أنابيب بلاستيك",
+"price_min": "28000.00",
+"price_max": "52000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 11000,
+"unit_volume_m3": 45,
+"hs_code": "8477.20",
+"lead_time_days": [
+35,
+55
+],
+"supplier_id": "sup_cn_008"
+},
+{
+"id": "lst_0009",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "CNC Vertical Machining Center VMC850 3-Axis",
+"title_ar": "مركز تشغيل CNC عمودي VMC850",
+"price_min": "24000.00",
+"price_max": "41000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 5200,
+"unit_volume_m3": 14,
+"hs_code": "8457.10",
+"lead_time_days": [
+30,
+50
+],
+"supplier_id": "sup_cn_009"
+},
+{
+"id": "lst_0010",
+"kind": "production_line",
+"condition": "new",
+"category": "metalworking",
+"title": "3000W Fiber Laser Cutting Machine for Metal Sheet",
+"title_ar": "ماكنة قص ليزر ألياف 3000 واط للمعادن",
+"price_min": "16000.00",
+"price_max": "30000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 3600,
+"unit_volume_m3": 10,
+"hs_code": "8456.11",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_010"
+},
+{
+"id": "lst_0011",
+"kind": "production_line",
+"condition": "new",
+"category": "construction_machinery",
+"title": "Automatic Concrete Block Making Machine QT10",
+"title_ar": "ماكنة صب بلوك خرسانية أوتوماتيكية",
+"price_min": "9000.00",
+"price_max": "24000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 6800,
+"unit_volume_m3": 16,
+"hs_code": "8474.80",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_011"
+},
+{
+"id": "lst_0012",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Wheat Flour Mill Plant 100 Ton per Day",
+"title_ar": "مطحنة طحين 100 طن يوميا",
+"price_min": "60000.00",
+"price_max": "140000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 32000,
+"unit_volume_m3": 95,
+"hs_code": "8437.80",
+"lead_time_days": [
+60,
+90
+],
+"supplier_id": "sup_cn_012"
+},
+{
+"id": "lst_0013",
+"kind": "production_line",
+"condition": "new",
+"category": "food_beverage",
+"title": "Edible Oil Press Line Sunflower Sesame Olive",
+"title_ar": "خط عصر زيوت نباتية",
+"price_min": "7000.00",
+"price_max": "26000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 3200,
+"unit_volume_m3": 12,
+"hs_code": "8479.20",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_cn_012"
+},
+{
+"id": "lst_0014",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Toilet Tissue Paper Making and Rewinding Line",
+"title_ar": "خط إنتاج ورق التواليت والمحارم",
+"price_min": "90000.00",
+"price_max": "230000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 26000,
+"unit_volume_m3": 85,
+"hs_code": "8439.10",
+"lead_time_days": [
+75,
+120
+],
+"supplier_id": "sup_cn_013"
+},
+{
+"id": "lst_0015",
+"kind": "production_line",
+"condition": "new",
+"category": "paper_packaging",
+"title": "Corrugated Carton Box Production Line 5-Ply",
+"title_ar": "خط إنتاج كرتون مموج 5 طبقات",
+"price_min": "120000.00",
+"price_max": "300000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "CIF",
+"unit_weight_kg": 38000,
+"unit_volume_m3": 110,
+"hs_code": "8441.10",
+"lead_time_days": [
+80,
+120
+],
+"supplier_id": "sup_cn_014"
+},
+{
+"id": "lst_0016",
+"kind": "production_line",
+"condition": "used",
+"category": "paper_packaging",
+"title": "Used Heidelberg Speedmaster 4-Color Offset Printing Press",
+"title_ar": "ماكنة طباعة أوفست هايدلبرغ مستعملة 4 ألوان",
+"price_min": "60000.00",
+"price_max": "110000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 18000,
+"unit_volume_m3": 70,
+"hs_code": "8443.13",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_de_001"
+},
+{
+"id": "lst_0017",
+"kind": "production_line",
+"condition": "used",
+"category": "metalworking",
+"title": "Used DMG Mori 5-Axis CNC Machining Center (2016)",
+"title_ar": "مركز تشغيل CNC خماسي المحاور DMG Mori مستعمل",
+"price_min": "45000.00",
+"price_max": "90000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 9800,
+"unit_volume_m3": 24,
+"hs_code": "8457.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_de_002"
+},
+{
+"id": "lst_0018",
+"kind": "production_line",
+"condition": "used",
+"category": "food_beverage",
+"title": "Used Italian Bakery Line, Divider Proofer and Oven (2015)",
+"title_ar": "خط مخبوزات إيطالي مستعمل",
+"price_min": "70000.00",
+"price_max": "140000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 12500,
+"unit_volume_m3": 48,
+"hs_code": "8438.10",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_it_001"
+},
+{
+"id": "lst_0019",
+"kind": "production_line",
+"condition": "used",
+"category": "plastics_machinery",
+"title": "Used Sipa PET Blow Molding Machine 6 Cavity (2014)",
+"title_ar": "ماكنة نفخ PET سيبا مستعملة 6 فتحات",
+"price_min": "40000.00",
+"price_max": "85000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 4800,
+"unit_volume_m3": 16,
+"hs_code": "8477.30",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_it_001"
+},
+{
+"id": "lst_0020",
+"kind": "production_line",
+"condition": "used",
+"category": "food_beverage",
+"title": "Used KHS Glass Bottle Filling Line 24000 BPH",
+"title_ar": "خط تعبئة قناني زجاجية KHS مستعمل",
+"price_min": "120000.00",
+"price_max": "260000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 42000,
+"unit_volume_m3": 150,
+"hs_code": "8422.30",
+"lead_time_days": [
+25,
+45
+],
+"supplier_id": "sup_de_001"
+},
+{
+"id": "lst_0021",
+"kind": "production_line",
+"condition": "used",
+"category": "plastics_machinery",
+"title": "Used Arburg Allrounder Injection Molding Machine 320 Ton",
+"title_ar": "ماكنة حقن أربورغ مستعملة 320 طن",
+"price_min": "25000.00",
+"price_max": "60000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 8200,
+"unit_volume_m3": 17,
+"hs_code": "8477.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_de_002"
+},
+{
+"id": "lst_0022",
+"kind": "production_line",
+"condition": "used",
+"category": "metalworking",
+"title": "Used Trumpf TruLaser 3030 Laser Cutting Machine",
+"title_ar": "ماكنة قص ليزر ترومبف مستعملة",
+"price_min": "55000.00",
+"price_max": "100000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 11000,
+"unit_volume_m3": 30,
+"hs_code": "8456.11",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_de_001"
+},
+{
+"id": "lst_0023",
+"kind": "production_line",
+"condition": "used",
+"category": "food_beverage",
+"title": "Used Italian Flour Mill 120 Ton per Day (Ocrim)",
+"title_ar": "مطحنة طحين إيطالية مستعملة 120 طن يوميا",
+"price_min": "90000.00",
+"price_max": "180000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "EXW",
+"unit_weight_kg": 36000,
+"unit_volume_m3": 110,
+"hs_code": "8437.80",
+"lead_time_days": [
+30,
+60
+],
+"supplier_id": "sup_it_002"
+},
+{
+"id": "lst_0024",
+"kind": "production_line",
+"condition": "used",
+"category": "food_beverage",
+"title": "Used American Biscuit and Cracker Baking Line",
+"title_ar": "خط بسكويت أمريكي مستعمل",
+"price_min": "80000.00",
+"price_max": "170000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 21000,
+"unit_volume_m3": 80,
+"hs_code": "8438.10",
+"lead_time_days": [
+25,
+45
+],
+"supplier_id": "sup_us_001"
+},
+{
+"id": "lst_0025",
+"kind": "production_line",
+"condition": "used",
+"category": "plastics_machinery",
+"title": "Used Plastic Extrusion Line with Twin Screw Extruder",
+"title_ar": "خط بثق بلاستيك مستعمل ببرغي مزدوج",
+"price_min": "30000.00",
+"price_max": "70000.00",
+"currency": "USD",
+"unit": "line",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 13000,
+"unit_volume_m3": 42,
+"hs_code": "8477.20",
+"lead_time_days": [
+20,
+40
+],
+"supplier_id": "sup_us_002"
+},
+{
+"id": "lst_0026",
+"kind": "production_line",
+"condition": "refurbished",
+"category": "metalworking",
+"title": "Refurbished Haas VF-2 CNC Vertical Machining Center",
+"title_ar": "مركز تشغيل CNC هاس VF-2 مجدد",
+"price_min": "28000.00",
+"price_max": "48000.00",
+"currency": "USD",
+"unit": "set",
+"moq": 1,
+"incoterm": "FOB",
+"unit_weight_kg": 4500,
+"unit_volume_m3": 12,
+"hs_code": "8457.10",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_us_003"
+},
+{
+"id": "lst_0027",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "Virgin PP Homopolymer Granules Injection Grade",
+"title_ar": "حبيبات بولي بروبيلين بكر للحقن",
+"price_min": "980.00",
+"price_max": "1150.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3902.10",
+"lead_time_days": [
+7,
+15
+],
+"supplier_id": "sup_cn_029"
+},
+{
+"id": "lst_0028",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "HDPE Granules Blow Molding Grade",
+"title_ar": "حبيبات بولي إيثيلين عالي الكثافة للنفخ",
+"price_min": "1050.00",
+"price_max": "1250.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3901.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_in_002"
+},
+{
+"id": "lst_0029",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "LDPE Film Grade Granules",
+"title_ar": "حبيبات بولي إيثيلين منخفض الكثافة للأفلام",
+"price_min": "1100.00",
+"price_max": "1320.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "CIF",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.6,
+"hs_code": "3901.10",
+"lead_time_days": [
+7,
+15
+],
+"supplier_id": "sup_cn_029"
+},
+{
+"id": "lst_0030",
+"kind": "raw_material",
+"condition": "new",
+"category": "plastics",
+"title": "PET Bottle Grade Resin Chips IV 0.80",
+"title_ar": "حبيبات PET لصناعة القناني",
+"price_min": "900.00",
+"price_max": "1080.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 22,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 1.5,
+"hs_code": "3907.61",
+"lead_time_days": [
+7,
+14
+],
+"supplier_id": "sup_cn_030"
+},
+{
+"id": "lst_0031",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Hot Rolled Steel Coil HRC Q235",
+"title_ar": "لفات صلب مدرفل على الساخن",
+"price_min": "520.00",
+"price_max": "640.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 25,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.9,
+"hs_code": "7208.39",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_015"
+},
+{
+"id": "lst_0032",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Steel Rebar B500B 12-32mm",
+"title_ar": "حديد تسليح B500B",
+"price_min": "480.00",
+"price_max": "580.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.8,
+"hs_code": "7214.20",
+"lead_time_days": [
+7,
+15
+],
+"supplier_id": "sup_tr_002"
+},
+{
+"id": "lst_0033",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Aluminium Ingot A7 99.7%",
+"title_ar": "سبائك ألمنيوم نقاوة 99.7%",
+"price_min": "2300.00",
+"price_max": "2700.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "CIF",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.5,
+"hs_code": "7601.10",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_028"
+},
+{
+"id": "lst_0034",
+"kind": "raw_material",
+"condition": "new",
+"category": "metals",
+"title": "Copper Wire Rod 8mm 99.9%",
+"title_ar": "سلك نحاس 8 ملم نقاوة 99.9%",
+"price_min": "8300.00",
+"price_max": "9600.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 10,
+"incoterm": "CIF",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 0.4,
+"hs_code": "7408.11",
+"lead_time_days": [
+10,
+18
+],
+"supplier_id": "sup_cn_029"
+},
+{
+"id": "lst_0035",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "Combed Cotton Yarn Ne 30/1 for Knitting",
+"title_ar": "خيوط قطن ممشط للحياكة",
+"price_min": "2.80",
+"price_max": "3.60",
+"currency": "USD",
+"unit": "kg",
+"moq": 1000,
+"incoterm": "FOB",
+"unit_weight_kg": 1,
+"unit_volume_m3": 0.003,
+"hs_code": "5205.23",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_in_001"
+},
+{
+"id": "lst_0036",
+"kind": "raw_material",
+"condition": "new",
+"category": "textiles",
+"title": "100% Polyester Woven Fabric 150gsm",
+"title_ar": "قماش بوليستر منسوج 150 غرام",
+"price_min": "0.80",
+"price_max": "1.60",
+"currency": "USD",
+"unit": "m",
+"moq": 3000,
+"incoterm": "FOB",
+"unit_weight_kg": 0.15,
+"unit_volume_m3": 0.0004,
+"hs_code": "5407.52",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_016"
+},
+{
+"id": "lst_0037",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Kraft Liner Paper Jumbo Rolls 125gsm",
+"title_ar": "رولات ورق كرافت 125 غرام",
+"price_min": "620.00",
+"price_max": "780.00",
+"currency": "USD",
+"unit": "ton",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 1000,
+"unit_volume_m3": 2.2,
+"hs_code": "4804.11",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_vn_001"
+},
+{
+"id": "lst_0038",
+"kind": "raw_material",
+"condition": "new",
+"category": "paper_wood",
+"title": "Plywood Panels 18mm Commercial Grade",
+"title_ar": "ألواح خشب رقائقي 18 ملم",
+"price_min": "9.00",
+"price_max": "18.00",
+"currency": "USD",
+"unit": "sheet",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 32,
+"unit_volume_m3": 0.045,
+"hs_code": "4412.33",
+"lead_time_days": [
+14,
+25
+],
+"supplier_id": "sup_vn_002"
+},
+{
+"id": "lst_0039",
+"kind": "product",
+"condition": "new",
+"category": "furniture",
+"title": "Dining Table and Chairs Set, 6-Seat Modern",
+"title_ar": "طاولة طعام مع كراسي 6 مقاعد",
+"price_min": "85.00",
+"price_max": "160.00",
+"currency": "USD",
+"unit": "set",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 75,
+"unit_volume_m3": 0.55,
+"hs_code": "9403.60",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_017"
+},
+{
+"id": "lst_0040",
+"kind": "product",
+"condition": "new",
+"category": "furniture",
+"title": "Ergonomic Mesh Office Chair with Headrest",
+"title_ar": "كرسي مكتب مريح شبكي",
+"price_min": "28.00",
+"price_max": "55.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 16,
+"unit_volume_m3": 0.14,
+"hs_code": "9401.30",
+"lead_time_days": [
+15,
+30
+],
+"supplier_id": "sup_cn_017"
+},
+{
+"id": "lst_0041",
+"kind": "product",
+"condition": "new",
+"category": "lighting",
+"title": "LED Panel Light 60x60 40W Recessed",
+"title_ar": "إضاءة LED لوح 60×60 سم",
+"price_min": "3.00",
+"price_max": "7.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 3.2,
+"unit_volume_m3": 0.02,
+"hs_code": "9405.42",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_018"
+},
+{
+"id": "lst_0042",
+"kind": "product",
+"condition": "new",
+"category": "lighting",
+"title": "LED Street Light 100W IP66 with Photocell",
+"title_ar": "كشاف شوارع LED 100 واط",
+"price_min": "22.00",
+"price_max": "48.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 6.5,
+"unit_volume_m3": 0.04,
+"hs_code": "9405.42",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_018"
+},
+{
+"id": "lst_0043",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "Mono Solar Panel 550W Tier-1 Half-Cell",
+"title_ar": "ألواح شمسية 550 واط أحادية البلورة",
+"price_min": "62.00",
+"price_max": "85.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 28,
+"unit_volume_m3": 0.18,
+"hs_code": "8541.43",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_019"
+},
+{
+"id": "lst_0044",
+"kind": "product",
+"condition": "new",
+"category": "solar_energy",
+"title": "Hybrid Solar Inverter 5kW with MPPT",
+"title_ar": "محول شمسي هجين 5 كيلوواط",
+"price_min": "280.00",
+"price_max": "460.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 20,
+"incoterm": "FOB",
+"unit_weight_kg": 24,
+"unit_volume_m3": 0.08,
+"hs_code": "8504.40",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_cn_020"
+},
+{
+"id": "lst_0045",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Stainless Steel Cookware Set 12 Pieces",
+"title_ar": "طقم أواني طبخ ستانلس ستيل 12 قطعة",
+"price_min": "14.00",
+"price_max": "32.00",
+"currency": "USD",
+"unit": "set",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 9,
+"unit_volume_m3": 0.06,
+"hs_code": "7323.93",
+"lead_time_days": [
+12,
+25
+],
+"supplier_id": "sup_cn_021"
+},
+{
+"id": "lst_0046",
+"kind": "product",
+"condition": "new",
+"category": "kitchenware",
+"title": "Glass Food Storage Container Set with Lids",
+"title_ar": "طقم علب حفظ طعام زجاجية",
+"price_min": "4.00",
+"price_max": "9.00",
+"currency": "USD",
+"unit": "set",
+"moq": 300,
+"incoterm": "FOB",
+"unit_weight_kg": 3,
+"unit_volume_m3": 0.02,
+"hs_code": "7013.37",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_021"
+},
+{
+"id": "lst_0047",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Passenger Car Tires 205/55R16 All Season",
+"title_ar": "إطارات سيارات 205/55R16",
+"price_min": "24.00",
+"price_max": "48.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 9,
+"unit_volume_m3": 0.09,
+"hs_code": "4011.10",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_022"
+},
+{
+"id": "lst_0048",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Truck and Bus Radial Tires 12R22.5",
+"title_ar": "إطارات شاحنات 12R22.5",
+"price_min": "95.00",
+"price_max": "150.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 52,
+"unit_volume_m3": 0.45,
+"hs_code": "4011.20",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_022"
+},
+{
+"id": "lst_0049",
+"kind": "product",
+"condition": "new",
+"category": "apparel",
+"title": "Abaya Black Crepe Open Front Modest Dress",
+"title_ar": "عباية سوداء كريب مفتوحة",
+"price_min": "9.00",
+"price_max": "24.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 0.6,
+"unit_volume_m3": 0.004,
+"hs_code": "6204.43",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_tr_001"
+},
+{
+"id": "lst_0050",
+"kind": "product",
+"condition": "new",
+"category": "apparel",
+"title": "Women Modest Long Dress Maxi Muslim Wear",
+"title_ar": "فستان محتشم طويل للنساء",
+"price_min": "6.00",
+"price_max": "15.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 0.5,
+"unit_volume_m3": 0.004,
+"hs_code": "6204.43",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_023"
+},
+{
+"id": "lst_0051",
+"kind": "product",
+"condition": "new",
+"category": "tools",
+"title": "Cordless Power Drill Set 21V with 2 Batteries",
+"title_ar": "عدة مثقاب كهربائي لاسلكي 21 فولت",
+"price_min": "18.00",
+"price_max": "45.00",
+"currency": "USD",
+"unit": "set",
+"moq": 100,
+"incoterm": "FOB",
+"unit_weight_kg": 2.8,
+"unit_volume_m3": 0.012,
+"hs_code": "8467.21",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_024"
+},
+{
+"id": "lst_0052",
+"kind": "product",
+"condition": "new",
+"category": "tools",
+"title": "Hand Tool Set 150 Pieces Chrome Vanadium",
+"title_ar": "طقم عدة يدوية 150 قطعة",
+"price_min": "8.00",
+"price_max": "20.00",
+"currency": "USD",
+"unit": "set",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 6.5,
+"unit_volume_m3": 0.02,
+"hs_code": "8206.00",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_024"
+},
+{
+"id": "lst_0053",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Ceramic Brake Pads Front Set for Japanese Cars",
+"title_ar": "فحمات فرامل سيراميك للسيارات اليابانية",
+"price_min": "3.00",
+"price_max": "9.00",
+"currency": "USD",
+"unit": "set",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 1.4,
+"unit_volume_m3": 0.003,
+"hs_code": "8708.30",
+"lead_time_days": [
+12,
+22
+],
+"supplier_id": "sup_cn_025"
+},
+{
+"id": "lst_0054",
+"kind": "product",
+"condition": "new",
+"category": "tires_auto",
+"title": "Gas Shock Absorbers Front Rear Auto Parts",
+"title_ar": "ممتصات صدمات للسيارات",
+"price_min": "8.00",
+"price_max": "22.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 200,
+"incoterm": "FOB",
+"unit_weight_kg": 3.5,
+"unit_volume_m3": 0.01,
+"hs_code": "8708.80",
+"lead_time_days": [
+15,
+25
+],
+"supplier_id": "sup_cn_025"
+},
+{
+"id": "lst_0055",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Stainless Submersible Water Pump 1.5HP Borehole",
+"title_ar": "مضخة مياه غاطسة ستانلس 1.5 حصان",
+"price_min": "45.00",
+"price_max": "120.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 14,
+"unit_volume_m3": 0.04,
+"hs_code": "8413.70",
+"lead_time_days": [
+15,
+28
+],
+"supplier_id": "sup_cn_026"
+},
+{
+"id": "lst_0056",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Solar Water Pump DC Surface Irrigation System",
+"title_ar": "مضخة مياه شمسية للري",
+"price_min": "120.00",
+"price_max": "310.00",
+"currency": "USD",
+"unit": "set",
+"moq": 30,
+"incoterm": "FOB",
+"unit_weight_kg": 22,
+"unit_volume_m3": 0.07,
+"hs_code": "8413.70",
+"lead_time_days": [
+15,
+28
+],
+"supplier_id": "sup_in_003"
+},
+{
+"id": "lst_0057",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Split Air Conditioner 18000 BTU Inverter T3 Climate",
+"title_ar": "مكيف سبلت 18000 وحدة حرارية انفرتر",
+"price_min": "210.00",
+"price_max": "340.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 50,
+"incoterm": "FOB",
+"unit_weight_kg": 52,
+"unit_volume_m3": 0.28,
+"hs_code": "8415.10",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_cn_027"
+},
+{
+"id": "lst_0058",
+"kind": "product",
+"condition": "new",
+"category": "pumps_hvac",
+"title": "Heavy Duty Centrifugal Water Pump Industrial 10HP",
+"title_ar": "مضخة مياه طاردة مركزية صناعية",
+"price_min": "420.00",
+"price_max": "980.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 5,
+"incoterm": "FOB",
+"unit_weight_kg": 95,
+"unit_volume_m3": 0.2,
+"hs_code": "8413.70",
+"lead_time_days": [
+20,
+35
+],
+"supplier_id": "sup_us_002"
+},
+{
+"id": "lst_0059",
+"kind": "product",
+"condition": "new",
+"category": "apparel",
+"title": "Premium Cotton Hijab Scarf Assorted Colors",
+"title_ar": "حجاب قطني فاخر",
+"price_min": "1.20",
+"price_max": "3.50",
+"currency": "USD",
+"unit": "piece",
+"moq": 500,
+"incoterm": "FOB",
+"unit_weight_kg": 0.15,
+"unit_volume_m3": 0.001,
+"hs_code": "6214.20",
+"lead_time_days": [
+10,
+20
+],
+"supplier_id": "sup_tr_001"
+},
+{
+"id": "lst_0060",
+"kind": "product",
+"condition": "new",
+"category": "furniture",
+"title": "Solid Wood Wardrobe 4-Door Bedroom Furniture",
+"title_ar": "خزانة ملابس خشبية 4 أبواب",
+"price_min": "160.00",
+"price_max": "340.00",
+"currency": "USD",
+"unit": "piece",
+"moq": 10,
+"incoterm": "FOB",
+"unit_weight_kg": 120,
+"unit_volume_m3": 1.2,
+"hs_code": "9403.50",
+"lead_time_days": [
+25,
+40
+],
+"supplier_id": "sup_cn_017"
+}
+]
+}

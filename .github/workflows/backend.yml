@@ -1,0 +1,25 @@
+name: backend
+on:
+  push:
+    paths: ["services/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["services/**", "scripts/**", "ruff.toml"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [geo, logistics, sourcing, trust, gateway]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/install_service.py services/${{ matrix.service }} --editable --extras dev
+      - run: pip install ruff pytest pytest-asyncio
+      - run: ruff check services/${{ matrix.service }}
+      - run: python -m pytest -q
+        working-directory: services/${{ matrix.service }}

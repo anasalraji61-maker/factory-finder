@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - geo service
+  version: 0.1.0
+  description: Countries, cities, logistics hubs, nearest-hub lookup and distance estimates. Port 8103.
+servers:
+  - url: http://localhost:8103
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, version]
+                properties:
+                  status: {type: string, const: ok}
+                  service: {type: string, const: geo}
+                  version: {type: string}
+  /v1/countries:
+    get:
+      summary: List supported countries
+      responses:
+        "200":
+          description: Countries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/Country"}}
+                  total: {type: integer}
+  /v1/cities:
+    get:
+      summary: Search cities (Arabic or English, diacritics/alef/ya/ta-marbuta insensitive)
+      parameters:
+        - {name: q, in: query, schema: {type: string}}
+        - {name: country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 50}}
+      responses:
+        "200":
+          description: Matching cities (prefix matches first)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/City"}}
+                  total: {type: integer, description: matches before limit}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/hubs:
+    get:
+      summary: List hubs located in, or serving, a country
+      parameters:
+        - {name: country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        - {name: type, in: query, schema: {$ref: "#/components/schemas/HubTypeFilter"}}
+      responses:
+        "200":
+          description: Hubs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/Hub"}}
+                  total: {type: integer}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/hubs/nearest:
+    get:
+      summary: Nearest hubs to a coordinate (straight-line), ascending distance
+      parameters:
+        - {name: lat, in: query, required: true, schema: {type: number, minimum: -90, maximum: 90}}
+        - {name: lon, in: query, required: true, schema: {type: number, minimum: -180, maximum: 180}}
+        - {name: type, in: query, schema: {$ref: "#/components/schemas/HubTypeFilter"}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 20, default: 3}}
+        - {name: country, in: query, description: Only hubs located in or serving this country, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+      responses:
+        "200":
+          description: Nearest hubs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/NearestHub"}}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/distance:
+    get:
+      summary: Distance estimate between two points
+      description: road = haversine x road factor (country of `country`, else nearest city to origin); sea = shipping-lane waypoint approximation; air = great-circle. Always an estimate.
+      parameters:
+        - {name: from_lat, in: query, required: true, schema: {type: number, minimum: -90, maximum: 90}}
+        - {name: from_lon, in: query, required: true, schema: {type: number, minimum: -180, maximum: 180}}
+        - {name: to_lat, in: query, required: true, schema: {type: number, minimum: -90, maximum: 90}}
+        - {name: to_lon, in: query, required: true, schema: {type: number, minimum: -180, maximum: 180}}
+        - {name: mode, in: query, schema: {type: string, enum: [road, sea, air], default: road}}
+        - {name: country, in: query, description: Optional override for the road factor, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+      responses:
+        "200":
+          description: Distance
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Distance"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  responses:
+    Error:
+      description: Standard error body
+      content:
+        application/json:
+          schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}
+  schemas:
+    HubTypeFilter:
+      type: string
+      enum: [sea, air, rail, land, land_border, consolidation]
+      description: "`land` is an alias of `land_border`."
+    Country:
+      type: object
+      required: [iso2, name_en, name_ar, currency, region, road_factor]
+      properties:
+        iso2: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}
+        name_en: {type: string}
+        name_ar: {type: string}
+        currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
+        region: {type: string}
+        road_factor: {type: number, minimum: 1.2, maximum: 1.5, description: Road distance / straight-line multiplier}
+    City:
+      type: object
+      required: [id, name_en, name_ar, country_code, point, industrial]
+      properties:
+        id: {type: string}
+        name_en: {type: string}
+        name_ar: {type: string}
+        country_code: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}
+        point: {$ref: "../schemas/common.schema.json#/$defs/GeoPoint"}
+        industrial: {type: boolean}
+    Hub:
+      type: object
+      required: [id, type, name_en, name_ar, country_code, point, serves_countries]
+      properties:
+        id: {type: string, description: "UN/LOCODE for sea (CNSHA); air:<IATA>; rail:<CODE>; land:<CODE>; consol:<CODE>"}
+        type: {type: string, enum: [sea, air, rail, land_border, consolidation]}
+        name_en: {type: string}
+        name_ar: {type: string}
+        country_code: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}
+        point: {$ref: "../schemas/common.schema.json#/$defs/GeoPoint"}
+        unlocode: {type: [string, "null"]}
+        iata: {type: [string, "null"]}
+        serves_countries: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        notes: {type: [string, "null"]}
+    NearestHub:
+      allOf:
+        - {$ref: "#/components/schemas/Hub"}
+        - type: object
+          required: [distance_km]
+          properties:
+            distance_km: {type: number, description: Straight-line km}
+    Distance:
+      type: object
+      required: [mode, distance_km, straight_line_km, duration_hours, method, via, is_estimate]
+      properties:
+        mode: {type: string, enum: [road, sea, air]}
+        distance_km: {type: number}
+        straight_line_km: {type: number}
+        duration_hours: {type: number}
+        method: {type: string}
+        road_factor: {type: [number, "null"]}
+        via: {type: array, items: {type: string}, description: Sea lane waypoints used}
+        is_estimate: {type: boolean}

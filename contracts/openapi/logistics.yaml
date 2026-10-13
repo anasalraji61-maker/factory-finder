@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder - logistics
+  version: 0.1.0
+  description: Landed-cost engine, FX and carrier directory. Money is {amount: decimal string, currency}.
+servers: [{url: http://localhost:8102}]
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Health"}}}}
+  /v1/quotes/landed-cost:
+    post:
+      summary: Landed cost to the buyer's city, one option per feasible mode (sorted by total, one recommended)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/LandedCostRequest"}}}
+      responses:
+        "200": {description: quote, content: {application/json: {schema: {$ref: "#/components/schemas/LandedCostQuoteResponse"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+        "502": {$ref: "#/components/responses/Error"}
+  /v1/fx/rates:
+    get:
+      summary: Rates per 1 unit of base
+      parameters: [{name: base, in: query, schema: {type: string, default: USD, pattern: "^[A-Z]{3}$"}}]
+      responses:
+        "200": {description: rates, content: {application/json: {schema: {$ref: "#/components/schemas/FxRates"}}}}
+        "400": {$ref: "#/components/responses/Error"}
+  /v1/fx/convert:
+    post:
+      summary: Convert an amount
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/ConvertRequest"}}}
+      responses:
+        "200": {description: converted, content: {application/json: {schema: {$ref: "#/components/schemas/ConvertResponse"}}}}
+        "400": {$ref: "#/components/responses/Error"}
+  /v1/carriers:
+    get:
+      summary: Carrier / forwarder directory (mock)
+      parameters:
+        - {name: origin_country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        - {name: destination_country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        - {name: mode, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}}
+      responses:
+        "200": {description: carriers, content: {application/json: {schema: {$ref: "#/components/schemas/CarrierList"}}}}
+components:
+  responses:
+    Error: {description: error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+  schemas:
+    Health:
+      type: object
+      properties: {status: {type: string}, service: {type: string}, version: {type: string}}
+    GoodsInput:
+      type: object
+      required: [total_weight_kg]
+      description: Give total_value or unit_price (x quantity). Volume is estimated (250 kg/m3) when omitted.
+      properties:
+        listing_id: {type: string}
+        description: {type: string}
+        quantity: {type: string, description: decimal, default: "1"}
+        unit: {type: string}
+        total_value: {$ref: "../schemas/common.schema.json#/$defs/Money"}
+        unit_price: {$ref: "../schemas/common.schema.json#/$defs/Money"}
+        total_weight_kg: {type: string, description: decimal}
+        total_volume_m3: {type: string, description: decimal}
+        hs_code: {type: string}
+        category: {type: string, description: "e.g. electronics, machinery, apparel, furniture, plastics, steel, vehicles"}
+        dangerous_goods: {type: boolean, default: false}
+    LandedCostRequest:
+      type: object
+      required: [goods, origin, destination]
+      properties:
+        goods: {$ref: "#/components/schemas/GoodsInput"}
+        origin: {$ref: "../schemas/common.schema.json#/$defs/Location"}
+        destination: {$ref: "../schemas/common.schema.json#/$defs/Location"}
+        supplier_incoterm: {$ref: "../schemas/common.schema.json#/$defs/Incoterm", default: EXW}
+        modes: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}, description: "Filter; also bypasses minimum-size rules for FCL/rail"}
+        display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode", default: USD}
+        insurance: {type: boolean, default: true}
+    LandedCostQuoteResponse:
+      allOf:
+        - $ref: "../schemas/common.schema.json#/$defs/LandedCostQuote"
+        - type: object
+          properties:
+            warnings: {type: array, items: {type: string}, description: quote-level (e.g. sanctions on origin/destination)}
+    FxRates:
+      type: object
+      properties:
+        base: {type: string}
+        timestamp: {type: string, format: date-time}
+        source: {type: string, description: "mock | ecb | mock-fallback"}
+        rates: {type: object, additionalProperties: {type: string}}
+    ConvertRequest:
+      type: object
+      required: [amount, from, to]
+      properties: {amount: {type: string}, from: {type: string}, to: {type: string}}
+    ConvertResponse:
+      type: object
+      properties:
+        amount: {$ref: "../schemas/common.schema.json#/$defs/Money"}
+        rate: {type: string}
+        from: {type: string}
+        to: {type: string}
+        timestamp: {type: string}
+        source: {type: string}
+    Carrier:
+      type: object
+      properties:
+        id: {type: string}
+        name: {type: string}
+        kind: {type: string, enum: [carrier, forwarder, airline]}
+        modes: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}}
+        origin_regions: {type: array, items: {type: string}}
+        destination_regions: {type: array, items: {type: string}}
+        rating: {type: number}
+    CarrierList:
+      type: object
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Carrier"}}, total: {type: integer}}

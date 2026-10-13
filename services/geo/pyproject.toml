@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ff-geo"
+version = "0.1.0"
+description = "Factory Finder geo service: countries, cities, hubs, nearest-hub, distances"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.110", "pydantic>=2.6", "pydantic-settings>=2.2", "uvicorn>=0.29"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "httpx", "ruff"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ff_geo"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib -q"
+asyncio_mode = "auto"

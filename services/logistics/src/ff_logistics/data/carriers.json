@@ -1,0 +1,230 @@
+{
+ "carriers": [
+  {
+   "id": "car_maersk",
+   "name": "Maersk",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.5
+  },
+  {
+   "id": "car_msc",
+   "name": "MSC",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc",
+    "sea_lcl"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.4
+  },
+  {
+   "id": "car_cosco",
+   "name": "COSCO Shipping",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "EAS"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "NAM",
+    "SAS"
+   ],
+   "rating": 4.2
+  },
+  {
+   "id": "car_cma",
+   "name": "CMA CGM",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc",
+    "sea_lcl"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_hapag",
+   "name": "Hapag-Lloyd",
+   "kind": "carrier",
+   "modes": [
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "sea_fcl_40hc"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.4
+  },
+  {
+   "id": "car_dhl",
+   "name": "DHL Global Forwarding",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "road"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_dsv",
+   "name": "DSV",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "sea_fcl_40",
+    "road",
+    "rail"
+   ],
+   "origin_regions": [
+    "EAS",
+    "EUR",
+    "NAM"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_kn",
+   "name": "Kuehne+Nagel",
+   "kind": "forwarder",
+   "modes": [
+    "air",
+    "sea_lcl",
+    "sea_fcl_40",
+    "rail"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "*"
+   ],
+   "rating": 4.4
+  },
+  {
+   "id": "car_emirates",
+   "name": "Emirates SkyCargo",
+   "kind": "airline",
+   "modes": [
+    "air"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "EAS",
+    "SAS"
+   ],
+   "rating": 4.4
+  },
+  {
+   "id": "car_turkish",
+   "name": "Turkish Cargo",
+   "kind": "airline",
+   "modes": [
+    "air"
+   ],
+   "origin_regions": [
+    "*"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "EAS",
+    "NAM"
+   ],
+   "rating": 4.3
+  },
+  {
+   "id": "car_sinotrans",
+   "name": "Sinotrans",
+   "kind": "forwarder",
+   "modes": [
+    "sea_lcl",
+    "sea_fcl_40",
+    "air",
+    "rail"
+   ],
+   "origin_regions": [
+    "EAS"
+   ],
+   "destination_regions": [
+    "GULF",
+    "MED",
+    "EUR",
+    "RUS"
+   ],
+   "rating": 4.0
+  },
+  {
+   "id": "car_iqtrans",
+   "name": "Gulf Bridge Logistics (mock)",
+   "kind": "forwarder",
+   "modes": [
+    "sea_lcl",
+    "sea_fcl_20",
+    "sea_fcl_40",
+    "road"
+   ],
+   "origin_regions": [
+    "EAS",
+    "MED",
+    "GULF"
+   ],
+   "destination_regions": [
+    "GULF"
+   ],
+   "rating": 3.9
+  }
+ ]
+}

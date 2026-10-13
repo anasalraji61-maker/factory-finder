@@ -1,0 +1,7 @@
+- 2026-10-13 | Refresh tokens are stateless JWTs (typ=refresh, 30d), no rotation/revocation store yet | keep MVP simple; add a denylist table before production.
+- 2026-10-13 | Login takes email OR phone; unknown user and wrong password give the same 401 | avoid account enumeration.
+- 2026-10-13 | Proxy strips client-supplied X-User-Id/X-Internal-Token and never forwards Authorization; X-User-Id is set from a valid JWT (also on public routes when a valid token is present) | anti-spoofing.
+- 2026-10-13 | Public GET prefixes: search, listings, suppliers, categories, countries, cities, hubs, fx/rates; POST quotes/landed-cost. /v1/sources, /v1/distance, /v1/carriers stay protected | follows the brief literally.
+- 2026-10-13 | Home feed = sourcing categories + trending search + logistics fx; failing section -> null + warnings entry | resilient aggregation.
+- 2026-10-13 | WebSocket proxying (/v1/ws/conversations/{id}) not implemented in v0.1; requests to resolve via messaging directly | HTTP proxy only; revisit with mobile-features-b.
+- 2026-10-13 | Rate limit: fixed window per client IP, 300/min general, 30/min for /v1/auth/*; env-configurable | in-memory, single instance only.

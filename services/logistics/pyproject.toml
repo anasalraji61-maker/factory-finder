@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ff-logistics"
+version = "0.1.0"
+description = "Factory Finder landed-cost engine"
+requires-python = ">=3.12"
+dependencies = ["fastapi", "pydantic>=2", "pydantic-settings", "httpx", "uvicorn"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "respx", "ruff"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ff_logistics"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib -q"
+asyncio_mode = "auto"

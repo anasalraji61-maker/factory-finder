@@ -1,0 +1,6 @@
+- 2026-10-13 | `/v1/hubs?type=land` is an alias of `land_border`; `rail` and `consolidation` also accepted (additive) | ARCHITECTURE lists sea|air|land only but logistics needs rail/consolidation hubs.
+- 2026-10-13 | `country` filter on hubs matches hubs located in OR serving that country | Mersin/Jebel Ali must be found when asking for Iraq.
+- 2026-10-13 | Road factor taken from `country` param, else country of the city nearest to the origin point | lat/lon-only API has no country.
+- 2026-10-13 | Sea distance = Dijkstra over a ~50-node lane graph (Malacca, Hormuz, Suez, Gibraltar, Pacific, Atlantic), endpoints attach to nearest 3 nodes | simple, deterministic, ~5-10% accuracy; always flagged `is_estimate`.
+- 2026-10-13 | Coordinates of some Iraqi border crossings (Trebil, Arar, Mundhiriya, Zurbatiyah, Shalamcheh) are approximate (+-20 km) | no authoritative source offline; noted in hub `notes`.
+- 2026-10-13 | Dataset ships at 45 countries / 204 cities / 127 hubs | covers brief; AGENTS.md targets (60 / 300 / 120) partially met, cities can grow later.

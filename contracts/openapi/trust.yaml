@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info: {title: Factory Finder trust, version: 0.1.0, description: "Explainable supplier trust score 0-100. Bands: green>=75, yellow 50-74, red<50, unknown when fewer than 4 signals known (sanctions hit always red, score<=20)."}
+servers: [{url: http://localhost:8104}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /v1/trust/suppliers/{supplier_id}:
+    get:
+      operationId: getSupplierTrust
+      parameters: [{name: supplier_id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Trust score, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/TrustScore"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+  /v1/trust/suppliers:batch:
+    get:
+      operationId: batchSupplierTrust
+      parameters: [{name: ids, in: query, required: true, description: "comma separated, max 50", schema: {type: string}}]
+      responses:
+        "200":
+          description: Scores for known ids
+          content: {application/json: {schema: {type: object, required: [items], properties: {items: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/TrustScore"}}}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/trust/evaluate:
+    post:
+      operationId: evaluateTrust
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierSignals"}}}}
+      responses:
+        "200": {description: Trust score, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/TrustScore"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  responses:
+    Error: {description: Error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+  schemas:
+    SupplierSignals:
+      type: object
+      additionalProperties: false
+      description: All fields optional; missing = unknown.
+      properties:
+        supplier_id: {type: string}
+        years_in_business: {type: number, minimum: 0}
+        verified: {type: boolean}
+        third_party_audit: {type: boolean}
+        transactions_count: {type: integer, minimum: 0}
+        response_rate: {type: number, minimum: 0, maximum: 1}
+        rating_avg: {type: number, minimum: 0, maximum: 5}
+        reviews_count: {type: integer, minimum: 0}
+        dispute_rate: {type: number, minimum: 0, maximum: 1}
+        certifications: {type: array, items: {type: string}}
+        domain_age_years: {type: number, minimum: 0}
+        has_physical_address: {type: boolean}
+        contact_consistency: {type: number, minimum: 0, maximum: 1}
+        sanctions_hit: {type: boolean}
+        price_vs_market_ratio: {type: number, exclusiveMinimum: 0}
+        country_risk: {type: number, minimum: 0, maximum: 1}

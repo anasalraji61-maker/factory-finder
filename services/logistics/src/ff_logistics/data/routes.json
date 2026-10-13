@@ -1,0 +1,57 @@
+{
+ "sea": {
+  "IQ": [
+   {
+    "hub": "IQUQR",
+    "label": "Umm Qasr"
+   },
+   {
+    "hub": "TRMER",
+    "via": "IQIBK",
+    "border_fee": 350,
+    "extra_days": [
+     2,
+     5
+    ],
+    "label": "Mersin + truck via Ibrahim Khalil"
+   },
+   {
+    "hub": "AEJEA",
+    "via": "IQSAF",
+    "border_fee": 450,
+    "extra_days": [
+     3,
+     6
+    ],
+    "label": "Jebel Ali + truck via Safwan"
+   }
+  ],
+  "JO": [
+   {
+    "hub": "JOAQJ",
+    "label": "Aqaba"
+   }
+  ]
+ },
+ "rail": {
+  "IQ": [
+   {
+    "hub": "TRMER",
+    "via": "IQIBK",
+    "border_fee": 350,
+    "extra_days": [
+     2,
+     5
+    ],
+    "label": "Turkey rail head + truck via Ibrahim Khalil"
+   }
+  ]
+ },
+ "hub_surcharge": {
+  "IQUQR": {
+   "per_container": 300,
+   "per_wm": 20,
+   "note": "port congestion / war-risk surcharges"
+  }
+ }
+}

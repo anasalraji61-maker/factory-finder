@@ -1,0 +1,119 @@
+import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/features/discover/data/discover_models.dart';
+import 'package:factory_finder/features/discover/data/mock_catalog.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class DiscoverRepository {
+  DiscoverRepository(this._api);
+
+  final ApiClient _api;
+
+  Future<PageResult<Listing>> search(ListingQuery q) async {
+    if (_api.isMock) {
+      await mockDelay();
+      return filterMockListings(q);
+    }
+    final json = await _api.get('/v1/listings/search', query: {
+      if (q.query.isNotEmpty) 'q': q.query,
+      if (q.kind != null) 'kind': q.kind!.json,
+      if (q.condition != null) 'condition': q.condition!.json,
+      if (q.originCountry != null) 'origin_country': q.originCountry,
+      if (q.maxMoq != null) 'max_moq': q.maxMoq,
+      if (q.verifiedOnly) 'verified_only': true,
+      if (q.category != null) 'category': q.category,
+      if (q.supplierId != null) 'supplier_id': q.supplierId,
+    });
+    return PageResult.fromJson<Listing>(
+      Map<String, dynamic>.from(json as Map),
+      Listing.fromJson,
+    );
+  }
+
+  Future<List<Listing>> trending() async {
+    if (_api.isMock) {
+      await mockDelay(250);
+      final sorted = [...mockListings]..sort((a, b) =>
+          (b.supplier.trustScore ?? 0).compareTo(a.supplier.trustScore ?? 0));
+      return sorted.take(8).toList();
+    }
+    final page = await search(const ListingQuery(sort: SortOption.trust));
+    return page.items.take(8).toList();
+  }
+
+  Future<Listing> getListing(String id) async {
+    if (_api.isMock) {
+      await mockDelay(250);
+      return mockListings.firstWhere(
+        (l) => l.id == id,
+        orElse: () => throw ApiException(
+          status: 404,
+          code: 'not_found',
+          message: 'Listing $id not found',
+        ),
+      );
+    }
+    final json = await _api.get('/v1/listings/$id');
+    return Listing.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  Future<SupplierSummary> getSupplier(String id) async {
+    if (_api.isMock) {
+      await mockDelay(200);
+      final s = mockSuppliers[id];
+      if (s == null) {
+        throw ApiException(
+          status: 404,
+          code: 'not_found',
+          message: 'Supplier $id not found',
+        );
+      }
+      return s;
+    }
+    final json = await _api.get('/v1/suppliers/$id');
+    return SupplierSummary.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  Future<TrustScore> getTrust(String supplierId) async {
+    if (_api.isMock) {
+      await mockDelay(200);
+      final s = mockSuppliers[supplierId];
+      if (s == null) {
+        throw ApiException(
+          status: 404,
+          code: 'not_found',
+          message: 'Supplier $supplierId not found',
+        );
+      }
+      return mockTrustFor(s);
+    }
+    final json = await _api.get('/v1/suppliers/$supplierId/trust');
+    return TrustScore.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+}
+
+final discoverRepositoryProvider = Provider<DiscoverRepository>(
+  (ref) => DiscoverRepository(ref.watch(apiClientProvider)),
+);
+
+final listingsProvider =
+    FutureProvider.autoDispose.family<PageResult<Listing>, ListingQuery>(
+  (ref, q) => ref.watch(discoverRepositoryProvider).search(q),
+);
+
+final trendingProvider = FutureProvider.autoDispose<List<Listing>>(
+  (ref) => ref.watch(discoverRepositoryProvider).trending(),
+);
+
+final listingProvider = FutureProvider.autoDispose.family<Listing, String>(
+  (ref, id) => ref.watch(discoverRepositoryProvider).getListing(id),
+);
+
+final supplierProvider =
+    FutureProvider.autoDispose.family<SupplierSummary, String>(
+  (ref, id) => ref.watch(discoverRepositoryProvider).getSupplier(id),
+);
+
+final trustProvider = FutureProvider.autoDispose.family<TrustScore, String>(
+  (ref, id) => ref.watch(discoverRepositoryProvider).getTrust(id),
+);
