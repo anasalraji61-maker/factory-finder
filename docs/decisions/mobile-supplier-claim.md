@@ -1,0 +1,2 @@
+2026-10-13 | Supplier claim UI validates `^sup_[A-Za-z0-9_]+$` client-side (stricter than gateway pattern which also allows `.:-`) | Simple rule requested; server remains the authority and 422/409 map to a generic/friendly message.
+2026-10-13 | Claim state lives in `Me.supplierId` (authProvider); mock mode returns 409 `supplier_claimed` for `sup_taken` | No separate store needed; mock stays in memory.

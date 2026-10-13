@@ -14,6 +14,7 @@ class Me {
     this.displayCurrency,
     this.language,
     this.defaultDestination,
+    this.supplierId,
   });
 
   final String id;
@@ -25,6 +26,23 @@ class Me {
   final String? displayCurrency;
   final String? language;
   final Location? defaultDestination;
+
+  /// Catalog supplier claimed by this user (`sup_...`), or null.
+  final String? supplierId;
+
+  /// Copy with [supplierId] replaced (null releases the claim).
+  Me withSupplierId(String? value) => Me(
+        id: id,
+        name: name,
+        email: email,
+        phone: phone,
+        company: company,
+        role: role,
+        displayCurrency: displayCurrency,
+        language: language,
+        defaultDestination: defaultDestination,
+        supplierId: value,
+      );
 
   factory Me.fromJson(Map<String, dynamic> j) {
     final dest = j['default_destination'];
@@ -40,6 +58,10 @@ class Me {
       defaultDestination: dest is Map
           ? Location.fromJson(Map<String, dynamic>.from(dest))
           : null,
+      supplierId: j['supplier_id'] is String &&
+              (j['supplier_id'] as String).isNotEmpty
+          ? j['supplier_id'] as String
+          : null,
     );
   }
 
@@ -54,6 +76,7 @@ class Me {
         if (language != null) 'language': language,
         if (defaultDestination != null)
           'default_destination': defaultDestination!.toJson(),
+        if (supplierId != null) 'supplier_id': supplierId,
       };
 }
 
@@ -104,6 +127,27 @@ class AuthRepository {
 
   void logout() => _api.tokens.clear();
 
+  /// Claims (or, with null, releases) a catalog supplier for [current].
+  /// Throws [ApiException] code `supplier_claimed` (409) when already taken.
+  Future<Me> claimSupplier(Me current, String? supplierId) async {
+    if (_api.isMock) {
+      await mockDelay(300);
+      if (supplierId == kMockTakenSupplierId) {
+        throw ApiException(
+          status: 409,
+          code: 'supplier_claimed',
+          message: 'Supplier already claimed',
+        );
+      }
+      return current.withSupplierId(supplierId);
+    }
+    final json = await _api.patch(
+      '/v1/me',
+      body: <String, dynamic>{'supplier_id': supplierId},
+    );
+    return Me.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
   Future<Me> _finish(dynamic json) async {
     final m = Map<String, dynamic>.from(json as Map);
     _api.tokens.set(
@@ -129,6 +173,9 @@ class AuthRepository {
     );
   }
 }
+
+/// Mock mode: claiming this supplier id always fails with 409 supplier_claimed.
+const String kMockTakenSupplierId = 'sup_taken';
 
 /// Id of the signed-in user in mock mode (owner of "my requests" fixtures).
 const String kMockUserId = 'usr_mock';
@@ -165,6 +212,12 @@ class AuthController extends StateNotifier<Me?> {
       password: password,
       name: name,
     );
+  }
+
+  Future<void> claimSupplier(String? supplierId) async {
+    final current = state;
+    if (current == null) return;
+    state = await _repo.claimSupplier(current, supplierId);
   }
 
   void logout() {

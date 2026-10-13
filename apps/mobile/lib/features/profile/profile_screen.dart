@@ -197,6 +197,17 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: Text(context.tr('claim.tile_title')),
+                  subtitle: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(me?.supplierId ?? context.tr('claim.not_linked')),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/supplier-claim'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.bookmark_border),
                   title: Text(context.tr('profile.watchlist')),
                   trailing: Text(
