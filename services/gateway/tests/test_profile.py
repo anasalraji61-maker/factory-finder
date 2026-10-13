@@ -44,6 +44,7 @@ def test_home_feed_with_mock_client(client, hdr):
 def test_claim_supplier_first_wins(client, hdr):
     r = client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
     assert r.status_code == 200 and r.json()["supplier_id"] == "sup_cn_018"
+    assert r.json()["supplier_claim_status"] == "pending"
     assert client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"}).status_code == 200  # idempotent
     other = client.post("/v1/auth/register", json={"email": "o@example.com", "password": "password123", "name": "O"}).json()
     oh = {"Authorization": f"Bearer {other['access_token']}"}

@@ -14,6 +14,21 @@ void main() {
     expect(me.withSupplierId(null).name, 'n');
   });
 
+  test('Me parses supplier_claim_status, tolerant of missing field', () {
+    expect(Me.fromJson({'id': 'u', 'name': 'n'}).supplierClaimStatus, 'none');
+    expect(
+        Me.fromJson({'id': 'u', 'name': 'n', 'supplier_id': 'sup_a'}).supplierClaimStatus,
+        'verified');
+    final p = Me.fromJson({
+      'id': 'u',
+      'name': 'n',
+      'supplier_id': 'sup_a',
+      'supplier_claim_status': 'pending'
+    });
+    expect(p.supplierClaimStatus, 'pending');
+    expect(p.withSupplierId(null).supplierClaimStatus, 'none');
+  });
+
   test('supplier id validation', () {
     expect(isValidSupplierId('sup_abc_1'), true);
     expect(isValidSupplierId(' sup_abc '), true);
@@ -29,6 +44,7 @@ void main() {
     const me = Me(id: kMockUserId, name: 'm');
     final claimed = await repo.claimSupplier(me, 'sup_ok');
     expect(claimed.supplierId, 'sup_ok');
+    expect(claimed.supplierClaimStatus, 'pending');
     final released = await repo.claimSupplier(claimed, null);
     expect(released.supplierId, isNull);
     try {

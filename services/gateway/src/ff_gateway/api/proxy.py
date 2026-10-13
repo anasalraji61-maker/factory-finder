@@ -56,7 +56,8 @@ async def proxy(full_path: str, request: Request) -> Response:
     headers.update(internal_headers(request, user_id))
     if upstream == "messaging" and user_id:  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
-            claimed = await s.scalar(select(User.supplier_id).where(User.id == user_id))
+            claimed = await s.scalar(select(User.supplier_id).where(User.id == user_id, User.supplier_claim_status == "verified")
+            )
         if claimed:
             headers["X-Supplier-Id"] = claimed
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")

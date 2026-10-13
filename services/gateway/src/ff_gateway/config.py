@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 300
     auth_rate_limit_per_minute: int = 30
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
+    admin_token: str | None = None  # FF_GATEWAY_ADMIN_TOKEN; unset -> /v1/admin/* answers 404
     home_client: str = "http"  # http | mock
     bcrypt_rounds: int = 12
 

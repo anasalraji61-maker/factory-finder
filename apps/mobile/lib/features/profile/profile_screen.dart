@@ -201,7 +201,11 @@ class ProfileScreen extends ConsumerWidget {
                   title: Text(context.tr('claim.tile_title')),
                   subtitle: Directionality(
                     textDirection: TextDirection.ltr,
-                    child: Text(me?.supplierId ?? context.tr('claim.not_linked')),
+                    child: Text(me?.supplierId == null
+                        ? context.tr('claim.not_linked')
+                        : me!.supplierClaimStatus == 'pending'
+                            ? context.tr('claim.pending_short', {'id': me.supplierId!})
+                            : me.supplierId!),
                   ),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () => context.push('/supplier-claim'),

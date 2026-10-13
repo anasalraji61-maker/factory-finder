@@ -84,6 +84,7 @@ class MeOut(BaseModel):
     role: Role
     default_destination: Location | None = None
     supplier_id: str | None = None
+    supplier_claim_status: Literal["none", "pending", "verified"] = "none"
     display_currency: str
     language: Language
     created_at: datetime

@@ -54,7 +54,11 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
     async with state.sessionmaker() as s:
         user = await s.get(User, user_id)
         claimed = (
-            await s.scalar(select(User.supplier_id).where(User.id == user_id)) if user else None
+            await s.scalar(
+                select(User.supplier_id).where(User.id == user_id, User.supplier_claim_status == "verified")
+            )
+            if user
+            else None
         )
     if user is None or not user.is_active:
         return await _reject(ws, 4401)

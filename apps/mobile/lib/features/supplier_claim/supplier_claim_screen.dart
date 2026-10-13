@@ -75,6 +75,14 @@ class _SupplierClaimScreenState extends ConsumerState<SupplierClaimScreen> {
                   : context.tr('claim.current', {'id': current}),
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
+            if (current != null && me.supplierClaimStatus != 'none') ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                context.tr(me.supplierClaimStatus == 'pending'
+                    ? 'claim.status.pending'
+                    : 'claim.status.verified'),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _controller,

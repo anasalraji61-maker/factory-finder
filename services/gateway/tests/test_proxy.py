@@ -144,6 +144,11 @@ def test_supplier_header_only_from_verified_claim(client, hdr, mock_upstream):
     assert "x-supplier-id" not in route.calls.last.request.headers
     client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
     client.get("/v1/conversations", headers={**hdr, "X-Supplier-Id": "sup_evil"})
+    assert "x-supplier-id" not in route.calls.last.request.headers  # pending claim is not trusted
+    uid = client.get("/v1/me", headers=hdr).json()["id"]
+    client.app.state.settings.admin_token = "adm"
+    assert client.post(f"/v1/admin/supplier-claims/{uid}/approve", headers={"X-Admin-Token": "adm"}).status_code == 200
+    client.get("/v1/conversations", headers={**hdr, "X-Supplier-Id": "sup_evil"})
     assert route.calls.last.request.headers["x-supplier-id"] == "sup_cn_018"
 
 

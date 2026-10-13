@@ -36,7 +36,7 @@ def to_me(u: User) -> MeOut:
     return MeOut(
         id=u.id, name=u.name, email=u.email, phone=u.phone, company=u.company, role=u.role,  # type: ignore[arg-type]
         default_destination=Location(**u.default_destination) if u.default_destination else None,
-        supplier_id=u.supplier_id,
+        supplier_id=u.supplier_id, supplier_claim_status=u.supplier_claim_status or "none",  # type: ignore[arg-type]
         display_currency=u.display_currency, language=u.language, created_at=u.created_at,  # type: ignore[arg-type]
     )  # fmt: skip
 

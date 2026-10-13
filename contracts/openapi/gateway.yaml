@@ -45,6 +45,35 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/supplier-claims:
+    get:
+      operationId: listSupplierClaims
+      description: "Admin only: header X-Admin-Token must equal FF_GATEWAY_ADMIN_TOKEN. 404 when the token is not configured, 401 when missing/wrong."
+      parameters: [{name: status, in: query, schema: {type: string, enum: [pending, verified], default: pending}}]
+      responses:
+        "200": {description: Claims, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/SupplierClaim"}}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/supplier-claims/{user_id}/approve:
+    post:
+      operationId: approveSupplierClaim
+      description: "Admin only (X-Admin-Token). Pending -> verified; 409 claim_not_pending otherwise."
+      parameters: [{name: user_id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Updated claim, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierClaim"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/admin/supplier-claims/{user_id}/reject:
+    post:
+      operationId: rejectSupplierClaim
+      description: "Admin only (X-Admin-Token). Pending -> released (supplier_id cleared, status none); 409 claim_not_pending otherwise."
+      parameters: [{name: user_id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Updated claim, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierClaim"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
   /v1/home:
     get:
       operationId: getHome
@@ -132,8 +161,19 @@ components:
         default_destination: {oneOf: [{$ref: "../schemas/common.schema.json#/$defs/Location"}, {type: "null"}]}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
         language: {type: string, enum: [ar, en]}
-        supplier_id: {type: [string, "null"], description: "Catalog supplier (sup_*) this user has claimed; lets them answer chats addressed to it"}
+        supplier_id: {type: [string, "null"], description: "Catalog supplier (sup_*) this user has claimed; lets them answer chats addressed to it only once supplier_claim_status is verified"}
+        supplier_claim_status: {type: string, enum: [none, pending, verified], default: none, description: "none = no claim; pending = awaiting admin review (no supplier access yet); verified = approved"}
         created_at: {type: string, format: date-time}
+    SupplierClaim:
+      type: object
+      properties:
+        user_id: {type: string}
+        name: {type: string}
+        email: {type: [string, "null"]}
+        phone: {type: [string, "null"]}
+        company: {type: [string, "null"]}
+        supplier_id: {type: [string, "null"]}
+        supplier_claim_status: {type: string, enum: [none, pending, verified]}
     MePatch:
       type: object
       additionalProperties: false
@@ -146,4 +186,4 @@ components:
         default_destination: {$ref: "../schemas/common.schema.json#/$defs/Location"}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode"}
         language: {type: string, enum: [ar, en]}
-        supplier_id: {type: [string, "null"], pattern: "^sup_[A-Za-z0-9_.:-]{1,59}$", description: "Claim a catalog supplier. First claimer wins (409 supplier_claimed otherwise); null releases it."}
+        supplier_id: {type: [string, "null"], pattern: "^sup_[A-Za-z0-9_.:-]{1,59}$", description: "Claim a catalog supplier. Records a PENDING claim until an admin approves it. Pending or verified claims are unique (409 supplier_claimed otherwise); null releases it and resets status to none."}

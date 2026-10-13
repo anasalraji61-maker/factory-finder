@@ -15,7 +15,9 @@ class Me {
     this.language,
     this.defaultDestination,
     this.supplierId,
-  });
+    String? supplierClaimStatus,
+  }) : supplierClaimStatus = supplierClaimStatus ??
+            (supplierId == null ? 'none' : 'verified');
 
   final String id;
   final String name;
@@ -30,8 +32,13 @@ class Me {
   /// Catalog supplier claimed by this user (`sup_...`), or null.
   final String? supplierId;
 
-  /// Copy with [supplierId] replaced (null releases the claim).
-  Me withSupplierId(String? value) => Me(
+  /// none | pending | verified. Pending claims are under admin review.
+  /// Defaults to verified when only a supplier id is present (older servers).
+  final String supplierClaimStatus;
+
+  /// Copy with [supplierId] replaced (null releases the claim). A new claim
+  /// starts as pending unless [status] says otherwise.
+  Me withSupplierId(String? value, {String? status}) => Me(
         id: id,
         name: name,
         email: email,
@@ -42,6 +49,7 @@ class Me {
         language: language,
         defaultDestination: defaultDestination,
         supplierId: value,
+        supplierClaimStatus: value == null ? 'none' : (status ?? 'pending'),
       );
 
   factory Me.fromJson(Map<String, dynamic> j) {
@@ -62,6 +70,10 @@ class Me {
               (j['supplier_id'] as String).isNotEmpty
           ? j['supplier_id'] as String
           : null,
+      supplierClaimStatus: const {'none', 'pending', 'verified'}
+              .contains(j['supplier_claim_status'])
+          ? j['supplier_claim_status'] as String
+          : null,
     );
   }
 
@@ -77,6 +89,7 @@ class Me {
         if (defaultDestination != null)
           'default_destination': defaultDestination!.toJson(),
         if (supplierId != null) 'supplier_id': supplierId,
+        'supplier_claim_status': supplierClaimStatus,
       };
 }
 
