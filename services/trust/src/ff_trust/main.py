@@ -1,5 +1,7 @@
 """FastAPI app factory for the trust service."""
 
+import hmac
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -33,7 +35,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
         if (
             settings.internal_token
             and request.url.path != "/health"
-            and request.headers.get("x-internal-token") != settings.internal_token
+            and not hmac.compare_digest(request.headers.get("x-internal-token", ""), settings.internal_token)
         ):
             return JSONResponse({"error": {"code": "forbidden", "message": "Invalid internal token", "details": {}}}, status_code=403)
         return await call_next(request)

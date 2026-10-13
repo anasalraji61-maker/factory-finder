@@ -145,3 +145,9 @@ def test_supplier_header_only_from_verified_claim(client, hdr, mock_upstream):
     client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
     client.get("/v1/conversations", headers={**hdr, "X-Supplier-Id": "sup_evil"})
     assert route.calls.last.request.headers["x-supplier-id"] == "sup_cn_018"
+
+
+def test_internal_only_route_not_exposed(client, mock_upstream, hdr):
+    route = mock_upstream.post("http://localhost:8108/v1/alerts/evaluate").mock(return_value=httpx.Response(200, json={}))
+    r = client.post("/v1/alerts/evaluate", headers=hdr, json={})
+    assert r.status_code == 404 and not route.called

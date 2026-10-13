@@ -70,7 +70,9 @@ class SearchIn(_Body):
 
 
 class WatchCreate(_Body):
-    listing_id: str | None = Field(default=None, min_length=1, max_length=128)
+    listing_id: str | None = Field(
+        default=None, min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_:\-][A-Za-z0-9_.:\-]*$"
+    )
     search: SearchIn | None = None
     target_price: MoneyIn | None = None
     drop_threshold_pct: str | None = None

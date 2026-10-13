@@ -12,7 +12,7 @@ from ff_gateway.domain.errors import (
     UpstreamTimeout,
     UpstreamUnavailable,
 )
-from ff_gateway.domain.routing import is_public, resolve_upstream
+from ff_gateway.domain.routing import is_internal_only, is_public, resolve_upstream
 
 router = APIRouter()
 
@@ -34,6 +34,11 @@ async def proxy(full_path: str, request: Request) -> Response:
         )  # fmt: skip
     if request.method == "OPTIONS":
         return Response(status_code=204)
+    if is_internal_only(request.method, path):
+        return Response(
+            '{"error":{"code":"not_found","message":"Route not found","details":{}}}',
+            status_code=404, media_type="application/json",
+        )  # fmt: skip
     user_id: str | None = None
     if is_public(request.method, path):
         if bearer_token(request):

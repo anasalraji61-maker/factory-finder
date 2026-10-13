@@ -1,3 +1,4 @@
+import hmac
 from typing import Annotated
 
 import httpx
@@ -12,7 +13,7 @@ from ..schemas import ConvertRequest, LandedCostRequest
 
 def _auth(request: Request, x_internal_token: Annotated[str | None, Header()] = None):
     token = request.app.state.settings.internal_token
-    if token and x_internal_token != token:
+    if token and not hmac.compare_digest(x_internal_token or "", token):
         raise ApiError("unauthorized", "Missing or invalid internal token", 401)
 
 

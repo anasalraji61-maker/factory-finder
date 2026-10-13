@@ -135,3 +135,11 @@ def test_suggestions_via_mock_sourcing(client):
     req = new_request(client)
     r = client.get(f"/v1/requests/{req['id']}/suggestions?limit=2", headers=BUYER).json()
     assert len(r["items"]) == 2 and r["items"][0]["title"].startswith("LED panel lights")
+
+
+def test_private_request_hidden_from_strangers(client):
+    req = new_request(client, visibility="private")
+    assert client.get(f"/v1/requests/{req['id']}", headers=BUYER).status_code == 200
+    assert client.get(f"/v1/requests/{req['id']}", headers=SUP_A).status_code == 404
+    new_offer(client, req["id"], headers=SUP_A)  # link-holder who offered keeps access
+    assert client.get(f"/v1/requests/{req['id']}", headers=SUP_A).status_code == 200

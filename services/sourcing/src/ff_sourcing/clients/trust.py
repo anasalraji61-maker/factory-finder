@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from typing import Protocol
+from urllib.parse import quote
 
 import httpx
 from pydantic import BaseModel
@@ -37,7 +38,7 @@ class HttpTrustClient:
         self._client = client
 
     async def get(self, supplier_id: str) -> TrustInfo:
-        url = f"{self._base}/v1/trust/suppliers/{supplier_id}"
+        url = f"{self._base}/v1/trust/suppliers/{quote(supplier_id, safe='')}"
         try:
             if self._client is not None:
                 r = await self._client.get(url, timeout=self._timeout)

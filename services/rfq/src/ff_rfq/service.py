@@ -176,6 +176,11 @@ class RfqService:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, self.clock())
             r = await self._request(s, request_id)
+            if r.owner_id != user and r.visibility != "public":  # private = owner + suppliers who offered
+                mine = (await s.execute(select(func.count()).select_from(OfferRow).where(
+                    OfferRow.request_id == r.id, OfferRow.supplier_user_id == user))).scalar_one()
+                if not mine:
+                    raise NotFound("Request not found")
             return request_dict(r, await self._count(s, r.id))
 
     async def close_request(self, user: str, request_id: str) -> dict[str, Any]:

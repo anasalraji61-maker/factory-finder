@@ -16,6 +16,7 @@ from ff_gateway.domain.security import hash_password, verify_password
 from ff_gateway.schemas import LoginIn, RefreshIn, RegisterIn, TokensOut
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
+_DUMMY_HASH = hash_password("timing-equalizer", 12)
 
 
 def _tokens(request: Request, user: User, with_user: bool = True) -> TokensOut:
@@ -55,7 +56,8 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
         conds.append(User.phone == body.phone)
     async with request.app.state.sessionmaker() as s:
         user = await s.scalar(select(User).where(or_(*conds)))
-    ok = user is not None and verify_password(body.password, user.password_hash)
+    # always run a bcrypt check so unknown accounts are not distinguishable by response time
+    ok = verify_password(body.password, user.password_hash if user else _DUMMY_HASH) and user is not None
     if not ok or user is None:
         raise InvalidCredentials()
     if not user.is_active:

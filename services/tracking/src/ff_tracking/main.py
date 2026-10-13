@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import os
 from collections.abc import Callable
 from contextlib import asynccontextmanager
@@ -49,7 +50,7 @@ def create_app(
 
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
-        if token and request.url.path != "/health" and request.headers.get("X-Internal-Token") != token:
+        if token and request.url.path != "/health" and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 

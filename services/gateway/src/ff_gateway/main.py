@@ -1,6 +1,7 @@
 """Gateway app factory."""
 
 import logging
+import re
 import uuid
 from contextlib import asynccontextmanager
 
@@ -22,6 +23,19 @@ from ff_gateway.domain.rate_limit import RateLimiter
 from ff_gateway.domain.security import TokenService
 
 log = logging.getLogger("ff_gateway")
+
+
+class _RedactToken(logging.Filter):
+    """The WebSocket client may pass ?token=<jwt>; keep it out of uvicorn access logs."""
+
+    _re = re.compile(r"([?&]token=)[^&\s\"']+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.args = tuple(self._re.sub(r"\1[redacted]", a) if isinstance(a, str) else a for a in record.args or ())
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_RedactToken())
 
 
 def _error(status: int, code: str, message: str, details: dict | None = None, headers: dict | None = None) -> JSONResponse:

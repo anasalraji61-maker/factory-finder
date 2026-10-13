@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from pydantic import ValidationError
@@ -56,14 +57,14 @@ class HttpTrustClient(_Base):
     service = "trust"
 
     async def supplier_score(self, supplier_id: str) -> TrustScore:
-        return self._parse(TrustScore, await self._call("GET", f"/v1/trust/suppliers/{supplier_id}"))
+        return self._parse(TrustScore, await self._call("GET", f"/v1/trust/suppliers/{quote(supplier_id, safe='')}"))
 
 
 class HttpTrackingClient(_Base):
     service = "tracking"
 
     async def validate(self, reference_type: str, reference: str) -> ReferenceCheck:
-        return self._parse(ReferenceCheck, await self._call("GET", f"/v1/validate/{reference_type}/{reference}"))
+        return self._parse(ReferenceCheck, await self._call("GET", f"/v1/validate/{quote(reference_type, safe='')}/{quote(reference, safe='')}"))
 
 
 def build_http_clients(s: Settings, transport: httpx.AsyncBaseTransport | None = None) -> Clients:

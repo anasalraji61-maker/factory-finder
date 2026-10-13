@@ -20,6 +20,16 @@ PUBLIC_GET_PREFIXES = (
 PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost")}
 
 
+# Service-to-service endpoints that must never be reachable through the public gateway
+# (the gateway attaches the internal token, so exposing them would bypass their guard).
+INTERNAL_ONLY = (("POST", "/v1/alerts/evaluate"),)
+
+
+def is_internal_only(method: str, path: str) -> bool:
+    path = path.rstrip("/") or "/"
+    return (method.upper(), path) in INTERNAL_ONLY
+
+
 def _under(path: str, prefix: str) -> bool:
     return path == prefix or path.startswith(prefix + "/")
 

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Factory Finder - logistics
   version: 0.1.0
-  description: Landed-cost engine, FX and carrier directory. Money is {amount: decimal string, currency}.
+  description: "Landed-cost engine, FX and carrier directory. Money is {amount: decimal string, currency}."
 servers: [{url: http://localhost:8102}]
 paths:
   /health:
