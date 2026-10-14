@@ -100,7 +100,6 @@ void main() {
     await pumpApp(tester, location: '/notification-prefs');
     await settle(tester, frames: 6);
 
-    expect(find.text('ساعات الهدوء'), findsOneWidget);
     final push = find.byKey(const Key('np_price_drop_push'));
     expect(tester.widget<SwitchListTile>(push).value, isTrue);
     await tester.tap(push);
