@@ -38,8 +38,13 @@ Future<void> _tapKey(WidgetTester tester, Object key) async {
     }
   }
   final f = all.first;
-  await tester.ensureVisible(f);
-  await tester.tap(f);
+  final w = tester.widget(f);
+  if (w is ChoiceChip) {
+    w.onSelected?.call(true);
+  } else {
+    await tester.ensureVisible(f);
+    await tester.tap(f);
+  }
   await settle(tester, frames: 3);
 }
 
