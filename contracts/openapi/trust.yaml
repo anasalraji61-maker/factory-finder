@@ -162,3 +162,15 @@ components:
         deals_cancelled: {type: integer, minimum: 0}
         confirmed_reports: {type: integer, minimum: 0}
         blocked: {type: boolean, description: "platform/compliance block: hard-fail red, score <= 20"}
+        review_summary:
+          type: object
+          description: >-
+            Optional verified-purchase review aggregates (same shape as rfq.yaml#ReviewSummary; decimals may be numbers or strings
+            when produced by the trust rfq client, numbers here). Adds the bounded `platform_reviews` factor (max +-6 points),
+            shrunk towards the prior and linearly dampened below 10 reviews. Never counted as a data gap when absent.
+          properties:
+            count: {type: integer, minimum: 0}
+            average: {type: [number, "null"], minimum: 0, maximum: 5}
+            histogram: {type: object, additionalProperties: {type: integer}}
+            sub_ratings: {type: object, additionalProperties: {type: [number, "null"]}}
+            completed_deals: {type: [integer, "null"], minimum: 0}

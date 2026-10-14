@@ -72,6 +72,61 @@ paths:
       responses:
         "200": {description: Run report, content: {application/json: {schema: {$ref: "#/components/schemas/EvaluationReport"}}}}
         "401": {$ref: "#/components/responses/Error"}
+  /v1/internal/tracking-events:
+    post:
+      operationId: ingestTrackingEvents
+      description: |
+        Internal (X-Internal-Token when FF_INTERNAL_TOKEN is set). Consumer side of tracking's outbox: each event is one `tracking_outbox` row.
+        Creates one inbox alert per event (rule `shipment_status` for kind `status_changed`, `shipment_delayed` for `shipment_delayed`), idempotent by
+        `dedupe_key` (replays and duplicates inside a batch give `duplicate`, no second alert or push). Push honors the owner's channel prefs / quiet
+        hours for the rule; the inbox is always written. Invalid events are reported per item (`invalid`) and never fail the batch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: object
+                    required: [dedupe_key, shipment_id, owner_id, kind, payload]
+                    properties:
+                      id: {type: integer, description: "outbox row id (informational)"}
+                      dedupe_key: {type: string, maxLength: 300}
+                      shipment_id: {type: string, maxLength: 128}
+                      owner_id: {type: string, maxLength: 64}
+                      kind: {type: string, enum: [status_changed, shipment_delayed]}
+                      payload: {type: object, description: "shipment_id, owner_id, reference, reference_type, label, kind, status, previous_status, eta, delayed, delay_hours, event_id, occurred_at"}
+      responses:
+        "200":
+          description: Per-event outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received: {type: integer}
+                  created: {type: integer}
+                  duplicates: {type: integer}
+                  invalid: {type: integer}
+                  pushes_sent: {type: integer}
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index: {type: integer}
+                        dedupe_key: {type: [string, "null"]}
+                        status: {type: string, enum: [created, duplicate, invalid]}
+                        alert_id: {type: string}
+                        error: {type: string}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/alerts/read-all:
     post:
       operationId: markAllAlertsRead
@@ -191,12 +246,12 @@ components:
       properties:
         id: {type: string}
         watch_id: {type: string}
-        rule: {type: string, enum: [price_drop, below_target, cheaper_equivalent, back_in_stock, new_results]}
+        rule: {type: string, enum: [price_drop, below_target, cheaper_equivalent, back_in_stock, new_results, shipment_status, shipment_delayed]}
         title: {type: string}
         title_ar: {type: string}
         body: {type: string}
         body_ar: {type: string}
-        payload: {type: object, description: "listing_ids, old_price, new_price, drop_pct, target_price, result_count"}
+        payload: {type: object, description: "listing_ids, old_price, new_price, drop_pct, target_price, result_count; shipment alerts add `shipment` {shipment_id, kind, reference, reference_type, label, status, previous_status, eta, delayed, delay_hours} and have watch_id `shp_<hash>`"}
         read: {type: boolean}
         created_at: {type: string, format: date-time}
         read_at: {type: [string, "null"], format: date-time}

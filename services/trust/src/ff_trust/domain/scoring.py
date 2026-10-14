@@ -17,14 +17,14 @@ from datetime import UTC, date, datetime, timedelta
 
 from ff_trust.config import ScoringConfig
 from ff_trust.domain.models import Assessment, DataGap, Factor, FactorKind, TrustBand
-from ff_trust.domain.signals import SupplierSignals
+from ff_trust.domain.signals import ReviewSummary, SupplierSignals
 
 SCORABLE = (
     "years_in_business", "verified", "third_party_audit", "transactions_count", "response_rate",
     "rating_avg", "reviews_count", "dispute_rate", "certifications", "domain_age_years",
     "has_physical_address", "contact_consistency", "price_vs_market_ratio", "country_risk",
     "business_license_status", "storefront_age_years", "repeat_buyer_rate", "response_time_hours",
-    "refund_rate", "deal_outcomes", "confirmed_reports",
+    "refund_rate", "deal_outcomes", "confirmed_reports", "platform_reviews",
 )  # fmt: skip
 
 LABELS = {
@@ -49,9 +49,11 @@ LABELS = {
     "refund_rate": ("Refund rate", "نسبة الاسترجاع"),
     "deal_outcomes": ("On-platform deal outcomes", "نتائج الصفقات على المنصة"),
     "confirmed_reports": ("Confirmed buyer reports", "بلاغات المشترين المؤكدة"),
+    "platform_reviews": ("Verified-purchase reviews", "تقييمات المشترين الموثقة"),
 }
 # confirmed_reports is a penalty-only signal: its absence is the normal state, not a data gap.
-EVIDENCE = tuple(k for k in SCORABLE if k != "confirmed_reports")
+# platform_reviews is an optional enrichment (only present when the rfq source is on): never a data gap.
+EVIDENCE = tuple(k for k in SCORABLE if k not in ("confirmed_reports", "platform_reviews"))
 GAP_ONLY = {"sanctions_hit": ("Sanctions screening not run", "لم يتم فحص قوائم العقوبات")}
 _LICENSE_F = {"verified": 1.0, "pending": 0.1, "unverified": -0.3, "expired": -0.6, "mismatch": -1.0}
 
@@ -135,6 +137,29 @@ def adjusted_rating(avg: float, n: int | None, cfg: ScoringConfig) -> float:
     return (n_eff * avg + cfg.review_prior_weight * cfg.review_prior_mean) / (n_eff + cfg.review_prior_weight)
 
 
+def _summary_average(rs: ReviewSummary) -> float | None:
+    if rs.average is not None:
+        return rs.average
+    h = rs.histogram or {}
+    n = sum(v for k, v in h.items() if k in "12345" and v > 0)
+    return sum(int(k) * v for k, v in h.items() if k in "12345" and v > 0) / n if n else None
+
+
+def platform_reviews_f(rs: ReviewSummary, cfg: ScoringConfig) -> float | None:
+    """Shrunk average (+ sub-ratings), then linearly dampened below `platform_review_full_n` reviews."""
+    avg = _summary_average(rs)
+    if rs.count <= 0 or avg is None:
+        return None
+    w = cfg.platform_review_prior_weight
+    adj = (rs.count * avg + w * cfg.review_prior_mean) / (rs.count + w)
+    f = _clip((adj - cfg.review_prior_mean) / 1.2)
+    subs = [v for v in (rs.sub_ratings or {}).values() if v is not None and 0 <= v <= 5]
+    if subs:
+        sub_adj = (rs.count * (sum(subs) / len(subs)) + w * cfg.review_prior_mean) / (rs.count + w)
+        f = (1 - cfg.platform_review_sub_share) * f + cfg.platform_review_sub_share * _clip((sub_adj - cfg.review_prior_mean) / 1.2)
+    return _clip(f) * min(1.0, rs.count / max(1, cfg.platform_review_full_n))
+
+
 def _f_values(s: SupplierSignals, cfg: ScoringConfig, today: date) -> dict[str, float]:
     f: dict[str, float] = {}
     if s.years_in_business is not None:
@@ -183,6 +208,10 @@ def _f_values(s: SupplierSignals, cfg: ScoringConfig, today: date) -> dict[str, 
         f["deal_outcomes"] = _clip((dr[0] - cfg.deal_prior_rate) / 0.15)
     if s.confirmed_reports is not None:
         f["confirmed_reports"] = -min(1.0, s.confirmed_reports / 3)
+    if s.review_summary is not None:
+        pf = platform_reviews_f(s.review_summary, cfg)
+        if pf is not None:
+            f["platform_reviews"] = pf
     return f
 
 
@@ -196,6 +225,10 @@ def _value_text(key: str, s: SupplierSignals, cfg: ScoringConfig, today: date) -
     if key == "dispute_rate":
         d = effective_dispute_rate(s, cfg)
         return f"{d:.3f}" + (" recency-weighted" if s.dispute_rate_recent is not None else "")
+    if key == "platform_reviews":
+        rs = s.review_summary
+        deals = f", deals={rs.completed_deals}" if rs.completed_deals else ""
+        return f"{_summary_average(rs):.2f}/5, n={rs.count}{deals}" + (", small sample dampened" if rs.count < cfg.platform_review_full_n else "")
     if key == "deal_outcomes":
         return f"{s.deals_completed or 0} completed / {s.deals_cancelled or 0} cancelled"
     return str(getattr(s, key))

@@ -27,6 +27,8 @@ class RuleKind(StrEnum):
     CHEAPER_EQUIVALENT = "cheaper_equivalent"
     BACK_IN_STOCK = "back_in_stock"
     NEW_RESULTS = "new_results"
+    SHIPMENT_STATUS = "shipment_status"  # tracking change events (see domain/tracking.py)
+    SHIPMENT_DELAYED = "shipment_delayed"
 
 
 class TrustBand(StrEnum):
@@ -331,9 +333,14 @@ class AlertPayload:
     drop_pct: Decimal | None = None
     target_price: Money | None = None
     result_count: int | None = None
+    shipment: Mapping[str, Any] | None = (
+        None  # tracking alerts only: shipment_id, reference, status, eta, ...
+    )
 
     def to_json(self) -> dict[str, Any]:
         data: dict[str, Any] = {"listing_ids": list(self.listing_ids)}
+        if self.shipment is not None:
+            data["shipment"] = dict(self.shipment)
         if self.old_price is not None:
             data["old_price"] = self.old_price.to_json()
         if self.new_price is not None:
@@ -361,6 +368,7 @@ class AlertPayload:
             drop_pct=None if drop is None else parse_amount(drop),
             target_price=opt_money("target_price"),
             result_count=None if count is None else int(count),
+            shipment=data.get("shipment"),
         )
 
 

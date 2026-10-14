@@ -4,6 +4,8 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/deals/deals_models.dart';
+import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart';
 import 'package:factory_finder/features/payments/widgets/deal_payment_section.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
@@ -77,14 +79,26 @@ class RequestDetailScreen extends ConsumerWidget {
                   );
                 },
               ),
-              if (isMine && acceptedDeal != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                DealPaymentSection(deal: acceptedDeal),
-                const SizedBox(height: AppSpacing.lg),
-                DealReviewSection(
-                  deal: acceptedDeal,
-                  supplierRef: _supplierOf(offersAsync.valueOrNull, acceptedDeal),
-                ),
+              if (acceptedDeal != null) ...[
+                if (dealRoleFor(acceptedDeal, myId,
+                        demo: isMock, assumeBuyer: isMine) !=
+                    DealRole.none) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  DealLifecycleSection(
+                    deal: acceptedDeal,
+                    role: dealRoleFor(acceptedDeal, myId,
+                        demo: isMock, assumeBuyer: isMine),
+                  ),
+                ],
+                if (isMine) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  DealPaymentSection(deal: acceptedDeal),
+                  const SizedBox(height: AppSpacing.lg),
+                  DealReviewSection(
+                    deal: acceptedDeal,
+                    supplierRef: _supplierOf(offersAsync.valueOrNull, acceptedDeal),
+                  ),
+                ],
               ],
             ],
           );

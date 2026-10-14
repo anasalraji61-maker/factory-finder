@@ -16,6 +16,7 @@ from ff_notifications.adapters.push import PushProvider
 from ff_notifications.clients.sourcing import SourcingClient, SourcingUnavailableError
 from ff_notifications.config import Settings
 from ff_notifications.delivery import DeliveryPipeline, load_prefs
+from ff_notifications.domain import tracking
 from ff_notifications.domain import verification as ver
 from ff_notifications.domain.delivery import CHANNELS, Prefs, QuietHours, parse_hhmm, valid_timezone
 from ff_notifications.domain.models import (
@@ -223,6 +224,73 @@ class NotificationService:
         with contextlib.suppress(Exception):
             report.pushes_sent = await self.delivery.process_due()
         return report
+
+    # ------------------------------------------------------------ tracking events
+
+    async def ingest_tracking_events(self, raw_events: list[dict]) -> dict:
+        """Turn tracking change events into inbox alerts (+ push per prefs); idempotent.
+
+        Per event result: created | duplicate | invalid. The inbox is always written
+        (``in_app`` never suppresses); push honors the user's channel prefs
+        and quiet hours via the delivery pipeline.
+        """
+        results: list[dict] = []
+        created: dict[str, list[Alert]] = {}
+        for i, raw in enumerate(raw_events):
+            key = raw.get("dedupe_key") if isinstance(raw, dict) else None
+            try:
+                ev = tracking.parse_event(raw)
+            except tracking.InvalidEvent as exc:
+                results.append(
+                    {
+                        "index": i,
+                        "dedupe_key": key if isinstance(key, str) else None,
+                        "status": "invalid",
+                        "error": str(exc),
+                    }
+                )
+                continue
+            message, payload = tracking.build(ev)
+            alert = Alert(
+                id=_id("alt"),
+                owner_id=ev.owner_id,
+                watch_id=ev.watch_id,
+                rule=ev.rule,
+                message=message,
+                payload=payload,
+                fingerprint=ev.dedupe_key,
+                created_at=self.clock(),
+            )
+            if await self.store.insert_alert_once(alert):
+                created.setdefault(ev.owner_id, []).append(alert)
+                results.append(
+                    {
+                        "index": i,
+                        "dedupe_key": ev.dedupe_key,
+                        "status": "created",
+                        "alert_id": alert.id,
+                    }
+                )
+            else:
+                results.append({"index": i, "dedupe_key": ev.dedupe_key, "status": "duplicate"})
+        for owner, alerts in created.items():
+            with contextlib.suppress(
+                Exception
+            ):  # alerts are committed: delivery problems never undo them
+                await self.delivery.enqueue_alerts(owner, alerts)
+        pushes = 0
+        if created:
+            with contextlib.suppress(Exception):
+                pushes = await self.delivery.process_due()
+        count = lambda s: sum(1 for r in results if r["status"] == s)  # noqa: E731
+        return {
+            "received": len(raw_events),
+            "created": count("created"),
+            "duplicates": count("duplicate"),
+            "invalid": count("invalid"),
+            "pushes_sent": pushes,
+            "results": results,
+        }
 
     # ------------------------------------------------------------ alerts inbox
 

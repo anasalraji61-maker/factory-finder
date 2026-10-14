@@ -17,6 +17,18 @@ class CertificationRecord(BaseModel):
     expires_on: date | None = None
 
 
+class ReviewSummary(BaseModel):
+    """Verified-purchase review aggregates from rfq (`rfq.yaml#ReviewSummary`). Optional input signal."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    count: int = Field(default=0, ge=0)
+    average: float | None = Field(default=None, ge=0, le=5)
+    histogram: dict[str, int] | None = None  # keys "1".."5"
+    sub_ratings: dict[str, float | None] | None = None  # quality / communication / shipping
+    completed_deals: int | None = Field(default=None, ge=0)
+
+
 class SupplierSignals(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -49,3 +61,4 @@ class SupplierSignals(BaseModel):
     deals_cancelled: int | None = Field(default=None, ge=0)
     confirmed_reports: int | None = Field(default=None, ge=0, description="buyer reports accepted after review")
     blocked: bool | None = Field(default=None, description="platform/compliance block: hard-fail red")
+    review_summary: ReviewSummary | None = Field(default=None, description="verified-purchase review aggregates (rfq)")

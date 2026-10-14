@@ -236,6 +236,15 @@ async def evaluate_alerts(s: Service, body: EvaluateIn | None = None) -> dict[st
     }
 
 
+class TrackingEventsIn(_Body):
+    events: list[dict[str, Any]] = Field(min_length=1, max_length=100)
+
+
+@router.post("/internal/tracking-events", dependencies=[Depends(internal_only)])
+async def ingest_tracking_events(body: TrackingEventsIn, s: Service) -> dict[str, Any]:
+    return await s.ingest_tracking_events(body.events)
+
+
 @router.post("/alerts/read-all")
 async def read_all(user: User, s: Service) -> dict[str, int]:
     return {"marked": await s.mark_all_read(user)}

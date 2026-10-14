@@ -6,6 +6,7 @@ Watchlist (listing or saved search + optional target price), rule evaluation aga
 - Admission (`domain/policy.py`): per (watch, rule) cooldown (default 24h) and dedupe of identical events; an event suppressed by cooldown stays pending.
 - `POST /v1/alerts/evaluate` (internal) evaluates active watches via `clients/sourcing.py` (httpx; `MockSourcingClient` is scriptable for tests), stores alerts, then enqueues deliveries (see below).
 - Optional scheduler (`FF_NOTIFICATIONS_SCHEDULER_ENABLED=true`, interval `..._SCHEDULER_INTERVAL_SECONDS`), off by default.
+- Tracking events (`domain/tracking.py`): `POST /v1/internal/tracking-events` (internal token) ingests tracking outbox rows (`status_changed` -> rule `shipment_status`, `shipment_delayed` -> `shipment_delayed`) as bilingual inbox alerts, idempotent by `dedupe_key` (stored as the alert fingerprint under pseudo watch `shp_<hash(shipment_id)>`; no schema change). Push follows the owner's channel prefs/quiet hours for the rule; the inbox is always written. Push model: tracking (or the orchestrator's relay) POSTs batches of <= 100 rows; see `docs/requests/tracking-notify-ingest.md`.
 
 Run: `uvicorn ff_notifications.main:app --port 8108` (from `src/`). Test: `../../.venv/bin/python -m pytest -q`.
 

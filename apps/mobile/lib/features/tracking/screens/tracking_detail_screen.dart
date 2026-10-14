@@ -67,7 +67,25 @@ class _TrackingDetailScreenState extends ConsumerState<TrackingDetailScreen> {
         data: (s) => ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            if (s.warning != null) ...[
+              TrackingBanner(
+                key: const Key('tracking_warning'),
+                icon: Icons.warning_amber_rounded,
+                title: context.tr('tracking.warning.title'),
+                message: context.tr(trackingWarningKey(s.warning!)),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            if (s.delayed) ...[
+              DelayBanner(key: const Key('tracking_delay'), shipment: s),
+              const SizedBox(height: AppSpacing.md),
+            ],
             _Header(shipment: s),
+            if (s.milestones.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              SectionHeader(title: context.tr('tracking.milestones')),
+              MilestonesWrap(milestones: s.milestones),
+            ],
             const SizedBox(height: AppSpacing.lg),
             SectionHeader(title: context.tr('tracking.timeline')),
             if (s.events.isEmpty)

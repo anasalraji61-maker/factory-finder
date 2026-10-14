@@ -117,6 +117,8 @@ void main() {
         'error_404': [404, 'listing_not_found'],
         'error_login': [401, 'invalid_credentials'],
         'error_refresh_throttled': [429, 'refresh_throttled'],
+        'error_invalid_deal_transition': [409, 'invalid_deal_transition'],
+        'error_supplier_verification_required': [403, 'supplier_verification_required'],
       }.entries) {
         final ro = RequestOptions(path: '/x');
         final e = mapDioError(DioException(
@@ -323,7 +325,7 @@ void main() {
       expect(s.events.first.time.year, 2026);
       expect(s.events.first.location, isNotEmpty);
       expect(s.events.first.description, isNotEmpty);
-      for (final name in ['shipment_create', 'shipment_detail']) {
+      for (final name in ['shipment_create', 'shipment_detail', 'shipment_detail_delayed']) {
         expect(Shipment.fromJson(_obj(name)).reference, 'MSKU1234565');
       }
     });

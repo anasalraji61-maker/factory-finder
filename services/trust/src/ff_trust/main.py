@@ -12,6 +12,7 @@ from ff_trust.adapters.real import AlibabaSignalsAdapter, MadeInChinaSignalsAdap
 from ff_trust.api import errors
 from ff_trust.api.routes import router
 from ff_trust.cache import TTLCache
+from ff_trust.clients.reviews import HttpReviewsClient, MockReviewsClient, ReviewsClient
 from ff_trust.config import ScoringConfig, Settings
 from ff_trust.obs import install_observability, ready_response
 from ff_trust.service import TrustService
@@ -22,7 +23,15 @@ def _adapter(name: str) -> SignalsAdapter:
     return {"alibaba": AlibabaSignalsAdapter, "made_in_china": MadeInChinaSignalsAdapter}.get(name, MockSignalsAdapter)()
 
 
-def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None = None) -> FastAPI:
+def _reviews(s: Settings) -> ReviewsClient | None:
+    if s.reviews_source == "mock":
+        return MockReviewsClient()
+    if s.reviews_source == "http":
+        return HttpReviewsClient(s.reviews_base_url, s.reviews_timeout_seconds, s.reviews_cache_ttl_seconds)
+    return None
+
+
+def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None = None, reviews: ReviewsClient | None = None) -> FastAPI:
     settings = settings or Settings()
     app = FastAPI(title="Factory Finder trust", version=__version__)
     app.state.settings = settings
@@ -30,7 +39,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
         adapter or _adapter(settings.adapter), ScoringConfig(),
         TTLCache(settings.cache_ttl_seconds, settings.cache_max_entries),
         reports=ReportStore(settings.report_rate_limit, settings.report_rate_window_seconds),
-        history_months=settings.history_months,
+        history_months=settings.history_months, reviews=reviews or _reviews(settings),
     )  # fmt: skip
     errors.install(app)
 

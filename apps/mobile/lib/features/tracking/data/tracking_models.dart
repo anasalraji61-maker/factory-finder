@@ -117,6 +117,29 @@ String _place(Object? v, {bool preferArabic = false}) {
   return (v ?? '').toString();
 }
 
+/// Milestone keys in journey order (tracking contract).
+const List<String> kMilestoneOrder = <String>[
+  'gate_in',
+  'loaded',
+  'departed',
+  'transshipment',
+  'arrived',
+  'discharged',
+  'gate_out',
+  'delivered',
+];
+
+Map<String, DateTime> _milestones(Object? v) {
+  final out = <String, DateTime>{};
+  if (v is Map) {
+    v.forEach((k, t) {
+      final d = _dt(t);
+      if (d != null) out[k.toString()] = d;
+    });
+  }
+  return out;
+}
+
 class TrackingEvent {
   const TrackingEvent({
     required this.status,
@@ -160,6 +183,11 @@ class Shipment {
     this.progress,
     this.events = const [],
     this.updatedAt,
+    this.milestones = const <String, DateTime>{},
+    this.initialEta,
+    this.delayed = false,
+    this.delayHours,
+    this.warning,
   });
 
   final String id;
@@ -174,6 +202,19 @@ class Shipment {
   final double? progress;
   final List<TrackingEvent> events;
   final DateTime? updatedAt;
+
+  /// First time of each milestone (gate_in, loaded, departed, ...), when known.
+  final Map<String, DateTime> milestones;
+
+  /// First ETA ever seen.
+  final DateTime? initialEta;
+
+  /// ETA slipped by more than 12 h past [initialEta].
+  final bool delayed;
+  final int? delayHours;
+
+  /// Degraded-data notice, e.g. `provider_unavailable:rate_limited`.
+  final String? warning;
 
   double get progressValue => (progress ?? status.defaultProgress).clamp(0.0, 1.0).toDouble();
 
@@ -207,6 +248,13 @@ class Shipment {
               : null),
       events: events,
       updatedAt: _dt(j['updated_at']),
+      milestones: _milestones(j['milestones']),
+      initialEta: _dt(j['initial_eta']),
+      delayed: j['delayed'] == true,
+      delayHours: j['delay_hours'] is num ? (j['delay_hours'] as num).toInt() : null,
+      warning: j['warning'] is String && (j['warning'] as String).isNotEmpty
+          ? j['warning'] as String
+          : null,
     );
   }
 
@@ -223,5 +271,13 @@ class Shipment {
         'progress': progressValue,
         'events': [for (final e in events) e.toJson()],
         if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
+        if (milestones.isNotEmpty)
+          'milestones': {
+            for (final e in milestones.entries) e.key: e.value.toUtc().toIso8601String(),
+          },
+        if (initialEta != null) 'initial_eta': initialEta!.toUtc().toIso8601String(),
+        'delayed': delayed,
+        if (delayHours != null) 'delay_hours': delayHours,
+        if (warning != null) 'warning': warning,
       };
 }

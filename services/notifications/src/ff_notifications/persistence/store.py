@@ -221,6 +221,34 @@ class Store:
                 .values(doc=serde.watch_to_doc(watch), version=watch.version)
             )
 
+    async def insert_alert_once(self, alert: Alert) -> bool:
+        """Insert unless (watch_id, rule, fingerprint) exists already. True when inserted."""
+        async with self._lock, self.engine.begin() as conn:
+            hit = (
+                await conn.execute(
+                    select(alerts.c.id).where(
+                        alerts.c.watch_id == alert.watch_id,
+                        alerts.c.rule == alert.rule.value,
+                        alerts.c.fingerprint == alert.fingerprint,
+                    )
+                )
+            ).first()
+            if hit:
+                return False
+            await conn.execute(
+                insert(alerts).values(
+                    id=alert.id,
+                    owner_id=alert.owner_id,
+                    watch_id=alert.watch_id,
+                    rule=alert.rule.value,
+                    fingerprint=alert.fingerprint,
+                    created_at=serde.ts(alert.created_at),
+                    read=False,
+                    doc=serde.alert_to_doc(alert),
+                )
+            )
+            return True
+
     # ------------------------------------------------------------------ alerts
 
     async def list_alerts(

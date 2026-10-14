@@ -310,6 +310,31 @@ class Offer {
       };
 }
 
+/// Per-invoice-kind payment state of a deal (`null` = no invoice reported yet).
+class DealPayment {
+  const DealPayment({this.commission, this.dealPayment});
+
+  /// `open`, `paid`, `refunded` or null.
+  final String? commission;
+  final String? dealPayment;
+
+  static const DealPayment none = DealPayment();
+
+  factory DealPayment.fromJson(Object? json) {
+    if (json is! Map) return none;
+    String? v(Object? x) => x is String && x.isNotEmpty ? x : null;
+    return DealPayment(
+      commission: v(json['commission']),
+      dealPayment: v(json['deal_payment']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'commission': commission,
+        'deal_payment': dealPayment,
+      };
+}
+
 class Deal {
   const Deal({
     required this.id,
@@ -325,6 +350,11 @@ class Deal {
     this.quantity,
     this.unitPrice,
     this.status = 'pending_payment',
+    this.buyerId,
+    this.supplierUserId,
+    this.payment = DealPayment.none,
+    this.deliveredAt,
+    this.completedAt,
   });
 
   final String id;
@@ -346,6 +376,38 @@ class Deal {
   final Money? unitPrice;
   final String status;
   final DateTime createdAt;
+  final String? buyerId;
+  final String? supplierUserId;
+  final DealPayment payment;
+  final DateTime? deliveredAt;
+  final DateTime? completedAt;
+
+  Deal copyWith({
+    String? status,
+    DealPayment? payment,
+    DateTime? deliveredAt,
+    DateTime? completedAt,
+  }) =>
+      Deal(
+        id: id,
+        requestId: requestId,
+        offerId: offerId,
+        subtotal: subtotal,
+        commission: commission,
+        createdAt: createdAt,
+        commissionRate: commissionRate,
+        minFeeApplied: minFeeApplied,
+        isEstimate: isEstimate,
+        supplierNet: supplierNet,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        status: status ?? this.status,
+        buyerId: buyerId,
+        supplierUserId: supplierUserId,
+        payment: payment ?? this.payment,
+        deliveredAt: deliveredAt ?? this.deliveredAt,
+        completedAt: completedAt ?? this.completedAt,
+      );
 
   factory Deal.fromJson(Map<String, dynamic> j) {
     final subtotal = _moneyOrNull(j['subtotal'] ?? j['goods_total']) ??
@@ -380,6 +442,11 @@ class Deal {
       unitPrice: _moneyOrNull(j['unit_price']),
       status: (j['status'] as String?) ?? 'pending_payment',
       createdAt: _date(j['created_at']) ?? DateTime.now().toUtc(),
+      buyerId: j['buyer_id']?.toString(),
+      supplierUserId: j['supplier_user_id']?.toString(),
+      payment: DealPayment.fromJson(j['payment']),
+      deliveredAt: _date(j['delivered_at']),
+      completedAt: _date(j['completed_at']),
     );
   }
 
@@ -387,6 +454,11 @@ class Deal {
         'id': id,
         'request_id': requestId,
         'offer_id': offerId,
+        if (buyerId != null) 'buyer_id': buyerId,
+        if (supplierUserId != null) 'supplier_user_id': supplierUserId,
+        'payment': payment.toJson(),
+        'delivered_at': deliveredAt == null ? null : _iso(deliveredAt!),
+        'completed_at': completedAt == null ? null : _iso(completedAt!),
         if (quantity != null) 'quantity': quantity,
         if (unitPrice != null) 'unit_price': unitPrice!.toJson(),
         'subtotal': subtotal.toJson(),

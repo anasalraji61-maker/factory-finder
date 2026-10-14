@@ -26,6 +26,7 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "refund_rate": 3,
     "deal_outcomes": 4,
     "confirmed_reports": 8,
+    "platform_reviews": 6,  # bounded: verified-purchase reviews from rfq
 }
 
 
@@ -50,6 +51,9 @@ class ScoringConfig(BaseModel):
     cert_expiring_days: int = 60
     review_prior_mean: float = 3.8  # Bayesian shrinkage prior for the average rating
     review_prior_weight: float = 10.0  # pseudo-reviews at the prior mean
+    platform_review_prior_weight: float = 8.0  # pseudo-reviews at the prior mean for the rfq review summary
+    platform_review_full_n: int = 10  # below this many reviews the signal is linearly dampened
+    platform_review_sub_share: float = 0.3  # share of the sub-ratings mean inside the signal
     deal_prior_rate: float = 0.85
     deal_prior_weight: float = 8.0
     dispute_recent_weight: float = 0.6  # weight of the last-90-day dispute rate vs the lifetime rate
@@ -66,4 +70,8 @@ class Settings(BaseSettings):
     report_rate_limit: int = 5  # buyer reports per user per window
     report_rate_window_seconds: int = 3600
     history_months: int = 12
+    reviews_source: str = "off"  # off | mock | http (rfq review-summary)
+    reviews_base_url: str = "http://rfq:8105"
+    reviews_timeout_seconds: float = 2.0
+    reviews_cache_ttl_seconds: float = 60.0
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")

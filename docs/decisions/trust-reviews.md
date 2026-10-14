@@ -1,0 +1,3 @@
+2026-10-14 | trust: rfq review aggregates enter as a NEW signal `platform_reviews` (not by overwriting `rating_avg`/`reviews_count`) | no double counting with marketplace ratings; weight 6 bounded, own shrinkage (prior weight 8), 30% sub-ratings, linear dampening below 10 reviews
+2026-10-14 | trust: `platform_reviews` is excluded from EVIDENCE/data_gaps like `confirmed_reports` | optional enrichment; its absence (source off) must not change confidence or gaps of existing scores
+2026-10-14 | trust: ReviewsClient defaults to `off`; http client never raises (timeout 2 s, 60 s cache, failures not cached) | rfq down must not break or slow scoring; completed_deals is shown in the evidence line only (deal_outcomes already covers completion)

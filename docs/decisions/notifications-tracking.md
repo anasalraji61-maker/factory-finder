@@ -1,0 +1,4 @@
+2026-10-14 | notifications: PUSH ingest (`POST /v1/internal/tracking-events`) instead of polling tracking | tracking has no outbox read endpoint yet and rows already carry everything; avoids a cross-service dependency/poller here
+2026-10-14 | notifications: tracking events become alerts with new rules `shipment_status`/`shipment_delayed`; pseudo watch_id `shp_<sha256(shipment_id)[:24]>`, fingerprint = dedupe_key | reuses inbox/push/digest/prefs and the existing unique index (watch_id, rule, fingerprint) for idempotency; no migration
+2026-10-14 | notifications: inbox is always written, push/email follow prefs (existing rule: in_app never suppresses) | consistent with current prefs semantics
+2026-10-14 | notifications: invalid events are reported per item and do not fail the batch; max 100 events per call | one bad row must not block the outbox

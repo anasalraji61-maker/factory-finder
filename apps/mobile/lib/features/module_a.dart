@@ -24,6 +24,7 @@ import 'package:factory_finder/features/supplier_claim/supplier_claim_strings.da
 import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
 import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
 import 'package:factory_finder/features/watchlist/watchlist_strings.dart';
+import 'package:factory_finder/features/deals/deals_strings.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_screen.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_strings.dart';
 import 'package:factory_finder/features/trust/trust_strings.dart';
@@ -100,5 +101,5 @@ final FeatureModule featureModuleA = FeatureModule(
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: mergeStringTables([discoverStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings]),
+  strings: mergeStringTables([discoverStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings, dealsStrings]),
 );

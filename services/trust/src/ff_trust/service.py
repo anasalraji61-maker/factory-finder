@@ -12,6 +12,7 @@ from ff_trust.api.schemas import (
     TrustScoreOut,
 )
 from ff_trust.cache import TTLCache
+from ff_trust.clients.reviews import ReviewsClient
 from ff_trust.config import ScoringConfig
 from ff_trust.domain.models import Assessment, TrustBand
 from ff_trust.domain.scoring import assess, band_for
@@ -40,11 +41,13 @@ class TrustService:
     def __init__(
         self, adapter: SignalsAdapter, cfg: ScoringConfig, cache: TTLCache[TrustScoreOut],
         snapshots: SnapshotStore | None = None, reports: ReportStore | None = None, history_months: int = 12,
+        reviews: ReviewsClient | None = None,
     ):  # fmt: skip
         self.adapter, self.cfg, self.cache = adapter, cfg, cache
         self.snapshots = snapshots or SnapshotStore()
         self.reports = reports or ReportStore()
         self.history_months = history_months
+        self.reviews = reviews
 
     async def for_supplier(self, supplier_id: str) -> TrustScoreOut | None:
         hit = self.cache.get(supplier_id)
@@ -53,6 +56,13 @@ class TrustService:
         signals = await self.adapter.get_signals(supplier_id)
         if signals is None:
             return None
+        if self.reviews is not None and signals.review_summary is None:
+            try:  # optional enrichment: any failure leaves the score as it was without it
+                summary = await self.reviews.fetch(supplier_id)
+            except Exception:  # noqa: BLE001
+                summary = None
+            if summary is not None:
+                signals = signals.model_copy(update={"review_summary": summary})
         accepted = self.reports.accepted_count(supplier_id)
         if accepted:  # only reviewed (accepted) reports ever touch the score
             signals = signals.model_copy(update={"confirmed_reports": accepted})
