@@ -313,6 +313,8 @@ void main() {
       expect(find.byKey(const ValueKey('myp-delete-lst_pr')), findsOneWidget);
 
       // Filter chip for the moderation state.
+      await tester.ensureVisible(find.byKey(const ValueKey('myp-filter-hidden')));
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.byKey(const ValueKey('myp-filter-hidden')));
       await settle(tester, frames: 8);
       expect(find.byKey(const ValueKey('myp-card-lst_hd')), findsOneWidget);
