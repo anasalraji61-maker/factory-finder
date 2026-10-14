@@ -53,13 +53,17 @@ class TrustBadge extends StatelessWidget {
             color: color,
           ),
           const SizedBox(width: 4),
-          Text(
+          Flexible(
+            child: Text(
             compact ? (scoreText.isEmpty ? label : scoreText) : '$label $scoreText'.trim(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w700,
               fontSize: compact ? 11 : 13,
             ),
+          ),
           ),
         ],
       ),
