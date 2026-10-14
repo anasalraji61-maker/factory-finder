@@ -326,3 +326,38 @@ class FreightCountryDropdown extends StatelessWidget {
     );
   }
 }
+
+/// Section title with an optional action that never overflows: the pair
+/// wraps onto two lines when the action label does not fit (large text scale).
+class FreightSectionHeader extends StatelessWidget {
+  const FreightSectionHeader({super.key, required this.title, this.actionLabel, this.onAction});
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleText = Text(
+      title,
+      style: Theme.of(context)
+          .textTheme
+          .titleMedium
+          ?.copyWith(fontWeight: FontWeight.w800),
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            titleText,
+            if (actionLabel != null) TextButton(onPressed: onAction, child: Text(actionLabel!)),
+          ],
+        ),
+      ),
+    );
+  }
+}

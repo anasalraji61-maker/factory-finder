@@ -262,7 +262,7 @@ class _FreightRequestDetailScreenState
           const SizedBox(height: AppSpacing.md),
           FreightRateCard(requestId: r.id, forwarderName: awarded.forwarder?.companyName),
         ],
-        SectionHeader(
+        FreightSectionHeader(
           title: context.tr('freight.quotes_title'),
           actionLabel: context.tr('freight.report.request'),
           onAction: () => _reportRequest(r),
