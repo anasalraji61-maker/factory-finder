@@ -1,0 +1,7942 @@
+{
+"note": "indicative, confirm with a customs broker",
+"version": "hs2022-curated-1",
+"items": [
+{
+"code": "020230",
+"chapter": "02",
+"description_en": "Frozen boneless beef",
+"description_ar": "لحم بقري مجمد خالٍ من العظم",
+"keywords": [
+"beef",
+"frozen",
+"meat",
+"بقر",
+"لحم"
+]
+},
+{
+"code": "020714",
+"chapter": "02",
+"description_en": "Frozen chicken cuts and offal",
+"description_ar": "قطع دجاج مجمدة",
+"keywords": [
+"chicken",
+"poultry",
+"دجاج",
+"فروج"
+]
+},
+{
+"code": "030389",
+"chapter": "03",
+"description_en": "Frozen fish, other",
+"description_ar": "أسماك مجمدة أخرى",
+"keywords": [
+"fish",
+"seafood",
+"سمك"
+]
+},
+{
+"code": "030617",
+"chapter": "03",
+"description_en": "Frozen shrimps and prawns",
+"description_ar": "روبيان (جمبري) مجمد",
+"keywords": [
+"prawn",
+"shrimp",
+"جمبري",
+"ربيان"
+]
+},
+{
+"code": "040221",
+"chapter": "04",
+"description_en": "Milk powder, sweetened or unsweetened, over 1.5% fat",
+"description_ar": "حليب مجفف (بودرة) دسم",
+"keywords": [
+"dairy",
+"milk",
+"powder",
+"بودرة",
+"حليب"
+]
+},
+{
+"code": "070310",
+"chapter": "07",
+"description_en": "Onions and shallots, fresh",
+"description_ar": "بصل طازج",
+"keywords": [
+"onion",
+"بصل"
+]
+},
+{
+"code": "071010",
+"chapter": "07",
+"description_en": "Frozen potatoes",
+"description_ar": "بطاطا مجمدة",
+"keywords": [
+"frozen",
+"potato",
+"بطاطس"
+]
+},
+{
+"code": "080131",
+"chapter": "08",
+"description_en": "Cashew nuts in shell",
+"description_ar": "كاجو بقشره",
+"keywords": [
+"cashew",
+"nuts",
+"مكسرات"
+]
+},
+{
+"code": "090111",
+"chapter": "09",
+"description_en": "Coffee, not roasted, not decaffeinated",
+"description_ar": "بن (قهوة) غير محمص",
+"keywords": [
+"coffee",
+"بن",
+"قهوة"
+]
+},
+{
+"code": "090240",
+"chapter": "09",
+"description_en": "Black tea, in bulk packings over 3 kg",
+"description_ar": "شاي أسود سائب",
+"keywords": [
+"tea",
+"شاي"
+]
+},
+{
+"code": "100630",
+"chapter": "10",
+"description_en": "Rice, semi-milled or wholly milled",
+"description_ar": "رز (أرز) مقشور",
+"keywords": [
+"rice",
+"أرز",
+"رز"
+]
+},
+{
+"code": "110100",
+"chapter": "11",
+"description_en": "Wheat or meslin flour",
+"description_ar": "طحين (دقيق) القمح",
+"keywords": [
+"flour",
+"wheat",
+"دقيق",
+"طحين"
+]
+},
+{
+"code": "150790",
+"chapter": "15",
+"description_en": "Soya-bean oil, refined",
+"description_ar": "زيت فول الصويا مكرر",
+"keywords": [
+"oil",
+"soybean",
+"زيت"
+]
+},
+{
+"code": "151190",
+"chapter": "15",
+"description_en": "Palm oil, refined",
+"description_ar": "زيت النخيل مكرر",
+"keywords": [
+"oil",
+"palm",
+"زيت",
+"نخيل"
+]
+},
+{
+"code": "170199",
+"chapter": "17",
+"description_en": "Cane or beet sugar, refined, solid",
+"description_ar": "سكر مكرر",
+"keywords": [
+"sugar",
+"سكر"
+]
+},
+{
+"code": "180690",
+"chapter": "18",
+"description_en": "Chocolate and cocoa preparations, other",
+"description_ar": "شوكولاتة ومحضرات كاكاو",
+"keywords": [
+"chocolate",
+"cocoa",
+"شوكولا"
+]
+},
+{
+"code": "190590",
+"chapter": "19",
+"description_en": "Bakery products, biscuits, other",
+"description_ar": "بسكويت ومخبوزات",
+"keywords": [
+"bakery",
+"biscuit",
+"cookies",
+"بسكت"
+]
+},
+{
+"code": "200989",
+"chapter": "20",
+"description_en": "Fruit juice, other single fruit",
+"description_ar": "عصير فواكه",
+"keywords": [
+"juice",
+"عصير"
+]
+},
+{
+"code": "210690",
+"chapter": "21",
+"description_en": "Food preparations, other",
+"description_ar": "محضرات غذائية أخرى",
+"keywords": [
+"food",
+"preparation",
+"supplement"
+]
+},
+{
+"code": "220210",
+"chapter": "22",
+"description_en": "Waters, sweetened or flavoured",
+"description_ar": "مياه مُحلّاة أو منكهة",
+"keywords": [
+"drink",
+"soft",
+"water",
+"غازية",
+"مشروبات"
+]
+},
+{
+"code": "230910",
+"chapter": "23",
+"description_en": "Dog or cat food, retail",
+"description_ar": "أغذية كلاب وقطط",
+"keywords": [
+"animal",
+"feed",
+"food",
+"pet",
+"علف"
+]
+},
+{
+"code": "250100",
+"chapter": "25",
+"description_en": "Salt, pure sodium chloride",
+"description_ar": "ملح",
+"keywords": [
+"salt",
+"ملح"
+]
+},
+{
+"code": "251710",
+"chapter": "25",
+"description_en": "Pebbles, gravel, crushed stone",
+"description_ar": "حصى وأحجار مكسرة",
+"keywords": [
+"crushed",
+"gravel",
+"stone"
+]
+},
+{
+"code": "252010",
+"chapter": "25",
+"description_en": "Gypsum, anhydrite",
+"description_ar": "جبس",
+"keywords": [
+"gypsum",
+"جص"
+]
+},
+{
+"code": "252100",
+"chapter": "25",
+"description_en": "Limestone flux, limestone",
+"description_ar": "حجر الكلس",
+"keywords": [
+"limestone"
+]
+},
+{
+"code": "252329",
+"chapter": "25",
+"description_en": "Portland cement, other",
+"description_ar": "إسمنت بورتلاندي",
+"keywords": [
+"cement",
+"اسمنت",
+"سمنت"
+]
+},
+{
+"code": "271019",
+"chapter": "27",
+"description_en": "Petroleum oils, other (lubricating oil)",
+"description_ar": "زيوت بترولية (زيوت تشحيم)",
+"keywords": [
+"engine",
+"lubricant",
+"motor",
+"oil",
+"زيت",
+"محركات"
+]
+},
+{
+"code": "281410",
+"chapter": "28",
+"description_en": "Ammonia, anhydrous",
+"description_ar": "أمونيا لا مائية",
+"keywords": [
+"ammonia"
+]
+},
+{
+"code": "281511",
+"chapter": "28",
+"description_en": "Sodium hydroxide (caustic soda), solid",
+"description_ar": "الصودا الكاوية صلبة",
+"keywords": [
+"caustic",
+"hydroxide",
+"soda",
+"sodium",
+"صودا"
+]
+},
+{
+"code": "283650",
+"chapter": "28",
+"description_en": "Calcium carbonate",
+"description_ar": "كربونات الكالسيوم",
+"keywords": [
+"calcium",
+"carbonate"
+]
+},
+{
+"code": "290511",
+"chapter": "29",
+"description_en": "Methanol (methyl alcohol)",
+"description_ar": "ميثانول",
+"keywords": [
+"alcohol",
+"methanol"
+]
+},
+{
+"code": "310210",
+"chapter": "31",
+"description_en": "Urea",
+"description_ar": "يوريا (سماد)",
+"keywords": [
+"fertilizer",
+"urea",
+"سماد"
+]
+},
+{
+"code": "310230",
+"chapter": "31",
+"description_en": "Ammonium nitrate",
+"description_ar": "نترات الأمونيوم",
+"keywords": [
+"ammonium",
+"fertilizer",
+"nitrate",
+"سماد"
+]
+},
+{
+"code": "310420",
+"chapter": "31",
+"description_en": "Potassium chloride",
+"description_ar": "كلوريد البوتاسيوم (سماد)",
+"keywords": [
+"fertilizer",
+"potash",
+"potassium",
+"بوتاس",
+"سماد"
+]
+},
+{
+"code": "310530",
+"chapter": "31",
+"description_en": "Diammonium hydrogenorthophosphate (DAP)",
+"description_ar": "فوسفات ثنائي الأمونيوم DAP",
+"keywords": [
+"dap",
+"fertilizer",
+"phosphate",
+"سماد"
+]
+},
+{
+"code": "310559",
+"chapter": "31",
+"description_en": "Mineral or chemical fertilizers, N and P, other",
+"description_ar": "أسمدة معدنية كيميائية نيتروجينية وفوسفاتية",
+"keywords": [
+"fertilizer",
+"npk",
+"سماد"
+]
+},
+{
+"code": "320890",
+"chapter": "32",
+"description_en": "Paints and varnishes in non-aqueous medium, other",
+"description_ar": "دهانات وورنيش",
+"keywords": [
+"paint",
+"varnish",
+"دهان",
+"طلاء"
+]
+},
+{
+"code": "320910",
+"chapter": "32",
+"description_en": "Paints, acrylic or vinyl polymers, aqueous",
+"description_ar": "دهانات مائية أكريليك",
+"keywords": [
+"acrylic",
+"emulsion",
+"paint",
+"دهان",
+"طلاء"
+]
+},
+{
+"code": "321000",
+"chapter": "32",
+"description_en": "Paints and varnishes, other",
+"description_ar": "دهانات وورنيشات أخرى",
+"keywords": [
+"coating",
+"paint",
+"طلاء"
+]
+},
+{
+"code": "330499",
+"chapter": "33",
+"description_en": "Beauty or skin-care preparations, other",
+"description_ar": "مستحضرات تجميل وعناية بالبشرة",
+"keywords": [
+"care",
+"cosmetics",
+"makeup",
+"skin",
+"تجميل"
+]
+},
+{
+"code": "330510",
+"chapter": "33",
+"description_en": "Shampoos",
+"description_ar": "شامبو",
+"keywords": [
+"hair",
+"shampoo",
+"شامبو"
+]
+},
+{
+"code": "330590",
+"chapter": "33",
+"description_en": "Hair preparations, other",
+"description_ar": "مستحضرات شعر أخرى",
+"keywords": [
+"care",
+"hair",
+"شعر"
+]
+},
+{
+"code": "330610",
+"chapter": "33",
+"description_en": "Dentifrices (toothpaste)",
+"description_ar": "معجون أسنان",
+"keywords": [
+"dental",
+"toothpaste",
+"معجون"
+]
+},
+{
+"code": "340111",
+"chapter": "34",
+"description_en": "Soap, toilet",
+"description_ar": "صابون للاستعمال الشخصي",
+"keywords": [
+"soap",
+"صابون"
+]
+},
+{
+"code": "340220",
+"chapter": "34",
+"description_en": "Washing preparations, retail",
+"description_ar": "مساحيق ومنظفات غسيل",
+"keywords": [
+"detergent",
+"powder",
+"washing",
+"مسحوق",
+"منظف"
+]
+},
+{
+"code": "350691",
+"chapter": "35",
+"description_en": "Adhesives based on rubber or plastics",
+"description_ar": "مواد لاصقة (غراء)",
+"keywords": [
+"adhesive",
+"glue",
+"gum",
+"غراء",
+"لاصق"
+]
+},
+{
+"code": "380891",
+"chapter": "38",
+"description_en": "Insecticides",
+"description_ar": "مبيدات حشرية",
+"keywords": [
+"insecticide",
+"pesticide",
+"حشري",
+"مبيد"
+]
+},
+{
+"code": "380893",
+"chapter": "38",
+"description_en": "Herbicides, anti-sprouting products",
+"description_ar": "مبيدات أعشاب",
+"keywords": [
+"herbicide",
+"pesticide",
+"مبيد"
+]
+},
+{
+"code": "381600",
+"chapter": "38",
+"description_en": "Refractory cements, mortars",
+"description_ar": "أسمنت ومونة حرارية",
+"keywords": [
+"cement",
+"refractory"
+]
+},
+{
+"code": "390110",
+"chapter": "39",
+"description_en": "Polyethylene, specific gravity under 0.94",
+"description_ar": "بولي إيثيلين منخفض الكثافة",
+"keywords": [
+"hdpe",
+"ldpe",
+"pe",
+"plastic",
+"polyethylene",
+"raw",
+"بلاستيك",
+"خام"
+]
+},
+{
+"code": "390120",
+"chapter": "39",
+"description_en": "Polyethylene, specific gravity 0.94 or more",
+"description_ar": "بولي إيثيلين عالي الكثافة",
+"keywords": [
+"hdpe",
+"plastic",
+"polyethylene"
+]
+},
+{
+"code": "390210",
+"chapter": "39",
+"description_en": "Polypropylene, primary forms",
+"description_ar": "بولي بروبلين",
+"keywords": [
+"granules",
+"plastic",
+"polypropylene",
+"pp"
+]
+},
+{
+"code": "390311",
+"chapter": "39",
+"description_en": "Expansible polystyrene",
+"description_ar": "بوليسترين قابل للتمدد",
+"keywords": [
+"eps",
+"foam",
+"polystyrene"
+]
+},
+{
+"code": "390410",
+"chapter": "39",
+"description_en": "Polyvinyl chloride, not mixed",
+"description_ar": "بولي فينيل كلورايد PVC",
+"keywords": [
+"chloride",
+"plastic",
+"polyvinyl",
+"pvc"
+]
+},
+{
+"code": "390761",
+"chapter": "39",
+"description_en": "Polyethylene terephthalate, viscosity number 78 ml/g or higher",
+"description_ar": "بولي إيثيلين تيريفثالات PET",
+"keywords": [
+"bottles",
+"pet",
+"preform",
+"resin"
+]
+},
+{
+"code": "391723",
+"chapter": "39",
+"description_en": "Tubes, pipes of polymers of vinyl chloride",
+"description_ar": "أنابيب PVC",
+"keywords": [
+"pipe",
+"pvc",
+"tube",
+"أنبوب"
+]
+},
+{
+"code": "391732",
+"chapter": "39",
+"description_en": "Other tubes, not reinforced",
+"description_ar": "أنابيب بلاستيكية",
+"keywords": [
+"hose",
+"pipe",
+"plastic"
+]
+},
+{
+"code": "391990",
+"chapter": "39",
+"description_en": "Self-adhesive plates, sheets, film, other",
+"description_ar": "شرائط وأغشية لاصقة",
+"keywords": [
+"adhesive",
+"film",
+"self",
+"tape"
+]
+},
+{
+"code": "392010",
+"chapter": "39",
+"description_en": "Plates, sheets, film of polymers of ethylene",
+"description_ar": "صفائح ورقائق بولي إيثيلين",
+"keywords": [
+"film",
+"nylon",
+"plastic",
+"sheet",
+"stretch",
+"نايلون"
+]
+},
+{
+"code": "392020",
+"chapter": "39",
+"description_en": "Plates, sheets, film of polymers of propylene",
+"description_ar": "صفائح ورقائق بولي بروبلين",
+"keywords": [
+"bopp",
+"film",
+"plastic"
+]
+},
+{
+"code": "392062",
+"chapter": "39",
+"description_en": "Sheets and film of PET",
+"description_ar": "ألواح ورقائق PET",
+"keywords": [
+"film",
+"pet",
+"sheet"
+]
+},
+{
+"code": "392113",
+"chapter": "39",
+"description_en": "Cellular plates of polyurethane",
+"description_ar": "ألواح إسفنج بولي يوريثان",
+"keywords": [
+"foam",
+"polyurethane",
+"sponge",
+"اسفنج"
+]
+},
+{
+"code": "392190",
+"chapter": "39",
+"description_en": "Other plates, sheets, film of plastics",
+"description_ar": "صفائح وأغشية بلاستيكية أخرى",
+"keywords": [
+"plastic",
+"sheet"
+]
+},
+{
+"code": "392310",
+"chapter": "39",
+"description_en": "Boxes, cases, crates of plastics",
+"description_ar": "صناديق بلاستيكية",
+"keywords": [
+"box",
+"crate",
+"plastic"
+]
+},
+{
+"code": "392321",
+"chapter": "39",
+"description_en": "Sacks and bags of polymers of ethylene",
+"description_ar": "أكياس وشنط بولي إيثيلين",
+"keywords": [
+"bag",
+"plastic",
+"sack",
+"كيس"
+]
+},
+{
+"code": "392330",
+"chapter": "39",
+"description_en": "Carboys, bottles, flasks of plastics",
+"description_ar": "قناني وعبوات بلاستيكية",
+"keywords": [
+"bottle",
+"container",
+"plastic",
+"عبوة",
+"قنينة"
+]
+},
+{
+"code": "392350",
+"chapter": "39",
+"description_en": "Stoppers, lids, caps of plastics",
+"description_ar": "أغطية وسدادات بلاستيكية",
+"keywords": [
+"cap",
+"closure",
+"lid",
+"غطاء"
+]
+},
+{
+"code": "392410",
+"chapter": "39",
+"description_en": "Tableware and kitchenware of plastics",
+"description_ar": "أدوات مائدة ومطبخ بلاستيكية",
+"keywords": [
+"kitchenware",
+"plastic",
+"tableware"
+]
+},
+{
+"code": "392510",
+"chapter": "39",
+"description_en": "Reservoirs, tanks, vats of plastics",
+"description_ar": "خزانات بلاستيكية",
+"keywords": [
+"plastic",
+"tank",
+"خزان"
+]
+},
+{
+"code": "392690",
+"chapter": "39",
+"description_en": "Other articles of plastics",
+"description_ar": "مصنوعات بلاستيكية أخرى",
+"keywords": [
+"articles",
+"plastic"
+]
+},
+{
+"code": "401110",
+"chapter": "40",
+"description_en": "New pneumatic tyres, for motor cars",
+"description_ar": "إطارات جديدة للسيارات",
+"keywords": [
+"car",
+"tire",
+"tyre",
+"إطار",
+"كفر"
+]
+},
+{
+"code": "401120",
+"chapter": "40",
+"description_en": "New pneumatic tyres, for buses or lorries",
+"description_ar": "إطارات للشاحنات والحافلات",
+"keywords": [
+"bus",
+"tire",
+"truck",
+"tyre",
+"إطار",
+"كفر"
+]
+},
+{
+"code": "401310",
+"chapter": "40",
+"description_en": "Inner tubes of rubber for cars, buses, lorries",
+"description_ar": "أنابيب داخلية مطاطية",
+"keywords": [
+"inner",
+"rubber",
+"tube"
+]
+},
+{
+"code": "401512",
+"chapter": "40",
+"description_en": "Gloves of vulcanised rubber for medical, surgical use",
+"description_ar": "قفازات مطاطية طبية",
+"keywords": [
+"gloves",
+"medical",
+"surgical",
+"طبية",
+"قفازات"
+]
+},
+{
+"code": "401519",
+"chapter": "40",
+"description_en": "Gloves of vulcanised rubber, other",
+"description_ar": "قفازات مطاطية",
+"keywords": [
+"gloves",
+"rubber",
+"قفازات"
+]
+},
+{
+"code": "401693",
+"chapter": "40",
+"description_en": "Gaskets, washers and seals of vulcanised rubber",
+"description_ar": "حشيات وأختام مطاطية",
+"keywords": [
+"gasket",
+"o-ring",
+"rubber",
+"seal"
+]
+},
+{
+"code": "410411",
+"chapter": "41",
+"description_en": "Bovine leather, full grains, wet state",
+"description_ar": "جلد بقري مدبوغ",
+"keywords": [
+"hide",
+"leather",
+"جلد"
+]
+},
+{
+"code": "420221",
+"chapter": "42",
+"description_en": "Handbags with outer surface of leather",
+"description_ar": "حقائب يد جلدية",
+"keywords": [
+"bag",
+"handbag",
+"leather",
+"حقيبة"
+]
+},
+{
+"code": "420222",
+"chapter": "42",
+"description_en": "Handbags with outer surface of plastic sheeting or textile",
+"description_ar": "حقائب يد من البلاستيك أو المنسوجات",
+"keywords": [
+"bag",
+"handbag",
+"حقيبة"
+]
+},
+{
+"code": "420292",
+"chapter": "42",
+"description_en": "Trunks, bags with outer surface of plastics or textile",
+"description_ar": "حقائب وصناديق سفر",
+"keywords": [
+"backpack",
+"bag",
+"luggage",
+"suitcase",
+"حقيبة",
+"سفر"
+]
+},
+{
+"code": "440711",
+"chapter": "44",
+"description_en": "Pine wood, sawn lengthwise",
+"description_ar": "خشب صنوبر منشور",
+"keywords": [
+"lumber",
+"pine",
+"timber",
+"wood",
+"خشب",
+"صنوبر"
+]
+},
+{
+"code": "441114",
+"chapter": "44",
+"description_en": "Medium density fibreboard (MDF), thickness over 9 mm",
+"description_ar": "ألواح MDF",
+"keywords": [
+"board",
+"fibreboard",
+"mdf",
+"wood",
+"خشب"
+]
+},
+{
+"code": "441231",
+"chapter": "44",
+"description_en": "Plywood with at least one outer ply of tropical wood",
+"description_ar": "خشب رقائقي (أبلكاش) استوائي",
+"keywords": [
+"plywood",
+"أبلكاش",
+"خشب"
+]
+},
+{
+"code": "441810",
+"chapter": "44",
+"description_en": "Windows, French-windows and frames, of wood",
+"description_ar": "نوافذ خشبية",
+"keywords": [
+"joinery",
+"window",
+"wooden",
+"شباك"
+]
+},
+{
+"code": "441820",
+"chapter": "44",
+"description_en": "Doors and their frames and thresholds, of wood",
+"description_ar": "أبواب خشبية",
+"keywords": [
+"door",
+"joinery",
+"wooden",
+"باب"
+]
+},
+{
+"code": "441873",
+"chapter": "44",
+"description_en": "Assembled flooring panels of bamboo",
+"description_ar": "أرضيات خيزران",
+"keywords": [
+"bamboo",
+"flooring",
+"parquet"
+]
+},
+{
+"code": "480256",
+"chapter": "48",
+"description_en": "Uncoated paper for writing/printing, 40-150 g/m2 sheets",
+"description_ar": "ورق طباعة وكتابة",
+"keywords": [
+"a4",
+"office",
+"paper",
+"printing",
+"ورق"
+]
+},
+{
+"code": "480411",
+"chapter": "48",
+"description_en": "Kraft liner, uncoated",
+"description_ar": "ورق كرافت",
+"keywords": [
+"kraft",
+"liner",
+"paper",
+"ورق"
+]
+},
+{
+"code": "481820",
+"chapter": "48",
+"description_en": "Handkerchiefs, cleansing tissues",
+"description_ar": "محارم ورقية",
+"keywords": [
+"napkin",
+"paper",
+"tissue",
+"محارم"
+]
+},
+{
+"code": "481840",
+"chapter": "48",
+"description_en": "Sanitary towels, tampons, diapers",
+"description_ar": "حفاضات ومحارم صحية",
+"keywords": [
+"diapers",
+"pads",
+"sanitary",
+"حفاضات"
+]
+},
+{
+"code": "481910",
+"chapter": "48",
+"description_en": "Cartons, boxes of corrugated paper",
+"description_ar": "صناديق كرتون مضلع",
+"keywords": [
+"box",
+"cardboard",
+"carton",
+"corrugated",
+"كرتون"
+]
+},
+{
+"code": "481920",
+"chapter": "48",
+"description_en": "Folding cartons, boxes of non-corrugated paper",
+"description_ar": "علب كرتون قابلة للطي",
+"keywords": [
+"box",
+"carton",
+"folding",
+"packaging"
+]
+},
+{
+"code": "490110",
+"chapter": "49",
+"description_en": "Printed books in single sheets",
+"description_ar": "كتب مطبوعة بأوراق مفردة",
+"keywords": [
+"books",
+"printed"
+]
+},
+{
+"code": "490199",
+"chapter": "49",
+"description_en": "Printed books, other",
+"description_ar": "كتب مطبوعة",
+"keywords": [
+"books",
+"printing",
+"كتب"
+]
+},
+{
+"code": "520100",
+"chapter": "52",
+"description_en": "Cotton, not carded or combed",
+"description_ar": "قطن غير مسرّح",
+"keywords": [
+"cotton",
+"raw",
+"قطن"
+]
+},
+{
+"code": "520512",
+"chapter": "52",
+"description_en": "Cotton yarn, single, uncombed, 714-232 dtex",
+"description_ar": "خيوط قطن مفردة",
+"keywords": [
+"cotton",
+"yarn",
+"خيط"
+]
+},
+{
+"code": "520811",
+"chapter": "52",
+"description_en": "Plain woven cotton fabric, bleached, <=100 g/m2",
+"description_ar": "أقمشة قطن منسوجة مبيضة",
+"keywords": [
+"cotton",
+"fabric",
+"woven",
+"قطن",
+"قماش"
+]
+},
+{
+"code": "520942",
+"chapter": "52",
+"description_en": "Denim fabric",
+"description_ar": "قماش دنيم (جينز)",
+"keywords": [
+"denim",
+"fabric",
+"jeans",
+"قماش"
+]
+},
+{
+"code": "530810",
+"chapter": "53",
+"description_en": "Coir yarn",
+"description_ar": "خيط ليف جوز الهند",
+"keywords": [
+"coir",
+"yarn"
+]
+},
+{
+"code": "540233",
+"chapter": "54",
+"description_en": "Textured yarn of polyesters",
+"description_ar": "خيوط بوليستر مُركّبة",
+"keywords": [
+"polyester",
+"yarn",
+"خيط"
+]
+},
+{
+"code": "540752",
+"chapter": "54",
+"description_en": "Woven fabrics of dyed textured polyester filament",
+"description_ar": "أقمشة بوليستر منسوجة مصبوغة",
+"keywords": [
+"fabric",
+"polyester",
+"woven",
+"قماش"
+]
+},
+{
+"code": "551511",
+"chapter": "55",
+"description_en": "Woven fabrics of polyester staple with viscose",
+"description_ar": "أقمشة بوليستر وفيسكوز",
+"keywords": [
+"fabric",
+"polyester",
+"viscose"
+]
+},
+{
+"code": "560110",
+"chapter": "56",
+"description_en": "Sanitary towels and tampons of wadding",
+"description_ar": "فوط صحية من الحشو",
+"keywords": [
+"sanitary",
+"wadding"
+]
+},
+{
+"code": "560311",
+"chapter": "56",
+"description_en": "Nonwovens of man-made filaments, up to 25 g/m2",
+"description_ar": "أقمشة غير منسوجة",
+"keywords": [
+"fabric",
+"nonwoven",
+"spunbond"
+]
+},
+{
+"code": "570242",
+"chapter": "57",
+"description_en": "Carpets, woven, man-made textile, pile",
+"description_ar": "سجاد منسوج صناعي",
+"keywords": [
+"carpet",
+"rug",
+"زولية",
+"سجاد"
+]
+},
+{
+"code": "570330",
+"chapter": "57",
+"description_en": "Tufted carpets of man-made textile",
+"description_ar": "سجاد مُنقّر صناعي",
+"keywords": [
+"carpet",
+"tufted",
+"سجاد",
+"موكيت"
+]
+},
+{
+"code": "580110",
+"chapter": "58",
+"description_en": "Woven pile fabrics of wool",
+"description_ar": "أقمشة مخملية صوف",
+"keywords": [
+"fabric",
+"velvet"
+]
+},
+{
+"code": "590320",
+"chapter": "59",
+"description_en": "Fabrics impregnated with polyurethane",
+"description_ar": "أقمشة مشرّبة بالبولي يوريثان",
+"keywords": [
+"coated",
+"fabric",
+"leather",
+"pu"
+]
+},
+{
+"code": "600110",
+"chapter": "60",
+"description_en": "Long pile knitted fabrics",
+"description_ar": "أقمشة محبوكة وبرية",
+"keywords": [
+"fabric",
+"knitted",
+"pile"
+]
+},
+{
+"code": "610910",
+"chapter": "61",
+"description_en": "T-shirts, singlets, of cotton, knitted",
+"description_ar": "تيشيرتات قطنية محبوكة",
+"keywords": [
+"cotton",
+"t-shirt",
+"tshirt",
+"تيشيرت"
+]
+},
+{
+"code": "610990",
+"chapter": "61",
+"description_en": "T-shirts of other textile materials, knitted",
+"description_ar": "تيشيرتات من مواد أخرى",
+"keywords": [
+"t-shirt",
+"tshirt"
+]
+},
+{
+"code": "611020",
+"chapter": "61",
+"description_en": "Jerseys, pullovers, of cotton, knitted",
+"description_ar": "بلوزات وكنزات قطن محبوكة",
+"keywords": [
+"cotton",
+"knit",
+"pullover",
+"sweater"
+]
+},
+{
+"code": "611030",
+"chapter": "61",
+"description_en": "Jerseys, pullovers of man-made fibres, knitted",
+"description_ar": "كنزات من ألياف صناعية",
+"keywords": [
+"hoodie",
+"pullover",
+"sweater"
+]
+},
+{
+"code": "611595",
+"chapter": "61",
+"description_en": "Pantyhose, socks, of cotton, knitted",
+"description_ar": "جوارب قطنية",
+"keywords": [
+"cotton",
+"socks",
+"جوارب",
+"شراب"
+]
+},
+{
+"code": "620193",
+"chapter": "62",
+"description_en": "Men's anoraks, windcheaters of man-made fibres",
+"description_ar": "جاكيتات رجالية",
+"keywords": [
+"jacket",
+"men",
+"windbreaker",
+"جاكيت"
+]
+},
+{
+"code": "620293",
+"chapter": "62",
+"description_en": "Women's anoraks, windcheaters of man-made fibres",
+"description_ar": "جاكيتات نسائية",
+"keywords": [
+"jacket",
+"windbreaker",
+"women",
+"جاكيت"
+]
+},
+{
+"code": "620342",
+"chapter": "62",
+"description_en": "Men's trousers of cotton, woven",
+"description_ar": "بناطيل رجالية قطن",
+"keywords": [
+"jeans",
+"men",
+"pants",
+"trousers",
+"بنطلون"
+]
+},
+{
+"code": "620442",
+"chapter": "62",
+"description_en": "Women's dresses of cotton",
+"description_ar": "فساتين نسائية قطن",
+"keywords": [
+"dress",
+"women",
+"فستان"
+]
+},
+{
+"code": "620443",
+"chapter": "62",
+"description_en": "Women's dresses of synthetic fibres",
+"description_ar": "فساتين نسائية صناعية",
+"keywords": [
+"dress",
+"synthetic",
+"women",
+"فستان"
+]
+},
+{
+"code": "620462",
+"chapter": "62",
+"description_en": "Women's trousers of cotton, woven",
+"description_ar": "بناطيل نسائية قطن",
+"keywords": [
+"jeans",
+"pants",
+"trousers",
+"women",
+"بنطلون"
+]
+},
+{
+"code": "620520",
+"chapter": "62",
+"description_en": "Men's shirts of cotton, woven",
+"description_ar": "قمصان رجالية قطن",
+"keywords": [
+"cotton",
+"men",
+"shirt",
+"قميص"
+]
+},
+{
+"code": "620630",
+"chapter": "62",
+"description_en": "Women's blouses of cotton",
+"description_ar": "بلوزات نسائية قطن",
+"keywords": [
+"blouse",
+"women",
+"بلوزة"
+]
+},
+{
+"code": "621112",
+"chapter": "62",
+"description_en": "Women's swimwear",
+"description_ar": "ملابس سباحة نسائية",
+"keywords": [
+"bikini",
+"swimwear"
+]
+},
+{
+"code": "621143",
+"chapter": "62",
+"description_en": "Women's other garments of man-made fibres (abaya)",
+"description_ar": "ملابس نسائية من ألياف صناعية (عباءة)",
+"keywords": [
+"abaya",
+"garment",
+"women",
+"عباءة"
+]
+},
+{
+"code": "621210",
+"chapter": "62",
+"description_en": "Brassieres",
+"description_ar": "حمالات صدر",
+"keywords": [
+"bra",
+"brassiere",
+"lingerie"
+]
+},
+{
+"code": "630231",
+"chapter": "63",
+"description_en": "Bed linen of cotton",
+"description_ar": "شراشف قطنية",
+"keywords": [
+"bed",
+"cotton",
+"linen",
+"sheets",
+"شرشف"
+]
+},
+{
+"code": "630260",
+"chapter": "63",
+"description_en": "Toilet or kitchen linen, of terry towelling, cotton",
+"description_ar": "مناشف قطنية",
+"keywords": [
+"cotton",
+"towel",
+"towels",
+"منشفة"
+]
+},
+{
+"code": "630533",
+"chapter": "63",
+"description_en": "Sacks and bags of polyethylene strip (woven)",
+"description_ar": "أكياس منسوجة بولي إيثيلين",
+"keywords": [
+"bag",
+"bulk",
+"pp",
+"sack",
+"woven",
+"كيس"
+]
+},
+{
+"code": "630622",
+"chapter": "63",
+"description_en": "Tents of synthetic fibres",
+"description_ar": "خيم من ألياف صناعية",
+"keywords": [
+"camping",
+"tent",
+"خيمة"
+]
+},
+{
+"code": "630790",
+"chapter": "63",
+"description_en": "Other made-up textile articles",
+"description_ar": "مصنوعات نسيجية أخرى",
+"keywords": [
+"articles",
+"textile"
+]
+},
+{
+"code": "640299",
+"chapter": "64",
+"description_en": "Footwear with rubber or plastic uppers, other",
+"description_ar": "أحذية مطاطية أو بلاستيكية",
+"keywords": [
+"plastic",
+"rubber",
+"sandals",
+"shoes",
+"صندل"
+]
+},
+{
+"code": "640399",
+"chapter": "64",
+"description_en": "Footwear with leather uppers, other",
+"description_ar": "أحذية بجزء علوي جلدي",
+"keywords": [
+"footwear",
+"leather",
+"shoes",
+"حذاء"
+]
+},
+{
+"code": "640411",
+"chapter": "64",
+"description_en": "Sports footwear with textile uppers",
+"description_ar": "أحذية رياضية",
+"keywords": [
+"shoes",
+"sneakers",
+"sport",
+"trainers",
+"حذاء",
+"رياضي"
+]
+},
+{
+"code": "640419",
+"chapter": "64",
+"description_en": "Footwear with textile uppers, other",
+"description_ar": "أحذية بجزء علوي نسيجي",
+"keywords": [
+"footwear",
+"shoes",
+"textile",
+"حذاء"
+]
+},
+{
+"code": "650500",
+"chapter": "65",
+"description_en": "Hats and other headgear, knitted",
+"description_ar": "قبعات وأغطية رأس",
+"keywords": [
+"cap",
+"hat",
+"قبعة"
+]
+},
+{
+"code": "660199",
+"chapter": "66",
+"description_en": "Umbrellas, other",
+"description_ar": "مظلات",
+"keywords": [
+"umbrella",
+"شمسية",
+"مظلة"
+]
+},
+{
+"code": "680221",
+"chapter": "68",
+"description_en": "Marble, travertine, worked, cut",
+"description_ar": "رخام مقطع",
+"keywords": [
+"marble",
+"stone",
+"رخام"
+]
+},
+{
+"code": "680223",
+"chapter": "68",
+"description_en": "Granite, worked, cut",
+"description_ar": "غرانيت مقطع",
+"keywords": [
+"granite",
+"stone",
+"جرانيت"
+]
+},
+{
+"code": "680610",
+"chapter": "68",
+"description_en": "Slag wool, rock wool",
+"description_ar": "صوف صخري",
+"keywords": [
+"insulation",
+"rock",
+"wool",
+"عزل"
+]
+},
+{
+"code": "681011",
+"chapter": "68",
+"description_en": "Building blocks of cement or concrete",
+"description_ar": "بلوك إسمنتي",
+"keywords": [
+"block",
+"cement",
+"concrete"
+]
+},
+{
+"code": "690310",
+"chapter": "69",
+"description_en": "Refractory ceramic goods with carbon",
+"description_ar": "منتجات سيراميكية حرارية",
+"keywords": [
+"brick",
+"refractory"
+]
+},
+{
+"code": "690490",
+"chapter": "69",
+"description_en": "Ceramic building bricks, other",
+"description_ar": "طابوق سيراميك",
+"keywords": [
+"brick",
+"طابوق"
+]
+},
+{
+"code": "690721",
+"chapter": "69",
+"description_en": "Ceramic tiles, water absorption <=0.5%",
+"description_ar": "بلاط سيراميك امتصاص منخفض",
+"keywords": [
+"ceramic",
+"floor",
+"porcelain",
+"tile",
+"بلاط",
+"بورسلين",
+"سيراميك"
+]
+},
+{
+"code": "690722",
+"chapter": "69",
+"description_en": "Ceramic tiles, absorption 0.5-10%",
+"description_ar": "بلاط سيراميك امتصاص متوسط",
+"keywords": [
+"ceramic",
+"floor",
+"tile",
+"wall",
+"بلاط",
+"سيراميك"
+]
+},
+{
+"code": "690723",
+"chapter": "69",
+"description_en": "Ceramic tiles, absorption over 10%",
+"description_ar": "بلاط سيراميك امتصاص عالٍ",
+"keywords": [
+"ceramic",
+"tile",
+"wall",
+"بلاط",
+"سيراميك"
+]
+},
+{
+"code": "691010",
+"chapter": "69",
+"description_en": "Ceramic sinks, baths, sanitary of porcelain",
+"description_ar": "أحواض وحمامات ومراحيض بورسلين",
+"keywords": [
+"bathtub",
+"sanitary",
+"sink",
+"toilet",
+"ware",
+"أدوات",
+"صحية",
+"مرحاض"
+]
+},
+{
+"code": "691110",
+"chapter": "69",
+"description_en": "Tableware and kitchenware of porcelain",
+"description_ar": "أدوات مائدة ومطبخ بورسلين",
+"keywords": [
+"plates",
+"porcelain",
+"tableware",
+"صحون"
+]
+},
+{
+"code": "691200",
+"chapter": "69",
+"description_en": "Ceramic tableware, kitchenware, other",
+"description_ar": "أدوات مائدة سيراميك",
+"keywords": [
+"ceramic",
+"dishes",
+"tableware"
+]
+},
+{
+"code": "700510",
+"chapter": "70",
+"description_en": "Float glass, non-wired, with absorbent layer",
+"description_ar": "زجاج مسطح (فلوت)",
+"keywords": [
+"float",
+"glass",
+"sheet",
+"زجاج"
+]
+},
+{
+"code": "700529",
+"chapter": "70",
+"description_en": "Float glass, other, not worked",
+"description_ar": "زجاج مسطح غير مشغول",
+"keywords": [
+"glass",
+"sheet",
+"زجاج"
+]
+},
+{
+"code": "700719",
+"chapter": "70",
+"description_en": "Toughened (tempered) safety glass, other",
+"description_ar": "زجاج مقسّى",
+"keywords": [
+"glass",
+"safety",
+"tempered",
+"زجاج"
+]
+},
+{
+"code": "700800",
+"chapter": "70",
+"description_en": "Multiple-walled insulating units of glass",
+"description_ar": "زجاج مزدوج عازل",
+"keywords": [
+"double",
+"glass",
+"glazing",
+"insulating"
+]
+},
+{
+"code": "701090",
+"chapter": "70",
+"description_en": "Glass bottles, jars, other containers",
+"description_ar": "قناني وجرار زجاجية",
+"keywords": [
+"bottle",
+"glass",
+"jar",
+"زجاجة"
+]
+},
+{
+"code": "701349",
+"chapter": "70",
+"description_en": "Glassware for table or kitchen, other",
+"description_ar": "أدوات زجاجية للمائدة",
+"keywords": [
+"cups",
+"drinking",
+"glass",
+"glassware",
+"كاسات"
+]
+},
+{
+"code": "701400",
+"chapter": "70",
+"description_en": "Signalling glassware and optical elements",
+"description_ar": "زجاجيات إشارة",
+"keywords": [
+"glass",
+"signalling"
+]
+},
+{
+"code": "701990",
+"chapter": "70",
+"description_en": "Glass fibres and articles thereof, other",
+"description_ar": "ألياف زجاجية",
+"keywords": [
+"fiberglass",
+"fibre",
+"glass"
+]
+},
+{
+"code": "711319",
+"chapter": "71",
+"description_en": "Articles of jewellery of other precious metal",
+"description_ar": "مجوهرات من معادن ثمينة",
+"keywords": [
+"gold",
+"jewelry",
+"silver",
+"مجوهرات"
+]
+},
+{
+"code": "711790",
+"chapter": "71",
+"description_en": "Imitation jewellery, other",
+"description_ar": "مجوهرات تقليدية (إكسسوارات)",
+"keywords": [
+"accessories",
+"bijouterie",
+"imitation",
+"jewelry"
+]
+},
+{
+"code": "720690",
+"chapter": "72",
+"description_en": "Iron and non-alloy steel in ingots",
+"description_ar": "سبائك فولاذ",
+"keywords": [
+"ingot",
+"steel"
+]
+},
+{
+"code": "720839",
+"chapter": "72",
+"description_en": "Hot-rolled flat steel coil, width >=600 mm, <3 mm",
+"description_ar": "صفائح فولاذ ملفوفة مدرفلة على الساخن",
+"keywords": [
+"coil",
+"hot",
+"hrc",
+"rolled",
+"steel"
+]
+},
+{
+"code": "720918",
+"chapter": "72",
+"description_en": "Cold-rolled flat steel, width >=600 mm, <0.5 mm",
+"description_ar": "صفائح فولاذ مدرفلة على البارد",
+"keywords": [
+"coil",
+"cold",
+"crc",
+"rolled",
+"steel"
+]
+},
+{
+"code": "721049",
+"chapter": "72",
+"description_en": "Flat-rolled iron/steel, zinc coated, other",
+"description_ar": "صفائح فولاذ مجلفنة",
+"keywords": [
+"coil",
+"galvanized",
+"gi",
+"sheet",
+"steel"
+]
+},
+{
+"code": "721070",
+"chapter": "72",
+"description_en": "Flat-rolled steel, painted or plastic coated",
+"description_ar": "صفائح فولاذ ملونة (PPGI)",
+"keywords": [
+"ppgi",
+"prepainted",
+"sheet",
+"steel"
+]
+},
+{
+"code": "721391",
+"chapter": "72",
+"description_en": "Hot-rolled bars in coils of iron, circular <14 mm",
+"description_ar": "حديد تسليح لفائف (وايرود)",
+"keywords": [
+"coil",
+"rod",
+"steel",
+"wire"
+]
+},
+{
+"code": "721399",
+"chapter": "72",
+"description_en": "Hot-rolled bars in coils, other",
+"description_ar": "قضبان حديد ملفوفة أخرى",
+"keywords": [
+"rod",
+"steel",
+"wire"
+]
+},
+{
+"code": "721420",
+"chapter": "72",
+"description_en": "Bars with indentations (rebar)",
+"description_ar": "حديد تسليح (أسياخ)",
+"keywords": [
+"bar",
+"rebar",
+"reinforcing",
+"steel",
+"تسليح",
+"حديد"
+]
+},
+{
+"code": "721633",
+"chapter": "72",
+"description_en": "H sections of iron or non-alloy steel",
+"description_ar": "حديد مقطع H",
+"keywords": [
+"beam",
+"h",
+"section",
+"steel"
+]
+},
+{
+"code": "721690",
+"chapter": "72",
+"description_en": "Angles, shapes and sections, other",
+"description_ar": "زوايا ومقاطع حديد",
+"keywords": [
+"angle",
+"profile",
+"steel"
+]
+},
+{
+"code": "721913",
+"chapter": "72",
+"description_en": "Stainless steel flat-rolled, hot-rolled coil",
+"description_ar": "ستانلس ستيل مدرفل ملفوف",
+"keywords": [
+"coil",
+"stainless",
+"steel"
+]
+},
+{
+"code": "722020",
+"chapter": "72",
+"description_en": "Stainless steel flat-rolled, cold-rolled, <600 mm",
+"description_ar": "ستانلس ستيل مدرفل على البارد",
+"keywords": [
+"stainless",
+"steel",
+"strip"
+]
+},
+{
+"code": "722830",
+"chapter": "72",
+"description_en": "Other bars of alloy steel, hot-rolled",
+"description_ar": "قضبان فولاذ سبائكي",
+"keywords": [
+"alloy",
+"bar",
+"steel"
+]
+},
+{
+"code": "730110",
+"chapter": "73",
+"description_en": "Sheet piling of iron or steel",
+"description_ar": "ستائر ركائز فولاذية",
+"keywords": [
+"piling",
+"sheet",
+"steel"
+]
+},
+{
+"code": "730300",
+"chapter": "73",
+"description_en": "Tubes, pipes of cast iron",
+"description_ar": "أنابيب حديد زهر",
+"keywords": [
+"cast",
+"iron",
+"pipe"
+]
+},
+{
+"code": "730411",
+"chapter": "73",
+"description_en": "Seamless line pipe, stainless steel",
+"description_ar": "أنابيب ستانلس بدون لحام",
+"keywords": [
+"pipe",
+"seamless",
+"stainless"
+]
+},
+{
+"code": "730431",
+"chapter": "73",
+"description_en": "Seamless tubes of iron, cold-drawn",
+"description_ar": "أنابيب فولاذ بدون لحام",
+"keywords": [
+"pipe",
+"seamless",
+"steel"
+]
+},
+{
+"code": "730630",
+"chapter": "73",
+"description_en": "Welded tubes of iron/steel, circular, other",
+"description_ar": "أنابيب فولاذ ملحومة",
+"keywords": [
+"pipe",
+"steel",
+"tube",
+"welded",
+"أنبوب",
+"حديد"
+]
+},
+{
+"code": "730690",
+"chapter": "73",
+"description_en": "Other welded tubes and profiles",
+"description_ar": "أنابيب ومقاطع ملحومة أخرى",
+"keywords": [
+"pipe",
+"square",
+"tube",
+"welded"
+]
+},
+{
+"code": "730719",
+"chapter": "73",
+"description_en": "Cast fittings, tube or pipe",
+"description_ar": "وصلات أنابيب مسبوكة",
+"keywords": [
+"cast",
+"fittings",
+"pipe"
+]
+},
+{
+"code": "730721",
+"chapter": "73",
+"description_en": "Flanges of stainless steel",
+"description_ar": "فلنجات ستانلس ستيل",
+"keywords": [
+"flange",
+"stainless"
+]
+},
+{
+"code": "730890",
+"chapter": "73",
+"description_en": "Structures and parts of structures of iron or steel",
+"description_ar": "هياكل حديدية",
+"keywords": [
+"frame",
+"steel",
+"structure",
+"هيكل"
+]
+},
+{
+"code": "730900",
+"chapter": "73",
+"description_en": "Reservoirs, tanks of iron/steel > 300 L",
+"description_ar": "خزانات حديدية",
+"keywords": [
+"reservoir",
+"steel",
+"tank",
+"خزان"
+]
+},
+{
+"code": "731100",
+"chapter": "73",
+"description_en": "Containers for compressed or liquefied gas",
+"description_ar": "اسطوانات غاز",
+"keywords": [
+"cylinder",
+"gas",
+"اسطوانة"
+]
+},
+{
+"code": "731210",
+"chapter": "73",
+"description_en": "Stranded wire, ropes and cables of iron/steel",
+"description_ar": "حبال وكابلات فولاذية",
+"keywords": [
+"cable",
+"rope",
+"steel",
+"wire"
+]
+},
+{
+"code": "731300",
+"chapter": "73",
+"description_en": "Barbed wire",
+"description_ar": "سلك شائك",
+"keywords": [
+"barbed",
+"wire"
+]
+},
+{
+"code": "731420",
+"chapter": "73",
+"description_en": "Grill, netting and fencing, welded",
+"description_ar": "شبك وسياج ملحوم",
+"keywords": [
+"fence",
+"mesh",
+"welded",
+"شبك"
+]
+},
+{
+"code": "731700",
+"chapter": "73",
+"description_en": "Nails, tacks, staples of iron/steel",
+"description_ar": "مسامير ودبابيس",
+"keywords": [
+"nails",
+"staples",
+"مسمار"
+]
+},
+{
+"code": "731815",
+"chapter": "73",
+"description_en": "Screws and bolts, threaded, other",
+"description_ar": "براغي ومسامير ملولبة",
+"keywords": [
+"bolt",
+"fastener",
+"screw",
+"برغي"
+]
+},
+{
+"code": "731816",
+"chapter": "73",
+"description_en": "Nuts, threaded",
+"description_ar": "صواميل",
+"keywords": [
+"fastener",
+"nut",
+"صمولة"
+]
+},
+{
+"code": "732111",
+"chapter": "73",
+"description_en": "Cooking appliances for gas fuel",
+"description_ar": "طباخات غاز",
+"keywords": [
+"cooker",
+"gas",
+"stove",
+"طباخ"
+]
+},
+{
+"code": "732393",
+"chapter": "73",
+"description_en": "Table, kitchen articles of stainless steel",
+"description_ar": "أدوات مطبخ ستانلس ستيل",
+"keywords": [
+"cookware",
+"kitchenware",
+"stainless",
+"steel",
+"قدور"
+]
+},
+{
+"code": "732619",
+"chapter": "73",
+"description_en": "Other forged iron/steel articles",
+"description_ar": "مصنوعات حديد مطروق",
+"keywords": [
+"forged",
+"steel"
+]
+},
+{
+"code": "732690",
+"chapter": "73",
+"description_en": "Other articles of iron or steel",
+"description_ar": "مصنوعات حديدية أخرى",
+"keywords": [
+"articles",
+"steel"
+]
+},
+{
+"code": "740311",
+"chapter": "74",
+"description_en": "Refined copper cathodes",
+"description_ar": "كاثود نحاس مكرر",
+"keywords": [
+"cathode",
+"copper"
+]
+},
+{
+"code": "740811",
+"chapter": "74",
+"description_en": "Copper wire, refined, >6 mm",
+"description_ar": "سلك نحاس",
+"keywords": [
+"copper",
+"wire",
+"نحاس"
+]
+},
+{
+"code": "741110",
+"chapter": "74",
+"description_en": "Copper tubes and pipes",
+"description_ar": "أنابيب نحاس",
+"keywords": [
+"copper",
+"pipe",
+"tube",
+"نحاس"
+]
+},
+{
+"code": "760110",
+"chapter": "76",
+"description_en": "Aluminium, not alloyed, unwrought",
+"description_ar": "ألمنيوم خام غير مخلوط",
+"keywords": [
+"aluminium",
+"aluminum",
+"ingot",
+"ألمنيوم"
+]
+},
+{
+"code": "760120",
+"chapter": "76",
+"description_en": "Aluminium alloys, unwrought",
+"description_ar": "ألمنيوم مخلوط خام",
+"keywords": [
+"alloy",
+"aluminum",
+"ingot"
+]
+},
+{
+"code": "760410",
+"chapter": "76",
+"description_en": "Aluminium bars, rods, profiles, not alloyed",
+"description_ar": "مقاطع ألمنيوم",
+"keywords": [
+"aluminum",
+"extrusion",
+"profile"
+]
+},
+{
+"code": "760429",
+"chapter": "76",
+"description_en": "Aluminium alloy bars, profiles, other",
+"description_ar": "بروفايل ألمنيوم سبائكي",
+"keywords": [
+"aluminium",
+"profile",
+"window"
+]
+},
+{
+"code": "760611",
+"chapter": "76",
+"description_en": "Aluminium plates, sheets, rectangular, not alloyed",
+"description_ar": "صفائح ألمنيوم",
+"keywords": [
+"aluminum",
+"plate",
+"sheet"
+]
+},
+{
+"code": "760711",
+"chapter": "76",
+"description_en": "Aluminium foil, rolled, not backed",
+"description_ar": "رقائق ألمنيوم (فويل)",
+"keywords": [
+"aluminium",
+"foil",
+"فويل"
+]
+},
+{
+"code": "761010",
+"chapter": "76",
+"description_en": "Aluminium doors, windows and frames",
+"description_ar": "أبواب ونوافذ ألمنيوم",
+"keywords": [
+"aluminum",
+"door",
+"window",
+"باب",
+"شباك"
+]
+},
+{
+"code": "761290",
+"chapter": "76",
+"description_en": "Aluminium casks, drums, cans, other",
+"description_ar": "علب وبراميل ألمنيوم",
+"keywords": [
+"aluminium",
+"can",
+"drum"
+]
+},
+{
+"code": "761699",
+"chapter": "76",
+"description_en": "Other articles of aluminium",
+"description_ar": "مصنوعات ألمنيوم أخرى",
+"keywords": [
+"aluminum",
+"articles"
+]
+},
+{
+"code": "780199",
+"chapter": "78",
+"description_en": "Lead, unwrought, other",
+"description_ar": "رصاص خام",
+"keywords": [
+"lead"
+]
+},
+{
+"code": "790111",
+"chapter": "79",
+"description_en": "Zinc, not alloyed, >=99.99%",
+"description_ar": "زنك خام",
+"keywords": [
+"zinc"
+]
+},
+{
+"code": "800110",
+"chapter": "80",
+"description_en": "Tin, not alloyed, unwrought",
+"description_ar": "قصدير خام",
+"keywords": [
+"tin"
+]
+},
+{
+"code": "820110",
+"chapter": "82",
+"description_en": "Spades and shovels",
+"description_ar": "مجارف وأرياح",
+"keywords": [
+"shovel",
+"spade"
+]
+},
+{
+"code": "820130",
+"chapter": "82",
+"description_en": "Mattocks, picks, hoes, rakes",
+"description_ar": "معاول ومجارف يدوية",
+"keywords": [
+"hoe",
+"pick",
+"rake"
+]
+},
+{
+"code": "820160",
+"chapter": "82",
+"description_en": "Hedge shears, pruning shears",
+"description_ar": "مقصات تقليم",
+"keywords": [
+"garden",
+"pruning",
+"shears"
+]
+},
+{
+"code": "820319",
+"chapter": "82",
+"description_en": "Pliers, pincers, tweezers",
+"description_ar": "كمّاشات وملاقط",
+"keywords": [
+"pliers",
+"tool",
+"كماشة"
+]
+},
+{
+"code": "820411",
+"chapter": "82",
+"description_en": "Hand-operated spanners and wrenches",
+"description_ar": "مفاتيح ربط يدوية",
+"keywords": [
+"spanner",
+"tool",
+"wrench",
+"ربط",
+"مفتاح"
+]
+},
+{
+"code": "820520",
+"chapter": "82",
+"description_en": "Hammers and sledge hammers",
+"description_ar": "مطارق",
+"keywords": [
+"hammer",
+"tool",
+"مطرقة"
+]
+},
+{
+"code": "820540",
+"chapter": "82",
+"description_en": "Screwdrivers",
+"description_ar": "مفكات",
+"keywords": [
+"screwdriver",
+"tool",
+"مفك"
+]
+},
+{
+"code": "820559",
+"chapter": "82",
+"description_en": "Other hand tools",
+"description_ar": "عدد يدوية أخرى",
+"keywords": [
+"hand",
+"tools"
+]
+},
+{
+"code": "820600",
+"chapter": "82",
+"description_en": "Tool sets of two or more headings",
+"description_ar": "طقم عدد",
+"keywords": [
+"kit",
+"set",
+"tool"
+]
+},
+{
+"code": "820713",
+"chapter": "82",
+"description_en": "Rock drilling tools with working part of cermet",
+"description_ar": "رؤوس حفر صخور",
+"keywords": [
+"bit",
+"drill",
+"rock"
+]
+},
+{
+"code": "820730",
+"chapter": "82",
+"description_en": "Tools for pressing, stamping or punching",
+"description_ar": "أدوات كبس وختم",
+"keywords": [
+"die",
+"dies",
+"press",
+"stamping"
+]
+},
+{
+"code": "820740",
+"chapter": "82",
+"description_en": "Tools for tapping or threading",
+"description_ar": "أدوات تلبيس (تقليم) الأسنان",
+"keywords": [
+"tap",
+"thread",
+"tool"
+]
+},
+{
+"code": "820750",
+"chapter": "82",
+"description_en": "Tools for drilling",
+"description_ar": "أدوات حفر (مثاقب)",
+"keywords": [
+"bits",
+"drill",
+"مثقاب"
+]
+},
+{
+"code": "820760",
+"chapter": "82",
+"description_en": "Tools for boring or broaching",
+"description_ar": "أدوات حفر وتجويف",
+"keywords": [
+"boring",
+"broaching",
+"tool"
+]
+},
+{
+"code": "820770",
+"chapter": "82",
+"description_en": "Tools for milling",
+"description_ar": "أدوات تفريز",
+"keywords": [
+"cutter",
+"milling"
+]
+},
+{
+"code": "820890",
+"chapter": "82",
+"description_en": "Knives and cutting blades, other",
+"description_ar": "سكاكين وشفرات قطع",
+"keywords": [
+"blade",
+"cutting",
+"knife"
+]
+},
+{
+"code": "830140",
+"chapter": "83",
+"description_en": "Locks of base metal, other",
+"description_ar": "أقفال معدنية",
+"keywords": [
+"lock",
+"padlock",
+"قفل"
+]
+},
+{
+"code": "830242",
+"chapter": "83",
+"description_en": "Mountings and fittings for furniture, base metal",
+"description_ar": "اكسسوارات أثاث معدنية",
+"keywords": [
+"fittings",
+"furniture",
+"hardware",
+"hinge",
+"مفصلات"
+]
+},
+{
+"code": "830300",
+"chapter": "83",
+"description_en": "Safes, strongboxes",
+"description_ar": "خزائن حديدية",
+"keywords": [
+"safe",
+"strongbox",
+"خزنة"
+]
+},
+{
+"code": "840734",
+"chapter": "84",
+"description_en": "Spark-ignition engines, over 1000 cc",
+"description_ar": "محركات بنزين للمركبات",
+"keywords": [
+"engine",
+"gasoline",
+"petrol",
+"محرك"
+]
+},
+{
+"code": "840820",
+"chapter": "84",
+"description_en": "Diesel engines for vehicles",
+"description_ar": "محركات ديزل للمركبات",
+"keywords": [
+"diesel",
+"engine",
+"vehicle",
+"محرك"
+]
+},
+{
+"code": "840890",
+"chapter": "84",
+"description_en": "Other compression-ignition engines",
+"description_ar": "محركات ديزل أخرى",
+"keywords": [
+"diesel",
+"engine",
+"محرك"
+]
+},
+{
+"code": "841181",
+"chapter": "84",
+"description_en": "Gas turbines, power up to 5000 kW",
+"description_ar": "توربينات غازية حتى 5000 ك.و",
+"keywords": [
+"gas",
+"turbine"
+]
+},
+{
+"code": "841311",
+"chapter": "84",
+"description_en": "Pumps for dispensing fuel",
+"description_ar": "مضخات توزيع الوقود",
+"keywords": [
+"dispenser",
+"fuel",
+"pump"
+]
+},
+{
+"code": "841330",
+"chapter": "84",
+"description_en": "Fuel, lubricating or cooling pumps for engines",
+"description_ar": "مضخات وقود وتبريد للمحركات",
+"keywords": [
+"engine",
+"fuel",
+"pump"
+]
+},
+{
+"code": "841370",
+"chapter": "84",
+"description_en": "Centrifugal pumps, other",
+"description_ar": "مضخات طرد مركزي",
+"keywords": [
+"centrifugal",
+"pump",
+"water",
+"مضخة"
+]
+},
+{
+"code": "841381",
+"chapter": "84",
+"description_en": "Pumps for liquids, other",
+"description_ar": "مضخات سوائل أخرى",
+"keywords": [
+"liquid",
+"pump",
+"مضخة"
+]
+},
+{
+"code": "841410",
+"chapter": "84",
+"description_en": "Vacuum pumps",
+"description_ar": "مضخات تفريغ",
+"keywords": [
+"pump",
+"vacuum"
+]
+},
+{
+"code": "841430",
+"chapter": "84",
+"description_en": "Compressors for refrigeration",
+"description_ar": "ضواغط تبريد",
+"keywords": [
+"compressor",
+"refrigeration",
+"كباس"
+]
+},
+{
+"code": "841450",
+"chapter": "84",
+"description_en": "Ceiling or roof ventilating fans",
+"description_ar": "مراوح سقفية وتهوية",
+"keywords": [
+"ceiling",
+"fan",
+"ventilating"
+]
+},
+{
+"code": "841451",
+"chapter": "84",
+"description_en": "Table, floor, wall fans with motor <=125 W",
+"description_ar": "مراوح طاولة وأرضية",
+"keywords": [
+"fan",
+"floor",
+"table",
+"مروحة"
+]
+},
+{
+"code": "841459",
+"chapter": "84",
+"description_en": "Fans, other",
+"description_ar": "مراوح أخرى",
+"keywords": [
+"exhaust",
+"fan",
+"industrial",
+"مروحة"
+]
+},
+{
+"code": "841480",
+"chapter": "84",
+"description_en": "Air or gas compressors, other",
+"description_ar": "ضواغط هواء أو غاز",
+"keywords": [
+"air",
+"compressor",
+"ضاغط",
+"هواء"
+]
+},
+{
+"code": "841510",
+"chapter": "84",
+"description_en": "Air conditioning machines, window or wall, self-contained",
+"description_ar": "مكيفات هواء شباك أو جدار",
+"keywords": [
+"ac",
+"air",
+"conditioner",
+"split",
+"window",
+"مكيف"
+]
+},
+{
+"code": "841520",
+"chapter": "84",
+"description_en": "Air conditioning machines for motor vehicles",
+"description_ar": "مكيفات هواء للمركبات",
+"keywords": [
+"air",
+"car",
+"conditioner"
+]
+},
+{
+"code": "841581",
+"chapter": "84",
+"description_en": "Air conditioning machines with refrigerating unit and reversible",
+"description_ar": "مكيفات هواء مع تبريد وتدفئة",
+"keywords": [
+"air",
+"conditioner",
+"heat",
+"pump",
+"split",
+"سبلت",
+"مكيف"
+]
+},
+{
+"code": "841583",
+"chapter": "84",
+"description_en": "Air conditioning machines without refrigerating unit",
+"description_ar": "مكيفات هواء بدون وحدة تبريد",
+"keywords": [
+"air",
+"conditioner"
+]
+},
+{
+"code": "841590",
+"chapter": "84",
+"description_en": "Parts of air conditioning machines",
+"description_ar": "أجزاء مكيفات هواء",
+"keywords": [
+"air",
+"conditioner",
+"parts"
+]
+},
+{
+"code": "841810",
+"chapter": "84",
+"description_en": "Combined refrigerator-freezers with separate doors",
+"description_ar": "ثلاجات مع فريزر",
+"keywords": [
+"freezer",
+"fridge",
+"refrigerator",
+"ثلاجة"
+]
+},
+{
+"code": "841821",
+"chapter": "84",
+"description_en": "Household refrigerators, compression type",
+"description_ar": "ثلاجات منزلية",
+"keywords": [
+"fridge",
+"refrigerator",
+"ثلاجة"
+]
+},
+{
+"code": "841829",
+"chapter": "84",
+"description_en": "Household refrigerators, other",
+"description_ar": "ثلاجات منزلية أخرى",
+"keywords": [
+"refrigerator",
+"ثلاجة"
+]
+},
+{
+"code": "841830",
+"chapter": "84",
+"description_en": "Freezers, chest type, up to 800 L",
+"description_ar": "مجمدات أفقية",
+"keywords": [
+"chest",
+"freezer",
+"فريزر"
+]
+},
+{
+"code": "841840",
+"chapter": "84",
+"description_en": "Freezers, upright, up to 900 L",
+"description_ar": "مجمدات عمودية",
+"keywords": [
+"freezer",
+"upright",
+"فريزر"
+]
+},
+{
+"code": "841850",
+"chapter": "84",
+"description_en": "Refrigerating or freezing chests, cabinets, display counters",
+"description_ar": "ثلاجات عرض وتبريد تجارية",
+"keywords": [
+"chiller",
+"commercial",
+"display",
+"refrigerator",
+"ثلاجة",
+"عرض"
+]
+},
+{
+"code": "841861",
+"chapter": "84",
+"description_en": "Heat pumps, other than air conditioning",
+"description_ar": "مضخات حرارية",
+"keywords": [
+"heat",
+"pump"
+]
+},
+{
+"code": "841869",
+"chapter": "84",
+"description_en": "Other refrigerating or freezing equipment",
+"description_ar": "معدات تبريد وتجميد أخرى",
+"keywords": [
+"cold",
+"equipment",
+"refrigeration",
+"room",
+"تبريد",
+"غرف"
+]
+},
+{
+"code": "841911",
+"chapter": "84",
+"description_en": "Instantaneous gas water heaters",
+"description_ar": "سخانات غاز فورية",
+"keywords": [
+"gas",
+"heater",
+"water",
+"سخان"
+]
+},
+{
+"code": "841919",
+"chapter": "84",
+"description_en": "Instantaneous or storage water heaters, non-electric, other",
+"description_ar": "سخانات ماء غير كهربائية",
+"keywords": [
+"heater",
+"solar",
+"water",
+"سخان"
+]
+},
+{
+"code": "841939",
+"chapter": "84",
+"description_en": "Dryers, other",
+"description_ar": "مجففات صناعية",
+"keywords": [
+"dryer",
+"drying",
+"industrial",
+"مجفف"
+]
+},
+{
+"code": "842010",
+"chapter": "84",
+"description_en": "Calendering or rolling machines",
+"description_ar": "آلات كبس ودرفلة",
+"keywords": [
+"calender",
+"machine",
+"rolling"
+]
+},
+{
+"code": "842121",
+"chapter": "84",
+"description_en": "Filtering machinery for water",
+"description_ar": "أجهزة تنقية وفلترة المياه",
+"keywords": [
+"filter",
+"purification",
+"water",
+"فلتر",
+"مياه"
+]
+},
+{
+"code": "842129",
+"chapter": "84",
+"description_en": "Filtering machinery for liquids, other",
+"description_ar": "أجهزة ترشيح سوائل أخرى",
+"keywords": [
+"filter",
+"liquid"
+]
+},
+{
+"code": "842139",
+"chapter": "84",
+"description_en": "Filtering or purifying machinery for gases, other",
+"description_ar": "أجهزة تنقية الغاز",
+"keywords": [
+"air",
+"filter",
+"gas"
+]
+},
+{
+"code": "842211",
+"chapter": "84",
+"description_en": "Dishwashing machines, household",
+"description_ar": "غسالات صحون منزلية",
+"keywords": [
+"dishwasher",
+"صحون",
+"غسالة"
+]
+},
+{
+"code": "842220",
+"chapter": "84",
+"description_en": "Machinery for cleaning or drying bottles",
+"description_ar": "آلات تنظيف وتجفيف القناني",
+"keywords": [
+"bottle",
+"machine",
+"washing"
+]
+},
+{
+"code": "842230",
+"chapter": "84",
+"description_en": "Machinery for filling, closing, capsuling bottles",
+"description_ar": "آلات تعبئة وسد القناني",
+"keywords": [
+"bottle",
+"capping",
+"filling",
+"machine",
+"آلة",
+"تعبئة"
+]
+},
+{
+"code": "842240",
+"chapter": "84",
+"description_en": "Other packing or wrapping machinery",
+"description_ar": "آلات تغليف وتعبئة أخرى",
+"keywords": [
+"machine",
+"packaging",
+"packing",
+"wrapping",
+"تغليف"
+]
+},
+{
+"code": "842320",
+"chapter": "84",
+"description_en": "Scales for continuous weighing on conveyors",
+"description_ar": "موازين سيور ناقلة",
+"keywords": [
+"conveyor",
+"scale"
+]
+},
+{
+"code": "842330",
+"chapter": "84",
+"description_en": "Constant weight scales and bagging scales",
+"description_ar": "موازين تعبئة ثابتة الوزن",
+"keywords": [
+"bagging",
+"scale",
+"weigher"
+]
+},
+{
+"code": "842381",
+"chapter": "84",
+"description_en": "Weighing machinery up to 30 kg",
+"description_ar": "موازين حتى 30 كغم",
+"keywords": [
+"balance",
+"scale",
+"weighing",
+"ميزان"
+]
+},
+{
+"code": "842382",
+"chapter": "84",
+"description_en": "Weighing machinery 30-5000 kg",
+"description_ar": "موازين من 30 إلى 5000 كغم",
+"keywords": [
+"scale",
+"weighing",
+"ميزان"
+]
+},
+{
+"code": "842390",
+"chapter": "84",
+"description_en": "Weights for scales; parts of weighing machinery",
+"description_ar": "أوزان وأجزاء موازين",
+"keywords": [
+"parts",
+"scale",
+"weights"
+]
+},
+{
+"code": "842419",
+"chapter": "84",
+"description_en": "Fire extinguishers, other",
+"description_ar": "طفايات حريق",
+"keywords": [
+"extinguisher",
+"fire",
+"حريق",
+"طفاية"
+]
+},
+{
+"code": "842420",
+"chapter": "84",
+"description_en": "Spray guns and similar appliances",
+"description_ar": "مسدسات رش",
+"keywords": [
+"gun",
+"spray"
+]
+},
+{
+"code": "842482",
+"chapter": "84",
+"description_en": "Agricultural or horticultural spraying machines, drip irrigation",
+"description_ar": "ري بالتنقيط ورشاشات",
+"keywords": [
+"drip",
+"irrigation",
+"sprinkler",
+"ري"
+]
+},
+{
+"code": "842542",
+"chapter": "84",
+"description_en": "Hydraulic jacks and hoists, other",
+"description_ar": "رافعات هيدروليكية",
+"keywords": [
+"hoist",
+"hydraulic",
+"jack",
+"رافعة"
+]
+},
+{
+"code": "842611",
+"chapter": "84",
+"description_en": "Overhead travelling cranes on fixed support",
+"description_ar": "رافعات علوية جسرية",
+"keywords": [
+"crane",
+"gantry",
+"overhead",
+"جسرية",
+"رافعة"
+]
+},
+{
+"code": "842619",
+"chapter": "84",
+"description_en": "Other overhead cranes",
+"description_ar": "رافعات علوية أخرى",
+"keywords": [
+"crane",
+"gantry",
+"رافعة"
+]
+},
+{
+"code": "842620",
+"chapter": "84",
+"description_en": "Tower cranes",
+"description_ar": "رافعات برجية",
+"keywords": [
+"crane",
+"tower",
+"برجية",
+"رافعة"
+]
+},
+{
+"code": "842641",
+"chapter": "84",
+"description_en": "Self-propelled lifting machinery on tyres",
+"description_ar": "رافعات متحركة على إطارات",
+"keywords": [
+"crane",
+"mobile",
+"truck",
+"رافعة",
+"متحركة"
+]
+},
+{
+"code": "842691",
+"chapter": "84",
+"description_en": "Machinery for lifting designed for mounting on road vehicles",
+"description_ar": "رافعات للتركيب على مركبات",
+"keywords": [
+"crane",
+"mounted",
+"truck"
+]
+},
+{
+"code": "842710",
+"chapter": "84",
+"description_en": "Self-propelled works trucks, electric motor",
+"description_ar": "رافعات شوكية كهربائية",
+"keywords": [
+"electric",
+"forklift",
+"رافعة",
+"شوكية"
+]
+},
+{
+"code": "842720",
+"chapter": "84",
+"description_en": "Self-propelled works trucks, rough-terrain forklift",
+"description_ar": "رافعات شوكية للأرض الوعرة",
+"keywords": [
+"forklift",
+"rough",
+"terrain"
+]
+},
+{
+"code": "842790",
+"chapter": "84",
+"description_en": "Other works trucks",
+"description_ar": "عربات رفع أخرى",
+"keywords": [
+"fork",
+"forklift",
+"truck"
+]
+},
+{
+"code": "842810",
+"chapter": "84",
+"description_en": "Lifts and skip hoists",
+"description_ar": "مصاعد",
+"keywords": [
+"elevator",
+"elevators",
+"lift",
+"مصعد"
+]
+},
+{
+"code": "842833",
+"chapter": "84",
+"description_en": "Continuous-action elevators, belt type",
+"description_ar": "ناقلات سيور",
+"keywords": [
+"belt",
+"conveyor",
+"سير",
+"ناقل"
+]
+},
+{
+"code": "842839",
+"chapter": "84",
+"description_en": "Continuous-action elevators and conveyors, other",
+"description_ar": "ناقلات مستمرة أخرى",
+"keywords": [
+"conveyor"
+]
+},
+{
+"code": "842840",
+"chapter": "84",
+"description_en": "Escalators and moving walkways",
+"description_ar": "سلالم كهربائية ومماشٍ متحركة",
+"keywords": [
+"escalator",
+"moving",
+"walkway",
+"سلم",
+"كهربائي"
+]
+},
+{
+"code": "842911",
+"chapter": "84",
+"description_en": "Bulldozers and angledozers, track laying",
+"description_ar": "بلدوزرات",
+"keywords": [
+"bulldozer",
+"dozer",
+"جرافة"
+]
+},
+{
+"code": "842920",
+"chapter": "84",
+"description_en": "Graders and levellers",
+"description_ar": "معدلات الطرق (قريدر)",
+"keywords": [
+"grader",
+"leveller"
+]
+},
+{
+"code": "842940",
+"chapter": "84",
+"description_en": "Tamping machines and road rollers",
+"description_ar": "مداحل (مدكات) طرق",
+"keywords": [
+"compactor",
+"road",
+"roller",
+"مدحلة"
+]
+},
+{
+"code": "842951",
+"chapter": "84",
+"description_en": "Front-end shovel loaders",
+"description_ar": "لوادر أمامية",
+"keywords": [
+"front",
+"loader",
+"wheel",
+"لودر"
+]
+},
+{
+"code": "842952",
+"chapter": "84",
+"description_en": "Machinery with 360 degree revolving superstructure",
+"description_ar": "حفارات دوارة 360 درجة",
+"keywords": [
+"digger",
+"excavator",
+"حفار"
+]
+},
+{
+"code": "842959",
+"chapter": "84",
+"description_en": "Excavators and loaders, other",
+"description_ar": "حفارات ولوادر أخرى",
+"keywords": [
+"backhoe",
+"excavator",
+"loader"
+]
+},
+{
+"code": "843120",
+"chapter": "84",
+"description_en": "Parts of fork-lift trucks",
+"description_ar": "أجزاء رافعات شوكية",
+"keywords": [
+"forklift",
+"parts"
+]
+},
+{
+"code": "843131",
+"chapter": "84",
+"description_en": "Parts for lifts, skip hoists or escalators",
+"description_ar": "أجزاء مصاعد",
+"keywords": [
+"elevator",
+"parts"
+]
+},
+{
+"code": "843139",
+"chapter": "84",
+"description_en": "Parts for other lifting or handling machinery",
+"description_ar": "أجزاء معدات رفع",
+"keywords": [
+"lifting",
+"parts"
+]
+},
+{
+"code": "843149",
+"chapter": "84",
+"description_en": "Parts for cranes, shovels, excavators",
+"description_ar": "أجزاء رافعات وحفارات",
+"keywords": [
+"crane",
+"excavator",
+"parts"
+]
+},
+{
+"code": "843210",
+"chapter": "84",
+"description_en": "Ploughs",
+"description_ar": "محاريث",
+"keywords": [
+"plough",
+"plow",
+"زراعة",
+"محراث"
+]
+},
+{
+"code": "843221",
+"chapter": "84",
+"description_en": "Disc harrows",
+"description_ar": "مشط قرصي",
+"keywords": [
+"disc",
+"harrow"
+]
+},
+{
+"code": "843230",
+"chapter": "84",
+"description_en": "Seeders, planters and transplanters",
+"description_ar": "بذارات وآلات زراعة",
+"keywords": [
+"planter",
+"seeder"
+]
+},
+{
+"code": "843240",
+"chapter": "84",
+"description_en": "Manure spreaders and fertilizer distributors",
+"description_ar": "ناشرات أسمدة",
+"keywords": [
+"fertilizer",
+"spreader"
+]
+},
+{
+"code": "843280",
+"chapter": "84",
+"description_en": "Other agricultural machinery for soil preparation",
+"description_ar": "آلات زراعية لتحضير التربة",
+"keywords": [
+"agricultural",
+"machinery",
+"soil"
+]
+},
+{
+"code": "843311",
+"chapter": "84",
+"description_en": "Powered lawnmowers, horizontal rotation",
+"description_ar": "جزازات عشب",
+"keywords": [
+"lawn",
+"lawnmower",
+"mower"
+]
+},
+{
+"code": "843320",
+"chapter": "84",
+"description_en": "Mowers, other",
+"description_ar": "آلات جز أخرى",
+"keywords": [
+"mower"
+]
+},
+{
+"code": "843351",
+"chapter": "84",
+"description_en": "Combine harvester-threshers",
+"description_ar": "حصادات دراسات (كومباين)",
+"keywords": [
+"combine",
+"harvester",
+"حصادة"
+]
+},
+{
+"code": "843359",
+"chapter": "84",
+"description_en": "Other harvesting machinery",
+"description_ar": "آلات حصاد أخرى",
+"keywords": [
+"harvester",
+"harvesting"
+]
+},
+{
+"code": "843360",
+"chapter": "84",
+"description_en": "Machines for cleaning or grading eggs, fruit",
+"description_ar": "آلات تنظيف وفرز البيض والفواكه",
+"keywords": [
+"egg",
+"fruit",
+"grading",
+"sorting"
+]
+},
+{
+"code": "843390",
+"chapter": "84",
+"description_en": "Parts of harvesting machinery",
+"description_ar": "أجزاء آلات حصاد",
+"keywords": [
+"harvester",
+"parts"
+]
+},
+{
+"code": "843410",
+"chapter": "84",
+"description_en": "Milking machines",
+"description_ar": "آلات حلب",
+"keywords": [
+"machine",
+"milking",
+"حلب"
+]
+},
+{
+"code": "843420",
+"chapter": "84",
+"description_en": "Dairy machinery",
+"description_ar": "آلات الألبان",
+"keywords": [
+"cheese",
+"dairy",
+"machinery",
+"milk",
+"processing"
+]
+},
+{
+"code": "843610",
+"chapter": "84",
+"description_en": "Machinery for preparing animal feeds",
+"description_ar": "آلات تحضير علف الحيوان",
+"keywords": [
+"animal",
+"feed",
+"machine",
+"mill",
+"علف"
+]
+},
+{
+"code": "843620",
+"chapter": "84",
+"description_en": "Poultry incubators and brooders",
+"description_ar": "حاضنات دواجن",
+"keywords": [
+"hatchery",
+"incubator",
+"poultry",
+"حاضنة",
+"دجاج"
+]
+},
+{
+"code": "843629",
+"chapter": "84",
+"description_en": "Other poultry-keeping machinery",
+"description_ar": "آلات تربية الدواجن",
+"keywords": [
+"feeding",
+"machinery",
+"poultry"
+]
+},
+{
+"code": "843680",
+"chapter": "84",
+"description_en": "Other agricultural machinery",
+"description_ar": "آلات زراعية أخرى",
+"keywords": [
+"agricultural",
+"machine"
+]
+},
+{
+"code": "843710",
+"chapter": "84",
+"description_en": "Machines for cleaning, sorting or grading seed, grain",
+"description_ar": "آلات تنظيف وفرز الحبوب",
+"keywords": [
+"cleaning",
+"grain",
+"machine",
+"seed",
+"sorting"
+]
+},
+{
+"code": "843780",
+"chapter": "84",
+"description_en": "Other machinery for milling, cereals",
+"description_ar": "آلات طحن الحبوب",
+"keywords": [
+"flour",
+"grain",
+"machine",
+"mill",
+"milling",
+"مطحنة"
+]
+},
+{
+"code": "844331",
+"chapter": "84",
+"description_en": "Machines which perform two or more of printing functions, network",
+"description_ar": "طابعات متعددة الوظائف شبكية",
+"keywords": [
+"copier",
+"multifunction",
+"printer",
+"طابعة"
+]
+},
+{
+"code": "844332",
+"chapter": "84",
+"description_en": "Other printers, copying machines connectable",
+"description_ar": "طابعات وناسخات قابلة للربط",
+"keywords": [
+"copier",
+"printer",
+"طابعة"
+]
+},
+{
+"code": "844339",
+"chapter": "84",
+"description_en": "Other printers, copying, facsimile",
+"description_ar": "طابعات وناسخات أخرى",
+"keywords": [
+"inkjet",
+"laser",
+"printer",
+"طابعة"
+]
+},
+{
+"code": "844351",
+"chapter": "84",
+"description_en": "Inkjet printing machines",
+"description_ar": "آلات طباعة نافثة للحبر",
+"keywords": [
+"inkjet",
+"machine",
+"printing"
+]
+},
+{
+"code": "844359",
+"chapter": "84",
+"description_en": "Other printing machinery",
+"description_ar": "آلات طباعة أخرى",
+"keywords": [
+"machine",
+"offset",
+"printing",
+"طباعة"
+]
+},
+{
+"code": "844399",
+"chapter": "84",
+"description_en": "Parts of printers",
+"description_ar": "أجزاء طابعات",
+"keywords": [
+"cartridge",
+"parts",
+"printer",
+"خرطوشة"
+]
+},
+{
+"code": "844520",
+"chapter": "84",
+"description_en": "Textile spinning machines",
+"description_ar": "آلات غزل",
+"keywords": [
+"machine",
+"spinning",
+"غزل"
+]
+},
+{
+"code": "845011",
+"chapter": "84",
+"description_en": "Household washing machines, fully automatic, <=10 kg",
+"description_ar": "غسالات منزلية أوتوماتيك",
+"keywords": [
+"machine",
+"washer",
+"washing",
+"غسالة"
+]
+},
+{
+"code": "845012",
+"chapter": "84",
+"description_en": "Other washing machines, with spin dryer, <=10 kg",
+"description_ar": "غسالات بمجفف دوران",
+"keywords": [
+"machine",
+"washing",
+"غسالة"
+]
+},
+{
+"code": "845019",
+"chapter": "84",
+"description_en": "Washing machines <=10 kg, other",
+"description_ar": "غسالات أخرى",
+"keywords": [
+"machine",
+"washing"
+]
+},
+{
+"code": "845020",
+"chapter": "84",
+"description_en": "Washing machines >10 kg",
+"description_ar": "غسالات سعة كبيرة",
+"keywords": [
+"large",
+"laundry",
+"machine",
+"washing",
+"صناعية",
+"غسالة"
+]
+},
+{
+"code": "845121",
+"chapter": "84",
+"description_en": "Drying machines <=10 kg",
+"description_ar": "مجففات ملابس",
+"keywords": [
+"clothes",
+"dryer",
+"tumble",
+"نشافة"
+]
+},
+{
+"code": "845129",
+"chapter": "84",
+"description_en": "Drying machines, other",
+"description_ar": "مجففات أخرى",
+"keywords": [
+"dryer"
+]
+},
+{
+"code": "845180",
+"chapter": "84",
+"description_en": "Machinery for dyeing, bleaching, finishing textiles",
+"description_ar": "آلات صباغة وتجهيز المنسوجات",
+"keywords": [
+"dyeing",
+"finishing",
+"machine",
+"صباغة"
+]
+},
+{
+"code": "845210",
+"chapter": "84",
+"description_en": "Sewing machines, household",
+"description_ar": "ماكينات خياطة منزلية",
+"keywords": [
+"machine",
+"sewing",
+"خياطة",
+"ماكينة"
+]
+},
+{
+"code": "845221",
+"chapter": "84",
+"description_en": "Automatic sewing machines (industrial)",
+"description_ar": "ماكينات خياطة أوتوماتيك",
+"keywords": [
+"automatic",
+"industrial",
+"machine",
+"sewing",
+"خياطة"
+]
+},
+{
+"code": "845229",
+"chapter": "84",
+"description_en": "Other sewing machines",
+"description_ar": "ماكينات خياطة أخرى",
+"keywords": [
+"machine",
+"sewing"
+]
+},
+{
+"code": "845310",
+"chapter": "84",
+"description_en": "Machinery for preparing or tanning hides",
+"description_ar": "آلات دباغة الجلود",
+"keywords": [
+"leather",
+"machine",
+"tanning"
+]
+},
+{
+"code": "845380",
+"chapter": "84",
+"description_en": "Machinery for making footwear",
+"description_ar": "آلات صناعة الأحذية",
+"keywords": [
+"footwear",
+"machine",
+"machinery",
+"making",
+"shoe"
+]
+},
+{
+"code": "845611",
+"chapter": "84",
+"description_en": "Machine-tools operated by laser",
+"description_ar": "آلات قطع بالليزر",
+"keywords": [
+"cutting",
+"laser",
+"machine",
+"ليزر"
+]
+},
+{
+"code": "845710",
+"chapter": "84",
+"description_en": "Machining centres for working metal",
+"description_ar": "مراكز تشغيل CNC للمعادن",
+"keywords": [
+"center",
+"cnc",
+"machining",
+"vmc",
+"إن",
+"سي"
+]
+},
+{
+"code": "845811",
+"chapter": "84",
+"description_en": "Horizontal lathes, numerically controlled",
+"description_ar": "مخارط أفقية CNC",
+"keywords": [
+"cnc",
+"horizontal",
+"lathe",
+"مخرطة"
+]
+},
+{
+"code": "845819",
+"chapter": "84",
+"description_en": "Horizontal lathes, other",
+"description_ar": "مخارط أفقية",
+"keywords": [
+"lathe",
+"مخرطة"
+]
+},
+{
+"code": "845891",
+"chapter": "84",
+"description_en": "Other lathes, numerically controlled",
+"description_ar": "مخارط CNC أخرى",
+"keywords": [
+"cnc",
+"lathe",
+"مخرطة"
+]
+},
+{
+"code": "845961",
+"chapter": "84",
+"description_en": "Milling machines, numerically controlled, other",
+"description_ar": "مكائن تفريز CNC",
+"keywords": [
+"cnc",
+"machine",
+"milling",
+"تفريز"
+]
+},
+{
+"code": "846012",
+"chapter": "84",
+"description_en": "Flat-surface grinding machines, numerically controlled",
+"description_ar": "مكائن جلخ مسطحة CNC",
+"keywords": [
+"cnc",
+"grinding",
+"machine",
+"جلخ"
+]
+},
+{
+"code": "846221",
+"chapter": "84",
+"description_en": "Bending, folding machines, numerically controlled",
+"description_ar": "مكائن ثني CNC",
+"keywords": [
+"bending",
+"brake",
+"machine",
+"press",
+"ثني"
+]
+},
+{
+"code": "846229",
+"chapter": "84",
+"description_en": "Bending machines, other",
+"description_ar": "مكائن ثني أخرى",
+"keywords": [
+"bending",
+"folding",
+"machine"
+]
+},
+{
+"code": "846231",
+"chapter": "84",
+"description_en": "Shearing machines, numerically controlled",
+"description_ar": "مكائن قص CNC",
+"keywords": [
+"machine",
+"shearing",
+"قص"
+]
+},
+{
+"code": "846239",
+"chapter": "84",
+"description_en": "Hydraulic presses, other",
+"description_ar": "مكابس هيدروليكية",
+"keywords": [
+"hydraulic",
+"press",
+"مكبس"
+]
+},
+{
+"code": "846299",
+"chapter": "84",
+"description_en": "Presses, other, for working metal",
+"description_ar": "مكابس معادن أخرى",
+"keywords": [
+"metal",
+"press",
+"stamping",
+"مكبس"
+]
+},
+{
+"code": "846510",
+"chapter": "84",
+"description_en": "Machine tools for wood, automatic",
+"description_ar": "آلات نجارة أوتوماتيكية",
+"keywords": [
+"cnc",
+"machine",
+"router",
+"wood",
+"working",
+"نجارة"
+]
+},
+{
+"code": "846591",
+"chapter": "84",
+"description_en": "Sawing machines for wood",
+"description_ar": "مناشير خشب",
+"keywords": [
+"machine",
+"saw",
+"wood",
+"منشار"
+]
+},
+{
+"code": "846592",
+"chapter": "84",
+"description_en": "Planing, milling machines for wood",
+"description_ar": "آلات تسوية وتفريز الخشب",
+"keywords": [
+"milling",
+"planer",
+"wood"
+]
+},
+{
+"code": "846593",
+"chapter": "84",
+"description_en": "Grinding or polishing machines for wood",
+"description_ar": "آلات صنفرة وصقل الخشب",
+"keywords": [
+"machine",
+"sanding",
+"wood"
+]
+},
+{
+"code": "846594",
+"chapter": "84",
+"description_en": "Bending or assembling machines for wood",
+"description_ar": "آلات ثني وتجميع الخشب",
+"keywords": [
+"bending",
+"wood"
+]
+},
+{
+"code": "846599",
+"chapter": "84",
+"description_en": "Machine-tools for wood, other",
+"description_ar": "آلات خشب أخرى",
+"keywords": [
+"woodworking"
+]
+},
+{
+"code": "846711",
+"chapter": "84",
+"description_en": "Rotary pneumatic tools",
+"description_ar": "أدوات هوائية دوارة",
+"keywords": [
+"air",
+"pneumatic",
+"tool"
+]
+},
+{
+"code": "846721",
+"chapter": "84",
+"description_en": "Electric drills, hand-held",
+"description_ar": "مثاقب كهربائية يدوية",
+"keywords": [
+"drill",
+"electric",
+"hand",
+"مثقاب"
+]
+},
+{
+"code": "846722",
+"chapter": "84",
+"description_en": "Electric saws, hand-held",
+"description_ar": "مناشير كهربائية يدوية",
+"keywords": [
+"circular",
+"electric",
+"saw",
+"كهربائي",
+"منشار"
+]
+},
+{
+"code": "846729",
+"chapter": "84",
+"description_en": "Hand-held electric tools, other",
+"description_ar": "أدوات كهربائية يدوية",
+"keywords": [
+"drill",
+"electric",
+"grinder",
+"power",
+"tool",
+"كهربائي",
+"مثقاب"
+]
+},
+{
+"code": "846781",
+"chapter": "84",
+"description_en": "Chain saws",
+"description_ar": "مناشير سلسلة",
+"keywords": [
+"chain",
+"saw",
+"سلسلة",
+"منشار"
+]
+},
+{
+"code": "846789",
+"chapter": "84",
+"description_en": "Other hand-held tools, non-electric",
+"description_ar": "أدوات يدوية آلية أخرى",
+"keywords": [
+"power",
+"tools"
+]
+},
+{
+"code": "847130",
+"chapter": "84",
+"description_en": "Portable automatic data-processing machines (laptops)",
+"description_ar": "حواسيب محمولة (لابتوب)",
+"keywords": [
+"computer",
+"laptop",
+"notebook",
+"حاسوب",
+"لابتوب",
+"محمول"
+]
+},
+{
+"code": "847141",
+"chapter": "84",
+"description_en": "Data processing machines, comprising CPU and I/O",
+"description_ar": "حواسيب مكتبية وحدة معالجة",
+"keywords": [
+"computer",
+"desktop",
+"pc",
+"حاسوب"
+]
+},
+{
+"code": "847149",
+"chapter": "84",
+"description_en": "Other data processing systems",
+"description_ar": "أنظمة معالجة بيانات أخرى",
+"keywords": [
+"computer",
+"system"
+]
+},
+{
+"code": "847150",
+"chapter": "84",
+"description_en": "Processing units other than 8471.41/49",
+"description_ar": "وحدات معالجة",
+"keywords": [
+"processing",
+"server",
+"unit",
+"خادم"
+]
+},
+{
+"code": "847160",
+"chapter": "84",
+"description_en": "Input or output units (keyboards, mice)",
+"description_ar": "وحدات إدخال وإخراج (لوحة مفاتيح وماوس)",
+"keywords": [
+"input",
+"keyboard",
+"mouse"
+]
+},
+{
+"code": "847170",
+"chapter": "84",
+"description_en": "Storage units (hard drives, SSD)",
+"description_ar": "وحدات تخزين (أقراص صلبة)",
+"keywords": [
+"drive",
+"hard",
+"ssd",
+"storage",
+"صلب",
+"قرص"
+]
+},
+{
+"code": "847180",
+"chapter": "84",
+"description_en": "Other units of automatic data-processing machines",
+"description_ar": "وحدات معالجة بيانات أخرى",
+"keywords": [
+"data",
+"processing",
+"unit"
+]
+},
+{
+"code": "847210",
+"chapter": "84",
+"description_en": "Duplicating machines",
+"description_ar": "آلات استنساخ",
+"keywords": [
+"duplicating",
+"machine"
+]
+},
+{
+"code": "847290",
+"chapter": "84",
+"description_en": "Other office machines",
+"description_ar": "آلات مكتبية أخرى",
+"keywords": [
+"machine",
+"office"
+]
+},
+{
+"code": "847310",
+"chapter": "84",
+"description_en": "Parts of typewriters and word processors",
+"description_ar": "أجزاء آلات مكتبية",
+"keywords": [
+"office",
+"parts"
+]
+},
+{
+"code": "847330",
+"chapter": "84",
+"description_en": "Parts and accessories for computers",
+"description_ar": "أجزاء وملحقات حاسوب",
+"keywords": [
+"accessories",
+"computer",
+"parts"
+]
+},
+{
+"code": "847410",
+"chapter": "84",
+"description_en": "Sorting, screening, separating machines for earth, stone",
+"description_ar": "آلات فرز وغربلة",
+"keywords": [
+"crusher",
+"machine",
+"screening",
+"sorting"
+]
+},
+{
+"code": "847420",
+"chapter": "84",
+"description_en": "Crushing or grinding machines for earth, stone, ores",
+"description_ar": "كسارات وطواحين للصخور",
+"keywords": [
+"crusher",
+"grinding",
+"mill",
+"stone",
+"كسارة"
+]
+},
+{
+"code": "847431",
+"chapter": "84",
+"description_en": "Concrete or mortar mixers",
+"description_ar": "خلاطات خرسانة",
+"keywords": [
+"concrete",
+"mixer",
+"خرسانة",
+"خلاطة"
+]
+},
+{
+"code": "847621",
+"chapter": "84",
+"description_en": "Automatic beverage-vending machines with heating or refrigeration",
+"description_ar": "مكائن بيع مشروبات أوتوماتيك",
+"keywords": [
+"beverage",
+"machine",
+"vending"
+]
+},
+{
+"code": "847689",
+"chapter": "84",
+"description_en": "Other automatic vending machines",
+"description_ar": "مكائن بيع أوتوماتيك أخرى",
+"keywords": [
+"machine",
+"vending"
+]
+},
+{
+"code": "847710",
+"chapter": "84",
+"description_en": "Injection-moulding machines",
+"description_ar": "ماكينات حقن بلاستيك",
+"keywords": [
+"injection",
+"machine",
+"molding",
+"plastic",
+"حقن"
+]
+},
+{
+"code": "847720",
+"chapter": "84",
+"description_en": "Extruders for rubber or plastics",
+"description_ar": "ماكينات بثق بلاستيك أو مطاط",
+"keywords": [
+"extruder",
+"extrusion",
+"plastic",
+"بثق"
+]
+},
+{
+"code": "847730",
+"chapter": "84",
+"description_en": "Blow moulding machines",
+"description_ar": "ماكينات نفخ",
+"keywords": [
+"blow",
+"bottle",
+"machine",
+"moulding",
+"نفخ"
+]
+},
+{
+"code": "847740",
+"chapter": "84",
+"description_en": "Vacuum moulding and thermoforming machines",
+"description_ar": "ماكينات تشكيل بالفراغ",
+"keywords": [
+"forming",
+"thermoforming",
+"vacuum"
+]
+},
+{
+"code": "847751",
+"chapter": "84",
+"description_en": "Machinery for moulding or retreading tyres",
+"description_ar": "آلات صب وتجديد الإطارات",
+"keywords": [
+"moulding",
+"retreading",
+"tyre"
+]
+},
+{
+"code": "847759",
+"chapter": "84",
+"description_en": "Other moulding machines",
+"description_ar": "آلات قولبة أخرى",
+"keywords": [
+"machine",
+"moulding"
+]
+},
+{
+"code": "847780",
+"chapter": "84",
+"description_en": "Other machinery for working rubber or plastics",
+"description_ar": "آلات معالجة المطاط والبلاستيك",
+"keywords": [
+"granulator",
+"machinery",
+"plastic",
+"recycling",
+"تدوير"
+]
+},
+{
+"code": "847790",
+"chapter": "84",
+"description_en": "Parts of machinery for rubber or plastics",
+"description_ar": "أجزاء آلات المطاط والبلاستيك",
+"keywords": [
+"machine",
+"parts",
+"plastic"
+]
+},
+{
+"code": "847920",
+"chapter": "84",
+"description_en": "Machinery for extraction of fats or oils",
+"description_ar": "آلات استخلاص الزيوت",
+"keywords": [
+"extraction",
+"machine",
+"oil",
+"press",
+"معصرة"
+]
+},
+{
+"code": "847930",
+"chapter": "84",
+"description_en": "Presses for manufacture of particle board",
+"description_ar": "مكابس ألواح خشبية",
+"keywords": [
+"board",
+"particle",
+"press"
+]
+},
+{
+"code": "847950",
+"chapter": "84",
+"description_en": "Industrial robots",
+"description_ar": "روبوتات صناعية",
+"keywords": [
+"industrial",
+"robot",
+"robotics",
+"روبوت"
+]
+},
+{
+"code": "847982",
+"chapter": "84",
+"description_en": "Mixing, kneading, crushing, grinding, screening, homogenising machines",
+"description_ar": "آلات خلط وطحن وتجانس",
+"keywords": [
+"grinding",
+"homogenizing",
+"machine",
+"mixing"
+]
+},
+{
+"code": "847989",
+"chapter": "84",
+"description_en": "Other machines and mechanical appliances",
+"description_ar": "آلات وأجهزة ميكانيكية أخرى",
+"keywords": [
+"appliance",
+"machine",
+"mechanical"
+]
+},
+{
+"code": "847990",
+"chapter": "84",
+"description_en": "Parts of machines of heading 8479",
+"description_ar": "أجزاء آلات",
+"keywords": [
+"machine",
+"parts"
+]
+},
+{
+"code": "848110",
+"chapter": "84",
+"description_en": "Pressure-reducing valves",
+"description_ar": "صمامات تخفيض الضغط",
+"keywords": [
+"pressure",
+"reducing",
+"valve"
+]
+},
+{
+"code": "848120",
+"chapter": "84",
+"description_en": "Valves for oleohydraulic or pneumatic transmissions",
+"description_ar": "صمامات هيدروليكية وهوائية",
+"keywords": [
+"hydraulic",
+"pneumatic",
+"valve"
+]
+},
+{
+"code": "848130",
+"chapter": "84",
+"description_en": "Check valves",
+"description_ar": "صمامات عدم رجوع",
+"keywords": [
+"check",
+"non",
+"return",
+"valve"
+]
+},
+{
+"code": "848140",
+"chapter": "84",
+"description_en": "Safety or relief valves",
+"description_ar": "صمامات أمان",
+"keywords": [
+"relief",
+"safety",
+"valve"
+]
+},
+{
+"code": "848180",
+"chapter": "84",
+"description_en": "Other appliances, taps, cocks, valves",
+"description_ar": "صنابير وصمامات أخرى",
+"keywords": [
+"faucet",
+"tap",
+"valve",
+"صمام",
+"صنبور"
+]
+},
+{
+"code": "848190",
+"chapter": "84",
+"description_en": "Parts of taps, valves",
+"description_ar": "أجزاء صنابير وصمامات",
+"keywords": [
+"parts",
+"valve"
+]
+},
+{
+"code": "848210",
+"chapter": "84",
+"description_en": "Ball bearings",
+"description_ar": "رولمان بلي كروي",
+"keywords": [
+"ball",
+"bearing",
+"bearings",
+"رولمان"
+]
+},
+{
+"code": "848220",
+"chapter": "84",
+"description_en": "Tapered roller bearings",
+"description_ar": "رولمان مخروطي",
+"keywords": [
+"bearing",
+"roller",
+"tapered"
+]
+},
+{
+"code": "848250",
+"chapter": "84",
+"description_en": "Other cylindrical roller bearings",
+"description_ar": "رولمان أسطواني",
+"keywords": [
+"bearing",
+"cylindrical",
+"roller"
+]
+},
+{
+"code": "848310",
+"chapter": "84",
+"description_en": "Transmission shafts and cranks",
+"description_ar": "أعمدة نقل الحركة",
+"keywords": [
+"crankshaft",
+"shaft",
+"transmission",
+"عمود"
+]
+},
+{
+"code": "848320",
+"chapter": "84",
+"description_en": "Bearing housings incorporating ball bearings",
+"description_ar": "حاضنات رولمان",
+"keywords": [
+"bearing",
+"housing"
+]
+},
+{
+"code": "848340",
+"chapter": "84",
+"description_en": "Gears and gearing, ball screws, gear boxes",
+"description_ar": "تروس وصناديق تروس",
+"keywords": [
+"box",
+"gear",
+"gearbox",
+"gears",
+"ترس"
+]
+},
+{
+"code": "848360",
+"chapter": "84",
+"description_en": "Clutches and shaft couplings",
+"description_ar": "قوابض ووصلات أعمدة",
+"keywords": [
+"clutch",
+"coupling"
+]
+},
+{
+"code": "848390",
+"chapter": "84",
+"description_en": "Toothed wheels, parts",
+"description_ar": "عجلات مسننة وأجزاء",
+"keywords": [
+"gear",
+"parts",
+"wheel"
+]
+},
+{
+"code": "848410",
+"chapter": "84",
+"description_en": "Gaskets of metal sheeting",
+"description_ar": "حشيات معدنية",
+"keywords": [
+"gasket",
+"metal",
+"seal"
+]
+},
+{
+"code": "848490",
+"chapter": "84",
+"description_en": "Sets of gaskets",
+"description_ar": "أطقم حشيات",
+"keywords": [
+"gasket",
+"seals",
+"sets"
+]
+},
+{
+"code": "848790",
+"chapter": "84",
+"description_en": "Machinery parts, not containing electrical features",
+"description_ar": "أجزاء آلات غير كهربائية",
+"keywords": [
+"machinery",
+"parts",
+"spare"
+]
+},
+{
+"code": "850110",
+"chapter": "85",
+"description_en": "Electric motors, output <=37.5 W",
+"description_ar": "محركات كهربائية صغيرة",
+"keywords": [
+"electric",
+"motor",
+"small",
+"محرك"
+]
+},
+{
+"code": "850120",
+"chapter": "85",
+"description_en": "Universal AC/DC motors, >37.5 W",
+"description_ar": "محركات AC/DC عامة",
+"keywords": [
+"motor",
+"universal"
+]
+},
+{
+"code": "850131",
+"chapter": "85",
+"description_en": "DC motors, output 37.5 W to 750 W",
+"description_ar": "محركات تيار مستمر",
+"keywords": [
+"dc",
+"motor",
+"محرك"
+]
+},
+{
+"code": "850140",
+"chapter": "85",
+"description_en": "Other AC motors, single-phase",
+"description_ar": "محركات تيار متناوب أحادية الطور",
+"keywords": [
+"ac",
+"motor",
+"phase",
+"single"
+]
+},
+{
+"code": "850152",
+"chapter": "85",
+"description_en": "AC motors, multi-phase, 750 W to 75 kW",
+"description_ar": "محركات تيار متناوب ثلاثية الطور",
+"keywords": [
+"ac",
+"induction",
+"motor",
+"phase",
+"three",
+"محرك"
+]
+},
+{
+"code": "850153",
+"chapter": "85",
+"description_en": "AC motors, multi-phase, over 75 kW",
+"description_ar": "محركات ثلاثية الطور كبيرة",
+"keywords": [
+"ac",
+"large",
+"motor"
+]
+},
+{
+"code": "850161",
+"chapter": "85",
+"description_en": "AC generators, output <=75 kVA",
+"description_ar": "مولدات تيار متناوب حتى 75 ك.ف.أ",
+"keywords": [
+"ac",
+"alternator",
+"generator"
+]
+},
+{
+"code": "850162",
+"chapter": "85",
+"description_en": "AC generators, 75-375 kVA",
+"description_ar": "مولدات تيار متناوب 75-375 ك.ف.أ",
+"keywords": [
+"alternator",
+"generator"
+]
+},
+{
+"code": "850163",
+"chapter": "85",
+"description_en": "AC generators, 375-750 kVA",
+"description_ar": "مولدات 375-750 ك.ف.أ",
+"keywords": [
+"generator"
+]
+},
+{
+"code": "850164",
+"chapter": "85",
+"description_en": "AC generators, over 750 kVA",
+"description_ar": "مولدات فوق 750 ك.ف.أ",
+"keywords": [
+"generator",
+"large"
+]
+},
+{
+"code": "850211",
+"chapter": "85",
+"description_en": "Diesel generating sets, <=75 kVA",
+"description_ar": "مولدات ديزل حتى 75 ك.ف.أ",
+"keywords": [
+"diesel",
+"generator",
+"genset",
+"ديزل",
+"مولد",
+"مولدة"
+]
+},
+{
+"code": "850212",
+"chapter": "85",
+"description_en": "Diesel generating sets, 75-375 kVA",
+"description_ar": "مولدات ديزل 75-375 ك.ف.أ",
+"keywords": [
+"diesel",
+"generator",
+"genset",
+"ديزل",
+"مولد"
+]
+},
+{
+"code": "850213",
+"chapter": "85",
+"description_en": "Diesel generating sets, over 375 kVA",
+"description_ar": "مولدات ديزل فوق 375 ك.ف.أ",
+"keywords": [
+"diesel",
+"generator",
+"genset",
+"large",
+"مولد"
+]
+},
+{
+"code": "850220",
+"chapter": "85",
+"description_en": "Generating sets with spark-ignition engines",
+"description_ar": "مولدات بنزين",
+"keywords": [
+"gasoline",
+"generator",
+"genset",
+"petrol",
+"بنزين",
+"مولد"
+]
+},
+{
+"code": "850231",
+"chapter": "85",
+"description_en": "Wind-powered generating sets",
+"description_ar": "مولدات رياح",
+"keywords": [
+"generator",
+"turbine",
+"wind",
+"توربين",
+"رياح"
+]
+},
+{
+"code": "850239",
+"chapter": "85",
+"description_en": "Other generating sets",
+"description_ar": "مولدات أخرى",
+"keywords": [
+"generating",
+"set"
+]
+},
+{
+"code": "850421",
+"chapter": "85",
+"description_en": "Liquid dielectric transformers <=650 kVA",
+"description_ar": "محولات سائلة حتى 650 ك.ف.أ",
+"keywords": [
+"oil",
+"transformer"
+]
+},
+{
+"code": "850422",
+"chapter": "85",
+"description_en": "Liquid dielectric transformers 650-10000 kVA",
+"description_ar": "محولات سائلة 650-10000 ك.ف.أ",
+"keywords": [
+"oil",
+"power",
+"transformer"
+]
+},
+{
+"code": "850423",
+"chapter": "85",
+"description_en": "Liquid dielectric transformers >10000 kVA",
+"description_ar": "محولات سائلة كبيرة",
+"keywords": [
+"large",
+"transformer"
+]
+},
+{
+"code": "850431",
+"chapter": "85",
+"description_en": "Other transformers <=1 kVA",
+"description_ar": "محولات كهربائية صغيرة",
+"keywords": [
+"small",
+"transformer",
+"محول"
+]
+},
+{
+"code": "850440",
+"chapter": "85",
+"description_en": "Static converters (inverters, chargers, UPS)",
+"description_ar": "محولات ساكنة (إنفرتر وشواحن)",
+"keywords": [
+"charger",
+"converter",
+"inverter",
+"static",
+"ups",
+"إنفرتر"
+]
+},
+{
+"code": "850710",
+"chapter": "85",
+"description_en": "Lead-acid accumulators for starting piston engines",
+"description_ar": "بطاريات رصاص حمضية لتشغيل السيارات",
+"keywords": [
+"acid",
+"battery",
+"car",
+"lead",
+"بطارية",
+"سيارة"
+]
+},
+{
+"code": "850720",
+"chapter": "85",
+"description_en": "Other lead-acid accumulators",
+"description_ar": "بطاريات رصاص حمضية أخرى",
+"keywords": [
+"acid",
+"battery",
+"lead",
+"ups",
+"بطارية"
+]
+},
+{
+"code": "850760",
+"chapter": "85",
+"description_en": "Lithium-ion accumulators",
+"description_ar": "بطاريات ليثيوم أيون",
+"keywords": [
+"battery",
+"li-ion",
+"lithium",
+"بطارية",
+"ليثيوم"
+]
+},
+{
+"code": "850780",
+"chapter": "85",
+"description_en": "Other accumulators",
+"description_ar": "بطاريات قابلة للشحن أخرى",
+"keywords": [
+"battery",
+"rechargeable"
+]
+},
+{
+"code": "850790",
+"chapter": "85",
+"description_en": "Parts of accumulators",
+"description_ar": "أجزاء بطاريات",
+"keywords": [
+"battery",
+"parts"
+]
+},
+{
+"code": "850811",
+"chapter": "85",
+"description_en": "Vacuum cleaners, motor <=1500 W",
+"description_ar": "مكانس كهربائية",
+"keywords": [
+"cleaner",
+"vacuum",
+"مكنسة"
+]
+},
+{
+"code": "850940",
+"chapter": "85",
+"description_en": "Food grinders, mixers, juice extractors",
+"description_ar": "خلاطات وعصارات طعام",
+"keywords": [
+"blender",
+"food",
+"juicer",
+"mixer",
+"processor",
+"خلاط"
+]
+},
+{
+"code": "850980",
+"chapter": "85",
+"description_en": "Other electromechanical domestic appliances",
+"description_ar": "أجهزة منزلية كهروميكانيكية أخرى",
+"keywords": [
+"appliance",
+"home"
+]
+},
+{
+"code": "851010",
+"chapter": "85",
+"description_en": "Shavers",
+"description_ar": "ماكينات حلاقة",
+"keywords": [
+"razor",
+"shaver"
+]
+},
+{
+"code": "851020",
+"chapter": "85",
+"description_en": "Hair clippers",
+"description_ar": "ماكينات قص الشعر",
+"keywords": [
+"clipper",
+"hair",
+"trimmer"
+]
+},
+{
+"code": "851030",
+"chapter": "85",
+"description_en": "Hair-removing appliances",
+"description_ar": "أجهزة إزالة الشعر",
+"keywords": [
+"epilator",
+"hair",
+"removal"
+]
+},
+{
+"code": "851310",
+"chapter": "85",
+"description_en": "Portable electric lamps (torches, flashlights)",
+"description_ar": "مصابيح كهربائية محمولة",
+"keywords": [
+"flashlight",
+"lamp",
+"torch",
+"كشاف"
+]
+},
+{
+"code": "851610",
+"chapter": "85",
+"description_en": "Electric instantaneous or storage water heaters",
+"description_ar": "سخانات مياه كهربائية",
+"keywords": [
+"electric",
+"heater",
+"water",
+"سخان",
+"كهربائي"
+]
+},
+{
+"code": "851621",
+"chapter": "85",
+"description_en": "Electric storage heating radiators",
+"description_ar": "مشعات تدفئة كهربائية",
+"keywords": [
+"electric",
+"heater",
+"radiator",
+"مدفأة"
+]
+},
+{
+"code": "851629",
+"chapter": "85",
+"description_en": "Other electric space heating apparatus",
+"description_ar": "أجهزة تدفئة كهربائية أخرى",
+"keywords": [
+"heater",
+"space",
+"مدفأة"
+]
+},
+{
+"code": "851631",
+"chapter": "85",
+"description_en": "Hair dryers",
+"description_ar": "مجففات شعر",
+"keywords": [
+"dryer",
+"hair",
+"شعر",
+"مجفف"
+]
+},
+{
+"code": "851632",
+"chapter": "85",
+"description_en": "Other hair-dressing apparatus",
+"description_ar": "أجهزة تصفيف الشعر",
+"keywords": [
+"curler",
+"hair",
+"straightener"
+]
+},
+{
+"code": "851640",
+"chapter": "85",
+"description_en": "Electric smoothing irons",
+"description_ar": "مكاوي كهربائية",
+"keywords": [
+"iron",
+"smoothing",
+"مكواة"
+]
+},
+{
+"code": "851650",
+"chapter": "85",
+"description_en": "Microwave ovens",
+"description_ar": "أفران مايكروويف",
+"keywords": [
+"microwave",
+"oven",
+"مايكرويف"
+]
+},
+{
+"code": "851660",
+"chapter": "85",
+"description_en": "Other ovens; cookers, hotplates",
+"description_ar": "أفران وطباخات كهربائية",
+"keywords": [
+"cooker",
+"hotplate",
+"oven",
+"فرن"
+]
+},
+{
+"code": "851671",
+"chapter": "85",
+"description_en": "Coffee or tea makers",
+"description_ar": "ماكينات قهوة وشاي",
+"keywords": [
+"coffee",
+"maker",
+"tea",
+"قهوة"
+]
+},
+{
+"code": "851672",
+"chapter": "85",
+"description_en": "Toasters",
+"description_ar": "محمصات خبز",
+"keywords": [
+"toaster"
+]
+},
+{
+"code": "851679",
+"chapter": "85",
+"description_en": "Other electrothermic appliances",
+"description_ar": "أجهزة حرارية كهربائية أخرى",
+"keywords": [
+"air",
+"cooker",
+"electric",
+"fryer",
+"kettle",
+"rice",
+"غلاية"
+]
+},
+{
+"code": "851680",
+"chapter": "85",
+"description_en": "Electric heating resistors",
+"description_ar": "مقاومات تسخين كهربائية",
+"keywords": [
+"element",
+"heating",
+"resistor"
+]
+},
+{
+"code": "851711",
+"chapter": "85",
+"description_en": "Line telephone sets with cordless handsets",
+"description_ar": "هواتف أرضية لاسلكية",
+"keywords": [
+"cordless",
+"phone"
+]
+},
+{
+"code": "851713",
+"chapter": "85",
+"description_en": "Smartphones",
+"description_ar": "هواتف ذكية",
+"keywords": [
+"mobile",
+"phone",
+"smartphone",
+"جوال",
+"ذكي",
+"موبايل",
+"هاتف"
+]
+},
+{
+"code": "851714",
+"chapter": "85",
+"description_en": "Other telephones for cellular networks",
+"description_ar": "هواتف خلوية أخرى",
+"keywords": [
+"cell",
+"mobile",
+"phone",
+"هاتف"
+]
+},
+{
+"code": "851762",
+"chapter": "85",
+"description_en": "Machines for reception, conversion, transmission of data (routers, switches)",
+"description_ar": "أجهزة استقبال وإرسال بيانات (راوتر وسويتش)",
+"keywords": [
+"modem",
+"network",
+"router",
+"switch",
+"راوتر"
+]
+},
+{
+"code": "851769",
+"chapter": "85",
+"description_en": "Other apparatus for transmission or reception of voice, images",
+"description_ar": "أجهزة اتصال أخرى (ساعة ذكية وسماعات)",
+"keywords": [
+"bluetooth",
+"device",
+"smartwatch",
+"wireless"
+]
+},
+{
+"code": "851770",
+"chapter": "85",
+"description_en": "Parts of telephone sets, transmitting apparatus",
+"description_ar": "أجزاء هواتف وأجهزة إرسال",
+"keywords": [
+"parts",
+"phone"
+]
+},
+{
+"code": "851810",
+"chapter": "85",
+"description_en": "Microphones and stands",
+"description_ar": "ميكروفونات",
+"keywords": [
+"microphone"
+]
+},
+{
+"code": "851821",
+"chapter": "85",
+"description_en": "Single loudspeakers mounted in enclosure",
+"description_ar": "مكبر صوت مفرد",
+"keywords": [
+"loudspeaker",
+"speaker"
+]
+},
+{
+"code": "851822",
+"chapter": "85",
+"description_en": "Multiple loudspeakers, mounted in same enclosure",
+"description_ar": "مكبرات صوت متعددة",
+"keywords": [
+"speaker",
+"system"
+]
+},
+{
+"code": "851830",
+"chapter": "85",
+"description_en": "Headphones and earphones",
+"description_ar": "سماعات رأس وأذن",
+"keywords": [
+"earbuds",
+"earphones",
+"headphones",
+"سماعات"
+]
+},
+{
+"code": "851840",
+"chapter": "85",
+"description_en": "Audio-frequency electric amplifiers",
+"description_ar": "مضخمات صوت",
+"keywords": [
+"amplifier",
+"audio"
+]
+},
+{
+"code": "851850",
+"chapter": "85",
+"description_en": "Electric sound amplifier sets",
+"description_ar": "أنظمة تضخيم صوت",
+"keywords": [
+"amplifier",
+"pa",
+"sound",
+"system"
+]
+},
+{
+"code": "851890",
+"chapter": "85",
+"description_en": "Parts of microphones, loudspeakers",
+"description_ar": "أجزاء ميكروفونات ومكبرات",
+"keywords": [
+"parts",
+"speaker"
+]
+},
+{
+"code": "851980",
+"chapter": "85",
+"description_en": "Other sound recording apparatus",
+"description_ar": "أجهزة تسجيل صوت أخرى",
+"keywords": [
+"recorder",
+"sound"
+]
+},
+{
+"code": "851981",
+"chapter": "85",
+"description_en": "Sound recording apparatus, using semiconductor media",
+"description_ar": "أجهزة تسجيل صوت رقمية",
+"keywords": [
+"digital",
+"recorder"
+]
+},
+{
+"code": "852110",
+"chapter": "85",
+"description_en": "Video recording or reproducing apparatus, magnetic tape",
+"description_ar": "مسجلات فيديو",
+"keywords": [
+"recorder",
+"video"
+]
+},
+{
+"code": "852190",
+"chapter": "85",
+"description_en": "Other video recording apparatus",
+"description_ar": "أجهزة تسجيل فيديو أخرى",
+"keywords": [
+"dvr",
+"nvr",
+"recorder",
+"video"
+]
+},
+{
+"code": "852290",
+"chapter": "85",
+"description_en": "Parts for sound reproducing apparatus",
+"description_ar": "أجزاء أجهزة الصوت",
+"keywords": [
+"parts",
+"sound"
+]
+},
+{
+"code": "852351",
+"chapter": "85",
+"description_en": "Solid-state non-volatile storage devices",
+"description_ar": "أجهزة تخزين صلبة (فلاش وذاكرة)",
+"keywords": [
+"card",
+"flash",
+"memory",
+"sd",
+"usb",
+"ذاكرة",
+"فلاش"
+]
+},
+{
+"code": "852580",
+"chapter": "85",
+"description_en": "Television cameras, digital cameras",
+"description_ar": "كاميرات تلفزيونية ورقمية",
+"keywords": [
+"camera",
+"digital",
+"video",
+"كاميرا"
+]
+},
+{
+"code": "852610",
+"chapter": "85",
+"description_en": "Radar apparatus",
+"description_ar": "أجهزة رادار",
+"keywords": [
+"radar"
+]
+},
+{
+"code": "852691",
+"chapter": "85",
+"description_en": "Radio navigational aid apparatus (GPS)",
+"description_ar": "أجهزة ملاحة (جي بي إس)",
+"keywords": [
+"gps",
+"navigation",
+"tracker",
+"إس",
+"بي",
+"جي"
+]
+},
+{
+"code": "852721",
+"chapter": "85",
+"description_en": "Radio-broadcast receivers for motor vehicles",
+"description_ar": "راديو سيارات",
+"keywords": [
+"car",
+"radio"
+]
+},
+{
+"code": "852852",
+"chapter": "85",
+"description_en": "Monitors capable of connecting to computers",
+"description_ar": "شاشات حاسوب",
+"keywords": [
+"computer",
+"monitor",
+"شاشة",
+"كمبيوتر"
+]
+},
+{
+"code": "852859",
+"chapter": "85",
+"description_en": "Other monitors",
+"description_ar": "شاشات (مونيتور) أخرى",
+"keywords": [
+"display",
+"monitor",
+"screen",
+"شاشة"
+]
+},
+{
+"code": "852872",
+"chapter": "85",
+"description_en": "Colour television reception apparatus, other",
+"description_ar": "أجهزة تلفزيون ملون",
+"keywords": [
+"led",
+"smart",
+"television",
+"tv",
+"تلفزيون"
+]
+},
+{
+"code": "852873",
+"chapter": "85",
+"description_en": "Other television reception apparatus, colour",
+"description_ar": "أجهزة تلفاز أخرى",
+"keywords": [
+"television",
+"tv"
+]
+},
+{
+"code": "853110",
+"chapter": "85",
+"description_en": "Burglar or fire alarms",
+"description_ar": "أجهزة إنذار سرقة وحريق",
+"keywords": [
+"alarm",
+"burglar",
+"fire",
+"إنذار"
+]
+},
+{
+"code": "853120",
+"chapter": "85",
+"description_en": "Indicator panels incorporating LCD or LED",
+"description_ar": "لوحات عرض LED وLCD",
+"keywords": [
+"digital",
+"display",
+"led",
+"panel",
+"signage",
+"إعلانات",
+"شاشة"
+]
+},
+{
+"code": "853180",
+"chapter": "85",
+"description_en": "Other electric sound or visual signalling apparatus",
+"description_ar": "أجهزة إشارة صوتية ومرئية",
+"keywords": [
+"apparatus",
+"doorbell",
+"signalling"
+]
+},
+{
+"code": "853190",
+"chapter": "85",
+"description_en": "Parts of signalling apparatus",
+"description_ar": "أجزاء أجهزة إنذار",
+"keywords": [
+"alarm",
+"parts"
+]
+},
+{
+"code": "853400",
+"chapter": "85",
+"description_en": "Printed circuits",
+"description_ar": "دوائر مطبوعة",
+"keywords": [
+"board",
+"circuit",
+"pcb",
+"printed",
+"دارات"
+]
+},
+{
+"code": "853620",
+"chapter": "85",
+"description_en": "Automatic circuit breakers",
+"description_ar": "قواطع دائرة أوتوماتيكية",
+"keywords": [
+"breaker",
+"circuit",
+"mcb",
+"قاطع"
+]
+},
+{
+"code": "853630",
+"chapter": "85",
+"description_en": "Other apparatus for protecting electrical circuits",
+"description_ar": "أجهزة حماية دوائر كهربائية",
+"keywords": [
+"fuse",
+"protector",
+"surge"
+]
+},
+{
+"code": "853650",
+"chapter": "85",
+"description_en": "Other switches",
+"description_ar": "مفاتيح كهربائية أخرى",
+"keywords": [
+"electrical",
+"switch",
+"كهربائي",
+"مفتاح"
+]
+},
+{
+"code": "853669",
+"chapter": "85",
+"description_en": "Plugs and sockets, <=1000 V, other",
+"description_ar": "قوابس وأفياش",
+"keywords": [
+"outlet",
+"plug",
+"socket",
+"فيشة"
+]
+},
+{
+"code": "853690",
+"chapter": "85",
+"description_en": "Electrical apparatus for switching, other",
+"description_ar": "أجهزة توصيل كهربائية أخرى",
+"keywords": [
+"connector",
+"terminal"
+]
+},
+{
+"code": "853710",
+"chapter": "85",
+"description_en": "Boards, panels for electric control, <=1000 V",
+"description_ar": "لوحات تحكم كهربائية",
+"keywords": [
+"control",
+"panel",
+"switchboard",
+"تحكم",
+"لوحة"
+]
+},
+{
+"code": "853720",
+"chapter": "85",
+"description_en": "Boards, panels for electric control, >1000 V",
+"description_ar": "لوحات توزيع عالية الجهد",
+"keywords": [
+"high",
+"panel",
+"switchgear",
+"voltage"
+]
+},
+{
+"code": "853890",
+"chapter": "85",
+"description_en": "Parts for electrical switching apparatus",
+"description_ar": "أجزاء أجهزة قطع الكهرباء",
+"keywords": [
+"parts",
+"switchgear"
+]
+},
+{
+"code": "853910",
+"chapter": "85",
+"description_en": "Sealed beam lamp units",
+"description_ar": "مصابيح محكمة الإغلاق",
+"keywords": [
+"beam",
+"headlight",
+"lamp",
+"sealed"
+]
+},
+{
+"code": "853921",
+"chapter": "85",
+"description_en": "Tungsten halogen filament lamps",
+"description_ar": "مصابيح هالوجين",
+"keywords": [
+"halogen",
+"lamp"
+]
+},
+{
+"code": "853922",
+"chapter": "85",
+"description_en": "Filament lamps, <=200 W and <=100 V",
+"description_ar": "مصابيح فتيل",
+"keywords": [
+"filament",
+"incandescent",
+"lamp"
+]
+},
+{
+"code": "853931",
+"chapter": "85",
+"description_en": "Fluorescent lamps, hot cathode",
+"description_ar": "مصابيح فلورسنت",
+"keywords": [
+"fluorescent",
+"lamp",
+"neon",
+"tube"
+]
+},
+{
+"code": "853949",
+"chapter": "85",
+"description_en": "Ultraviolet or infrared lamps",
+"description_ar": "مصابيح فوق بنفسجية وتحت حمراء",
+"keywords": [
+"infrared",
+"lamp",
+"uv"
+]
+},
+{
+"code": "853950",
+"chapter": "85",
+"description_en": "LED lamps",
+"description_ar": "مصابيح LED",
+"keywords": [
+"bulb",
+"lamp",
+"led",
+"light",
+"إضاءة",
+"ليد",
+"مصباح"
+]
+},
+{
+"code": "853990",
+"chapter": "85",
+"description_en": "Parts of electric filament or discharge lamps",
+"description_ar": "أجزاء مصابيح",
+"keywords": [
+"lamp",
+"parts"
+]
+},
+{
+"code": "854110",
+"chapter": "85",
+"description_en": "Diodes, other than photosensitive or LED",
+"description_ar": "ثنائيات",
+"keywords": [
+"diode"
+]
+},
+{
+"code": "854121",
+"chapter": "85",
+"description_en": "Transistors, dissipation <1 W",
+"description_ar": "ترانزستورات",
+"keywords": [
+"transistor"
+]
+},
+{
+"code": "854129",
+"chapter": "85",
+"description_en": "Transistors, other",
+"description_ar": "ترانزستورات أخرى",
+"keywords": [
+"transistor"
+]
+},
+{
+"code": "854142",
+"chapter": "85",
+"description_en": "Photovoltaic cells not assembled in modules",
+"description_ar": "خلايا شمسية غير مجمّعة",
+"keywords": [
+"cell",
+"photovoltaic",
+"solar",
+"خلايا",
+"شمسية"
+]
+},
+{
+"code": "854143",
+"chapter": "85",
+"description_en": "Photovoltaic modules assembled in panels (solar panels)",
+"description_ar": "ألواح شمسية كهروضوئية مجمّعة",
+"keywords": [
+"module",
+"panel",
+"photovoltaic",
+"pv",
+"solar",
+"ألواح",
+"شمسي",
+"شمسية",
+"طاقة",
+"لوح"
+]
+},
+{
+"code": "854149",
+"chapter": "85",
+"description_en": "Photosensitive semiconductor devices, other",
+"description_ar": "أجهزة شبه موصلة حساسة للضوء أخرى",
+"keywords": [
+"photosensitive"
+]
+},
+{
+"code": "854151",
+"chapter": "85",
+"description_en": "Semiconductor-based transducers",
+"description_ar": "محوّلات شبه موصلة",
+"keywords": [
+"semiconductor",
+"transducer"
+]
+},
+{
+"code": "854159",
+"chapter": "85",
+"description_en": "Other semiconductor devices",
+"description_ar": "أجهزة شبه موصلة أخرى",
+"keywords": [
+"semiconductor"
+]
+},
+{
+"code": "854231",
+"chapter": "85",
+"description_en": "Electronic integrated circuits, processors and controllers",
+"description_ar": "دوائر متكاملة: معالجات ومتحكمات",
+"keywords": [
+"circuit",
+"ic",
+"integrated",
+"microcontroller",
+"processor",
+"شريحة"
+]
+},
+{
+"code": "854232",
+"chapter": "85",
+"description_en": "Electronic integrated circuits, memories",
+"description_ar": "دوائر متكاملة: ذاكرات",
+"keywords": [
+"chip",
+"dram",
+"flash",
+"ic",
+"memory"
+]
+},
+{
+"code": "854239",
+"chapter": "85",
+"description_en": "Other electronic integrated circuits",
+"description_ar": "دوائر متكاملة أخرى",
+"keywords": [
+"chip",
+"ic"
+]
+},
+{
+"code": "854290",
+"chapter": "85",
+"description_en": "Parts of electronic integrated circuits",
+"description_ar": "أجزاء دوائر متكاملة",
+"keywords": [
+"ic",
+"parts"
+]
+},
+{
+"code": "854320",
+"chapter": "85",
+"description_en": "Signal generators",
+"description_ar": "مولدات إشارة",
+"keywords": [
+"generator",
+"signal"
+]
+},
+{
+"code": "854330",
+"chapter": "85",
+"description_en": "Machines for electroplating, electrolysis",
+"description_ar": "آلات طلاء كهربائي",
+"keywords": [
+"electrolysis",
+"electroplating"
+]
+},
+{
+"code": "854370",
+"chapter": "85",
+"description_en": "Other electrical machines with individual functions",
+"description_ar": "آلات كهربائية أخرى (سجائر إلكترونية وغيرها)",
+"keywords": [
+"cigarette",
+"e-cigarette",
+"electronic",
+"vape"
+]
+},
+{
+"code": "854390",
+"chapter": "85",
+"description_en": "Parts of electrical machines",
+"description_ar": "أجزاء آلات كهربائية",
+"keywords": [
+"electrical",
+"machine",
+"parts"
+]
+},
+{
+"code": "854430",
+"chapter": "85",
+"description_en": "Ignition wiring sets for vehicles",
+"description_ar": "أطقم أسلاك للمركبات",
+"keywords": [
+"harness",
+"vehicle",
+"wiring"
+]
+},
+{
+"code": "854442",
+"chapter": "85",
+"description_en": "Electric conductors <=1000 V, fitted with connectors",
+"description_ar": "موصلات كهربائية مع وصلات",
+"keywords": [
+"cable",
+"connector",
+"usb",
+"كيبل"
+]
+},
+{
+"code": "854449",
+"chapter": "85",
+"description_en": "Other electric conductors <=1000 V",
+"description_ar": "موصلات كهربائية أخرى",
+"keywords": [
+"cable",
+"electric",
+"wire",
+"سلك",
+"كيبل"
+]
+},
+{
+"code": "854460",
+"chapter": "85",
+"description_en": "Electric conductors, >1000 V",
+"description_ar": "كابلات كهربائية عالية الجهد",
+"keywords": [
+"cable",
+"high",
+"voltage"
+]
+},
+{
+"code": "854470",
+"chapter": "85",
+"description_en": "Optical fibre cables",
+"description_ar": "كابلات ألياف ضوئية",
+"keywords": [
+"cable",
+"fiber",
+"optic"
+]
+},
+{
+"code": "854800",
+"chapter": "85",
+"description_en": "Electrical parts of machinery",
+"description_ar": "أجزاء كهربائية للآلات",
+"keywords": [
+"electrical",
+"parts"
+]
+},
+{
+"code": "860900",
+"chapter": "86",
+"description_en": "Containers specially designed for carriage",
+"description_ar": "حاويات شحن",
+"keywords": [
+"container",
+"shipping",
+"حاوية"
+]
+},
+{
+"code": "870192",
+"chapter": "87",
+"description_en": "Tractors, engine power 18 kW to 37 kW",
+"description_ar": "جرارات 18-37 كيلوواط",
+"keywords": [
+"agricultural",
+"small",
+"tractor",
+"جرار"
+]
+},
+{
+"code": "870193",
+"chapter": "87",
+"description_en": "Tractors, engine power 37 kW to 75 kW",
+"description_ar": "جرارات 37-75 كيلوواط",
+"keywords": [
+"agricultural",
+"tractor",
+"جرار",
+"زراعي"
+]
+},
+{
+"code": "870194",
+"chapter": "87",
+"description_en": "Tractors, engine power 75 kW to 130 kW",
+"description_ar": "جرارات 75-130 كيلوواط",
+"keywords": [
+"agricultural",
+"large",
+"tractor",
+"جرار"
+]
+},
+{
+"code": "870210",
+"chapter": "87",
+"description_en": "Buses for 10+ persons, diesel",
+"description_ar": "حافلات ديزل",
+"keywords": [
+"bus",
+"diesel",
+"حافلة"
+]
+},
+{
+"code": "870321",
+"chapter": "87",
+"description_en": "Passenger cars, spark-ignition, <=1000 cc",
+"description_ar": "سيارات ركوب بنزين حتى 1000 سي سي",
+"keywords": [
+"car",
+"passenger",
+"vehicle",
+"سيارة"
+]
+},
+{
+"code": "870323",
+"chapter": "87",
+"description_en": "Passenger cars, spark-ignition, 1500-3000 cc",
+"description_ar": "سيارات ركوب بنزين 1500-3000 سي سي",
+"keywords": [
+"car",
+"sedan",
+"suv",
+"سيارة"
+]
+},
+{
+"code": "870332",
+"chapter": "87",
+"description_en": "Passenger cars, diesel, 1500-2500 cc",
+"description_ar": "سيارات ركوب ديزل",
+"keywords": [
+"car",
+"diesel",
+"ديزل",
+"سيارة"
+]
+},
+{
+"code": "870380",
+"chapter": "87",
+"description_en": "Passenger vehicles, electric motor only",
+"description_ar": "سيارات كهربائية",
+"keywords": [
+"car",
+"electric",
+"ev",
+"vehicle",
+"سيارة",
+"كهربائية"
+]
+},
+{
+"code": "870421",
+"chapter": "87",
+"description_en": "Goods vehicles, diesel, GVW <=5 t",
+"description_ar": "شاحنات ديزل حتى 5 طن",
+"keywords": [
+"diesel",
+"lorry",
+"pickup",
+"truck",
+"شاحنة"
+]
+},
+{
+"code": "870423",
+"chapter": "87",
+"description_en": "Goods vehicles, diesel, GVW over 20 t",
+"description_ar": "شاحنات ديزل فوق 20 طن",
+"keywords": [
+"heavy",
+"lorry",
+"truck",
+"ثقيلة",
+"شاحنة"
+]
+},
+{
+"code": "870431",
+"chapter": "87",
+"description_en": "Goods vehicles, spark-ignition, GVW <=5 t",
+"description_ar": "شاحنات بنزين حتى 5 طن",
+"keywords": [
+"petrol",
+"pickup",
+"truck"
+]
+},
+{
+"code": "870510",
+"chapter": "87",
+"description_en": "Mobile cranes, vehicles",
+"description_ar": "مركبات رافعة متنقلة",
+"keywords": [
+"crane",
+"mobile",
+"truck"
+]
+},
+{
+"code": "870590",
+"chapter": "87",
+"description_en": "Special purpose motor vehicles, other",
+"description_ar": "مركبات خاصة أخرى",
+"keywords": [
+"concrete",
+"mixer",
+"special",
+"truck",
+"vehicle"
+]
+},
+{
+"code": "870600",
+"chapter": "87",
+"description_en": "Chassis fitted with engines for motor vehicles",
+"description_ar": "هياكل مركبات مع محركات",
+"keywords": [
+"chassis",
+"vehicle"
+]
+},
+{
+"code": "870810",
+"chapter": "87",
+"description_en": "Bumpers and parts for vehicles",
+"description_ar": "مصدّات وأجزاؤها",
+"keywords": [
+"bumper",
+"car",
+"parts",
+"مصد"
+]
+},
+{
+"code": "870821",
+"chapter": "87",
+"description_en": "Safety seat belts",
+"description_ar": "أحزمة أمان",
+"keywords": [
+"belt",
+"safety",
+"seat"
+]
+},
+{
+"code": "870829",
+"chapter": "87",
+"description_en": "Other parts and accessories of bodies",
+"description_ar": "أجزاء وملحقات هياكل المركبات",
+"keywords": [
+"accessories",
+"body",
+"car",
+"parts"
+]
+},
+{
+"code": "870830",
+"chapter": "87",
+"description_en": "Brakes and servo-brakes and parts",
+"description_ar": "فرامل وأجزاؤها",
+"keywords": [
+"brake",
+"brakes",
+"disc",
+"pads",
+"فرامل"
+]
+},
+{
+"code": "870840",
+"chapter": "87",
+"description_en": "Gear boxes for vehicles",
+"description_ar": "صناديق تروس للمركبات",
+"keywords": [
+"car",
+"gearbox",
+"transmission",
+"حركة",
+"ناقل"
+]
+},
+{
+"code": "870850",
+"chapter": "87",
+"description_en": "Drive axles with differential",
+"description_ar": "محاور دفع مع ديفرنشيال",
+"keywords": [
+"axle",
+"differential",
+"drive"
+]
+},
+{
+"code": "870870",
+"chapter": "87",
+"description_en": "Road wheels and parts",
+"description_ar": "عجلات وجنوط",
+"keywords": [
+"alloy",
+"rim",
+"wheel",
+"جنط"
+]
+},
+{
+"code": "870880",
+"chapter": "87",
+"description_en": "Suspension systems and shock absorbers",
+"description_ar": "أنظمة تعليق ومساعدات",
+"keywords": [
+"absorber",
+"shock",
+"suspension",
+"مساعد"
+]
+},
+{
+"code": "870891",
+"chapter": "87",
+"description_en": "Radiators for vehicles",
+"description_ar": "مشعات (رادياتير) للمركبات",
+"keywords": [
+"car",
+"radiator",
+"مشع"
+]
+},
+{
+"code": "870892",
+"chapter": "87",
+"description_en": "Silencers and exhaust pipes",
+"description_ar": "كواتم صوت وعوادم",
+"keywords": [
+"exhaust",
+"muffler",
+"silencer",
+"عادم"
+]
+},
+{
+"code": "870893",
+"chapter": "87",
+"description_en": "Clutches and parts",
+"description_ar": "قوابض مركبات",
+"keywords": [
+"car",
+"clutch"
+]
+},
+{
+"code": "870894",
+"chapter": "87",
+"description_en": "Steering wheels, columns and boxes",
+"description_ar": "مقود وأعمدة توجيه",
+"keywords": [
+"steering",
+"wheel"
+]
+},
+{
+"code": "870899",
+"chapter": "87",
+"description_en": "Other parts and accessories for motor vehicles",
+"description_ar": "قطع غيار سيارات أخرى",
+"keywords": [
+"auto",
+"car",
+"parts",
+"spare",
+"سيارات",
+"غيار",
+"قطع"
+]
+},
+{
+"code": "871120",
+"chapter": "87",
+"description_en": "Motorcycles, 50-250 cc",
+"description_ar": "دراجات نارية 50-250 سي سي",
+"keywords": [
+"motorbike",
+"motorcycle",
+"دراجة",
+"نارية"
+]
+},
+{
+"code": "871150",
+"chapter": "87",
+"description_en": "Motorcycles over 800 cc",
+"description_ar": "دراجات نارية فوق 800 سي سي",
+"keywords": [
+"large",
+"motorcycle"
+]
+},
+{
+"code": "871160",
+"chapter": "87",
+"description_en": "Motorcycles with electric motor",
+"description_ar": "دراجات نارية كهربائية",
+"keywords": [
+"e-bike",
+"electric",
+"motorcycle",
+"scooter",
+"سكوتر"
+]
+},
+{
+"code": "871200",
+"chapter": "87",
+"description_en": "Bicycles, not motorised",
+"description_ar": "دراجات هوائية",
+"keywords": [
+"bicycle",
+"bike",
+"دراجة"
+]
+},
+{
+"code": "871390",
+"chapter": "87",
+"description_en": "Carriages for disabled persons, other",
+"description_ar": "كراسي متحركة",
+"keywords": [
+"disabled",
+"wheelchair",
+"كرسي",
+"متحرك"
+]
+},
+{
+"code": "871419",
+"chapter": "87",
+"description_en": "Parts of motorcycles, other",
+"description_ar": "قطع دراجات نارية",
+"keywords": [
+"motorcycle",
+"parts"
+]
+},
+{
+"code": "871420",
+"chapter": "87",
+"description_en": "Parts of invalid carriages",
+"description_ar": "أجزاء كراسي المعاقين",
+"keywords": [
+"parts",
+"wheelchair"
+]
+},
+{
+"code": "871500",
+"chapter": "87",
+"description_en": "Baby carriages and parts",
+"description_ar": "عربات أطفال",
+"keywords": [
+"baby",
+"pram",
+"stroller",
+"أطفال",
+"عربة"
+]
+},
+{
+"code": "871639",
+"chapter": "87",
+"description_en": "Trailers and semi-trailers, other",
+"description_ar": "مقطورات ونصف مقطورات",
+"keywords": [
+"semi-trailer",
+"trailer",
+"مقطورة"
+]
+},
+{
+"code": "871690",
+"chapter": "87",
+"description_en": "Parts of trailers",
+"description_ar": "أجزاء مقطورات",
+"keywords": [
+"parts",
+"trailer"
+]
+},
+{
+"code": "880621",
+"chapter": "88",
+"description_en": "Unmanned aircraft (drones), up to 250 g",
+"description_ar": "طائرات مسيّرة (درون) حتى 250 غ",
+"keywords": [
+"drone",
+"mini",
+"uav",
+"درون"
+]
+},
+{
+"code": "880622",
+"chapter": "88",
+"description_en": "Unmanned aircraft (drones), 250 g to 7 kg",
+"description_ar": "طائرات مسيّرة (درون) من 250 غ إلى 7 كغم",
+"keywords": [
+"drone",
+"quadcopter",
+"uav",
+"درون",
+"طائرة",
+"مسيرة"
+]
+},
+{
+"code": "900190",
+"chapter": "90",
+"description_en": "Lenses, prisms, other optical elements",
+"description_ar": "عدسات ومناشير بصرية",
+"keywords": [
+"lens",
+"optical",
+"عدسة"
+]
+},
+{
+"code": "900211",
+"chapter": "90",
+"description_en": "Objective lenses for cameras",
+"description_ar": "عدسات كاميرات",
+"keywords": [
+"camera",
+"lens",
+"objective"
+]
+},
+{
+"code": "900311",
+"chapter": "90",
+"description_en": "Frames for spectacles, plastics",
+"description_ar": "إطارات نظارات بلاستيكية",
+"keywords": [
+"eyeglass",
+"frames",
+"spectacles",
+"نظارات"
+]
+},
+{
+"code": "900410",
+"chapter": "90",
+"description_en": "Sunglasses",
+"description_ar": "نظارات شمسية",
+"keywords": [
+"sunglasses",
+"شمسية",
+"نظارات"
+]
+},
+{
+"code": "900490",
+"chapter": "90",
+"description_en": "Spectacles and goggles, other",
+"description_ar": "نظارات أخرى",
+"keywords": [
+"glasses",
+"goggles"
+]
+},
+{
+"code": "900510",
+"chapter": "90",
+"description_en": "Binoculars",
+"description_ar": "مناظير ثنائية",
+"keywords": [
+"binoculars"
+]
+},
+{
+"code": "900580",
+"chapter": "90",
+"description_en": "Other optical telescopes",
+"description_ar": "تلسكوبات",
+"keywords": [
+"telescope"
+]
+},
+{
+"code": "900630",
+"chapter": "90",
+"description_en": "Cameras for underwater photography or aerial",
+"description_ar": "كاميرات تصوير جوي وتحت الماء",
+"keywords": [
+"aerial",
+"camera",
+"underwater"
+]
+},
+{
+"code": "900640",
+"chapter": "90",
+"description_en": "Instant print cameras",
+"description_ar": "كاميرات فورية",
+"keywords": [
+"camera",
+"instant",
+"polaroid"
+]
+},
+{
+"code": "900691",
+"chapter": "90",
+"description_en": "Parts and accessories for cameras",
+"description_ar": "أجزاء وملحقات كاميرات",
+"keywords": [
+"accessories",
+"camera",
+"parts"
+]
+},
+{
+"code": "901180",
+"chapter": "90",
+"description_en": "Compound optical microscopes, other",
+"description_ar": "مجاهر ضوئية أخرى",
+"keywords": [
+"microscope",
+"optical",
+"مجهر"
+]
+},
+{
+"code": "901380",
+"chapter": "90",
+"description_en": "Other optical appliances (LCD devices)",
+"description_ar": "أجهزة بصرية أخرى",
+"keywords": [
+"appliance",
+"optical"
+]
+},
+{
+"code": "901580",
+"chapter": "90",
+"description_en": "Other surveying instruments",
+"description_ar": "أجهزة مسح أخرى",
+"keywords": [
+"gps",
+"instrument",
+"rtk",
+"surveying"
+]
+},
+{
+"code": "901780",
+"chapter": "90",
+"description_en": "Other instruments for measuring length",
+"description_ar": "أدوات قياس طول أخرى",
+"keywords": [
+"length",
+"measuring",
+"meter",
+"ruler",
+"tape"
+]
+},
+{
+"code": "901810",
+"chapter": "90",
+"description_en": "Electro-diagnostic apparatus",
+"description_ar": "أجهزة تشخيص كهربائية (ECG)",
+"keywords": [
+"diagnostic",
+"ecg",
+"monitor",
+"patient",
+"تخطيط",
+"قلب"
+]
+},
+{
+"code": "901812",
+"chapter": "90",
+"description_en": "Ultrasonic scanning apparatus",
+"description_ar": "أجهزة تصوير بالموجات فوق الصوتية",
+"keywords": [
+"scanner",
+"ultrasound",
+"سونار"
+]
+},
+{
+"code": "901813",
+"chapter": "90",
+"description_en": "Magnetic resonance imaging apparatus",
+"description_ar": "أجهزة رنين مغناطيسي",
+"keywords": [
+"magnetic",
+"mri",
+"resonance"
+]
+},
+{
+"code": "901814",
+"chapter": "90",
+"description_en": "Scintigraphic apparatus",
+"description_ar": "أجهزة تصوير وميضي",
+"keywords": [
+"scintigraphy"
+]
+},
+{
+"code": "901819",
+"chapter": "90",
+"description_en": "Other electro-diagnostic apparatus",
+"description_ar": "أجهزة تشخيص أخرى",
+"keywords": [
+"diagnostic",
+"monitoring"
+]
+},
+{
+"code": "901820",
+"chapter": "90",
+"description_en": "Ultraviolet or infrared ray apparatus",
+"description_ar": "أجهزة أشعة فوق بنفسجية",
+"keywords": [
+"ir",
+"therapy",
+"uv"
+]
+},
+{
+"code": "901831",
+"chapter": "90",
+"description_en": "Syringes, with or without needles",
+"description_ar": "محاقن (سرنجات)",
+"keywords": [
+"injection",
+"syringe",
+"سرنجة"
+]
+},
+{
+"code": "901832",
+"chapter": "90",
+"description_en": "Tubular metal needles, suture needles",
+"description_ar": "إبر معدنية وخياطة جراحية",
+"keywords": [
+"needle",
+"suture"
+]
+},
+{
+"code": "901839",
+"chapter": "90",
+"description_en": "Other catheters, cannulae",
+"description_ar": "قسطرات وأنابيب طبية",
+"keywords": [
+"cannula",
+"catheter",
+"iv"
+]
+},
+{
+"code": "901841",
+"chapter": "90",
+"description_en": "Dental drill engines",
+"description_ar": "مثاقب أسنان",
+"keywords": [
+"dental",
+"drill"
+]
+},
+{
+"code": "901849",
+"chapter": "90",
+"description_en": "Other instruments for dental sciences",
+"description_ar": "أدوات طب الأسنان الأخرى",
+"keywords": [
+"dental",
+"instrument",
+"tool",
+"أسنان"
+]
+},
+{
+"code": "901850",
+"chapter": "90",
+"description_en": "Other ophthalmic instruments",
+"description_ar": "أدوات طب العيون",
+"keywords": [
+"eye",
+"instrument",
+"ophthalmic"
+]
+},
+{
+"code": "901890",
+"chapter": "90",
+"description_en": "Other medical, surgical instruments",
+"description_ar": "أدوات طبية وجراحية أخرى",
+"keywords": [
+"instrument",
+"medical",
+"surgical",
+"جراحة"
+]
+},
+{
+"code": "901910",
+"chapter": "90",
+"description_en": "Mechano-therapy and massage apparatus",
+"description_ar": "أجهزة علاج ميكانيكي ومساج",
+"keywords": [
+"apparatus",
+"massage",
+"mechanotherapy",
+"مساج"
+]
+},
+{
+"code": "901920",
+"chapter": "90",
+"description_en": "Ozone, oxygen therapy, respirators",
+"description_ar": "أجهزة علاج بالأكسجين وتنفس",
+"keywords": [
+"concentrator",
+"oxygen",
+"respirator",
+"ventilator",
+"اكسجين"
+]
+},
+{
+"code": "902000",
+"chapter": "90",
+"description_en": "Other breathing appliances and gas masks",
+"description_ar": "أجهزة تنفس وأقنعة غاز",
+"keywords": [
+"apparatus",
+"breathing",
+"gas",
+"mask",
+"قناع"
+]
+},
+{
+"code": "902110",
+"chapter": "90",
+"description_en": "Orthopaedic or fracture appliances",
+"description_ar": "أجهزة تقويم العظام",
+"keywords": [
+"fracture",
+"orthopaedic",
+"orthopedic"
+]
+},
+{
+"code": "902131",
+"chapter": "90",
+"description_en": "Artificial joints",
+"description_ar": "مفاصل صناعية",
+"keywords": [
+"artificial",
+"implant",
+"joint"
+]
+},
+{
+"code": "902139",
+"chapter": "90",
+"description_en": "Other artificial parts of the body",
+"description_ar": "أعضاء صناعية أخرى",
+"keywords": [
+"artificial",
+"limb",
+"prosthesis"
+]
+},
+{
+"code": "902140",
+"chapter": "90",
+"description_en": "Hearing aids",
+"description_ar": "أجهزة سمع",
+"keywords": [
+"aid",
+"hearing",
+"أذن",
+"سماعة",
+"طبية"
+]
+},
+{
+"code": "902190",
+"chapter": "90",
+"description_en": "Other appliances worn on the body",
+"description_ar": "أجهزة طبية أخرى تُلبس",
+"keywords": [
+"appliance",
+"medical"
+]
+},
+{
+"code": "902212",
+"chapter": "90",
+"description_en": "Computed tomography apparatus",
+"description_ar": "أجهزة أشعة مقطعية (CT)",
+"keywords": [
+"ct",
+"scanner",
+"tomography"
+]
+},
+{
+"code": "902213",
+"chapter": "90",
+"description_en": "Dental X-ray apparatus",
+"description_ar": "أجهزة أشعة أسنان",
+"keywords": [
+"dental",
+"xray"
+]
+},
+{
+"code": "902214",
+"chapter": "90",
+"description_en": "Other X-ray apparatus for medical use",
+"description_ar": "أجهزة أشعة سينية طبية",
+"keywords": [
+"medical",
+"x-ray",
+"xray",
+"أشعة"
+]
+},
+{
+"code": "902219",
+"chapter": "90",
+"description_en": "X-ray apparatus for other uses",
+"description_ar": "أجهزة أشعة سينية لاستخدامات أخرى",
+"keywords": [
+"apparatus",
+"scanner",
+"security",
+"xray"
+]
+},
+{
+"code": "902290",
+"chapter": "90",
+"description_en": "Parts and accessories of X-ray equipment",
+"description_ar": "أجزاء أجهزة الأشعة",
+"keywords": [
+"parts",
+"xray"
+]
+},
+{
+"code": "902511",
+"chapter": "90",
+"description_en": "Liquid-filled thermometers",
+"description_ar": "موازين حرارة سائلة",
+"keywords": [
+"liquid",
+"thermometer"
+]
+},
+{
+"code": "902519",
+"chapter": "90",
+"description_en": "Thermometers, other (electronic)",
+"description_ar": "موازين حرارة إلكترونية",
+"keywords": [
+"digital",
+"electronic",
+"thermometer",
+"حرارة",
+"ميزان"
+]
+},
+{
+"code": "902580",
+"chapter": "90",
+"description_en": "Other hydrometers, barometers, hygrometers",
+"description_ar": "أجهزة قياس رطوبة وضغط",
+"keywords": [
+"barometer",
+"humidity",
+"hygrometer"
+]
+},
+{
+"code": "902610",
+"chapter": "90",
+"description_en": "Instruments for measuring flow of liquids",
+"description_ar": "أجهزة قياس تدفق السوائل",
+"keywords": [
+"flow",
+"liquid",
+"meter"
+]
+},
+{
+"code": "902620",
+"chapter": "90",
+"description_en": "Instruments for measuring pressure",
+"description_ar": "أجهزة قياس الضغط",
+"keywords": [
+"gauge",
+"pressure",
+"sensor"
+]
+},
+{
+"code": "902680",
+"chapter": "90",
+"description_en": "Other instruments for measuring liquids or gases",
+"description_ar": "أجهزة قياس سوائل وغازات أخرى",
+"keywords": [
+"gauge",
+"instrument",
+"level"
+]
+},
+{
+"code": "902710",
+"chapter": "90",
+"description_en": "Gas or smoke analysis apparatus",
+"description_ar": "أجهزة تحليل الغاز والدخان",
+"keywords": [
+"analyser",
+"gas",
+"smoke"
+]
+},
+{
+"code": "902720",
+"chapter": "90",
+"description_en": "Chromatographs and electrophoresis instruments",
+"description_ar": "كروماتوغراف",
+"keywords": [
+"chromatograph",
+"electrophoresis"
+]
+},
+{
+"code": "902730",
+"chapter": "90",
+"description_en": "Spectrometers using optical radiations",
+"description_ar": "مطياف ضوئي",
+"keywords": [
+"spectrometer",
+"spectrophotometer"
+]
+},
+{
+"code": "902750",
+"chapter": "90",
+"description_en": "Other instruments using optical radiations",
+"description_ar": "أجهزة تحليل بصرية أخرى",
+"keywords": [
+"analysis",
+"optical"
+]
+},
+{
+"code": "902780",
+"chapter": "90",
+"description_en": "Other instruments for physical or chemical analysis",
+"description_ar": "أجهزة تحليل فيزيائي وكيميائي",
+"keywords": [
+"analysis",
+"instrument",
+"meter",
+"ph"
+]
+},
+{
+"code": "902810",
+"chapter": "90",
+"description_en": "Gas meters",
+"description_ar": "عدادات غاز",
+"keywords": [
+"gas",
+"meter"
+]
+},
+{
+"code": "902820",
+"chapter": "90",
+"description_en": "Liquid meters (water meters)",
+"description_ar": "عدادات سوائل (عدادات مياه)",
+"keywords": [
+"liquid",
+"meter",
+"water",
+"عداد",
+"ماء"
+]
+},
+{
+"code": "902830",
+"chapter": "90",
+"description_en": "Electricity meters",
+"description_ar": "عدادات كهرباء",
+"keywords": [
+"electricity",
+"energy",
+"meter",
+"عداد",
+"كهرباء"
+]
+},
+{
+"code": "903031",
+"chapter": "90",
+"description_en": "Multimeters without recording device",
+"description_ar": "أجهزة قياس متعددة (ملتيميتر)",
+"keywords": [
+"measuring",
+"multimeter",
+"ملتيميتر"
+]
+},
+{
+"code": "903039",
+"chapter": "90",
+"description_en": "Other instruments for measuring voltage, current",
+"description_ar": "أجهزة قياس الجهد والتيار",
+"keywords": [
+"ammeter",
+"voltmeter"
+]
+},
+{
+"code": "903089",
+"chapter": "90",
+"description_en": "Other instruments for measuring electrical quantities",
+"description_ar": "أجهزة قياس كهربائية أخرى",
+"keywords": [
+"electrical",
+"measuring"
+]
+},
+{
+"code": "903210",
+"chapter": "90",
+"description_en": "Thermostats",
+"description_ar": "منظمات حرارة (ثرموستات)",
+"keywords": [
+"controller",
+"temperature",
+"thermostat"
+]
+},
+{
+"code": "903220",
+"chapter": "90",
+"description_en": "Manostats",
+"description_ar": "منظمات ضغط",
+"keywords": [
+"controller",
+"manostat",
+"pressure"
+]
+},
+{
+"code": "903289",
+"chapter": "90",
+"description_en": "Other automatic regulating instruments",
+"description_ar": "أجهزة تحكم أوتوماتيكية أخرى",
+"keywords": [
+"automatic",
+"control",
+"plc",
+"regulator"
+]
+},
+{
+"code": "903300",
+"chapter": "90",
+"description_en": "Parts and accessories for measuring instruments",
+"description_ar": "أجزاء أجهزة قياس",
+"keywords": [
+"measuring",
+"parts"
+]
+},
+{
+"code": "910111",
+"chapter": "91",
+"description_en": "Wrist-watches, battery, precious metal",
+"description_ar": "ساعات يد معدنية ثمينة",
+"keywords": [
+"gold",
+"watch",
+"wristwatch",
+"ساعة",
+"يد"
+]
+},
+{
+"code": "910211",
+"chapter": "91",
+"description_en": "Wrist-watches, electrically operated, mechanical display",
+"description_ar": "ساعات يد كهربائية",
+"keywords": [
+"quartz",
+"watch",
+"wristwatch",
+"ساعة"
+]
+},
+{
+"code": "910219",
+"chapter": "91",
+"description_en": "Wrist-watches, electrically operated, other",
+"description_ar": "ساعات يد أخرى",
+"keywords": [
+"watch",
+"wristwatch"
+]
+},
+{
+"code": "910291",
+"chapter": "91",
+"description_en": "Other watches, electrically operated",
+"description_ar": "ساعات أخرى كهربائية",
+"keywords": [
+"watch"
+]
+},
+{
+"code": "940110",
+"chapter": "94",
+"description_en": "Seats of a kind used for aircraft",
+"description_ar": "مقاعد طائرات",
+"keywords": [
+"aircraft",
+"seat"
+]
+},
+{
+"code": "940120",
+"chapter": "94",
+"description_en": "Seats of a kind used for motor vehicles",
+"description_ar": "مقاعد مركبات",
+"keywords": [
+"car",
+"seat",
+"vehicle"
+]
+},
+{
+"code": "940130",
+"chapter": "94",
+"description_en": "Swivel seats with variable height",
+"description_ar": "كراسي دوارة قابلة لضبط الارتفاع",
+"keywords": [
+"chair",
+"office",
+"swivel",
+"كرسي",
+"مكتب"
+]
+},
+{
+"code": "940140",
+"chapter": "94",
+"description_en": "Seats convertible into beds",
+"description_ar": "مقاعد قابلة للتحول إلى أسرّة",
+"keywords": [
+"bed",
+"convertible",
+"sofa"
+]
+},
+{
+"code": "940161",
+"chapter": "94",
+"description_en": "Upholstered seats with wooden frames",
+"description_ar": "كراسي منجدة بإطار خشبي",
+"keywords": [
+"chair",
+"sofa",
+"upholstered",
+"wooden",
+"كرسي"
+]
+},
+{
+"code": "940169",
+"chapter": "94",
+"description_en": "Other seats with wooden frames",
+"description_ar": "كراسي بإطار خشبي أخرى",
+"keywords": [
+"chair",
+"wooden",
+"خشب",
+"كرسي"
+]
+},
+{
+"code": "940171",
+"chapter": "94",
+"description_en": "Upholstered seats with metal frames",
+"description_ar": "كراسي منجدة بإطار معدني",
+"keywords": [
+"chair",
+"frame",
+"metal",
+"upholstered"
+]
+},
+{
+"code": "940179",
+"chapter": "94",
+"description_en": "Other seats with metal frames",
+"description_ar": "كراسي بإطار معدني",
+"keywords": [
+"chair",
+"metal",
+"كرسي",
+"معدني"
+]
+},
+{
+"code": "940180",
+"chapter": "94",
+"description_en": "Other seats",
+"description_ar": "كراسي أخرى",
+"keywords": [
+"chair",
+"seat"
+]
+},
+{
+"code": "940190",
+"chapter": "94",
+"description_en": "Parts of seats",
+"description_ar": "أجزاء كراسي",
+"keywords": [
+"chair",
+"parts"
+]
+},
+{
+"code": "940210",
+"chapter": "94",
+"description_en": "Dentists', barbers' chairs",
+"description_ar": "كراسي أسنان وحلاقة",
+"keywords": [
+"barber",
+"chair",
+"dental",
+"حلاقة",
+"كرسي"
+]
+},
+{
+"code": "940290",
+"chapter": "94",
+"description_en": "Other medical, surgical or veterinary furniture",
+"description_ar": "أثاث طبي وجراحي آخر",
+"keywords": [
+"bed",
+"furniture",
+"hospital",
+"medical",
+"سرير",
+"مستشفى"
+]
+},
+{
+"code": "940310",
+"chapter": "94",
+"description_en": "Metal furniture for offices",
+"description_ar": "أثاث مكتبي معدني",
+"keywords": [
+"desk",
+"furniture",
+"metal",
+"office"
+]
+},
+{
+"code": "940320",
+"chapter": "94",
+"description_en": "Other metal furniture",
+"description_ar": "أثاث معدني آخر",
+"keywords": [
+"furniture",
+"metal"
+]
+},
+{
+"code": "940330",
+"chapter": "94",
+"description_en": "Wooden furniture for offices",
+"description_ar": "أثاث مكتبي خشبي",
+"keywords": [
+"desk",
+"furniture",
+"office",
+"wooden",
+"مكتب"
+]
+},
+{
+"code": "940340",
+"chapter": "94",
+"description_en": "Wooden furniture for kitchens",
+"description_ar": "أثاث مطبخ خشبي",
+"keywords": [
+"cabinet",
+"kitchen",
+"wooden",
+"مطبخ"
+]
+},
+{
+"code": "940350",
+"chapter": "94",
+"description_en": "Wooden furniture for bedrooms",
+"description_ar": "أثاث غرف نوم خشبي",
+"keywords": [
+"bedroom",
+"furniture",
+"wardrobe",
+"غرفة",
+"نوم"
+]
+},
+{
+"code": "940360",
+"chapter": "94",
+"description_en": "Other wooden furniture",
+"description_ar": "أثاث خشبي آخر",
+"keywords": [
+"furniture",
+"wooden",
+"أثاث",
+"خشب"
+]
+},
+{
+"code": "940370",
+"chapter": "94",
+"description_en": "Furniture of plastics",
+"description_ar": "أثاث بلاستيكي",
+"keywords": [
+"furniture",
+"plastic"
+]
+},
+{
+"code": "940382",
+"chapter": "94",
+"description_en": "Furniture of bamboo",
+"description_ar": "أثاث خيزران",
+"keywords": [
+"bamboo",
+"furniture"
+]
+},
+{
+"code": "940389",
+"chapter": "94",
+"description_en": "Furniture of other materials (rattan, etc.)",
+"description_ar": "أثاث من مواد أخرى",
+"keywords": [
+"furniture",
+"rattan",
+"wicker"
+]
+},
+{
+"code": "940390",
+"chapter": "94",
+"description_en": "Parts of furniture",
+"description_ar": "أجزاء أثاث",
+"keywords": [
+"furniture",
+"parts"
+]
+},
+{
+"code": "940410",
+"chapter": "94",
+"description_en": "Mattress supports",
+"description_ar": "قواعد مراتب",
+"keywords": [
+"base",
+"bed",
+"frame",
+"mattress"
+]
+},
+{
+"code": "940421",
+"chapter": "94",
+"description_en": "Mattresses of cellular rubber or plastics",
+"description_ar": "مراتب إسفنج أو مطاط",
+"keywords": [
+"foam",
+"mattress",
+"فرشة"
+]
+},
+{
+"code": "940429",
+"chapter": "94",
+"description_en": "Mattresses of other materials",
+"description_ar": "مراتب أخرى",
+"keywords": [
+"mattress",
+"spring",
+"فرشة"
+]
+},
+{
+"code": "940430",
+"chapter": "94",
+"description_en": "Sleeping bags",
+"description_ar": "أكياس نوم",
+"keywords": [
+"bag",
+"sleeping"
+]
+},
+{
+"code": "940490",
+"chapter": "94",
+"description_en": "Bedding and similar furnishing articles",
+"description_ar": "مفروشات ومستلزمات سرير",
+"keywords": [
+"bedding",
+"duvet",
+"pillow",
+"quilt",
+"لحاف",
+"وسادة"
+]
+},
+{
+"code": "940511",
+"chapter": "94",
+"description_en": "Ceiling or wall lighting fittings for LED light sources",
+"description_ar": "وحدات إضاءة سقفية وجدارية LED",
+"keywords": [
+"ceiling",
+"chandelier",
+"downlight",
+"led",
+"light",
+"إضاءة",
+"ثريا",
+"سقف"
+]
+},
+{
+"code": "940519",
+"chapter": "94",
+"description_en": "Other ceiling or wall lighting fittings",
+"description_ar": "وحدات إضاءة سقفية وجدارية أخرى",
+"keywords": [
+"ceiling",
+"chandelier",
+"lamp",
+"light",
+"wall",
+"ثريا"
+]
+},
+{
+"code": "940521",
+"chapter": "94",
+"description_en": "Electric table, desk or floor lamps for LED light sources",
+"description_ar": "مصابيح طاولة ومكتب وأرضية LED",
+"keywords": [
+"desk",
+"lamp",
+"led",
+"table",
+"مصباح",
+"مكتب"
+]
+},
+{
+"code": "940529",
+"chapter": "94",
+"description_en": "Other electric table, desk or floor lamps",
+"description_ar": "مصابيح طاولة ومكتب وأرضية أخرى",
+"keywords": [
+"floor",
+"lamp",
+"table",
+"مصباح"
+]
+},
+{
+"code": "940531",
+"chapter": "94",
+"description_en": "Lighting sets for Christmas trees, LED",
+"description_ar": "أضواء زينة LED",
+"keywords": [
+"christmas",
+"led",
+"lights",
+"string"
+]
+},
+{
+"code": "940541",
+"chapter": "94",
+"description_en": "Photovoltaic LED lamps and lighting fittings",
+"description_ar": "مصابيح LED كهروضوئية (شمسية)",
+"keywords": [
+"led",
+"light",
+"solar",
+"street",
+"إنارة",
+"شمسية"
+]
+},
+{
+"code": "940542",
+"chapter": "94",
+"description_en": "Other LED electric lamps and lighting fittings",
+"description_ar": "مصابيح وتجهيزات إضاءة LED أخرى",
+"keywords": [
+"floodlight",
+"led",
+"light",
+"panel",
+"street",
+"إنارة",
+"كشاف"
+]
+},
+{
+"code": "940549",
+"chapter": "94",
+"description_en": "Other electric lamps and lighting fittings",
+"description_ar": "مصابيح وتجهيزات إضاءة كهربائية أخرى",
+"keywords": [
+"fitting",
+"lamp",
+"lighting",
+"إنارة"
+]
+},
+{
+"code": "940550",
+"chapter": "94",
+"description_en": "Non-electrical lamps and lighting fittings",
+"description_ar": "مصابيح غير كهربائية",
+"keywords": [
+"lamp",
+"lantern",
+"oil"
+]
+},
+{
+"code": "940561",
+"chapter": "94",
+"description_en": "Illuminated signs, LED",
+"description_ar": "لافتات مضيئة LED",
+"keywords": [
+"illuminated",
+"led",
+"sign",
+"signage",
+"لافتة"
+]
+},
+{
+"code": "940591",
+"chapter": "94",
+"description_en": "Parts of lamps, of glass",
+"description_ar": "أجزاء مصابيح زجاجية",
+"keywords": [
+"glass",
+"lamp",
+"parts"
+]
+},
+{
+"code": "940599",
+"chapter": "94",
+"description_en": "Parts of lamps, other",
+"description_ar": "أجزاء مصابيح أخرى",
+"keywords": [
+"lamp",
+"parts"
+]
+},
+{
+"code": "940620",
+"chapter": "94",
+"description_en": "Modular building units of steel",
+"description_ar": "وحدات بناء معيارية فولاذية",
+"keywords": [
+"building",
+"container",
+"house",
+"modular",
+"steel",
+"كرفان"
+]
+},
+{
+"code": "940690",
+"chapter": "94",
+"description_en": "Prefabricated buildings, other",
+"description_ar": "مبانٍ جاهزة أخرى",
+"keywords": [
+"building",
+"container",
+"house",
+"prefab",
+"prefabricated",
+"كرفان"
+]
+},
+{
+"code": "950300",
+"chapter": "95",
+"description_en": "Tricycles, scooters, pedal cars, dolls, other toys",
+"description_ar": "ألعاب (دراجات ثلاثية وعرائس وغيرها)",
+"keywords": [
+"dolls",
+"toys",
+"tricycle",
+"العاب",
+"لعبة"
+]
+},
+{
+"code": "950430",
+"chapter": "95",
+"description_en": "Games operated by coins or tokens",
+"description_ar": "ألعاب تعمل بالعملة",
+"keywords": [
+"arcade",
+"coin",
+"game",
+"operated"
+]
+},
+{
+"code": "950450",
+"chapter": "95",
+"description_en": "Video game consoles and machines",
+"description_ar": "أجهزة ألعاب فيديو",
+"keywords": [
+"console",
+"game",
+"playstation",
+"video",
+"ألعاب",
+"فيديو"
+]
+},
+{
+"code": "950490",
+"chapter": "95",
+"description_en": "Other table or parlour games",
+"description_ar": "ألعاب طاولة وأخرى",
+"keywords": [
+"board",
+"cards",
+"game",
+"games"
+]
+},
+{
+"code": "950510",
+"chapter": "95",
+"description_en": "Articles for Christmas festivities",
+"description_ar": "مستلزمات أعياد الميلاد",
+"keywords": [
+"christmas",
+"decorations",
+"festive"
+]
+},
+{
+"code": "950590",
+"chapter": "95",
+"description_en": "Festive, carnival or other entertainment articles",
+"description_ar": "مستلزمات احتفالات وترفيه",
+"keywords": [
+"carnival",
+"festive",
+"party"
+]
+},
+{
+"code": "950662",
+"chapter": "95",
+"description_en": "Inflatable balls",
+"description_ar": "كرات منفوخة",
+"keywords": [
+"ball",
+"football",
+"soccer",
+"كرة"
+]
+},
+{
+"code": "950691",
+"chapter": "95",
+"description_en": "Articles for general physical exercise, gymnastics",
+"description_ar": "معدات لياقة وتمارين",
+"keywords": [
+"equipment",
+"fitness",
+"gym",
+"treadmill",
+"لياقة"
+]
+},
+{
+"code": "950699",
+"chapter": "95",
+"description_en": "Other sports equipment",
+"description_ar": "معدات رياضية أخرى",
+"keywords": [
+"equipment",
+"sports"
+]
+},
+{
+"code": "960310",
+"chapter": "96",
+"description_en": "Brooms and brushes of vegetable material",
+"description_ar": "مكانس وفراشي",
+"keywords": [
+"broom",
+"brush",
+"مكنسة"
+]
+},
+{
+"code": "960321",
+"chapter": "96",
+"description_en": "Tooth brushes",
+"description_ar": "فراشي أسنان",
+"keywords": [
+"toothbrush",
+"أسنان",
+"فرشاة"
+]
+},
+{
+"code": "960330",
+"chapter": "96",
+"description_en": "Artists' brushes, writing brushes, make-up brushes",
+"description_ar": "فراشي رسم وتجميل",
+"keywords": [
+"brush",
+"makeup",
+"paint",
+"فرشاة"
+]
+},
+{
+"code": "960390",
+"chapter": "96",
+"description_en": "Other brushes",
+"description_ar": "فراشي أخرى",
+"keywords": [
+"brush"
+]
+},
+{
+"code": "960500",
+"chapter": "96",
+"description_en": "Travel sets for personal toilet",
+"description_ar": "أطقم سفر للعناية الشخصية",
+"keywords": [
+"kit",
+"sewing",
+"travel"
+]
+},
+{
+"code": "960610",
+"chapter": "96",
+"description_en": "Press-fasteners, snap-fasteners",
+"description_ar": "أزرار ضغط",
+"keywords": [
+"buttons",
+"snap"
+]
+},
+{
+"code": "960621",
+"chapter": "96",
+"description_en": "Buttons of plastics",
+"description_ar": "أزرار بلاستيكية",
+"keywords": [
+"buttons",
+"plastic",
+"زر"
+]
+},
+{
+"code": "960629",
+"chapter": "96",
+"description_en": "Buttons, other",
+"description_ar": "أزرار أخرى",
+"keywords": [
+"buttons"
+]
+},
+{
+"code": "960710",
+"chapter": "96",
+"description_en": "Slide fasteners (zippers) with base metal teeth",
+"description_ar": "سحّابات بأسنان معدنية",
+"keywords": [
+"zip",
+"zipper",
+"سحاب"
+]
+},
+{
+"code": "960720",
+"chapter": "96",
+"description_en": "Parts of slide fasteners",
+"description_ar": "أجزاء سحّابات",
+"keywords": [
+"parts",
+"zipper"
+]
+},
+{
+"code": "960810",
+"chapter": "96",
+"description_en": "Ball point pens",
+"description_ar": "أقلام حبر جاف",
+"keywords": [
+"ballpoint",
+"pen",
+"قلم"
+]
+},
+{
+"code": "960820",
+"chapter": "96",
+"description_en": "Felt tipped pens, markers",
+"description_ar": "أقلام تلوين وماركر",
+"keywords": [
+"felt",
+"marker",
+"pen",
+"tip"
+]
+},
+{
+"code": "960910",
+"chapter": "96",
+"description_en": "Pencils and crayons",
+"description_ar": "أقلام رصاص وطباشير ملونة",
+"keywords": [
+"crayon",
+"pencil",
+"رصاص",
+"قلم"
+]
+},
+{
+"code": "961100",
+"chapter": "96",
+"description_en": "Date, sealing or numbering stamps",
+"description_ar": "أختام",
+"keywords": [
+"seal",
+"stamp",
+"ختم"
+]
+},
+{
+"code": "961210",
+"chapter": "96",
+"description_en": "Typewriter or similar ribbons",
+"description_ar": "أشرطة حبر",
+"keywords": [
+"ink",
+"ribbon",
+"typewriter"
+]
+},
+{
+"code": "961511",
+"chapter": "96",
+"description_en": "Combs, hair-slides, of hard rubber or plastics",
+"description_ar": "أمشاط ومشابك شعر",
+"keywords": [
+"clip",
+"comb",
+"hair",
+"مشط"
+]
+},
+{
+"code": "961900",
+"chapter": "96",
+"description_en": "Sanitary towels, tampons, diapers, of any material",
+"description_ar": "فوط صحية وحفاضات",
+"keywords": [
+"diaper",
+"napkin",
+"pad",
+"sanitary",
+"حفاضات"
+]
+}
+]
+}

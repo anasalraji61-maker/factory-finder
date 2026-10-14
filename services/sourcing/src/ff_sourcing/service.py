@@ -9,6 +9,7 @@ from .clients.trust import TrustClient, TrustInfo, unknown
 from .domain import search as engine
 from .domain.cache import TTLCache
 from .domain.models import (
+    Facets,
     Listing,
     ListingDetail,
     SearchQuery,
@@ -16,7 +17,7 @@ from .domain.models import (
     SourceStatus,
     Supplier,
 )
-from .domain.text import english_keywords, parse_query
+from .domain.text import english_keywords, parse_query, query_phrase
 
 log = logging.getLogger(__name__)
 
@@ -103,35 +104,41 @@ class SourcingService:
         return SourceStatus(source=adapter.id, status="ok"), items
 
     async def search(
-        self, query: SearchQuery, page: int = 1, page_size: int = 20
+        self,
+        query: SearchQuery,
+        page: int = 1,
+        page_size: int = 20,
+        sort: str = "relevance",
     ) -> SearchResponse:
         terms = parse_query(query.q)
+        phrase = query_phrase(query.q)
         query = query.model_copy(update={"keywords_en": english_keywords(query.q)})
         outcomes = await asyncio.gather(
             *(self._query_adapter(a, query) for a in self.registry.enabled())
         )
-        candidates: list[tuple[Listing, float]] = []
+        candidates: list[tuple[Listing, engine.Match]] = []
         sources: list[SourceStatus] = []
         for status, items in outcomes:
             n = 0
             for item in items:
                 if not engine.passes_filters(item, query):
                     continue
-                rel = engine.relevance(terms, item)
-                if rel is None:
+                m = engine.match(terms, item, phrase)
+                if m is None:
                     continue
-                candidates.append((item.model_copy(deep=True), rel))
+                candidates.append((item.model_copy(), m))  # shallow: _enrich only rebinds .supplier
                 n += 1
             sources.append(status.model_copy(update={"count": n}))
         candidates = engine.dedupe(candidates)
         await self._enrich([c[0] for c in candidates])
-        ranked = engine.rank(candidates)
+        ranked = engine.rank(candidates, sort)
         return SearchResponse(
             items=engine.paginate(ranked, page, page_size),
             total=len(ranked),
             page=page,
             page_size=page_size,
             sources=sources,
+            facets=Facets(**engine.facets(ranked)),
         )
 
     # ---- detail ---------------------------------------------------------

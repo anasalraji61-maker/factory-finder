@@ -71,10 +71,54 @@ paths:
         - {name: mode, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}}
       responses:
         "200": {description: carriers, content: {application/json: {schema: {$ref: "#/components/schemas/CarrierList"}}}}
+  /v1/hs/search:
+    get:
+      summary: HS-code finder (curated, indicative dataset; confirm with a customs broker)
+      description: Arabic/English token search; a numeric q is a code-prefix match. q is required (non-blank).
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 100}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 50, default: 10}}
+        - {name: destination_country, in: query, description: "Country whose duty table feeds typical_duty_percent_hint", schema: {type: string, pattern: "^[A-Z]{2}$", default: IQ}}
+      responses:
+        "200": {description: matches (best first), content: {application/json: {schema: {$ref: "#/components/schemas/HsSearchResponse"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/hs/{code}:
+    get:
+      summary: One HS subheading by 6-digit code (dots and 8/10-digit national codes are truncated to 6)
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string}}
+        - {name: destination_country, in: query, schema: {type: string, pattern: "^[A-Z]{2}$", default: IQ}}
+      responses:
+        "200": {description: item, content: {application/json: {schema: {$ref: "#/components/schemas/HsDetailResponse"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
 components:
   responses:
     Error: {description: error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
   schemas:
+    HsItem:
+      type: object
+      required: [code, chapter, description_en, description_ar, typical_duty_percent_hint, keywords]
+      properties:
+        code: {type: string, pattern: "^[0-9]{6}$"}
+        chapter: {type: string, pattern: "^[0-9]{2}$"}
+        description_en: {type: string}
+        description_ar: {type: string}
+        typical_duty_percent_hint: {type: [number, "null"], description: "From the approximate duty table by chapter; null when the chapter is not tabulated"}
+        keywords: {type: array, items: {type: string}}
+    HsSearchResponse:
+      type: object
+      required: [items, total, destination_country, disclaimer]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/HsItem"}}
+        total: {type: integer}
+        destination_country: {type: string}
+        disclaimer: {type: string}
+    HsDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/HsItem"
+        - type: object
+          properties: {destination_country: {type: string}, disclaimer: {type: string}}
     Health:
       type: object
       properties: {status: {type: string}, service: {type: string}, version: {type: string}}

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 
-_DIACRITICS = re.compile(r"[ؐ-ًؚ-ٰٟۖ-ۭـ]")
+_DIACRITICS = re.compile(r"[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06dc\u06df-\u06e8\u06ea-\u06ed\u0640]")
 _ARABIC_MAP = str.maketrans(
     {
         "أ": "ا",
@@ -16,11 +17,21 @@ _ARABIC_MAP = str.maketrans(
         "ٱ": "ا",
         "ى": "ي",
         "ة": "ه",
+        "ؤ": "و",
+        "ئ": "ي",
+        "گ": "ك",  # Iraqi/Persian letters -> nearest Arabic
+        "چ": "ج",
+        "پ": "ب",
+        "ڤ": "ف",
+        "ک": "ك",
+        "ی": "ي",
+        "ہ": "ه",
         **{chr(0x0660 + i): str(i) for i in range(10)},
         **{chr(0x06F0 + i): str(i) for i in range(10)},
     }
 )
 _NON_WORD = re.compile(r"[^\w]+", re.UNICODE)
+_CJK = re.compile(r"([\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff])")
 
 STOPWORDS = {
     "the",
@@ -53,28 +64,43 @@ STOPWORDS = {
 
 
 def normalize(text: str) -> str:
-    """Lowercase, strip diacritics/tatweel, unify alef/yaa/taa-marbuta, ASCII digits."""
-    text = unicodedata.normalize("NFKC", text or "").lower()
+    """Lowercase, strip diacritics/tatweel/accents, unify alef/yaa/taa-marbuta, ASCII digits."""
+    text = unicodedata.normalize("NFKD", text or "").lower()
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     text = _DIACRITICS.sub("", text).translate(_ARABIC_MAP)
+    text = _CJK.sub(r" \1 ", text)  # each Chinese character is its own token
     return _NON_WORD.sub(" ", text).strip()
 
 
+_AR_PREFIXES = ("وال", "بال", "فال", "كال", "لل", "ال")
+
+
 def stem(token: str) -> str:
-    """Strip Arabic definite article (repeatedly) and English plural 's'."""
-    while token.startswith("ال") and len(token) > 4:
-        token = token[2:]
+    """Strip Arabic definite article/clitic prefixes and English plural endings."""
+    while len(token) > 4:
+        for p in _AR_PREFIXES:
+            if token.startswith(p) and len(token) - len(p) >= 3:
+                token = token[len(p) :]
+                break
+        else:
+            break
     if token.isascii() and len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
-        token = token[:-1]
+        if token.endswith("ies") and len(token) > 4:
+            return token[:-3] + "y"
+        if token.endswith(("xes", "ches", "shes", "sses")) and len(token) > 4:
+            return token[:-2]
+        return token[:-1]
     return token
 
 
-def tokens(text: str) -> list[str]:
-    return [stem(t) for t in normalize(text).split() if t]
+@lru_cache(maxsize=16384)
+def tokens(text: str) -> tuple[str, ...]:
+    return tuple(stem(t) for t in normalize(text).split() if t)
 
 
 # Equivalence groups; first item is the canonical English keyword for remote APIs.
 _SYNONYM_GROUPS: list[list[str]] = [
-    ["production line", "خط انتاج", "خطوط انتاج", "خط تصنيع", "مصنع جاهز", "assembly line"],
+    ["production line", "خط انتاج", "خطوط انتاج", "خط تصنيع", "مصنع جاهز", "assembly line", "خط انتاج", "生产线", "流水线"],
     [
         "machine",
         "machinery",
@@ -88,6 +114,12 @@ _SYNONYM_GROUPS: list[list[str]] = [
         "معدات",
         "آلة",
         "الة",
+        "مكائن",
+        "ماكينه",
+        "مكاين",
+        "机器",
+        "机械",
+        "设备",
     ],
     [
         "pastry",
@@ -101,39 +133,39 @@ _SYNONYM_GROUPS: list[list[str]] = [
         "خبز",
         "كرواسون",
     ],
-    ["biscuit", "cookie", "cracker", "بسكويت", "كوكيز", "بسكويت"],
-    ["bottle", "bottling", "قنينه", "قناني", "زجاجه", "عبوه", "تعبئه"],
-    ["water", "ماء", "مياه", "ميه"],
+    ["biscuit", "cookie", "cracker", "بسكويت", "كوكيز", "بسكوت", "饼干"],
+    ["bottle", "bottling", "قنينه", "قناني", "قنينات", "عبوه", "عبوات", "تعبئه", "瓶", "瓶子"],
+    ["water", "ماء", "مياه", "ميه", "ماي", "水"],
     ["juice", "عصير", "عصائر"],
-    ["injection molding", "injection moulding", "حقن بلاستيك", "ماكنه حقن"],
+    ["injection molding", "injection moulding", "حقن بلاستيك", "ماكنه حقن", "注塑机", "注塑"],
     ["extrusion", "extruder", "بثق", "اكسترودر"],
-    ["laser cutting", "laser cutter", "قص ليزر", "ليزر"],
+    ["laser cutting", "laser cutter", "قص ليزر", "ليزر", "激光切割", "激光"],
     ["concrete block", "block making", "بلوك", "طابوق", "بلوك خرساني"],
     ["flour mill", "mill", "مطحنه", "طحين", "طحن"],
     ["oil press", "edible oil", "عصر زيت", "معصره", "زيوت"],
     ["tissue paper", "toilet paper", "ورق التواليت", "ورق تواليت", "محارم", "ورق صحي"],
     ["carton", "corrugated", "cardboard", "كرتون", "كارتون", "مموج"],
-    ["used", "second hand", "secondhand", "مستعمل", "مستعمله", "مستخدم"],
+    ["used", "second hand", "secondhand", "مستعمل", "مستعمله", "مستخدم", "مستخدمه", "二手"],
     ["granule", "granules", "resin", "chips", "حبيبات", "حبيبه", "بيليت", "راتنج"],
     ["polypropylene", "pp", "بولي بروبيلين", "بولي بروبلين", "بولبروبلين"],
     ["polyethylene", "pe", "hdpe", "ldpe", "بولي ايثيلين", "بولي اثيلين", "بولي ايثلين"],
     ["pet", "بولي ايثيلين تيريفثالات"],
-    ["steel", "حديد", "صلب", "فولاذ", "ستيل"],
+    ["steel", "حديد", "صلب", "فولاذ", "ستيل", "钢", "钢材"],
     ["rebar", "reinforcing bar", "حديد تسليح", "سيخ"],
-    ["aluminium", "aluminum", "المنيوم", "المونيوم", "المنيم"],
-    ["copper", "نحاس"],
+    ["aluminium", "aluminum", "المنيوم", "المونيوم", "المنيم", "المينيوم", "铝"],
+    ["copper", "نحاس", "铜"],
     ["yarn", "thread", "خيوط", "خيط", "غزل"],
-    ["cotton", "قطن", "قطني"],
+    ["cotton", "قطن", "قطني", "棉", "棉花"],
     ["polyester", "بوليستر"],
-    ["fabric", "textile", "cloth", "قماش", "اقمشه", "نسيج", "منسوجات"],
-    ["paper", "ورق"],
-    ["wood", "plywood", "timber", "panel", "خشب", "اخشاب", "الواح خشب", "خشب رقائقي"],
-    ["chair", "كرسي", "كراسي", "مقعد", "مقاعد"],
-    ["table", "طاوله", "طاولات", "ميز"],
-    ["furniture", "اثاث", "فرنيتشر"],
-    ["office", "مكتب", "مكتبي"],
-    ["led", "ليد", "لد"],
-    ["light", "lighting", "lamp", "اضاءه", "انارة", "انارت", "كشاف", "مصباح", "مصابيح", "لمبه"],
+    ["fabric", "textile", "cloth", "قماش", "اقمشه", "نسيج", "منسوجات", "布", "面料", "纺织"],
+    ["paper", "ورق", "اوراق", "纸"],
+    ["wood", "plywood", "timber", "panel", "خشب", "اخشاب", "الواح خشب", "خشب رقائقي", "木", "木材", "胶合板", "خشب", "ابلكاش", "بلايوود"],
+    ["chair", "كرسي", "كراسي", "كرسيه", "كراسيه", "مقعد", "مقاعد", "椅子", "椅"],
+    ["table", "طاوله", "طاولات", "طاولة", "ميز", "桌子", "桌"],
+    ["furniture", "اثاث", "فرنيتشر", "家具"],
+    ["office", "مكتب", "مكتبي", "办公"],
+    ["led", "ليد", "لد", "发光二极管"],
+    ["light", "lighting", "lamp", "اضاءه", "انارة", "انارت", "كشاف", "مصباح", "مصابيح", "لمبه", "لمبات", "灯", "灯具", "照明"],
     [
         "solar panel",
         "photovoltaic",
@@ -143,12 +175,15 @@ _SYNONYM_GROUPS: list[list[str]] = [
         "الواح شمسية",
         "خلايا شمسيه",
         "الواح طاقه شمسيه",
+        "光伏板",
+        "太阳能板",
+        "光伏",
     ],
-    ["solar", "شمسي", "شمسيه", "طاقه شمسيه"],
+    ["solar", "شمسي", "شمسيه", "طاقه شمسيه", "太阳能"],
     ["inverter", "محول", "انفرتر", "انفيرتر", "عاكس"],
     ["kitchenware", "cookware", "kitchen", "مطبخ", "اواني", "اواني طبخ", "ادوات مطبخ", "قدور"],
-    ["tire", "tyre", "اطار", "اطارات", "تاير", "تايرات", "كفرات", "كفر"],
-    ["truck", "شاحنه", "شاحنات", "لوري", "حمل"],
+    ["tire", "tyre", "اطار", "اطارات", "تاير", "تايرات", "كفرات", "كفر", "كفرات", "轮胎"],
+    ["truck", "شاحنه", "شاحنات", "لوري", "حمل", "卡车", "货车"],
     ["abaya", "عباءه", "عباءة", "عبايه", "عبايات", "عباية"],
     ["modest", "hijab", "محتشم", "محتشمه", "حجاب", "ازياء محتشمه"],
     ["dress", "فستان", "فساتين", "ثوب"],
@@ -156,11 +191,37 @@ _SYNONYM_GROUPS: list[list[str]] = [
     ["drill", "مثقاب", "دريل", "دريلات"],
     ["auto part", "car part", "spare part", "قطع غيار", "قطع سيارات", "غيار سيارات"],
     ["brake", "فرامل", "فحمات", "بريك"],
-    ["pump", "مضخه", "مضخات", "مضخة", "طلمبه", "بمب", "مضخه ماء"],
+    ["pump", "مضخه", "مضخات", "مضخة", "طلمبه", "طلمبات", "بمب", "مضخه ماء", "泵", "水泵"],
     ["submersible", "غاطس", "غاطسه"],
-    ["air conditioner", "air conditioning", "ac", "split", "مكيف", "مكيفات", "سبلت", "تكييف"],
-    ["cnc", "machining center", "سي ان سي", "مركز تشغيل", "خراطه"],
-    ["printing", "offset", "طباعه", "اوفست"],
+    ["air conditioner", "air conditioning", "ac", "split", "مكيف", "مكيفات", "سبلت", "تكييف", "空调"],
+    ["cnc", "machining center", "سي ان سي", "مركز تشغيل", "خراطه", "مخرطه", "数控", "加工中心"],
+    ["printing", "offset", "طباعه", "اوفست", "印刷"],
+    ["plastic", "plastics", "بلاستيك", "بلاستك", "بلاستيكي", "塑料"],
+    ["generator", "genset", "مولد", "مولده", "مولدات", "جنريتر", "جنريتر", "发电机"],
+    ["battery", "batteries", "بطاريه", "بطاريات", "باطريه", "بطارية", "电池"],
+    ["tank", "خزان", "خزانات", "تانكي", "تنكي", "水箱"],
+    ["tile", "بلاط", "كاشي", "瓷砖"],
+    ["ceramic", "سيراميك", "陶瓷"],
+    ["porcelain", "بورسلان", "بورسلين"],
+    ["glass", "زجاج", "زجاجي", "زجاجيه", "قزاز", "玻璃"],
+    ["sewing", "خياطه", "خياط", "sewing machine", "ماكينه خياطه", "缝纫", "缝纫机"],
+    ["printer", "3d printer", "طابعه", "طابعات", "打印机"],
+    ["cable", "wire", "cord", "كابل", "كيبل", "سلك", "اسلاك", "电缆"],
+    ["film", "فيلم", "نايلون", "薄膜"],
+    ["leather", "جلد", "جلود", "جلديه", "皮革"],
+    ["pipe", "tube", "انبوب", "انابيب", "ماسوره", "مواسير", "بايب", "管"],
+    ["packaging", "packing", "wrapping", "تغليف", "تعبئه وتغليف", "تغليف", "包装"],
+    ["label", "labeling", "labelling", "sticker", "ملصق", "ملصقات", "ستيكر", "标签"],
+    ["brick", "bricks", "طوب", "اجر", "طابوق طيني", "砖"],
+    ["fertilizer", "fertiliser", "سماد", "اسمده", "سمد", "肥料"],
+    ["toy", "toys", "لعبه", "العاب", "دميه", "دمي", "玩具"],
+    ["camera", "cctv", "كاميرا", "كاميرات", "مراقبه", "监控", "摄像头"],
+    ["charger", "charging", "شاحن", "شواحن", "充电器"],
+    ["sprayer", "رشاش", "مرشه", "مرش", "喷雾器"],
+    ["cigarette", "cigarettes", "سجائر", "سجاير", "جكاير", "جكاره", "سكائر", "香烟"],
+    ["flour", "wheat", "دقيق", "面粉"],
+    ["air cooler", "cooler", "مبرد", "مبرد هواء", "كولر", "冷风机"],
+    ["food", "غذاء", "اغذيه", "طعام", "食品"],
 ]
 
 
@@ -168,6 +229,7 @@ _SYNONYM_GROUPS: list[list[str]] = [
 class QueryTerm:
     original: str
     alternatives: tuple[tuple[str, ...], ...]  # each alternative is a stemmed token sequence
+    fuzzy: str | None = None  # literal (unknown-word) token that may match doc tokens with typos
 
 
 def _phrase_tokens(p: str) -> tuple[str, ...]:
@@ -191,8 +253,82 @@ def _phrase_index() -> tuple[dict[tuple[str, ...], int], list[list[tuple[str, ..
     return idx, groups, longest
 
 
+@lru_cache(maxsize=1)
+def _single_vocab() -> tuple[tuple[str, int], ...]:
+    """Single-token synonym keys eligible as typo-correction targets (len >= 4, alphabetic)."""
+    idx, _, _ = _phrase_index()
+    return tuple((t[0], gi) for t, gi in idx.items() if len(t) == 1 and _fuzzable(t[0]))
+
+
+# ---- typo tolerance --------------------------------------------------------
+def _fuzzable(tok: str) -> bool:
+    return len(tok) >= 4 and tok.isalpha()
+
+
+def _osa(a: str, b: str, limit: int) -> int:
+    """Optimal-string-alignment distance (insert/delete/substitute/transpose); > limit -> limit+1."""
+    la, lb = len(a), len(b)
+    if abs(la - lb) > limit:
+        return limit + 1
+    prev2: list[int] = []
+    prev = list(range(lb + 1))
+    for i in range(1, la + 1):
+        cur = [i] + [0] * lb
+        best = cur[0]
+        for j in range(1, lb + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            v = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                v = min(v, prev2[j - 2] + 1)
+            cur[j] = v
+            best = min(best, v)
+        if best > limit:
+            return limit + 1
+        prev2, prev = prev, cur
+    return prev[lb]
+
+
+def typo_distance(q: str, d: str) -> int | None:
+    """Edit distance if ``d`` is an acceptable typo of ``q``, else None.
+
+    Guards against matching unrelated words: both tokens >= 4 alphabetic chars, same first letter,
+    distance 1 (2 only when both are >= 8 chars), and for 4-letter words no same-length
+    substitution (tile/tire, pipe/pine) - only transposition or a missing/extra letter.
+    """
+    if q == d:
+        return 0
+    if not (_fuzzable(q) and _fuzzable(d)) or q[0] != d[0]:
+        return None
+    short = min(len(q), len(d))
+    limit = 2 if short >= 8 else 1
+    if abs(len(q) - len(d)) > limit:
+        return None
+    dist = _osa(q, d, limit)
+    if dist > limit:
+        return None
+    if short == 4 and len(q) == len(d) and dist == 1 and sorted(q) != sorted(d):
+        return None
+    return dist
+
+
+def _correct(token: str) -> int | None:
+    """Group index of the unique closest synonym keyword within typo distance, else None."""
+    if not _fuzzable(token):
+        return None
+    best: dict[int, int] = {}
+    for key, gi in _single_vocab():
+        d = typo_distance(token, key)
+        if d is not None and d < best.get(gi, 99):
+            best[gi] = d
+    if not best:
+        return None
+    m = min(best.values())
+    winners = [gi for gi, d in best.items() if d == m]
+    return winners[0] if len(winners) == 1 else None
+
+
 def parse_query(q: str) -> list[QueryTerm]:
-    """Greedy longest-phrase synonym expansion; unknown tokens stay literal."""
+    """Greedy longest-phrase synonym expansion; typo-corrected where unambiguous."""
     idx, groups, longest = _phrase_index()
     toks = [t for t in tokens(q) if t not in STOPWORDS]
     out: list[QueryTerm] = []
@@ -209,9 +345,19 @@ def parse_query(q: str) -> list[QueryTerm]:
                 i += n
                 break
         else:
-            out.append(QueryTerm(toks[i], ((toks[i],),)))
+            tok = toks[i]
+            gi = _correct(tok)
+            if gi is not None:  # typo of a known term: expand its group (keep the literal too)
+                out.append(QueryTerm(tok, (*groups[gi], (tok,))))
+            else:
+                out.append(QueryTerm(tok, ((tok,),), fuzzy=tok if _fuzzable(tok) else None))
             i += 1
     return out
+
+
+def query_phrase(q: str) -> tuple[str, ...]:
+    """Stemmed query tokens (stopwords dropped) used for the exact-phrase title boost."""
+    return tuple(t for t in tokens(q) if t not in STOPWORDS)
 
 
 def english_keywords(q: str) -> list[str]:
@@ -224,10 +370,16 @@ def english_keywords(q: str) -> list[str]:
     return kws
 
 
-def contains_phrase(doc_tokens: list[str], phrase: tuple[str, ...]) -> bool:
+def contains_phrase(doc_tokens: Sequence[str], phrase: tuple[str, ...]) -> bool:
     n = len(phrase)
     if n == 0:
         return False
     if n == 1:
         return phrase[0] in doc_tokens
     return any(tuple(doc_tokens[i : i + n]) == phrase for i in range(len(doc_tokens) - n + 1))
+
+
+def fuzzy_in(doc_tokens: Sequence[str], token: str) -> bool:
+    """True when some doc token is an acceptable typo of ``token`` (never for exact hits)."""
+    variants = (token, token + "s")  # stem() may have eaten a typo'd word's final "s"
+    return any(typo_distance(v, d) is not None for d in doc_tokens for v in variants)

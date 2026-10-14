@@ -7,7 +7,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
 @pytest.mark.parametrize(
     ("path", "upstream"),
     [
-        ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"),
+        ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"), ("/v1/hs/851713", "logistics"),
         ("/v1/countries", "geo"), ("/v1/trust/suppliers/sup_1", "trust"), ("/v1/trust/suppliers:batch", "trust"),
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/assistant/query", "assistant"),
@@ -22,7 +22,7 @@ def test_resolve(path, upstream):
     ("method", "path", "public"),
     [
         ("GET", "/health", True), ("POST", "/v1/auth/login", True), ("GET", "/v1/search", True),
-        ("GET", "/v1/fx/rates", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
+        ("GET", "/v1/fx/rates", True), ("GET", "/v1/hs/search", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
         ("POST", "/v1/search", False), ("GET", "/v1/trust/suppliers/s", False), ("GET", "/v1/requests", False),
         ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False),
     ],

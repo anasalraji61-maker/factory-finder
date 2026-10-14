@@ -105,12 +105,27 @@ class SourceStatus(BaseModel):
     warning: str | None = None  # e.g. real source failed and mock results were substituted
 
 
+class FacetBucket(BaseModel):
+    value: str
+    count: int
+
+
+class Facets(BaseModel):
+    """Counts over the full matched set (all pages), each sorted by count desc then value."""
+
+    kind: list[FacetBucket] = []
+    condition: list[FacetBucket] = []
+    origin_country: list[FacetBucket] = []
+    category: list[FacetBucket] = []
+
+
 class SearchResponse(BaseModel):
     items: list[Listing]
     total: int
     page: int
     page_size: int
     sources: list[SourceStatus]
+    facets: Facets = Facets()
 
 
 class CategoryNode(BaseModel):

@@ -3,7 +3,7 @@
 PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/search": "sourcing", "/v1/listings": "sourcing", "/v1/suppliers": "sourcing",
     "/v1/categories": "sourcing", "/v1/sources": "sourcing",
-    "/v1/quotes": "logistics", "/v1/fx": "logistics", "/v1/carriers": "logistics",
+    "/v1/quotes": "logistics", "/v1/fx": "logistics", "/v1/carriers": "logistics", "/v1/hs": "logistics",
     "/v1/countries": "geo", "/v1/cities": "geo", "/v1/hubs": "geo", "/v1/distance": "geo",
     "/v1/trust": "trust",
     "/v1/requests": "rfq", "/v1/offers": "rfq", "/v1/deals": "rfq",
@@ -15,7 +15,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
 
 PUBLIC_GET_PREFIXES = (
     "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories",
-    "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates",
+    "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs",
 )  # fmt: skip
 PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost")}
 

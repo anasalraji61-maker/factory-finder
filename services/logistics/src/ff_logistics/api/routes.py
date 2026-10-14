@@ -5,6 +5,8 @@ import httpx
 from fastapi import APIRouter, Depends, Header, Query, Request
 
 from ..adapters.carriers import list_carriers
+from ..domain import hs as hs_domain
+from ..domain.duties import load_json
 from ..domain.engine import Engine
 from ..domain.money import money
 from ..errors import ApiError
@@ -48,3 +50,28 @@ async def carriers(origin_country: str | None = None, destination_country: str |
                    mode: str | None = None):
     items = list_carriers(origin_country, destination_country, mode)
     return {"items": items, "total": len(items)}
+
+
+_HS_DISCLAIMER = "indicative, confirm with a customs broker"
+
+
+@router.get("/hs/search")
+async def hs_search(q: Annotated[str, Query(max_length=100)] = "", limit: Annotated[int, Query(ge=1, le=50)] = 10,
+                    destination_country: Annotated[str, Query(pattern=r"^[A-Z]{2}$")] = "IQ"):
+    if not q.strip():
+        raise ApiError("validation_error", "q must not be empty", 422, {"field": "q"})
+    duties = load_json("duties.json")
+    items = [hs_domain.to_item(e, duties, destination_country) for e in hs_domain.search(q, limit)]
+    return {"items": items, "total": len(items), "destination_country": destination_country,
+            "disclaimer": _HS_DISCLAIMER}
+
+
+@router.get("/hs/{code}")
+async def hs_get(code: str, destination_country: Annotated[str, Query(pattern=r"^[A-Z]{2}$")] = "IQ"):
+    if hs_domain.normalize_code(code) is None:
+        raise ApiError("validation_error", "code must be 6 to 10 digits (dots allowed)", 422, {"field": "code"})
+    entry = hs_domain.get(code)
+    if entry is None:
+        raise ApiError("not_found", f"HS code {code} not in the curated dataset", 404)
+    return {**hs_domain.to_item(entry, load_json("duties.json"), destination_country),
+            "destination_country": destination_country, "disclaimer": _HS_DISCLAIMER}

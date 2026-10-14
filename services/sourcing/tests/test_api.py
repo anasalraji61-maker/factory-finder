@@ -7,7 +7,7 @@ async def test_search_shape_and_money_is_string(client):
     r = await client.get("/v1/search", params={"q": "air conditioner", "page_size": 5})
     assert r.status_code == 200
     body = r.json()
-    assert set(body) == {"items", "total", "page", "page_size", "sources"}
+    assert set(body) == {"items", "total", "page", "page_size", "sources", "facets"}
     item = body["items"][0]
     assert (
         isinstance(item["price"]["min"]["amount"], str)

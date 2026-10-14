@@ -59,6 +59,7 @@ paths:
         - {name: max_price, in: query, description: Unit price cap in USD, schema: {type: number, minimum: 0}}
         - {name: moq_max, in: query, schema: {type: integer, minimum: 0}}
         - {name: verified_only, in: query, schema: {type: boolean, default: false}}
+        - {name: sort, in: query, description: "Result order; ties always break by relevance score then id", schema: {type: string, enum: [relevance, price_asc, price_desc, trust, moq], default: relevance}}
         - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
@@ -72,6 +73,14 @@ paths:
                   - type: object
                     required: [sources]
                     properties:
+                      facets:
+                        type: object
+                        description: Counts over the full matched set (all pages), each list ordered by count desc then value
+                        properties:
+                          kind: &facet {type: array, items: {type: object, required: [value, count], properties: {value: {type: string}, count: {type: integer}}}}
+                          condition: *facet
+                          origin_country: *facet
+                          category: *facet
                       items:
                         type: array
                         items: {$ref: ../schemas/common.schema.json#/$defs/Listing}

@@ -24,9 +24,18 @@ cd services/sourcing
 - `clients/trust.py`: trust service client (800 ms timeout, failure -> band `unknown`) + mock.
 - `service.py`: concurrent fan-out with per-adapter timeout and failure isolation.
 
-## Ranking
-`0.55 * relevance + 0.25 * trust band + 0.20 * price fit (percentile within category)`.
-Query terms are AND-ed; each term may match any of its synonyms (title hit = 3, category/supplier = 1).
+## Search quality
+- Query pipeline (`domain/text.py`): NFKD + accent/diacritic/tatweel strip, alef/ya/ta-marbuta (and Persian
+  letter) unification, Arabic clitic/`ال` stripping, English plural stripping, one token per Chinese character.
+  Greedy longest-phrase expansion through a curated Arabic (incl. Iraqi dialect) / English / Chinese synonym table.
+- Typo tolerance: unknown words >= 4 letters are corrected to a unique known term, or fuzzy-matched against
+  document tokens (edit distance 1, 2 when both >= 8 letters; same first letter; no 4-letter substitutions
+  such as tile/tire; never digits).
+- Query terms are AND-ed. Per-term field weights: title 1.0 > category 0.6 > description 0.35 > supplier/city 0.2
+  (typo hit x0.8). Score = `0.62 relevance + 0.10 exact title phrase + 0.12 trust band + 0.03 verified + 0.13 price fit`;
+  ties break by id.
+- `sort` = `relevance` (default) | `price_asc` | `price_desc` | `trust` | `moq`. Response `facets`
+  (kind, condition, origin_country, category counts) cover the whole matched set, not just the page.
 
 ## Env (prefix `FF_SOURCING_`)
 `ENABLED_SOURCES` (default `mock`; e.g. `mock,alibaba`), `ADAPTER_TIMEOUT_S` (3), `CACHE_TTL_S` (60),

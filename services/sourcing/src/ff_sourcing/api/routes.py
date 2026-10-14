@@ -36,6 +36,7 @@ async def search(
     max_price: Decimal | None = Query(None, ge=0),
     moq_max: int | None = Query(None, ge=0),
     verified_only: bool = False,
+    sort: Literal["relevance", "price_asc", "price_desc", "trust", "moq"] = "relevance",
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> SearchResponse:
@@ -52,7 +53,7 @@ async def search(
         moq_max=moq_max,
         verified_only=verified_only,
     )
-    return await svc(request).search(query, page, page_size)
+    return await svc(request).search(query, page, page_size, sort)
 
 
 @router.get("/listings/{listing_id}", response_model=ListingDetail)

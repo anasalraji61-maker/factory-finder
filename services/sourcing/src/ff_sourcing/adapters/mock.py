@@ -106,7 +106,8 @@ class MockAdapter(SourceAdapter):
             out = [
                 i for i in out if i.supplier.location.country_code == query.origin_country.upper()
             ]
-        return [i.model_copy(deep=True) for i in out]
+        # shared, read-only: the service shallow-copies the items it keeps before enriching them
+        return list(out)
 
     async def get_listing(self, listing_id: str) -> ListingDetail | None:
         item = self._by_id.get(listing_id)

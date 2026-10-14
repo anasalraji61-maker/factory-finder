@@ -2,7 +2,7 @@
 
 Landed-cost engine: origin inland -> main leg (sea LCL/FCL, air, rail, road) -> destination hub -> duties/VAT -> destination inland, with FX, carriers directory and warnings. Money is `Decimal`; all rates are an approximate table, verify with a customs broker.
 
-Endpoints: `GET /health`, `POST /v1/quotes/landed-cost`, `GET /v1/fx/rates`, `POST /v1/fx/convert`, `GET /v1/carriers`. Contract: `contracts/openapi/logistics.yaml`.
+Endpoints: `GET /health`, `POST /v1/quotes/landed-cost`, `GET /v1/fx/rates`, `POST /v1/fx/convert`, `GET /v1/carriers`, `GET /v1/hs/search?q=&limit=`, `GET /v1/hs/{code}` (HS finder: curated ~700 6-digit subheadings in `data/hs_codes.json`, indicative only, confirm with a customs broker; optional `destination_country` selects the duty table for `typical_duty_percent_hint`). Contract: `contracts/openapi/logistics.yaml`.
 
 Layout: `domain/` pure engine (cargo, incoterms, duties, warnings, engine), `clients/geo.py` (Protocol + httpx + MockGeo), `adapters/fx.py` (mock + ECB/Frankfurter with cache and fallback), `data/*.json` (lanes, handling, duties, routes, carriers).
 
