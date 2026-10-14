@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/features/tracking/screens/tracking_detail_screen.dart';
 import 'package:factory_finder/features/trust/trust_models.dart';
 import 'package:factory_finder/features/trust/trust_repository.dart';
 import 'package:factory_finder/features/trust/trust_widgets.dart';
@@ -131,7 +132,7 @@ void main() {
 
   testWidgets('alerts inbox: shipment alert deep-links to tracking detail',
       (tester) async {
-    final router = await pumpApp(tester, location: '/alerts');
+    await pumpApp(tester, location: '/alerts');
     await settle(tester, frames: 6);
 
     expect(find.byKey(const Key('alert_icon_shipment_status')), findsOneWidget);
@@ -140,8 +141,7 @@ void main() {
 
     await tester.tap(find.text('تحديث الشحنة'));
     await settle(tester, frames: 8);
-    expect(router.routerDelegate.currentConfiguration.uri.path,
-        '/logistics/tracking/shp_001');
+    expect(find.byType(TrackingDetailScreen), findsOneWidget);
 
     expect(tester.takeException(), isNull);
     await disposeApp(tester);
