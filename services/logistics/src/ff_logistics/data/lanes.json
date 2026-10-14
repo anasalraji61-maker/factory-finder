@@ -65,7 +65,12 @@
   "RS": "EUR",
   "UZ": "RUS",
   "RO": "EUR",
-  "CZ": "EUR"
+  "CZ": "EUR",
+  "AZ": "RUS",
+  "GE": "RUS",
+  "GH": "AFR",
+  "SN": "AFR",
+  "PE": "LAM"
  },
  "continents": {
   "CN": "EA",
@@ -133,7 +138,12 @@
   "RS": "EA",
   "UZ": "EA",
   "RO": "EA",
-  "CZ": "EA"
+  "CZ": "EA",
+  "AZ": "EA",
+  "GE": "EA",
+  "GH": "EA",
+  "SN": "EA",
+  "PE": "SA"
  },
  "lanes": {
   "EAS>GULF": {

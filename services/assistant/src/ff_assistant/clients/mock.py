@@ -7,7 +7,16 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from ff_assistant.clients.base import ClientError, Clients, ReferenceCheck, SearchResult
+from ff_assistant.clients.base import (
+    ClientError,
+    Clients,
+    DealInfo,
+    HsEntry,
+    HsResult,
+    ReferenceCheck,
+    SearchResult,
+    ShipmentInfo,
+)
 from ff_assistant.domain.models import LandedCostQuote, Listing, TrustScore, band_for_score
 
 _NOW = datetime(2026, 10, 13, tzinfo=UTC)
@@ -66,6 +75,21 @@ class MockSourcingClient:
         return SearchResult(items=out, total=len(out))
 
 
+    async def get_listing(self, listing_id: str) -> Listing | None:
+        self.calls.append({"get_listing": listing_id})
+        if self.fail:
+            raise ClientError("sourcing")
+        return next((_listing(r) for r in _CATALOG if r[0] == listing_id), None)
+
+
+_HS = [
+    ("392690", "39", "Other articles of plastics", "مصنوعات أخرى من البلاستيك", 10.0, "plastic plastics article chair كرسي بلاستيك"),
+    ("940180", "94", "Plastic and other seats", "مقاعد من البلاستيك وغيرها", 20.0, "chair chairs seat seats plastic كرسي كراسي مقعد"),
+    ("847130", "84", "Portable automatic data processing machines", "حواسيب محمولة", 5.0, "laptop computer حاسوب"),
+    ("390210", "39", "Polypropylene in primary forms", "بولي بروبلين بأشكال أولية", 5.0, "polypropylene plastic granules حبيبات بلاستيك"),
+]
+
+
 class MockLogisticsClient:
     def __init__(self, fail: bool = False) -> None:
         self.fail = fail
@@ -102,6 +126,26 @@ class MockLogisticsClient:
         })
 
 
+    def _hs_entry(self, row: tuple) -> HsEntry:
+        return HsEntry(code=row[0], chapter=row[1], description_en=row[2], description_ar=row[3], typical_duty_percent_hint=row[4])
+
+    async def hs_search(self, q: str, destination_country: str = "IQ", limit: int = 5) -> HsResult:
+        self.calls.append({"hs_search": q})
+        if self.fail:
+            raise ClientError("logistics")
+        words = set(q.lower().split())
+        rows = [r for r in _HS if words & set(r[5].lower().split()) or any(r[0].startswith(w) for w in words)]
+        return HsResult(items=[self._hs_entry(r) for r in rows[:limit]], total=len(rows), destination_country=destination_country,
+                        disclaimer="Indicative only; confirm with a customs broker.")
+
+    async def hs_detail(self, code: str, destination_country: str = "IQ") -> HsEntry | None:
+        self.calls.append({"hs_detail": code})
+        if self.fail:
+            raise ClientError("logistics")
+        row = next((r for r in _HS if r[0] == code[:6]), None)
+        return self._hs_entry(row) if row else None
+
+
 class MockTrustClient:
     def __init__(self, fail: bool = False) -> None:
         self.fail = fail
@@ -135,9 +179,30 @@ def iso6346_valid(code: str) -> bool:
     return total % 11 % 10 == int(code[10])
 
 
+def _demo_shipment() -> ShipmentInfo:
+    return ShipmentInfo(
+        id="shp_mock_001", reference="CSQU3054383", reference_type="container", mode="sea", status="in_transit",
+        progress_percent=55, eta="2026-11-20T00:00:00Z", carrier={"name": "Mock Line", "name_ar": "خط وهمي"},
+        origin={"country_code": "CN", "city": "Ningbo"}, destination={"country_code": "IQ", "city": "Basra"},
+        events=[{"status": "departed", "description": "Departed Ningbo", "description_ar": "غادرت نينغبو",
+                 "timestamp": "2026-10-10T08:00:00Z", "location": {"name": "Ningbo", "name_ar": "نينغبو"}}],
+        last_refreshed_at="2026-10-13T00:00:00Z",
+    )
+
+
 class MockTrackingClient:
-    def __init__(self, fail: bool = False) -> None:
+    """``shipments`` maps (user_id, normalized reference) -> shipment; default: one demo shipment owned by ``u_demo``."""
+
+    def __init__(self, fail: bool = False, shipments: dict[tuple[str, str], ShipmentInfo] | None = None) -> None:
         self.fail = fail
+        self.shipments = shipments if shipments is not None else {("u_demo", "CSQU3054383"): _demo_shipment()}
+        self.calls: list[tuple[str, str]] = []
+
+    async def find_shipment(self, user_id: str, reference: str) -> ShipmentInfo | None:
+        self.calls.append((user_id, reference))
+        if self.fail:
+            raise ClientError("tracking")
+        return self.shipments.get((user_id, reference.replace(" ", "").upper()))
 
     async def validate(self, reference_type: str, reference: str) -> ReferenceCheck:
         if self.fail:
@@ -147,5 +212,26 @@ class MockTrackingClient:
                               reason=None if ok else "check digit mismatch")
 
 
+class MockDealsClient:
+    """Deals visible only to their parties (mirrors rfq's 404-for-non-parties)."""
+
+    def __init__(self, fail: bool = False, deals: dict[str, DealInfo] | None = None) -> None:
+        self.fail = fail
+        self.deals = deals if deals is not None else {"deal_mock_001": DealInfo(
+            id="deal_mock_001", buyer_id="u_demo", supplier_user_id="u_supplier", status="pending_payment", quantity="500",
+            unit_price={"amount": "3.8", "currency": "USD"}, subtotal={"amount": "1900.00", "currency": "USD"},
+            commission={"rate": "0.03", "amount": {"amount": "57.00", "currency": "USD"}, "is_estimate": False},
+            payment={"commission": "open", "deal_payment": None}, updated_at="2026-10-13T00:00:00Z")}
+        self.calls: list[tuple[str, str]] = []
+
+    async def get_deal(self, user_id: str, deal_id: str) -> DealInfo | None:
+        self.calls.append((user_id, deal_id))
+        if self.fail:
+            raise ClientError("deals")
+        d = self.deals.get(deal_id)
+        return d if d and user_id in (d.buyer_id, d.supplier_user_id) else None
+
+
 def build_mock_clients() -> Clients:
-    return Clients(sourcing=MockSourcingClient(), logistics=MockLogisticsClient(), trust=MockTrustClient(), tracking=MockTrackingClient())
+    return Clients(sourcing=MockSourcingClient(), logistics=MockLogisticsClient(), trust=MockTrustClient(),
+                   tracking=MockTrackingClient(), deals=MockDealsClient())

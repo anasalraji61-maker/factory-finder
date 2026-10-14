@@ -558,5 +558,13 @@
 "currency": "PEN",
 "region": "South America",
 "road_factor": 1.4
+},
+{
+"iso2": "TZ",
+"name_en": "Tanzania",
+"name_ar": "تنزانيا",
+"currency": "TZS",
+"region": "Africa",
+"road_factor": 1.4
 }
 ]

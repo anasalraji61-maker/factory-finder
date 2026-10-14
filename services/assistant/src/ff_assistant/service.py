@@ -8,8 +8,10 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ff_assistant import compose
+from ff_assistant import guard as guardrails
 from ff_assistant.clients.base import ClientError, Clients
 from ff_assistant.config import Settings
+from ff_assistant.domain.cards import Card
 from ff_assistant.domain.gazetteer import Gazetteer
 from ff_assistant.domain.models import (
     LandedCostQuote,
@@ -20,7 +22,9 @@ from ff_assistant.domain.models import (
 )
 from ff_assistant.domain.parser import parse
 from ff_assistant.domain.query import Intent, ParsedQuery
+from ff_assistant.guard import Sanitizer
 from ff_assistant.llm import LlmClient, extract_query, rewrite_answer
+from ff_assistant.tools import Tools
 
 
 class AssistantResult(BaseModel):
@@ -30,7 +34,11 @@ class AssistantResult(BaseModel):
     listings: list[Listing] = Field(default_factory=list)
     quote: LandedCostQuote | None = None
     trust: TrustScore | None = None
+    cards: list[Card] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+
+TOOL_INTENTS = frozenset({Intent.SHIPMENT_STATUS, Intent.DEAL_STATUS, Intent.COMPARE, Intent.HS_LOOKUP})
 
 
 class Assistant:
@@ -38,17 +46,26 @@ class Assistant:
         self.c, self.s = clients, settings
         self.gaz = gaz or Gazetteer.default()
         self.llm = llm
+        self.tools = Tools(self)
 
-    async def handle(self, text: str, destination: Location | None = None) -> AssistantResult:
+    async def handle(self, text: str, destination: Location | None = None, user_id: str | None = None) -> AssistantResult:
         p = parse(text, self.gaz, destination)
-        if self.llm is not None and p.confidence < self.s.llm_min_confidence:
+        tool_intent = p.intent in TOOL_INTENTS
+        if self.llm is not None and p.confidence < self.s.llm_min_confidence and not tool_intent:
             p = await extract_query(self.llm, self.s, text, p)
         warnings: list[str] = []
-        handler = {Intent.SEARCH: self._search, Intent.QUOTE: self._quote, Intent.TRUST: self._trust,
-                   Intent.TRACK: self._track, Intent.HELP: self._help}[p.intent]
-        res = await handler(p, warnings)
+        san = Sanitizer()
+        if tool_intent:
+            res = await self._tool(p, user_id, warnings, san)
+        else:
+            handler = {Intent.SEARCH: self._search, Intent.QUOTE: self._quote, Intent.TRUST: self._trust,
+                       Intent.TRACK: self._track, Intent.HELP: self._help}[p.intent]
+            res = await handler(p, warnings)
+        if san.hit and guardrails.WARNING not in warnings:
+            warnings.append(guardrails.WARNING)
         res.warnings = warnings
-        if self.llm is not None and self.s.llm_rewrite:
+        # rewrite only first-party answers: tool answers embed third-party text and are already structured
+        if self.llm is not None and self.s.llm_rewrite and not tool_intent and guardrails.WARNING not in warnings:
             res.answer_text = await rewrite_answer(self.llm, self.s, res.answer_text)
         if warnings:  # appended after any rewrite so notices are never altered
             names = compose.SERVICE_EN if p.language == "en" else compose.SERVICE_AR
@@ -57,6 +74,25 @@ class Assistant:
                      for w in warnings if w.endswith("_unavailable")]
             res.answer_text = (res.answer_text + "\n" + " ".join(notes)).strip()
         return res
+
+    async def _tool(self, p: ParsedQuery, user_id: str | None, warnings: list[str], san: Sanitizer) -> AssistantResult:
+        t = self.tools
+        out = {
+            Intent.SHIPMENT_STATUS: lambda: t.shipment_status(p, user_id, warnings, san),
+            Intent.DEAL_STATUS: lambda: t.deal_status(p, user_id, warnings, san),
+            Intent.COMPARE: lambda: t.compare(p, warnings, san),
+            Intent.HS_LOOKUP: lambda: t.hs_lookup(p, warnings, san),
+        }[p.intent]
+        o = await out()
+        return AssistantResult(intent=p.intent, parsed_query=p, answer_text=o.text, listings=o.listings, quote=o.quote,
+                               trust=o.trust, cards=o.cards)
+
+    def _clean(self, listings: list[Listing], warnings: list[str]) -> list[Listing]:
+        san = Sanitizer()
+        out = [san.listing(x) for x in listings]
+        if san.hit and guardrails.WARNING not in warnings:
+            warnings.append(guardrails.WARNING)
+        return out
 
     async def _guard(self, service: str, coro: Any, warnings: list[str]) -> Any:
         try:
@@ -82,6 +118,8 @@ class Assistant:
         if res is not None and not res.items and len(words) > 1:
             # sourcing ANDs query terms; relax to the head noun (last word) so a modifier miss still returns something
             res = await self._guard("sourcing", self.c.sourcing.search({**params, "q": words[-1]}), warnings) or res
+        if res is not None:
+            res = res.model_copy(update={"items": self._clean(res.items, warnings)})
         return res
 
     async def _search(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
@@ -109,7 +147,16 @@ class Assistant:
         score = await self._guard("trust", self.c.trust.supplier_score(sup.id), warnings)
         if score is None and sup.trust_score is not None:
             score = TrustScore(supplier_id=sup.id, score=sup.trust_score, band=sup.trust_band or band_for_score(sup.trust_score), factors=[])
-        return score
+        return self._clean_trust(score, warnings)
+
+    def _clean_trust(self, score: TrustScore | None, warnings: list[str]) -> TrustScore | None:
+        if score is None:
+            return None
+        san = Sanitizer()
+        out = san.trust(score)
+        if san.hit and guardrails.WARNING not in warnings:
+            warnings.append(guardrails.WARNING)
+        return out
 
     async def _quote_for(self, p: ParsedQuery, listing: Listing | None, warnings: list[str]) -> LandedCostQuote | None:
         if p.destination is None:
@@ -163,7 +210,7 @@ class Assistant:
         L = p.language
         if not p.supplier_id:
             return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.msg(L, "اكتب رقم المورد (مثل sup_cn_001) حتى أفحص موثوقيته.", "Send the supplier id (e.g. sup_cn_001) so I can check its trust score."))
-        score = await self._guard("trust", self.c.trust.supplier_score(p.supplier_id), warnings)
+        score = self._clean_trust(await self._guard("trust", self.c.trust.supplier_score(p.supplier_id), warnings), warnings)
         text = compose.trust_text(score, L) if score else compose.msg(L, f"تعذّر فحص المورد {p.supplier_id} الآن.", f"Could not check supplier {p.supplier_id} right now.")
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text, trust=score)
 

@@ -127,6 +127,49 @@ NODES: dict[str, tuple[float, float]] = {
     "Banda Sea": (-6.5, 127.0),
     "Makassar Strait": (-2.0, 118.0),
     "Pacific Equatorial": (-4.0, 157.0),
+    # --- Bay of Bengal / Bangladesh ---
+    "Bay of Bengal Central": (12.0, 87.0),
+    "Chennai Approach": (13.2, 81.0),
+    "Head of Bay": (20.5, 89.5),
+    "Chittagong Approach": (21.8, 91.6),
+    # --- Southeast Asia gulf / Indonesia / Philippines ---
+    "Gulf of Thailand": (10.0, 102.0),
+    "Laem Chabang Approach": (12.8, 100.9),
+    "Jakarta Approach": (-5.9, 106.8),
+    "Madura Strait": (-6.9, 113.0),
+    "Manila Approach": (14.3, 120.5),
+    # --- Central Med / Tunisia / Libya / Adriatic ---
+    "Gulf of Tunis": (37.2, 10.8),
+    "Libya Offshore": (33.8, 14.5),
+    "Otranto Strait": (40.0, 19.0),
+    "Adriatic Central": (43.0, 15.5),
+    "Adriatic North": (45.2, 13.2),
+    # --- Baltic north / Scandinavia ---
+    "Skagerrak": (57.8, 9.0),
+    "Kattegat": (57.3, 11.3),
+    "Oresund": (55.7, 12.7),
+    "Baltic Central": (57.5, 19.5),
+    "Gulf of Finland": (59.9, 26.5),
+    # --- Black Sea south / east coast ---
+    "Turkey Black Sea Coast": (41.9, 33.0),
+    "Samsun Approach": (41.6, 36.3),
+    "Poti Approach": (42.0, 41.0),
+    # --- Arabian Sea / Oman ---
+    "Duqm Approach": (19.3, 58.2),
+    # --- Pacific South America / Cape Horn ---
+    "Patagonia Offshore": (-47.0, -61.0),
+    "Cape Horn": (-56.5, -67.0),
+    "Chile South Offshore": (-50.0, -77.0),
+    "Chile Offshore": (-33.0, -73.0),
+    "Antofagasta Offshore": (-23.6, -71.0),
+    # --- North America Pacific / Gulf ---
+    "San Francisco Approach": (37.7, -123.0),
+    "Gulf of Alaska": (50.0, -145.0),
+    "Prince Rupert Approach": (54.0, -132.0),
+    "Mississippi Passes": (28.9, -89.2),
+    "Yucatan Channel": (21.8, -85.5),
+    "Dardanelles": (40.0, 26.2),
+    "Texas Offshore": (28.6, -94.3),
 }
 
 EDGES: list[tuple[str, str]] = [
@@ -280,6 +323,71 @@ EDGES: list[tuple[str, str]] = [
     ("Banda Sea", "Makassar Strait"),
     ("Makassar Strait", "Java Sea"),
     ("Coral Sea", "Pacific Equatorial"),
+    # Bay of Bengal
+    ("Andaman Sea", "Bay of Bengal Central"),
+    ("Bay of Bengal Central", "Sri Lanka South"),
+    ("Bay of Bengal Central", "Chennai Approach"),
+    ("Bay of Bengal Central", "Head of Bay"),
+    ("Head of Bay", "Chittagong Approach"),
+    # SE Asia gulf / Indonesia / Philippines
+    ("Vietnam South Coast", "Gulf of Thailand"),
+    ("Singapore Strait", "Gulf of Thailand"),
+    ("Gulf of Thailand", "Laem Chabang Approach"),
+    ("Java Sea", "Jakarta Approach"),
+    ("Jakarta Approach", "Sunda Strait"),
+    ("Java Sea", "Madura Strait"),
+    ("South China Sea", "Manila Approach"),
+    ("Manila Approach", "Luzon Strait"),
+    # Tunisia / Libya / Adriatic
+    ("Gulf of Tunis", "Central Mediterranean"),
+    ("Gulf of Tunis", "West Mediterranean"),
+    ("Libya Offshore", "Central Mediterranean"),
+    ("Libya Offshore", "Gulf of Tunis"),
+    ("Central Mediterranean", "Otranto Strait"),
+    ("Otranto Strait", "Adriatic Central"),
+    ("Adriatic Central", "Adriatic North"),
+    # Baltic north
+    ("German Bight", "Skagerrak"),
+    ("Skagerrak", "Kattegat"),
+    ("Kattegat", "Oresund"),
+    ("Oresund", "Baltic South"),
+    ("Baltic South", "Baltic Central"),
+    ("Baltic Central", "Gulf of Finland"),
+    # Black Sea south / east
+    ("Bosphorus", "Turkey Black Sea Coast"),
+    ("Turkey Black Sea Coast", "Samsun Approach"),
+    ("Samsun Approach", "Black Sea East"),
+    ("Black Sea East", "Poti Approach"),
+    ("Samsun Approach", "Poti Approach"),
+    # Oman
+    ("Arabian Sea", "Duqm Approach"),
+    ("Duqm Approach", "Gulf of Oman"),
+    # Cape Horn / Chile
+    ("River Plate Approach", "Patagonia Offshore"),
+    ("Patagonia Offshore", "Cape Horn"),
+    ("Cape Horn", "Chile South Offshore"),
+    ("Chile South Offshore", "Chile Offshore"),
+    ("Chile Offshore", "Antofagasta Offshore"),
+    ("Antofagasta Offshore", "Callao Approach"),
+    # North America Pacific / Gulf
+    ("US West Coast", "San Francisco Approach"),
+    ("San Francisco Approach", "North Pacific East"),
+    ("North Pacific West", "Gulf of Alaska"),
+    ("Gulf of Alaska", "North Pacific East"),
+    ("Gulf of Alaska", "Prince Rupert Approach"),
+    ("Prince Rupert Approach", "Puget Sound"),
+    ("Gulf of Mexico", "Mississippi Passes"),
+    # shortcuts that remove detours found by the property scan
+    ("Luzon Strait", "Taiwan Strait"),
+    ("Karimata Strait", "Jakarta Approach"),
+    ("Ligurian Sea", "Gulf of Tunis"),
+    ("East Mediterranean", "Otranto Strait"),
+    ("Aegean Sea", "Dardanelles"),
+    ("Dardanelles", "Marmara"),
+    ("Gulf of Mexico", "Texas Offshore"),
+    ("Texas Offshore", "Mississippi Passes"),
+    ("Gulf of Mexico", "Yucatan Channel"),
+    ("Yucatan Channel", "Panama Atlantic"),
 ]
 
 MAX_ACCESS_KM = 400.0  # max straight-line from an endpoint to its nearest lane node
@@ -297,8 +405,10 @@ def _graph() -> dict[str, list[tuple[str, float]]]:
 
 
 def _access(lat: float, lon: float) -> list[tuple[float, str]]:
-    """Nearest few lane nodes to a point (straight-line)."""
-    return sorted((haversine_km(lat, lon, *p), n) for n, p in NODES.items())[:3]
+    """Nearest few lane nodes to a point (straight-line). Nodes farther than MAX_ACCESS_KM are dropped
+    (except the nearest one), so a port never "jumps" overland to a node on another coast."""
+    near = sorted((haversine_km(lat, lon, *p), n) for n, p in NODES.items())[:3]
+    return [x for i, x in enumerate(near) if i == 0 or x[0] <= MAX_ACCESS_KM]
 
 
 def _dijkstra(start: str, goal: str) -> tuple[float, list[str]]:

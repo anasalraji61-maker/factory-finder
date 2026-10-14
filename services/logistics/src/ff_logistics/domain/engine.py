@@ -10,9 +10,10 @@ from ..clients.geo import GeoClient, Hub, Point
 from ..errors import ApiError
 from ..schemas import ALL_MODES, LandedCostRequest, MoneyIn
 from . import cargo
-from .duties import duty_rule, load_json
+from .duties import de_minimis, duty_rule, load_json
 from .incoterms import BUYER_STAGES, CUSTOMS_ADDS
 from .money import D, money, quantize
+from .sensitivity import sensitivity
 from .warnings import cargo_warnings, sanctions_warning, value_warnings
 
 ASSUMPTION_TABLE = "Rates, duties and fees come from an approximate table, verify with a customs broker."
@@ -35,6 +36,7 @@ class Line:
     source: str
     estimate: bool = True
     spread: Decimal | None = None  # overrides SPREAD[stage] (e.g. a live quote's own range)
+    min_spread_usd: Decimal = Decimal(0)  # absolute half-range floor (table ranges, also when the base amount is 0)
 
 
 @dataclass
@@ -195,11 +197,31 @@ class Engine:
         sw = sanctions_warning({oc, dc})
         if sw:
             quote_warn.append(sw)
+        dmw = await self._de_minimis_warning(dc, goods_usd)
+        if dmw:
+            quote_warn.append(dmw)
         assumptions.extend(dict.fromkeys(self.freight_notes))
         assumptions.append(f"FX: {table.source} rates as of {table.timestamp}; 1 USD = {usd_rate:.6g} {disp}.")
         return {"id": "qte_" + uuid.uuid4().hex, "currency": disp, "origin": req.origin.model_dump(exclude_none=True),
                 "destination": req.destination.model_dump(exclude_none=True), "options": options,
                 "assumptions": assumptions, "warnings": quote_warn, "created_at": utcnow_iso()}
+
+    # ------------------------------------------------------------ helpers
+    async def _de_minimis_warning(self, dc: str, goods_usd: Decimal) -> str | None:
+        dm = de_minimis(DATA.duties, dc)
+        if dm is None:
+            return None
+        try:
+            to_usd, _ = await self.fx.rate(dm["currency"], "USD")
+        except ApiError:
+            return None  # threshold currency has no FX rate: skip the hint rather than fail the quote
+        limit_usd = D(dm["threshold"]) * to_usd
+        if goods_usd >= limit_usd:
+            return None
+        return (f"Goods value is below the {dc} de minimis threshold ({dm['threshold']} {dm['currency']}, "
+                f"{dm['applies_to']}, status {dm['status']}, confidence {dm['confidence']}). It normally applies only "
+                "to courier/postal parcels, not commercial freight; the totals do NOT assume any waiver. "
+                "Indicative, verify with broker.")
 
     # ------------------------------------------------------------ helpers
     async def _resolve(self, loc, label: str) -> Point:
@@ -470,12 +492,23 @@ class Engine:
         cv = goods_usd + sum((lines[s].usd for s in CUSTOMS_ADDS[req.supplier_incoterm] if s in lines), Decimal(0))
         rule = duty_rule(DATA.duties, dc, req.goods.hs_code, req.goods.category, oc)
         duty = cv * rule.duty_rate_pct / 100
-        lines["duties"] = Line("duties", f"Import duty on customs value USD {cv:.0f}: {rule.rule}", duty,
-                               "approx. duty table (verify with customs broker)")
+        tag = f" [range {rule.duty_range_pct[0]}-{rule.duty_range_pct[1]}%]" if rule.duty_range_pct else ""
+        src_txt = "approx. duty table (indicative, verify with customs broker)" + (
+            f"; as of {rule.as_of}, confidence {rule.confidence}" if rule.as_of else "")
+        duty_floor = Decimal(0)
+        if rule.duty_range_pct:
+            duty_floor = cv * max(rule.duty_rate_pct - rule.duty_range_pct[0],
+                                  rule.duty_range_pct[1] - rule.duty_rate_pct, Decimal(0)) / 100
+        lines["duties"] = Line("duties", f"Import duty on customs value USD {cv:.0f}: {rule.rule}{tag}", duty,
+                               src_txt, min_spread_usd=duty_floor)
+        vat_floor = Decimal(0)
+        if rule.vat_range_pct:
+            vat_floor = (cv + duty) * max(rule.vat_pct - rule.vat_range_pct[0],
+                                          rule.vat_range_pct[1] - rule.vat_pct, Decimal(0)) / 100
         lines["taxes"] = Line("taxes", f"VAT/sales tax {rule.vat_pct}% on customs value + duty", (cv + duty) * rule.vat_pct / 100,
-                              "approx. duty table (verify with customs broker)")
+                              src_txt, min_spread_usd=vat_floor)
         lines["clearance"] = Line("clearance", "Customs broker / clearance fee", rule.clearance_fee_usd,
-                                  "approx. duty table (verify with customs broker)")
+                                  src_txt)
         order = ["origin_inland", "origin_handling", "main_leg", "insurance", "destination_handling",
                  "duties", "taxes", "clearance", "destination_inland"]
         final = [lines[s] for s in order if s in lines and s in stages]
@@ -501,11 +534,18 @@ class Engine:
     def _render(self, d: Draft, goods_usd: Decimal, goods_val, disp: str, rate: Decimal,
                 recommended: bool, dg: bool) -> dict:
         lines_out, total, spread = [], Decimal(0), Decimal(0)
+        freight_amt, freight_frac, goods_amt = Decimal(0), Decimal(0), Decimal(0)
         raw = [Line("goods", "Goods price from supplier", goods_usd, "supplier quote", False)] + d.lines
         for ln in raw:
             amt = quantize(ln.usd * rate, disp)
             total += amt
-            spread += quantize(amt * (ln.spread if ln.spread is not None else D(SPREAD[ln.stage])), disp) if ln.estimate else 0
+            frac = ln.spread if ln.spread is not None else D(SPREAD[ln.stage])
+            if ln.estimate:
+                spread += max(quantize(amt * frac, disp), quantize(ln.min_spread_usd * rate, disp))
+            if ln.stage == "main_leg":
+                freight_amt, freight_frac = amt, frac
+            elif ln.stage == "goods":
+                goods_amt = amt
             entry = {"stage": ln.stage, "description": ln.description, "amount": money(amt, disp),
                      "original_amount": money(ln.usd, "USD"), "fx_rate": f"{rate:.8g}",
                      "source": ln.source, "estimate": ln.estimate}
@@ -522,4 +562,5 @@ class Engine:
                 "route_summary": d.summary, "lines": lines_out,
                 "total": {"min": money(total - spread, disp), "max": money(total + spread, disp)},
                 "transit_days": {"min": d.days[0], "max": d.days[1]}, "co2_kg": d.co2,
-                "recommended": recommended, "warnings": warns}
+                "recommended": recommended, "warnings": warns,
+                "sensitivity": sensitivity(total, freight_amt, freight_frac, goods_amt, goods_val.currency, disp)}

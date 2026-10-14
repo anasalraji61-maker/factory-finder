@@ -8,6 +8,10 @@ NEW_SEA_HUBS = [
     "JPYOK", "JPOSA", "JPUKB", "JPNGO", "BRSSZ", "ARBUE", "PECLL", "COCTG", "AUSYD",
     "AUMEL", "AUFRE",
 ]
+ROUND3_HUBS = [  # data round 3 (docs/requests/data-geo-sea-nodes.md)
+    "INMAA", "INCCU", "BDCGP", "IDJKT", "IDSUB", "THLCH", "PHMNL", "TNRAD", "LYMRA", "LYTIP", "ITTRS", "ITVCE",
+    "SEGOT", "RULED", "GEPTI", "TRSAM", "BGVAR", "OMDQM", "TZDAR", "CLVAP", "MXZLO", "USOAK", "CAPRR", "USMSY",
+]
 
 
 def _hub(hub_id):
@@ -40,7 +44,7 @@ def test_new_sea_hubs_present_and_valid():
     hubs = {h.id: h for h in get_dataset().hubs}
     for code in NEW_SEA_HUBS:
         assert code in hubs and hubs[code].type == "sea" and hubs[code].unlocode == code
-    assert sum(1 for h in hubs.values() if h.type == "sea") >= 114
+    assert sum(1 for h in hubs.values() if h.type == "sea") >= 138
 
 
 @pytest.mark.parametrize(
@@ -74,3 +78,38 @@ def test_new_regional_routes_use_expected_lanes():
     assert "Bosphorus" in _km("ROCND", "NLRTM")[1]
     assert "Cape Town Approach" in _km("NLRTM", "ZADUR")[1]
     assert 400 < _km("GHTEM", "NGAPP")[0] < 700
+
+
+def test_round3_hubs_present_and_valid():
+    hubs = {h.id: h for h in get_dataset().hubs}
+    for code in ROUND3_HUBS:
+        assert code in hubs and hubs[code].type == "sea" and hubs[code].unlocode == code, code
+
+
+@pytest.mark.parametrize(
+    ("a", "b", "real_km", "tol"),
+    [  # real_km: approximate port-to-port sea distances (rounded from nautical-mile tables)
+        ("SGSIN", "THLCH", 1430, 0.20),
+        ("SGSIN", "IDSUB", 1450, 0.20),
+        ("NLRTM", "SEGOT", 1000, 0.20),
+        ("DEHAM", "RULED", 1750, 0.20),
+        ("ITGOA", "TNRAD", 1000, 0.20),
+        ("USHOU", "USLAX", 8400, 0.20),
+        ("CNSHA", "CAPRR", 8800, 0.20),
+        ("BRSSZ", "CLVAP", 7900, 0.20),
+        ("EGPSD", "LYTIP", 1900, 0.20),
+        ("KEMBA", "TZDAR", 400, 0.20),
+        ("SGSIN", "INMAA", 3600, 0.20),
+    ],
+)
+def test_round3_known_sea_distances(a, b, real_km, tol):
+    km, _ = _km(a, b)
+    assert abs(km / real_km - 1) <= tol, (a, b, km)
+
+
+def test_round3_lanes_use_expected_waypoints():
+    assert "Cape Horn" in _km("BRSSZ", "CLVAP")[1]
+    assert "Bosphorus" in _km("TRMER", "GEPTI")[1]
+    assert "Otranto Strait" in _km("TRMER", "ITVCE")[1]
+    assert "Skagerrak" in _km("NLRTM", "SEGOT")[1]
+    assert "Head of Bay" in _km("SGSIN", "BDCGP")[1]

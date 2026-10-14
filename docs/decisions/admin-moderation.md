@@ -1,0 +1,4 @@
+2026-10-14 | Moderation tab uses the existing `/v1/admin/moderation/*` gateway passthrough (listings pending_review/hidden, reports, hide with 3-300 char reason, restore) | already in gateway contract; no new gateway work.
+2026-10-14 | Supplier claim approval already existed (Claims tab); left unchanged | avoid duplicate screens.
+2026-10-14 | Payments outbox tab calls `GET /v1/admin/payments/outbox` and `POST /v1/admin/payments/outbox/{id}/requeue` (X-Admin-Token) | payments outbox is admin-only behind the user-auth proxy and the gateway has NO X-Admin-Token route for it; the tab shows "route not available" on 404 until the gateway lane adds this passthrough (request: allow-list those two paths, inject payments admin identity like demand).
+2026-10-14 | Pure logic split into `lib.js` and tested with `node --test` | console has no build step; tests stay dependency-free. Token handling unchanged: sessionStorage only, never logged.

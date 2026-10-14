@@ -4739,5 +4739,16 @@
 "lon": -77.0428
 },
 "industrial": true
+},
+{
+"id": "TZ-DAR-ES-SALAAM",
+"name_en": "Dar es Salaam",
+"name_ar": "دار السلام",
+"country_code": "TZ",
+"point": {
+"lat": -6.7924,
+"lon": 39.2083
+},
+"industrial": true
 }
 ]

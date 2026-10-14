@@ -48,7 +48,6 @@ def _currency(tok: Token | None) -> str | None:
 def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location | None = None) -> ParsedQuery:
     gaz = gaz or Gazetteer.default()
     clean = clean_text(text)
-    language = detect_language(clean)
 
     # 1. references (masked afterwards so they never leak into keywords)
     spans: list[tuple[int, int]] = []
@@ -66,7 +65,24 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
     if sm:
         supplier_id = sm.group().lower()
         spans.append(sm.span())
+    listing_ids: list[str] = []
+    for lm in lx.LISTING_RE.finditer(clean):
+        if lm.group().lower() not in listing_ids:
+            listing_ids.append(lm.group().lower())
+        spans.append(lm.span())
+    dm = lx.DEAL_RE.search(clean)
+    deal_id = dm.group().lower() if dm else None
+    if dm:
+        spans.append(dm.span())
+    hs_phrase = lx.HS_RE.search(clean) is not None
+    hs_code = None
+    if hs_phrase and reference is None:
+        hm = lx.HS_CODE_RE.search(clean)
+        if hm:
+            hs_code = re.sub(r"\D", "", hm.group())
+            spans.append(hm.span())
     masked = mask_spans(clean, spans)
+    language = detect_language(masked) if masked.strip() else detect_language(clean)  # ids/refs are not language evidence
     tokens = tokenize(masked, fold(masked))
     used = [False] * len(tokens)
 
@@ -228,7 +244,15 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
             kind = ListingKind(m.value)
 
     # 7. intent
-    if reference or (_has(tokens, lx.TRACK_WORDS) and not supplier_id and not keywords):
+    if len(listing_ids) >= 2 or (listing_ids and lx.COMPARE_RE.search(clean)):
+        intent = Intent.COMPARE
+    elif deal_id or (lx.DEAL_PHRASE_RE.search(clean) and not keywords):
+        intent = Intent.DEAL_STATUS
+    elif hs_phrase and not reference and not supplier_id:
+        intent = Intent.HS_LOOKUP
+    elif reference and _has(tokens, lx.STATUS_WORDS):
+        intent = Intent.SHIPMENT_STATUS
+    elif reference or (_has(tokens, lx.TRACK_WORDS) and not supplier_id and not keywords):
         intent = Intent.TRACK
     elif supplier_id or _has(tokens, lx.TRUST_WORDS):
         intent = Intent.TRUST
@@ -249,11 +273,19 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         ]
         keywords = [t.surface for t in leftover][:6]
 
+    hs_query = None
+    if intent is Intent.HS_LOOKUP and not hs_code:
+        hs_query = " ".join(
+            t.surface for t in tokens
+            if t.is_word and not used[t.index] and not in_set(t.norm, lx.STOPWORDS | lx.HS_NOISE, clitics=True)
+            and not lx.HS_RE.fullmatch(t.surface)
+        )[:100] or (" ".join(keywords) or None)
+
     conf = 0.3
     conf += 0.3 if keywords else 0
     conf += 0.15 if destination else 0
     conf += 0.1 if origin or origin_region else 0
-    conf += 0.5 if (reference or supplier_id) else 0
+    conf += 0.5 if (reference or supplier_id or deal_id or listing_ids or hs_code) else 0
     if intent is Intent.HELP:
         conf = 0.8
     return ParsedQuery(
@@ -273,5 +305,9 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         supplier_id=supplier_id,
         reference=reference,
         reference_type=reference_type,
+        deal_id=deal_id,
+        listing_ids=listing_ids,
+        hs_code=hs_code,
+        hs_query=hs_query,
         confidence=min(conf, 1.0),
     )

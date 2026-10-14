@@ -74,6 +74,22 @@ REF_RES = {
     "awb": re.compile(r"(?<!\d)\d{3}[- ]\d{8}(?!\d)"),
 }
 SUPPLIER_RE = re.compile(r"(?i)\bsup_[a-z0-9]+(?:_[a-z0-9]+)*\b")
+LISTING_RE = re.compile(r"(?i)\blst_[a-z0-9]+(?:_[a-z0-9]+)*\b")
+DEAL_RE = re.compile(r"(?i)\bdeal_[a-z0-9]+(?:_[a-z0-9]+)*\b")
+# tool intents (raw, unfolded text; Arabic variants spelled out)
+COMPARE_RE = re.compile(r"(?i)\bcompare\b|\bcomparison\b|\bvs\.?(?=\s|$)|\bversus\b|قارن|مقارن|مقابل|الفرق بين|ايهما|أيهما|اي منهم")
+HS_RE = re.compile(
+    r"(?i)\bhs\b|\bhs[- ]?codes?\b|harmoni[sz]ed|\btariff\b|customs code|"
+    r"(?:رمز|كود|رقم|بند)\s+(?:ال)?(?:جمرك|hs)|تعرف[ةه]\s+(?:ال)?جمرك|رمز\s+الـ?\s*hs"
+)
+HS_CODE_RE = re.compile(r"(?<![\d.])\d{4}(?:[. ]?\d{2}){1,2}(?![\d])|(?<![\d.])\d{6,10}(?![\d])")
+DEAL_PHRASE_RE = re.compile(
+    r"(?i)payment status|deal status|status of (?:my )?(?:deal|payment)|my (?:deal|payment)|did i pay|"
+    r"(?:is|was) (?:it|my \w+) paid|حالة (?:ال)?(?:دفع|صفق)|صفقتي|دفعتي|دفعتك|هل (?:تم|انا دفعت)|صفقه|الصفقة"
+)
+STATUS_WORDS = word_set(
+    ["حاله", "status", "وين", "اين", "where", "eta", "موعد", "وصلت", "وصول", "متى", "when", "arrive", "arrived", "arrival", "شنو"]
+)
 
 
 @cache
@@ -83,3 +99,5 @@ def glossary_index() -> PhraseIndex[dict]:
         for phrase in (*entry["ar"], entry["en"], *entry.get("en_aliases", [])):
             index.add(phrase, entry)
     return index
+
+HS_NOISE = word_set(["hs", "code", "codes", "tariff", "harmonized", "customs", "رمز", "كود", "رقم", "بند", "جمركي", "الجمركي", "جمرك", "تعرفه", "التعرفه", "لل", "ما", "ماهو", "ماهي", "what", "which", "whats", "find", "lookup", "search"])

@@ -22,3 +22,7 @@ source+timestamp); any error falls back to the tables and adds an assumption lin
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Data round 3
+- `data/duties.json`: 70 destinations; new entries carry `source`, `as_of`, `confidence`, `duty_range_pct`, `vat_range_pct`, `label` ("indicative, verify with broker") and `de_minimis` (warning only, never applied to totals).
+- Every option has an optional `sensitivity` (freight / fx / combined low-base-high); FX buckets live in `data/fx_volatility.json` (judgment-based stress sizes, not forecasts).

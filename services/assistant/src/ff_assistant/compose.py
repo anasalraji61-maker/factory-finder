@@ -39,15 +39,19 @@ MODE_EN = {"sea_lcl": "sea freight (LCL)", "sea_fcl_20": "sea freight, 20ft cont
            "air": "air freight", "rail": "rail freight", "road": "road freight"}
 CUR_SYM = {"USD": "$"}
 
-SERVICE_AR = {"sourcing": "البحث", "logistics": "حساب الشحن", "trust": "فحص الموثوقية", "tracking": "التتبع"}
-SERVICE_EN = {"sourcing": "search", "logistics": "freight calculation", "trust": "trust check", "tracking": "tracking"}
+SERVICE_AR = {"sourcing": "البحث", "logistics": "حساب الشحن", "trust": "فحص الموثوقية", "tracking": "التتبع", "deals": "الصفقات"}
+SERVICE_EN = {"sourcing": "search", "logistics": "freight calculation", "trust": "trust check", "tracking": "tracking", "deals": "deals"}
 
 HELP_TEXT_EN = (
     "Welcome to Muwarrid. I can help you with:\n"
     "- Searching for a product, raw material or production line (new or used), e.g. \"I need a used pastry production line from China delivered to Baghdad\".\n"
     "- Full door-to-door cost, e.g. \"how much to ship 2 tons of plastic granules from Ningbo to Basra\".\n"
     "- Supplier trust check, e.g. \"is supplier sup_cn_001 trustworthy?\".\n"
-    "- Validating a container or air waybill number, e.g. \"track container CSQU3054383\"."
+    "- Validating a container or air waybill number, e.g. \"track container CSQU3054383\".\n"
+    "- Shipment status (sign in), e.g. \"where is container CSQU3054383\".\n"
+    "- Deal payment status (sign in), e.g. \"payment status of deal deal_abc\".\n"
+    "- Comparing two listings, e.g. \"compare lst_a and lst_b\".\n"
+    "- HS customs code, e.g. \"HS code for plastic chairs\"."
 )
 
 
@@ -63,7 +67,11 @@ HELP_TEXT = (
     "• البحث عن منتج أو مادة أولية أو خط إنتاج (جديد أو مستعمل)، مثال: «أريد خط إنتاج معجنات مستعمل من الصين يوصل بغداد».\n"
     "• حساب الكلفة الكاملة لحد الباب، مثال: «شكد كلفة شحن 2 طن حبيبات بلاستيك من ننغبو الى البصرة».\n"
     "• فحص موثوقية مورد، مثال: «هل المورد sup_cn_001 موثوق؟».\n"
-    "• التحقق من رقم حاوية أو بوليصة جوية، مثال: «تتبع الحاوية CSQU3054383»."
+    "• التحقق من رقم حاوية أو بوليصة جوية، مثال: «تتبع الحاوية CSQU3054383».\n"
+    "• حالة شحنتك (بعد تسجيل الدخول)، مثال: «وين الحاوية CSQU3054383».\n"
+    "• حالة الدفع لصفقة (بعد تسجيل الدخول)، مثال: «حالة الدفع للصفقة deal_abc».\n"
+    "• مقارنة عرضين، مثال: «قارن lst_a مع lst_b».\n"
+    "• الرمز الجمركي HS، مثال: «شنو رمز HS للكراسي البلاستيك»."
 )
 
 

@@ -1,0 +1,15 @@
+{
+ "label": "indicative stress assumption, not a forecast",
+ "as_of": "2026-10",
+ "basis": "Plausible adverse move (percent) of a currency against USD over a typical quote-to-payment window of about 30 to 60 days. Judgment-based buckets, not computed from market data.",
+ "default_pct": "8",
+ "pct": {
+  "USD": "0",
+  "AED": "0.5", "SAR": "0.5", "QAR": "0.5", "BHD": "0.5", "OMR": "0.5", "JOD": "0.5", "HKD": "0.5",
+  "KWD": "1.5", "IQD": "3", "SGD": "3", "CNY": "3", "INR": "3.5", "MYR": "4", "THB": "4",
+  "EUR": "4", "GBP": "4", "CHF": "4", "SEK": "5", "CAD": "4", "AUD": "5", "JPY": "5", "KRW": "5",
+  "TWD": "4", "PLN": "5", "CZK": "5", "HUF": "6", "RON": "5", "BGN": "4", "MXN": "7", "BRL": "9", "CLP": "7", "COP": "8", "PEN": "5",
+  "ZAR": "9", "KES": "6", "GHS": "12", "XOF": "4", "XAF": "4", "KZT": "8", "UZS": "6", "AZN": "3", "GEL": "5",
+  "TRY": "12", "EGP": "12", "RUB": "12", "UAH": "10", "NGN": "15", "ARS": "20", "IRR": "25", "PKR": "8", "LKR": "10", "BDT": "6", "VND": "3", "IDR": "6", "PHP": "5", "RSD": "4"
+ }
+}

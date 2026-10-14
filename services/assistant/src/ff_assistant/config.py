@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     logistics_url: str = "http://localhost:8102"
     trust_url: str = "http://localhost:8104"
     tracking_url: str = "http://localhost:8107"
+    rfq_url: str = "http://localhost:8105"
     http_timeout_s: float = Field(default=4.0, gt=0, le=60)
 
     # Shared internal token (checked only when set; also forwarded to downstream services).
@@ -33,6 +34,11 @@ class Settings(BaseSettings):
     default_currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     max_listings: int = Field(default=3, ge=1, le=10)
     search_page_size: int = Field(default=10, ge=3, le=50)
+
+    # Per-user daily request quota (in-memory, per process). Identity = X-User-Id set by the gateway;
+    # requests without it share a small per-client-host bucket.
+    quota_per_day: int = Field(default=200, ge=1)
+    anon_quota_per_day: int = Field(default=30, ge=1)
 
     # Optional LLM (OFF by default): FF_ASSISTANT_LLM=off|mock|anthropic.
     # Used only for low-confidence intent extraction and optional tone rewrite; never invents figures.

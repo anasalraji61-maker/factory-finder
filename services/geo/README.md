@@ -23,3 +23,6 @@ cd services/geo && ../../.venv/bin/python -m uvicorn ff_geo.main:app --port 8103
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 if the bundled dataset fails to load. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Sea graph (data round 3)
+`domain/sea.py` has 150 lane nodes and 138 sea hubs. Access nodes farther than 400 km are ignored (except the nearest) so ports never jump overland. `tests/test_sea_properties.py` checks distance >= great-circle, symmetry and sane detour ratios.

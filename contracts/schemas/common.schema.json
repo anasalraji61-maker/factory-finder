@@ -125,7 +125,33 @@
         "transit_days": {"$ref": "#/$defs/DayRange"},
         "co2_kg": {"type": "number"},
         "recommended": {"type": "boolean"},
-        "warnings": {"type": "array", "items": {"type": "string"}}
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "sensitivity": {"$ref": "#/$defs/CostSensitivity"}
+      }
+    },
+    "MoneyBand": {
+      "type": "object",
+      "description": "Low/base/high of a landed-cost total under a stress scenario, in the quote currency (Decimal strings)",
+      "required": ["low", "base", "high"],
+      "properties": {
+        "low": {"$ref": "#/$defs/Money"},
+        "base": {"$ref": "#/$defs/Money"},
+        "high": {"$ref": "#/$defs/Money"},
+        "shock_pct": {"type": "string", "description": "stress size in percent (decimal string); effective percent for fx"},
+        "goods_currency": {"type": "string", "description": "fx band only: currency the goods are priced in"}
+      }
+    },
+    "CostSensitivity": {
+      "type": "object",
+      "description": "Additive, optional. Stress ranges (not forecasts): freight uses the main-leg estimate spread, fx uses indicative per-currency volatility buckets.",
+      "required": ["currency", "freight", "fx", "combined"],
+      "properties": {
+        "currency": {"$ref": "#/$defs/CurrencyCode"},
+        "freight": {"$ref": "#/$defs/MoneyBand"},
+        "fx": {"$ref": "#/$defs/MoneyBand"},
+        "combined": {"$ref": "#/$defs/MoneyBand"},
+        "estimate": {"type": "boolean"},
+        "note": {"type": "string"}
       }
     },
     "LandedCostQuote": {
@@ -138,6 +164,7 @@
         "destination": {"$ref": "#/$defs/Location"},
         "options": {"type": "array", "items": {"$ref": "#/$defs/LandedCostOption"}},
         "assumptions": {"type": "array", "items": {"type": "string"}},
+        "warnings": {"type": "array", "items": {"type": "string"}, "description": "quote-level warnings (sanctions, de minimis hint)"},
         "created_at": {"type": "string", "format": "date-time"}
       }
     },

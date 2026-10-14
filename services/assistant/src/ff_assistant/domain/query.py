@@ -22,6 +22,10 @@ class Intent(StrEnum):
     TRUST = "trust"
     TRACK = "track"
     HELP = "help"
+    SHIPMENT_STATUS = "shipment_status"
+    DEAL_STATUS = "deal_status"
+    COMPARE = "compare"
+    HS_LOOKUP = "hs_lookup"
 
 
 class Budget(BaseModel):
@@ -47,4 +51,8 @@ class ParsedQuery(BaseModel):
     supplier_id: str | None = None
     reference: str | None = None
     reference_type: Literal["container", "awb", "vessel_imo"] | None = None
+    deal_id: str | None = None
+    listing_ids: list[str] = Field(default_factory=list)
+    hs_code: str | None = None
+    hs_query: str | None = None
     confidence: float = Field(default=0.0, ge=0, le=1)

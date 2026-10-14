@@ -16,6 +16,10 @@ class DutyEstimate:
     vat_pct: Decimal
     clearance_fee_usd: Decimal
     rule: str
+    duty_range_pct: tuple[Decimal, Decimal] | None = None
+    vat_range_pct: tuple[Decimal, Decimal] | None = None
+    as_of: str | None = None
+    confidence: str | None = None
 
 
 def hs_chapter(hs_code: str | None, category: str | None, table: dict) -> str | None:
@@ -40,4 +44,14 @@ def duty_rule(table: dict, country: str, hs_code: str | None, category: str | No
     if extra:
         rate += extra
         rule += f" + {extra}% additional duty on {origin_country}-origin goods"
-    return DutyEstimate(rate, D(c["vat_pct"]), D(c["clearance_fee_usd"]), rule)
+    dr, vr = c.get("duty_range_pct"), c.get("vat_range_pct")
+    return DutyEstimate(
+        rate, D(c["vat_pct"]), D(c["clearance_fee_usd"]), rule,
+        (D(dr[0]) + extra, D(dr[1]) + extra) if dr else None, (D(vr[0]), D(vr[1])) if vr else None,
+        c.get("as_of"), c.get("confidence"))
+
+
+def de_minimis(table: dict, country: str) -> dict | None:
+    """De minimis record for a destination (threshold/currency/applies_to/status/confidence) or None."""
+    dm = table["countries"].get(country, {}).get("de_minimis")
+    return dm if dm and dm.get("threshold") else None

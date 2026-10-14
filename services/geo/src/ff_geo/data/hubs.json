@@ -3524,5 +3524,413 @@
 "AU"
 ],
 "notes": null
+},
+{
+"id": "INMAA",
+"type": "sea",
+"name_en": "Chennai Port",
+"name_ar": "ميناء تشيناي",
+"country_code": "IN",
+"point": {
+"lat": 13.09,
+"lon": 80.3
+},
+"unlocode": "INMAA",
+"iata": null,
+"serves_countries": [
+"IN"
+],
+"notes": null
+},
+{
+"id": "INCCU",
+"type": "sea",
+"name_en": "Kolkata / Haldia Port",
+"name_ar": "ميناء كولكاتا",
+"country_code": "IN",
+"point": {
+"lat": 22.03,
+"lon": 88.07
+},
+"unlocode": "INCCU",
+"iata": null,
+"serves_countries": [
+"IN"
+],
+"notes": null
+},
+{
+"id": "BDCGP",
+"type": "sea",
+"name_en": "Chattogram (Chittagong) Port",
+"name_ar": "ميناء شيتاغونغ",
+"country_code": "BD",
+"point": {
+"lat": 22.31,
+"lon": 91.8
+},
+"unlocode": "BDCGP",
+"iata": null,
+"serves_countries": [
+"BD"
+],
+"notes": null
+},
+{
+"id": "IDJKT",
+"type": "sea",
+"name_en": "Tanjung Priok (Jakarta)",
+"name_ar": "ميناء تانجونغ بريوك جاكرتا",
+"country_code": "ID",
+"point": {
+"lat": -6.1,
+"lon": 106.88
+},
+"unlocode": "IDJKT",
+"iata": null,
+"serves_countries": [
+"ID"
+],
+"notes": null
+},
+{
+"id": "IDSUB",
+"type": "sea",
+"name_en": "Tanjung Perak (Surabaya)",
+"name_ar": "ميناء سورابايا",
+"country_code": "ID",
+"point": {
+"lat": -7.2,
+"lon": 112.73
+},
+"unlocode": "IDSUB",
+"iata": null,
+"serves_countries": [
+"ID"
+],
+"notes": null
+},
+{
+"id": "THLCH",
+"type": "sea",
+"name_en": "Laem Chabang Port",
+"name_ar": "ميناء لام تشابانغ",
+"country_code": "TH",
+"point": {
+"lat": 13.08,
+"lon": 100.88
+},
+"unlocode": "THLCH",
+"iata": null,
+"serves_countries": [
+"TH"
+],
+"notes": null
+},
+{
+"id": "PHMNL",
+"type": "sea",
+"name_en": "Manila Port",
+"name_ar": "ميناء مانيلا",
+"country_code": "PH",
+"point": {
+"lat": 14.6,
+"lon": 120.95
+},
+"unlocode": "PHMNL",
+"iata": null,
+"serves_countries": [
+"PH"
+],
+"notes": null
+},
+{
+"id": "TNRAD",
+"type": "sea",
+"name_en": "Radès Port (Tunis)",
+"name_ar": "ميناء رادس",
+"country_code": "TN",
+"point": {
+"lat": 36.8,
+"lon": 10.27
+},
+"unlocode": "TNRAD",
+"iata": null,
+"serves_countries": [
+"TN"
+],
+"notes": null
+},
+{
+"id": "LYMRA",
+"type": "sea",
+"name_en": "Misrata Port",
+"name_ar": "ميناء مصراتة",
+"country_code": "LY",
+"point": {
+"lat": 32.37,
+"lon": 15.22
+},
+"unlocode": "LYMRA",
+"iata": null,
+"serves_countries": [
+"LY"
+],
+"notes": null
+},
+{
+"id": "LYTIP",
+"type": "sea",
+"name_en": "Tripoli Port",
+"name_ar": "ميناء طرابلس",
+"country_code": "LY",
+"point": {
+"lat": 32.9,
+"lon": 13.19
+},
+"unlocode": "LYTIP",
+"iata": null,
+"serves_countries": [
+"LY"
+],
+"notes": null
+},
+{
+"id": "ITTRS",
+"type": "sea",
+"name_en": "Trieste Port",
+"name_ar": "ميناء تريستي",
+"country_code": "IT",
+"point": {
+"lat": 45.65,
+"lon": 13.76
+},
+"unlocode": "ITTRS",
+"iata": null,
+"serves_countries": [
+"IT"
+],
+"notes": null
+},
+{
+"id": "ITVCE",
+"type": "sea",
+"name_en": "Venice Port",
+"name_ar": "ميناء البندقية",
+"country_code": "IT",
+"point": {
+"lat": 45.43,
+"lon": 12.32
+},
+"unlocode": "ITVCE",
+"iata": null,
+"serves_countries": [
+"IT"
+],
+"notes": null
+},
+{
+"id": "SEGOT",
+"type": "sea",
+"name_en": "Gothenburg Port",
+"name_ar": "ميناء غوتنبرغ",
+"country_code": "SE",
+"point": {
+"lat": 57.7,
+"lon": 11.93
+},
+"unlocode": "SEGOT",
+"iata": null,
+"serves_countries": [
+"SE"
+],
+"notes": null
+},
+{
+"id": "RULED",
+"type": "sea",
+"name_en": "St Petersburg Port",
+"name_ar": "ميناء سانت بطرسبرغ",
+"country_code": "RU",
+"point": {
+"lat": 59.88,
+"lon": 30.22
+},
+"unlocode": "RULED",
+"iata": null,
+"serves_countries": [
+"RU"
+],
+"notes": null
+},
+{
+"id": "GEPTI",
+"type": "sea",
+"name_en": "Poti Port",
+"name_ar": "ميناء بوتي",
+"country_code": "GE",
+"point": {
+"lat": 42.15,
+"lon": 41.67
+},
+"unlocode": "GEPTI",
+"iata": null,
+"serves_countries": [
+"GE"
+],
+"notes": null
+},
+{
+"id": "TRSAM",
+"type": "sea",
+"name_en": "Samsun Port",
+"name_ar": "ميناء سامسون",
+"country_code": "TR",
+"point": {
+"lat": 41.29,
+"lon": 36.34
+},
+"unlocode": "TRSAM",
+"iata": null,
+"serves_countries": [
+"TR"
+],
+"notes": null
+},
+{
+"id": "BGVAR",
+"type": "sea",
+"name_en": "Varna Port",
+"name_ar": "ميناء فارنا",
+"country_code": "BG",
+"point": {
+"lat": 43.19,
+"lon": 27.95
+},
+"unlocode": "BGVAR",
+"iata": null,
+"serves_countries": [
+"BG"
+],
+"notes": null
+},
+{
+"id": "OMDQM",
+"type": "sea",
+"name_en": "Duqm Port",
+"name_ar": "ميناء الدقم",
+"country_code": "OM",
+"point": {
+"lat": 19.67,
+"lon": 57.7
+},
+"unlocode": "OMDQM",
+"iata": null,
+"serves_countries": [
+"OM"
+],
+"notes": null
+},
+{
+"id": "TZDAR",
+"type": "sea",
+"name_en": "Dar es Salaam Port",
+"name_ar": "ميناء دار السلام",
+"country_code": "TZ",
+"point": {
+"lat": -6.82,
+"lon": 39.29
+},
+"unlocode": "TZDAR",
+"iata": null,
+"serves_countries": [
+"TZ"
+],
+"notes": null
+},
+{
+"id": "CLVAP",
+"type": "sea",
+"name_en": "Valparaiso Port",
+"name_ar": "ميناء فالبارايسو",
+"country_code": "CL",
+"point": {
+"lat": -33.03,
+"lon": -71.63
+},
+"unlocode": "CLVAP",
+"iata": null,
+"serves_countries": [
+"CL"
+],
+"notes": null
+},
+{
+"id": "MXZLO",
+"type": "sea",
+"name_en": "Manzanillo Port",
+"name_ar": "ميناء مانزانيو",
+"country_code": "MX",
+"point": {
+"lat": 19.05,
+"lon": -104.31
+},
+"unlocode": "MXZLO",
+"iata": null,
+"serves_countries": [
+"MX"
+],
+"notes": null
+},
+{
+"id": "USOAK",
+"type": "sea",
+"name_en": "Oakland Port",
+"name_ar": "ميناء أوكلاند",
+"country_code": "US",
+"point": {
+"lat": 37.8,
+"lon": -122.32
+},
+"unlocode": "USOAK",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
+},
+{
+"id": "CAPRR",
+"type": "sea",
+"name_en": "Prince Rupert Port",
+"name_ar": "ميناء برنس روبرت",
+"country_code": "CA",
+"point": {
+"lat": 54.31,
+"lon": -130.33
+},
+"unlocode": "CAPRR",
+"iata": null,
+"serves_countries": [
+"CA"
+],
+"notes": null
+},
+{
+"id": "USMSY",
+"type": "sea",
+"name_en": "New Orleans Port",
+"name_ar": "ميناء نيو أورلينز",
+"country_code": "US",
+"point": {
+"lat": 29.94,
+"lon": -90.05
+},
+"unlocode": "USMSY",
+"iata": null,
+"serves_countries": [
+"US"
+],
+"notes": null
 }
 ]

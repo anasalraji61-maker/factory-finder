@@ -56,6 +56,9 @@ CITIES = {  # (country, lowercase name) -> (lat, lon)
     ("US", "new york"): (40.71, -74.01), ("IR", "tehran"): (35.69, 51.39),
     ("SA", "riyadh"): (24.71, 46.68), ("EG", "cairo"): (30.04, 31.24),
     ("IN", "mumbai"): (19.08, 72.88), ("JO", "amman"): (31.95, 35.93),
+    ("GH", "accra"): (5.60, -0.19), ("PE", "lima"): (-12.05, -77.04), ("MX", "mexico city"): (19.43, -99.13),
+    ("LK", "colombo"): (6.93, 79.85), ("SE", "stockholm"): (59.33, 18.07), ("GR", "athens"): (37.98, 23.73),
+    ("CH", "zurich"): (47.37, 8.54), ("KZ", "almaty"): (43.24, 76.89),
 }
 HUBS = [  # id, name, type, country, lat, lon
     ("CNSHA", "Shanghai", "sea", "CN", 31.23, 121.47), ("CNNGB", "Ningbo-Zhoushan", "sea", "CN", 29.87, 121.85),
@@ -77,6 +80,13 @@ HUBS = [  # id, name, type, country, lat, lon
     ("EGALY", "Alexandria", "sea", "EG", 31.19, 29.88), ("CAI", "Cairo Intl", "air", "EG", 30.12, 31.41),
     ("INNSA", "Nhava Sheva", "sea", "IN", 18.95, 72.95), ("BOM", "Mumbai Intl", "air", "IN", 19.09, 72.87),
     ("JOAQJ", "Aqaba", "sea", "JO", 29.52, 35.0), ("AMM", "Amman Queen Alia", "air", "JO", 31.72, 35.99),
+    ("GHTEM", "Tema", "sea", "GH", 5.63, 0.02), ("ACC", "Accra Kotoka", "air", "GH", 5.61, -0.17),
+    ("PECLL", "Callao", "sea", "PE", -12.05, -77.15), ("LIM", "Lima Jorge Chavez", "air", "PE", -12.02, -77.11),
+    ("MXZLO", "Manzanillo", "sea", "MX", 19.05, -104.31), ("MEX", "Mexico City Intl", "air", "MX", 19.44, -99.07),
+    ("LKCMB", "Colombo", "sea", "LK", 6.95, 79.85), ("CMB", "Colombo Bandaranaike", "air", "LK", 7.18, 79.88),
+    ("SEGOT", "Gothenburg", "sea", "SE", 57.70, 11.93), ("ARN", "Stockholm Arlanda", "air", "SE", 59.65, 17.92),
+    ("GRPIR", "Piraeus", "sea", "GR", 37.94, 23.64), ("ATH", "Athens Intl", "air", "GR", 37.94, 23.94),
+    ("ZRH", "Zurich Airport", "air", "CH", 47.46, 8.55), ("ALA", "Almaty Airport", "air", "KZ", 43.35, 77.04),
 ]
 ROAD_FACTOR = {"road": 1.3, "sea": 1.25, "air": 1.0}
 

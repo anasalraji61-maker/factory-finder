@@ -48,6 +48,12 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/assistant/query:
     post:
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: false
+          description: Caller identity (set by the gateway; never read from the message text). Optional, but shipment_status and deal_status answer "sign in required" (no downstream call) without it. Also keys the daily quota (anonymous callers share a small per-client bucket).
+          schema: {type: string, pattern: "^[A-Za-z0-9_.:@-]{1,64}$"}
       summary: Arabic/English natural-language query -> intent, structured query and one combined answer (answer_text is in the language detected from the query, Arabic by default)
       requestBody:
         required: true
@@ -62,6 +68,12 @@ paths:
               schema: {$ref: "#/components/schemas/AssistantResponse"}
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+        "429":
+          description: Daily per-user quota exceeded (error.code quota_exceeded, details.limit, details.retry_after_seconds)
+          headers: {Retry-After: {schema: {type: integer}}}
+          content:
+            application/json:
+              schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
 components:
   responses:
     Error:
@@ -83,7 +95,7 @@ components:
       type: object
       required: [intent]
       properties:
-        intent: {type: string, enum: [search, quote, trust, track, help]}
+        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup]}
         language: {type: string, enum: [ar, en]}
         kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
         condition: {type: string, enum: [new, used, refurbished]}
@@ -105,18 +117,57 @@ components:
         supplier_id: {type: string}
         reference: {type: string}
         reference_type: {type: string, enum: [container, awb, vessel_imo]}
+        deal_id: {type: string}
+        listing_ids: {type: array, items: {type: string}}
+        hs_code: {type: string, description: digits only}
+        hs_query: {type: string}
         confidence: {type: number, minimum: 0, maximum: 1}
     AssistantResponse:
       type: object
       required: [intent, parsed_query, answer_text, listings, warnings]
       properties:
-        intent: {type: string, enum: [search, quote, trust, track, help]}
+        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup]}
         parsed_query: {$ref: "#/components/schemas/ParsedQuery"}
         answer_text: {type: string, description: Concise Arabic answer}
         listings: {type: array, items: {$ref: ../schemas/common.schema.json#/$defs/Listing}}
         quote: {$ref: ../schemas/common.schema.json#/$defs/LandedCostQuote}
         trust: {$ref: ../schemas/common.schema.json#/$defs/TrustScore}
+        cards:
+          type: array
+          description: Structured, bilingual cards for the app to render (tool intents; additive, absent/empty otherwise). Third-party text inside is sanitized data.
+          items: {$ref: "#/components/schemas/Card"}
         warnings:
           type: array
-          description: "e.g. sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
+          description: "e.g. deals_unavailable, untrusted_text_filtered (instruction-like third-party text was removed), compare_limited_to_two, sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
           items: {type: string}
+    CardRow:
+      type: object
+      required: [key, label, label_ar]
+      properties:
+        key: {type: string}
+        label: {type: string}
+        label_ar: {type: string}
+        value: {type: [string, "null"]}
+        value_ar: {type: [string, "null"]}
+        values: {type: [array, "null"], items: {type: string}, description: Comparison rows - one entry per column}
+        highlight: {type: [integer, "null"], description: Comparison rows - index of the better column when meaningful}
+    CardColumn:
+      type: object
+      required: [id, title]
+      properties:
+        id: {type: string}
+        title: {type: string}
+        title_ar: {type: [string, "null"]}
+    Card:
+      type: object
+      required: [type, title, title_ar, severity, rows, refs]
+      properties:
+        type: {type: string, enum: [shipment_status, deal_status, listing_comparison, hs_code, notice]}
+        title: {type: string}
+        title_ar: {type: string}
+        severity: {type: string, enum: [info, ok, warning, error]}
+        rows: {type: array, items: {$ref: "#/components/schemas/CardRow"}}
+        columns: {type: [array, "null"], items: {$ref: "#/components/schemas/CardColumn"}}
+        refs: {type: object, additionalProperties: {type: string}, description: "Ids for deep links (shipment_id, deal_id, listing_a/listing_b, hs_code) or a notice code (auth_required_*, *_not_found, *_unavailable)"}
+        footnote: {type: [string, "null"]}
+        footnote_ar: {type: [string, "null"]}

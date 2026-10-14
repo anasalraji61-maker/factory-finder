@@ -13,6 +13,8 @@ MOCK_USD_RATES = {  # units of currency per 1 USD (static, approximate)
     "USD": "1", "EUR": "0.92", "GBP": "0.79", "CNY": "7.20", "IQD": "1310", "TRY": "34.5",
     "AED": "3.6725", "SAR": "3.75", "KWD": "0.307", "JOD": "0.709", "EGP": "48.5", "INR": "83.5",
     "RUB": "92", "IRR": "42000", "JPY": "150", "KRW": "1350", "CAD": "1.36",
+    "AUD": "1.52", "CHF": "0.88", "SGD": "1.34", "MYR": "4.7", "ZAR": "18.5", "PHP": "56", "SEK": "10.5",
+    "PLN": "4.0", "MXN": "17.5", "BRL": "5.0", "HKD": "7.8", "TWD": "32", "CZK": "23", "HUF": "360",
 }
 MOCK_TS = "2026-01-01T00:00:00Z"
 
