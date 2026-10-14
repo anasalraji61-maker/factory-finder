@@ -6,6 +6,7 @@ import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/router/app_router.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
+import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
