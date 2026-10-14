@@ -208,18 +208,26 @@ components:
         attachments: {type: array, items: {type: string}, maxItems: 10}
         visibility: {type: string, enum: [public, private], default: public}
     Request:
-      allOf:
-        - $ref: "#/components/schemas/RequestCreate"
-        - type: object
-          required: [id, owner_id, status, offers_count, created_at, updated_at]
-          properties:
-            id: {type: string, description: "req_..."}
-            owner_id: {type: string}
-            quantity: {type: string}
-            status: {$ref: "#/components/schemas/RequestStatus"}
-            offers_count: {type: integer}
-            created_at: {type: string, format: date-time}
-            updated_at: {type: string, format: date-time}
+      type: object
+      required: [kind, title, quantity, id, owner_id, status, offers_count, created_at, updated_at]
+      properties:
+        kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
+        title: {type: string, minLength: 3, maxLength: 200}
+        description: {type: [string, "null"]}
+        quantity: {type: string}
+        unit: {type: string, default: piece}
+        condition: {type: string, enum: [new, used, any], default: any}
+        target_price: {$ref: "#/components/schemas/Money"}
+        destination: {type: object, required: [country_code], properties: {country_code: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}, city: {type: string}}}
+        deadline: {type: [string, "null"], format: date-time}
+        attachments: {type: array, items: {type: string}, maxItems: 10}
+        visibility: {type: string, enum: [public, private], default: public}
+        id: {type: string, description: "req_..."}
+        owner_id: {type: string}
+        status: {$ref: "#/components/schemas/RequestStatus"}
+        offers_count: {type: integer}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
     OfferCreate:
       type: object
       required: [price, supplier_name]
@@ -234,18 +242,24 @@ components:
         valid_until: {type: string, format: date-time}
         notes: {type: string}
     Offer:
-      allOf:
-        - $ref: "#/components/schemas/OfferCreate"
-        - type: object
-          required: [id, request_id, supplier_user_id, status, created_at, updated_at]
-          properties:
-            id: {type: string, description: "off_..."}
-            request_id: {type: string}
-            supplier_user_id: {type: string}
-            supplier_verified: {type: boolean, description: "true when supplier_ref came from a gateway-verified X-Supplier-Id"}
-            status: {$ref: "#/components/schemas/OfferStatus"}
-            created_at: {type: string, format: date-time}
-            updated_at: {type: string, format: date-time}
+      type: object
+      required: [price, supplier_name, id, request_id, supplier_user_id, status, created_at, updated_at]
+      properties:
+        price: {$ref: "#/components/schemas/Money"}
+        supplier_name: {type: string}
+        supplier_ref: {type: [string, "null"], description: "Gateway-verified X-Supplier-Id (null if none)."}
+        moq: {type: integer, minimum: 0}
+        lead_time_days: {type: integer, minimum: 0}
+        incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
+        valid_until: {type: [string, "null"], format: date-time}
+        notes: {type: [string, "null"]}
+        id: {type: string, description: "off_..."}
+        request_id: {type: string}
+        supplier_user_id: {type: string}
+        supplier_verified: {type: boolean, description: "true when supplier_ref came from a gateway-verified X-Supplier-Id"}
+        status: {$ref: "#/components/schemas/OfferStatus"}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
     Deal:
       type: object
       required: [id, request_id, offer_id, buyer_id, supplier_user_id, kind, quantity, unit_price, subtotal, commission, supplier_net, status]

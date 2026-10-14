@@ -53,7 +53,7 @@
       "properties": {
         "country_code": {"$ref": "#/$defs/CountryCode"},
         "city": {"type": "string"},
-        "point": {"$ref": "#/$defs/GeoPoint"}
+        "point": {"oneOf": [{"$ref": "#/$defs/GeoPoint"}, {"type": "null"}]}
       }
     },
     "ListingKind": {"type": "string", "enum": ["product", "raw_material", "production_line"]},

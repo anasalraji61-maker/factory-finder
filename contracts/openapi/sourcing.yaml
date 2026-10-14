@@ -93,7 +93,7 @@ paths:
                             source: {type: string}
                             status: {type: string, enum: [ok, timeout, error]}
                             count: {type: integer}
-                            warning: {type: string, description: "Optional; set when a real source failed and mock results were used instead"}
+                            warning: {type: [string, "null"], description: "Optional; set when a real source failed and mock results were used instead"}
         "422": {$ref: "#/components/responses/Error"}
   /v1/listings/{id}:
     get:

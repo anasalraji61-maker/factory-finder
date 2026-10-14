@@ -1,5 +1,8 @@
 # Contract drift found by scripts/contract_validate.py (2026-10-14)
 
+**RESOLVED 2026-10-14 (A, B, C fixed on the contract side; allowlist emptied; validator: 0 mismatches, 0 allowlisted).** Request/Offer flattened into single object schemas (create bodies keep additionalProperties:false); nullable fields added in sourcing, rfq, gateway and common.schema.json.
+
+
 112 responses over 89 operations validated; 20 findings (de-duplicated per path/location), all allowlisted in
 `scripts/contract_validate.allow.json`. Route sets match (`contract_check.py` all OK). None is a service crash or a data
 bug; all are contract-side (services/contracts were not edited by this task). Owners: architect (contracts), then the

@@ -287,7 +287,7 @@ components:
         refresh_token: {type: string}
         token_type: {type: string, enum: [bearer]}
         expires_in: {type: integer}
-        user: {$ref: "#/components/schemas/Me"}
+        user: {oneOf: [{$ref: "#/components/schemas/Me"}, {type: "null"}]}
     Me:
       type: object
       required: [id, name, role, display_currency, language, created_at]
