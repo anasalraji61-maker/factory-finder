@@ -75,8 +75,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
       final msgs = await _repo.messages(widget.conversationId);
       await _repo.markRead(widget.conversationId);
-      ref.invalidate(conversationsProvider);
       if (!mounted) return;
+      ref.invalidate(conversationsProvider);
       setState(() {
         _messages = mergeServer(_messages, msgs);
         _loading = false;

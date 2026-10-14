@@ -20,6 +20,7 @@ class TrackingListScreen extends ConsumerWidget {
       builder: (_) => const AddShipmentSheet(),
     );
     if (added != null) {
+      if (!context.mounted) return;
       ref.invalidate(shipmentsProvider);
       if (context.mounted) context.push('/logistics/tracking/${added.id}');
     }

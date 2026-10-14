@@ -94,6 +94,7 @@ class RequestDetailScreen extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
     try {
       final deal = await ref.read(rfqRepositoryProvider).accept(offer);
+      if (!context.mounted) return;
       ref.invalidate(rfqDetailProvider(requestId));
       ref.invalidate(rfqOffersProvider(requestId));
       ref.invalidate(rfqListProvider);

@@ -276,7 +276,8 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
-    controller.dispose();
+    // Not disposed here: the dialog route is still animating out and its
+    // TextField would touch a disposed controller. It holds no resources.
     if (result != null && result.isNotEmpty) {
       ref.read(serverUrlProvider.notifier).state =
           result.endsWith('/') ? result.substring(0, result.length - 1) : result;

@@ -153,12 +153,13 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     try {
       if (existing != null) {
         await repo.remove(existing.id);
+        if (!mounted) return;
         ref.invalidate(watchlistProvider);
-        if (mounted) _snack(removedText);
+        _snack(removedText);
         return;
       }
       final draft = await showWatchSheet(context, currency: l.price.min.currency);
-      if (draft == null) return;
+      if (draft == null || !mounted) return;
       await repo.add(
         l.id,
         targetPrice: draft.targetPrice,
@@ -167,8 +168,9 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
         titleAr: l.titleAr,
         currentPrice: l.price.min,
       );
+      if (!mounted) return;
       ref.invalidate(watchlistProvider);
-      if (mounted) _snack(addedText);
+      _snack(addedText);
     } on ApiException catch (e) {
       if (mounted) _snack(e.isUnauthorized ? loginText : failText);
     } catch (_) {

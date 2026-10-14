@@ -1,0 +1,4 @@
+2026-10-14 | Static QA of apps/mobile/lib: added `mounted` guards before `ref.invalidate` after awaits (chat load, tracking refresh/list, RFQ accept, watch toggle); stopped disposing the server-URL dialog controller while its route animates out | analyzer cannot catch use-after-dispose; only fixes that are a few lines each.
+2026-10-14 | `FactoryFinderApp` takes optional `router` (default singleton `appRouter`) | widget tests need a fresh GoRouter per test; production path unchanged.
+2026-10-14 | `debugDisableNetworkImages` flag in common_widgets.dart | CachedNetworkImage touches network/sqflite plugins, which are unavailable under flutter_test.
+2026-10-14 | Widget tests live in test/widgets/ (smoke, logistics calculator + FX, watchlist toggle + locale switch) using bounded `settle()` pumps instead of pumpAndSettle | shimmers/spinners never settle; Flutter was not available locally so tests are unrun (CI is the first run).

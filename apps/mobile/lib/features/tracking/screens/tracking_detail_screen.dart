@@ -22,6 +22,7 @@ class _TrackingDetailScreenState extends ConsumerState<TrackingDetailScreen> {
     setState(() => _refreshing = true);
     try {
       await ref.read(trackingRepositoryProvider).refresh(widget.shipmentId);
+      if (!mounted) return;
       ref.invalidate(shipmentProvider(widget.shipmentId));
       ref.invalidate(shipmentsProvider);
       if (mounted) {

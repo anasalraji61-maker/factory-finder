@@ -201,6 +201,9 @@ class LoadingList extends StatelessWidget {
   }
 }
 
+/// Tests set this to true so no network/cache plugin is touched.
+bool debugDisableNetworkImages = false;
+
 class AppNetworkImage extends StatelessWidget {
   const AppNetworkImage({
     super.key,
@@ -226,7 +229,7 @@ class AppNetworkImage extends StatelessWidget {
       alignment: Alignment.center,
       child: const Icon(Icons.image_outlined, color: AppColors.textSecondary),
     );
-    final Widget image = (url == null || url!.isEmpty)
+    final Widget image = (debugDisableNetworkImages || url == null || url!.isEmpty)
         ? placeholder
         : CachedNetworkImage(
             imageUrl: url!,
