@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -83,3 +83,16 @@ class ReportCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reason: str = Field(default="other", pattern="^(spam|abuse|fake|other)$")
     note: str | None = Field(default=None, max_length=300)
+
+
+class PaymentStatusCallback(BaseModel):
+    """Internal (payments -> rfq). ``event_id`` makes redelivery idempotent."""
+
+    model_config = ConfigDict(extra="forbid")
+    invoice_id: str = Field(min_length=1, max_length=64)
+    kind: Literal["commission", "deal_payment"]
+    status: Literal["paid", "refunded"]
+    amount: Money
+    event_id: str = Field(min_length=1, max_length=128)
+    # other invoice kinds of this deal that are still open (pending/awaiting/confirming) at event time
+    other_open_kinds: list[Literal["commission", "deal_payment"]] = Field(default_factory=list, max_length=2)

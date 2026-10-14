@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     rfq_url: str = "http://localhost:8105"
     deal_client: str = "http"  # http | mock
 
+    outbox_max_attempts: int = 8  # then the event is dead-lettered (admin can requeue)
+    outbox_backoff_seconds: int = 30  # doubles per attempt, capped at one hour
+    outbox_lease_seconds: int = 60
+    outbox_inline_timeout_seconds: float = 3.0  # best-effort immediate delivery after settlement
+
     commission_product: Decimal = Decimal("0.03")
     commission_raw_material: Decimal = Decimal("0.02")
     commission_production_line: Decimal = Decimal("0.04")

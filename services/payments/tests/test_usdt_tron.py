@@ -96,7 +96,8 @@ def test_explorer_outage_does_not_break_sweep():
     with TestClient(create_app(make_settings(provider="off"), provider=prov,
                                deals=MockDealClient({"deal_1": DEAL}), clock=Clock())) as c:
         c.post("/v1/invoices", json={"deal_id": "deal_1", "kind": "commission"}, headers=BUYER)
-        assert c.post("/v1/payments/sweep", headers=ADMIN).json() == {"expired": 0, "polled": 1, "updated": 0}
+        out = c.post("/v1/payments/sweep", headers=ADMIN).json()
+        assert {k: out[k] for k in ("expired", "polled", "updated")} == {"expired": 0, "polled": 1, "updated": 0}
 
 
 def test_not_configured_and_wrong_currency():

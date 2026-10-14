@@ -71,7 +71,10 @@ def deal_dict(d: DealRow) -> dict[str, Any]:
             "min_fee_applied": d.min_fee_applied, "is_estimate": False,
         },
         "supplier_net": _money(format(Decimal(d.subtotal) - Decimal(d.commission_amount), "f"), d.currency),
-        "status": d.status, "created_at": _iso(d.created_at), "updated_at": _iso(d.updated_at),
+        "status": d.status,
+        "payment": {k: ((d.payment_state or {}).get(k) or {}).get("status") for k in ("commission", "deal_payment")},
+        "delivered_at": _iso(d.delivered_at), "completed_at": _iso(d.completed_at),
+        "created_at": _iso(d.created_at), "updated_at": _iso(d.updated_at),
     }
 
 

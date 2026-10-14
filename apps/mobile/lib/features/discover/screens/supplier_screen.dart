@@ -5,6 +5,7 @@ import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/screens/listing_detail_screen.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/reviews/widgets/review_widgets.dart';
 import 'package:factory_finder/features/trust/trust_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,6 +102,17 @@ class SupplierScreen extends ConsumerWidget {
                   child: TrustInsights(supplierId: supplierId, trust: t),
                 ),
                 orElse: () => const SizedBox.shrink(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
+                child: RatingSummaryCard(supplierRef: supplierId),
               ),
             ),
             SliverToBoxAdapter(

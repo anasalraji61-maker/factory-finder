@@ -18,7 +18,22 @@ class Settings(BaseSettings):
     @property
     def auto_create_tables(self) -> bool:
         return resolve_auto_create(self.database_url, self.db_auto_create)
-    provider: str = "mock"  # mock | licensed
+    provider: str = "mock"  # mock (default, no network) | http (licensed APIs below) | <other> = stub
     provider_api_key: str | None = None
     refresh_min_interval_seconds: int = 60
     internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured (see main.py)
+    # --- real providers (all OFF unless provider=http AND a base URL + key are set; env only) ---
+    container_base_url: str = ""
+    container_api_key: str | None = None
+    awb_base_url: str = ""
+    awb_api_key: str | None = None
+    vessel_base_url: str = ""
+    vessel_api_key: str | None = None
+    http_min_interval_seconds: float = 3.0  # per host, clamped to >= 3
+    http_cache_ttl_seconds: float = 3600.0
+    fallback_to_mock: bool = True  # on provider failure answer with mock data + `warning`
+    # --- background refresh of active shipments (off by default) ---
+    refresh_job_enabled: bool = False
+    refresh_job_interval_hours: float = 6.0  # a shipment is refreshed at most this often
+    refresh_job_poll_seconds: float = 600.0
+    refresh_job_batch_size: int = 50

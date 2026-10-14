@@ -213,6 +213,11 @@ components:
         flight: {type: [object, "null"]}
         events: {type: array, items: {$ref: "#/components/schemas/TrackingEvent"}}
         provider: {type: [string, "null"]}
+        warning: {type: [string, "null"], description: "Degraded-data notice, e.g. provider_unavailable:kill_switch|not_configured|rate_limited|upstream_error|timeout|blocked|bad_payload (real provider failed; mock data or last good data shown)"}
+        milestones: {type: object, additionalProperties: {type: string, format: date-time}, description: "First time of gate_in, loaded, departed, transshipment, arrived, discharged, gate_out, delivered when known"}
+        initial_eta: {type: [string, "null"], format: date-time, description: First ETA ever seen}
+        delayed: {type: boolean, description: "ETA slipped > 12 h past initial_eta, or a stale past ETA was recomputed"}
+        delay_hours: {type: [integer, "null"]}
         last_refreshed_at: {type: [string, "null"], format: date-time}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}

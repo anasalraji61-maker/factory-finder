@@ -1,0 +1,15 @@
+{"data": {"container_number": "MSKU0000000", "carrier": {"scac": "MAEU"},
+ "origin": {"unlocode": "CNSHA"}, "destination": {"unlocode": "IQUQR"},
+ "vessel": {"name": "Maersk Sentosa", "imo": "9074729", "voyage": "412E"},
+ "eta": "2026-10-20T06:00:00Z",
+ "events": [
+  {"id": "e5", "type": "Vessel Departed", "occurred_at": "2026-09-10T10:00:00+08:00", "actual": true, "location": {"unlocode": "CNSHA"}},
+  {"id": "e1", "type": "GATE_IN_FULL", "occurred_at": "2026-09-05T08:00:00+08:00", "actual": true, "location": {"unlocode": "CNSHA", "name": "Shanghai"}},
+  {"id": "e1dup", "type": "GATE_IN_FULL", "occurred_at": "2026-09-05T08:00:30+08:00", "actual": true, "location": {"unlocode": "CNSHA"}},
+  {"id": "e2", "type": "LOADED", "occurred_at": "2026-09-09T20:00:00+08:00", "actual": true, "location": {"unlocode": "CNSHA"}},
+  {"id": "e6", "type": "DISCHARGE", "occurred_at": "2026-09-25T00:00:00Z", "actual": true, "location": {"unlocode": "MYPKG"}},
+  {"id": "e7", "type": "LOADED", "occurred_at": "2026-09-27T00:00:00Z", "actual": true, "location": {"unlocode": "MYPKG"}},
+  {"id": "e8", "type": "WEIRD_CODE", "occurred_at": "2026-09-28T00:00:00Z", "actual": true},
+  {"id": "e9", "type": "GATE_OUT_FULL", "occurred_at": "not-a-date", "actual": true},
+  {"id": "e10", "type": "ARRIVAL", "occurred_at": "2026-10-20T06:00:00Z", "actual": false, "location": {"unlocode": "IQUQR"}}
+ ]}}

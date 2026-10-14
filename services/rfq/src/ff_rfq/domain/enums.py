@@ -57,6 +57,7 @@ class DealStatus(StrEnum):
     IN_FULFILMENT = "in_fulfilment"
     COMPLETED = "completed"
     DISPUTED = "disputed"
+    REFUNDED = "refunded"
     CANCELLED = "cancelled"
 
 

@@ -66,6 +66,17 @@ OCEAN_CARRIERS: tuple[Carrier, ...] = (
             ("PCIU",), ("PCIU",), vessel_prefix="KOTA"),
     Carrier("wan_hai", "Wan Hai Lines", "وان هاي", _SEA, "WHLC",
             ("WHLU", "WHSU"), ("WHLC",), vessel_prefix="WAN HAI"),
+    # Added in Phase 4 prep (best effort: verify owner codes against the BIC registry before relying on them)
+    Carrier("sealand", "Sealand", "سيلاند", _SEA, "SEJJ", ("SEAU", "SEBU"), ("SEJJ",), vessel_prefix="SEALAND"),
+    Carrier("anl", "ANL", "إيه إن إل", _SEA, "ANNU", ("ANNU", "ANLU"), ("ANNU",), vessel_prefix="ANL"),
+    Carrier("matson", "Matson", "ماتسون", _SEA, "MATS", ("MATU",), ("MATS",), vessel_prefix="MATSON"),
+    Carrier("rcl", "Regional Container Lines (RCL)", "ريجونال كونتينر لاينز", _SEA, "RCLU", ("RCLU",), ("RCLU",)),
+    Carrier("sitc", "SITC Container Lines", "إس آي تي سي", _SEA, "SITC", ("SITU",), ("SITC",), vessel_prefix="SITC"),
+    Carrier("kmtc", "KMTC", "كي إم تي سي", _SEA, "KMTU", ("KMTU",), ("KMTU",), vessel_prefix="KMTC"),
+    Carrier("sm_line", "SM Line", "إس إم لاين", _SEA, "SMLM", ("SMLU",), ("SMLM",), vessel_prefix="SM"),
+    Carrier("ts_lines", "T.S. Lines", "تي إس لاينز", _SEA, "TSLU", ("TSLU",), ("TSLU",)),
+    Carrier("sinokor", "Sinokor", "سينوكور", _SEA, "SKLU", ("SKLU",), ("SKLU",), vessel_prefix="SINOKOR"),
+    Carrier("heung_a", "Heung-A Line", "هيونغ آ", _SEA, "HASU", ("HASU",), ("HASU",), vessel_prefix="HEUNG-A"),
 )
 
 AIRLINES: tuple[Carrier, ...] = (
@@ -103,6 +114,29 @@ AIRLINES: tuple[Carrier, ...] = (
     Carrier("hainan_airlines", "Hainan Airlines", "خطوط هاينان الجوية", _AIR, iata_code="HU", awb_prefix="880"),
     Carrier("oman_air", "Oman Air Cargo", "الطيران العُماني للشحن", _AIR, iata_code="WY", awb_prefix="910"),
     Carrier("air_china", "Air China Cargo", "طيران الصين للشحن", _AIR, iata_code="CA", awb_prefix="999"),
+    Carrier("fedex", "FedEx Express", "فيديكس", _AIR, iata_code="FX", awb_prefix="023"),
+    Carrier("ups", "UPS Airlines", "يو بي إس", _AIR, iata_code="5X", awb_prefix="406"),
+    Carrier("air_india", "Air India Cargo", "طيران الهند للشحن", _AIR, iata_code="AI", awb_prefix="098"),
+    Carrier("atlas_air", "Atlas Air", "أطلس إير", _AIR, iata_code="5Y", awb_prefix="369"),
+    Carrier("jal", "Japan Airlines Cargo", "طيران اليابان للشحن", _AIR, iata_code="JL", awb_prefix="131"),
+    Carrier("ana", "ANA Cargo", "إيه إن إيه للشحن", _AIR, iata_code="NH", awb_prefix="205"),
+    Carrier("thai", "Thai Airways Cargo", "الخطوط التايلاندية للشحن", _AIR, iata_code="TG", awb_prefix="217"),
+    Carrier("malaysia", "MASkargo", "ماس كارغو", _AIR, iata_code="MH", awb_prefix="232"),
+    Carrier("air_canada", "Air Canada Cargo", "طيران كندا للشحن", _AIR, iata_code="AC", awb_prefix="014"),
+    Carrier("pegasus", "Pegasus Cargo", "بيغاسوس للشحن", _AIR, iata_code="PC", awb_prefix="624"),
+    Carrier("air_arabia", "Air Arabia Cargo", "العربية للطيران للشحن", _AIR, iata_code="G9", awb_prefix="514"),
+    Carrier("aeroflot", "Aeroflot Cargo", "أيروفلوت للشحن", _AIR, iata_code="SU", awb_prefix="555"),
+    Carrier("vietnam", "Vietnam Airlines Cargo", "الخطوط الفيتنامية للشحن", _AIR, iata_code="VN", awb_prefix="738"),
+    Carrier("asiana", "Asiana Cargo", "آسيانا للشحن", _AIR, iata_code="OZ", awb_prefix="988"),
+    Carrier("pia", "PIA Cargo", "الباكستانية للشحن", _AIR, iata_code="PK", awb_prefix="214"),
+    Carrier("srilankan", "SriLankan Cargo", "السريلانكية للشحن", _AIR, iata_code="UL", awb_prefix="603"),
+    Carrier("swiss", "Swiss WorldCargo", "سويس وورلد كارغو", _AIR, iata_code="LX", awb_prefix="724"),
+    Carrier("virgin_atlantic", "Virgin Atlantic Cargo", "فيرجن أتلانتيك للشحن", _AIR, iata_code="VS", awb_prefix="932"),
+    Carrier("iberia", "Iberia Cargo", "إيبيريا للشحن", _AIR, iata_code="IB", awb_prefix="075"),
+    Carrier("tap", "TAP Air Portugal Cargo", "تاب البرتغالية للشحن", _AIR, iata_code="TP", awb_prefix="047"),
+    Carrier("finnair", "Finnair Cargo", "فينير للشحن", _AIR, iata_code="AY", awb_prefix="105"),
+    Carrier("qantas", "Qantas Freight", "كانتاس للشحن", _AIR, iata_code="QF", awb_prefix="081"),
+    Carrier("kenya_airways", "Kenya Airways Cargo", "الكينية للشحن", _AIR, iata_code="KQ", awb_prefix="706"),
 )
 
 # Container owner codes of leasing companies: the container may sail with any carrier.

@@ -93,6 +93,17 @@ async def sweep(s: Svc) -> dict[str, int]:
     return await s.sweep()
 
 
+@router.get("/payments/outbox", dependencies=[Depends(admin_only)])
+async def list_outbox(s: Svc, status: Annotated[str | None, Query(pattern="^(pending|delivered|dead)$")] = None,
+                      page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
+    return await s.list_outbox(status, page, page_size)
+
+
+@router.post("/payments/outbox/{outbox_id}/requeue", dependencies=[Depends(admin_only)])
+async def requeue_outbox(outbox_id: str, s: Svc) -> dict[str, Any]:
+    return await s.requeue_outbox(outbox_id)
+
+
 @router.post("/payments/webhooks/{provider}")
 async def webhook(provider: str, request: Request, s: Svc,
                   x_ff_signature: Annotated[str | None, Header()] = None) -> dict[str, Any]:

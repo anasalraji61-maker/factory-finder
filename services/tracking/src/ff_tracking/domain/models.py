@@ -12,6 +12,7 @@ from typing import Annotated
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ff_tracking.domain.enums import ReferenceType, ShipmentStatus, TransportMode
+from ff_tracking.domain.eta import assess_eta
 
 
 def ensure_utc(value: datetime) -> datetime:
@@ -97,6 +98,9 @@ class TrackingSnapshot(_Value):
     vessel: VesselRef | None = None
     flight: FlightRef | None = None
     carrier: CarrierRef | None = None
+    # Set when this snapshot is a degraded stand-in (e.g. mock after a real-provider failure).
+    warning: str | None = None
+    milestones: dict[str, UtcDatetime] = Field(default_factory=dict)
 
     @property
     def status(self) -> ShipmentStatus | None:
@@ -124,6 +128,11 @@ class Shipment(BaseModel):
     flight: FlightRef | None = None
     events: list[TrackingEvent] = Field(default_factory=list)
     provider: str | None = None
+    warning: str | None = Field(default=None, description="Degraded-data notice, e.g. provider_unavailable:kill_switch")
+    milestones: dict[str, UtcDatetime] = Field(default_factory=dict)
+    initial_eta: UtcDatetime | None = None
+    delayed: bool = False
+    delay_hours: int | None = None
     last_refreshed_at: UtcDatetime | None = None
     last_refresh_attempt_at: UtcDatetime | None = None
     created_at: UtcDatetime
@@ -139,6 +148,12 @@ class Shipment(BaseModel):
 
     def apply_snapshot(self, snapshot: TrackingSnapshot, now: datetime) -> None:
         """Merge provider data into the aggregate (provider is the source of truth for events)."""
+        if snapshot.warning and self.provider not in (None, snapshot.provider) and self.events:
+            # A degraded stand-in must never overwrite real data we already hold.
+            self.warning = snapshot.warning
+            self.last_refreshed_at = now
+            self.updated_at = now
+            return
         events = sorted(snapshot.events, key=lambda e: e.timestamp)
         if events:
             self.events = events
@@ -152,6 +167,11 @@ class Shipment(BaseModel):
         self.flight = snapshot.flight or self.flight
         if self.carrier is None and snapshot.carrier is not None:
             self.carrier = snapshot.carrier
+        if snapshot.milestones:
+            self.milestones = dict(snapshot.milestones)
+        self.eta, self.initial_eta, self.delayed, self.delay_hours = assess_eta(
+            self.eta, self.initial_eta, self.status, now)
+        self.warning = snapshot.warning
         self.provider = snapshot.provider
         self.last_refreshed_at = now
         self.updated_at = now

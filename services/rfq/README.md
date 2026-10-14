@@ -32,3 +32,6 @@ Code: `reviews.py`, `domain/review_text.py`; tables `reviews`, `review_events`, 
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Deal lifecycle
+`POST /v1/deals/{id}/fulfilment/start|delivered|confirm-receipt`, `GET /v1/deals/{id}/events`, internal `POST /v1/internal/deals/{id}/payment-status` (payments callback, token-guarded, not routed by the gateway). Env: `FF_RFQ_REQUIRE_BOTH_INVOICES`. See `docs/decisions/deal-payment-hook.md`.

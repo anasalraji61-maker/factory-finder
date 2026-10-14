@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from sqlalchemy import DateTime, String, Text, UniqueConstraint, func, select
+from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -31,6 +32,21 @@ class ShipmentRow(Base):
     status: Mapped[str] = mapped_column(String(24), index=True)
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
     data: Mapped[str] = mapped_column(Text)
+
+
+class OutboxRow(Base):
+    """Notification event records, written once per shipment change (read by the notifications integration)."""
+
+    __tablename__ = "tracking_outbox"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    dedupe_key: Mapped[str] = mapped_column(String(200), unique=True)
+    shipment_id: Mapped[str] = mapped_column(String(40), index=True)
+    owner_id: Mapped[str] = mapped_column(String(64), index=True)
+    kind: Mapped[str] = mapped_column(String(32))
+    payload: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
+    delivered_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 def make_engine(url: str) -> AsyncEngine:
@@ -92,4 +108,38 @@ class ShipmentRepository:
             return [Shipment.model_validate_json(r.data) for r in rows], total
 
 
-__all__ = ["AsyncSession", "Base", "ShipmentRepository", "make_engine"]
+    async def add_outbox(self, *, dedupe_key: str, shipment_id: str, owner_id: str, kind: str,
+                         payload: str, created_at) -> bool:
+        """Insert once per ``dedupe_key``; returns False when the record already exists."""
+        async with self._sessions() as s:
+            s.add(OutboxRow(dedupe_key=dedupe_key, shipment_id=shipment_id, owner_id=owner_id,
+                            kind=kind, payload=payload, created_at=created_at))
+            try:
+                await s.commit()
+            except IntegrityError:
+                await s.rollback()
+                return False
+            return True
+
+    async def pending_outbox(self, limit: int = 100) -> list[OutboxRow]:
+        async with self._sessions() as s:
+            rows = (await s.execute(select(OutboxRow).where(OutboxRow.delivered_at.is_(None))
+                                    .order_by(OutboxRow.id).limit(limit))).scalars()
+            return list(rows)
+
+    async def mark_outbox_delivered(self, outbox_id: int, when) -> None:
+        async with self._sessions() as s:
+            row = await s.get(OutboxRow, outbox_id)
+            if row:
+                row.delivered_at = when
+                await s.commit()
+
+    async def active(self) -> list[Shipment]:
+        """Shipments not yet delivered (the refresh job filters staleness in Python)."""
+        async with self._sessions() as s:
+            rows = (await s.execute(select(ShipmentRow).where(ShipmentRow.status != "delivered")
+                                    .order_by(ShipmentRow.created_at))).scalars()
+            return [Shipment.model_validate_json(r.data) for r in rows]
+
+
+__all__ = ["AsyncSession", "Base", "OutboxRow", "ShipmentRepository", "make_engine"]

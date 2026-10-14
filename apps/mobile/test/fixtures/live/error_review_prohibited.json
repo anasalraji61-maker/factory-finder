@@ -1,0 +1,1 @@
+{"error":{"code":"prohibited_content","message":"Text contains a link","details":{"field":"text","kind":"url"}}}

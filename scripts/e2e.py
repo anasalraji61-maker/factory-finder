@@ -32,6 +32,7 @@ ADMIN_TOKEN = os.environ.get("FF_E2E_ADMIN_TOKEN", "e2e-admin-token")  # local r
 # no local processes are spawned and the steps that need direct (unpublished) service ports are skipped.
 REMOTE = os.environ.get("FF_E2E_BASE_URL", "").rstrip("/")
 GW = REMOTE or "http://localhost:8000"
+WEBHOOK_SECRET = "e2e-webhook-secret"  # payments mock-provider webhook HMAC key (local run only)
 RESULTS: list[tuple[str, bool, str]] = []
 SKIPPED: list[str] = []
 
@@ -78,6 +79,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_GATEWAY_BCRYPT_ROUNDS": "4", "FF_GATEWAY_RATE_LIMIT_PER_MINUTE": "100000",
         "FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE": "100000", "FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS": "3600",
         "FF_GATEWAY_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_PROVIDER": "mock",
+        "FF_PAYMENTS_WEBHOOK_SECRET_MOCK": WEBHOOK_SECRET,
         "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
         "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
     }  # fmt: skip
@@ -451,6 +453,54 @@ def scenario() -> None:
         assert r.status_code in (403, 404), f"unrelated user can read invoice: {r.status_code}"
 
     step("payments: commission invoice (idempotent, owner-only) via gateway", payments)
+
+    def deal_lifecycle():
+        import hashlib
+        import hmac
+        import json
+        import time
+
+        if REMOTE:
+            return skip("deal paid -> review-eligible", "needs direct access to the payments webhook port")
+        if not deal.get("id"):
+            return skip("deal paid -> review-eligible", "no deal from the rfq step")
+        did = deal["id"]
+        # a stranger cannot touch the deal; the internal callback is not reachable through the gateway
+        assert c.post(f"/v1/deals/{did}/confirm-receipt", headers=h("supplier")).status_code == 403
+        r = c.post(f"/v1/internal/deals/{did}/payment-status", headers=h("buyer"), json={})
+        assert r.status_code == 404, f"internal endpoint exposed via gateway: {r.status_code}"
+        assert c.post(f"/v1/deals/{did}/fulfilment/start", headers=h("supplier")).status_code == 409  # not paid yet
+        inv = {k: ok(c.post("/v1/invoices", headers=h("buyer"), json={"deal_id": did, "kind": k}), 200, 201)
+               for k in ("commission", "deal_payment")}
+
+        def webhook(invoice: dict, eid: str, status: str = "applied"):
+            raw = json.dumps({"event_id": eid, "type": "payment.confirmed", "invoice_id": invoice["id"]}).encode()
+            ts = int(time.time())
+            mac = hmac.new(WEBHOOK_SECRET.encode(), f"{ts}.".encode() + raw, hashlib.sha256).hexdigest()
+            r = httpx.post("http://localhost:8111/v1/payments/webhooks/mock", content=raw, timeout=15,
+                           headers={"X-FF-Signature": f"t={ts},v1={mac}", "Content-Type": "application/json"})
+            assert r.status_code == 200 and r.json()["status"] == status, r.text
+
+        def review_code() -> str:
+            r = c.post(f"/v1/deals/{did}/reviews", headers=h("buyer"), json={"rating": 5})
+            return r.json().get("error", {}).get("code", str(r.status_code))
+
+        webhook(inv["deal_payment"], f"e2e-dp-{sfx}")
+        d = ok(c.get(f"/v1/deals/{did}", headers=h("buyer")))
+        assert d["status"] == "pending_payment" and d["payment"]["deal_payment"] == "paid", d  # commission still open
+        assert review_code() == "deal_not_reviewable"
+        webhook(inv["commission"], f"e2e-cm-{sfx}")
+        webhook(inv["commission"], f"e2e-cm-{sfx}", "duplicate")  # duplicate delivery changes nothing
+        assert ok(c.get(f"/v1/deals/{did}", headers=h("buyer")))["status"] == "paid"
+        assert review_code() == "supplier_unverified", "paid deal should pass the status gate (supplier is unverified here)"
+        assert ok(c.post(f"/v1/deals/{did}/fulfilment/start", headers=h("supplier")))["status"] == "in_fulfilment"
+        assert ok(c.post(f"/v1/deals/{did}/delivered", headers=h("supplier")))["delivered_at"]
+        assert c.post(f"/v1/deals/{did}/confirm-receipt", headers=h("supplier")).status_code == 403
+        assert ok(c.post(f"/v1/deals/{did}/confirm-receipt", headers=h("buyer")))["status"] == "completed"
+        ev = items(ok(c.get(f"/v1/deals/{did}/events", headers=h("buyer"))))
+        assert [e["action"] for e in ev] == ["payment_paid", "payment_paid", "fulfilment_started", "delivered", "receipt_confirmed"], ev
+
+    step("deal paid (payments webhook -> rfq) -> fulfilment -> completed + event log", deal_lifecycle)
 
     def media():
         import struct

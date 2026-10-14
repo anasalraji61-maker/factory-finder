@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hmac
 import os
 from collections.abc import Callable
@@ -13,11 +14,18 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_tracking import __version__
 from ff_tracking.adapters.base import TrackingProvider
+from ff_tracking.adapters.http import (
+    HttpAwbProvider,
+    HttpContainerProvider,
+    HttpVesselPositionProvider,
+)
 from ff_tracking.adapters.mock import MockProvider
 from ff_tracking.adapters.real import LicensedProviderStub
+from ff_tracking.adapters.router import FallbackProvider, RoutingProvider
 from ff_tracking.api.routes import router
 from ff_tracking.config import Settings
 from ff_tracking.domain.errors import DomainError, RefreshThrottled, Unauthenticated
+from ff_tracking.jobs import RefreshJob
 from ff_tracking.obs import db_ready, install_observability, ready_response
 from ff_tracking.repository import ShipmentRepository, make_engine
 from ff_tracking.service import ShipmentService
@@ -28,14 +36,28 @@ def _err(status: int, code: str, message: str, details: dict | None = None, head
                         status_code=status, headers=headers)
 
 
+def build_provider(settings: Settings) -> TrackingProvider:
+    """mock (default) | http (licensed APIs, mock fallback with a warning) | stub for anything else."""
+    if settings.provider == "mock":
+        return MockProvider()
+    if settings.provider != "http":
+        return LicensedProviderStub(settings.provider, settings.provider_api_key)
+    kw = {"min_interval_s": settings.http_min_interval_seconds, "cache_ttl_s": settings.http_cache_ttl_seconds}
+    router = RoutingProvider(
+        container=HttpContainerProvider(settings.container_base_url, settings.container_api_key or "", **kw),
+        awb=HttpAwbProvider(settings.awb_base_url, settings.awb_api_key or "", **kw),
+        vessel=HttpVesselPositionProvider(settings.vessel_base_url, settings.vessel_api_key or "", **kw),
+    )
+    return FallbackProvider(router, MockProvider()) if settings.fallback_to_mock else router
+
+
 def create_app(
     settings: Settings | None = None,
     provider: TrackingProvider | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
-    provider = provider or (MockProvider() if settings.provider == "mock"
-                            else LicensedProviderStub(settings.provider, settings.provider_api_key))
+    provider = provider or build_provider(settings)
     repo = ShipmentRepository(make_engine(settings.database_url))
     clock = clock or (lambda: datetime.now(UTC))
 
@@ -43,7 +65,14 @@ def create_app(
     async def lifespan(app: FastAPI):
         if settings.auto_create_tables:
             await repo.create_tables()
+        task = None
+        if settings.refresh_job_enabled:
+            job = RefreshJob(repo, app.state.service, clock, settings.refresh_job_interval_hours,
+                             settings.refresh_job_batch_size)
+            task = asyncio.create_task(job.run_forever(settings.refresh_job_poll_seconds))
         yield
+        if task:
+            task.cancel()
         await repo.engine.dispose()
 
     app = FastAPI(title="Factory Finder - tracking", version=__version__, lifespan=lifespan)

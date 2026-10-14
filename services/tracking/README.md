@@ -16,5 +16,28 @@ Normalized statuses (booked ... delivered), bilingual event timeline, progress %
 | `FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS` | `60` |
 
 
+## Real providers (Phase 4 prep, OFF by default)
+`FF_TRACKING_PROVIDER=http` routes container/B-L to `HttpContainerProvider`, AWB to `HttpAwbProvider`, vessel IMO to
+`HttpVesselPositionProvider` (AIS, position + ETA only, official API only). **All wire shapes are UNVERIFIED** and
+fixture-driven (`tests/fixtures`); re-check against the licensed provider's docs before enabling. Carrier is detected from
+the container owner code (SCAC table, 23 lines) / AWB prefix (57 airlines).
+- Normalization (`domain/normalize.py`): status mapping table (ocean codes + IATA Cargo-IMP), UTC timestamps, UN/LOCODE/IATA
+  location resolution, dedupe + ordering, milestones (gate_in, loaded, departed, transshipment, arrived, discharged, gate_out,
+  delivered), ETA/delay flag (`delayed`, `delay_hours`, `initial_eta`; stale past ETA recomputed to now+24 h).
+- Safety: >= 3 s per host, response cache, honest User-Agent, cooldown after errors, no retries/bypass. Kill switch:
+  `FF_TRACKING_KILL_SWITCH=1` (or `FF_TRACKING_CONTAINER_DISABLED` / `_AWB_DISABLED` / `_VESSEL_DISABLED`). On any failure
+  the answer degrades to the mock with `warning` (`provider_unavailable:<reason>`); real events already held are never
+  overwritten by mock data. `FF_TRACKING_FALLBACK_TO_MOCK=false` returns 502 instead.
+- Background refresh (`jobs.py`, `FF_TRACKING_REFRESH_JOB_ENABLED=true`): refreshes non-delivered shipments at most every
+  `FF_TRACKING_REFRESH_JOB_INTERVAL_HOURS` (default 6) and writes `tracking_outbox` rows (`status_changed`,
+  `shipment_delayed`; unique `dedupe_key` => once per change). Notifications integration: `docs/requests/tracking-notify.md`.
+
+| Extra env | Default |
+|---|---|
+| `FF_TRACKING_{CONTAINER,AWB,VESSEL}_BASE_URL` / `_API_KEY` | empty (env only, never logged) |
+| `FF_TRACKING_HTTP_MIN_INTERVAL_SECONDS` / `_HTTP_CACHE_TTL_SECONDS` | `3` / `3600` |
+| `FF_TRACKING_FALLBACK_TO_MOCK` | `true` |
+| `FF_TRACKING_REFRESH_JOB_{ENABLED,INTERVAL_HOURS,POLL_SECONDS,BATCH_SIZE}` | `false` / `6` / `600` / `50` |
+
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

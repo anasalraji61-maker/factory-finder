@@ -54,7 +54,7 @@ def provider() -> MockProvider:
 def client(clock, provider):
     deals = MockDealClient({"deal_1": DEAL})
     with TestClient(create_app(make_settings(), provider=provider, deals=deals, clock=clock)) as c:
-        c.provider, c.clock = provider, clock
+        c.provider, c.clock, c.deals = provider, clock, deals
         yield c
 
 

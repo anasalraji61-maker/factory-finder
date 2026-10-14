@@ -16,6 +16,7 @@ from ff_rfq.api.routes import router
 from ff_rfq.clients.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
 from ff_rfq.config import Settings
 from ff_rfq.db import make_engine
+from ff_rfq.deals import DealService
 from ff_rfq.domain.errors import DomainError
 from ff_rfq.obs import db_ready, install_observability, ready_response
 from ff_rfq.reviews import ReviewService
@@ -48,7 +49,9 @@ def create_app(
     app = FastAPI(title="Factory Finder - rfq", version=__version__, lifespan=lifespan)
     app.state.service = service
     app.state.reviews = ReviewService(engine, service.clock)
+    app.state.deals = DealService(engine, service.clock, settings.require_both_invoices)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
+    app.state.internal_token = token
 
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):

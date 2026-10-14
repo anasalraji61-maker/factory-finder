@@ -38,3 +38,6 @@ append-only double-entry ledger, provider webhooks. Internal only (reached throu
 
 ## Ops (logging / readiness)
 `GET /ready`: 503 when the database is unreachable. One JSON log line per request (route template, status, duration, user id); never query strings, bodies, tokens, signatures, memos or addresses. Code: `obs.py` (self-contained copy). Migrations: `alembic upgrade head` (see docs/DB.md).
+
+## rfq callback outbox
+Every `paid`/`refunded` transition queues an event for rfq in the same transaction; delivered inline (best effort) and by `POST /v1/payments/sweep`. Admin: `GET /v1/payments/outbox`, `POST /v1/payments/outbox/{id}/requeue`. Env: `FF_PAYMENTS_OUTBOX_MAX_ATTEMPTS`, `_OUTBOX_BACKOFF_SECONDS`, `_OUTBOX_LEASE_SECONDS`, `_OUTBOX_INLINE_TIMEOUT_SECONDS`. See `docs/decisions/deal-payment-hook.md`.

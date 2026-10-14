@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Index, Integer, String, TypeDecorator, event
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, TypeDecorator, event
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -97,6 +97,24 @@ class WebhookEventRow(Base):
     invoice_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
     outcome: Mapped[str] = mapped_column(String(16))
     received_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class OutboxEventRow(Base):
+    """Settlement events owed to rfq. Written in the same transaction as the invoice transition."""
+
+    __tablename__ = "outbox_events"
+    __table_args__ = (Index("ix_outbox_events_status_next", "status", "next_attempt_at"),)
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)  # time-ordered: delivery order per deal
+    event_id: Mapped[str] = mapped_column(String(128), unique=True)  # "<invoice_id>:<paid|refunded>"
+    deal_id: Mapped[str] = mapped_column(String(64), index=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(10))  # pending | delivered | dead
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    delivered_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
 
 class LedgerImmutable(RuntimeError):

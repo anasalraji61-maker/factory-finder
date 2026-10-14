@@ -168,6 +168,72 @@ paths:
       responses:
         "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}/fulfilment/start:
+    post:
+      summary: Supplier starts fulfilment (paid -> in_fulfilment; idempotent)
+      description: |
+        Only the supplier user of the deal; when the offer carried a verified supplier ref, the gateway-verified
+        X-Supplier-Id must equal it (else 403 `supplier_verification_required`). 404 for non-parties, 403 for the buyer,
+        409 `invalid_deal_transition` unless the deal is paid.
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: X-Supplier-Id, in: header, required: false, schema: {type: string}}
+      responses:
+        "200": {description: Deal, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}/delivered:
+    post:
+      summary: Supplier marks the goods shipped / delivered (sets delivered_at; idempotent)
+      description: Same caller rules as fulfilment/start. Requires status in_fulfilment (409 otherwise). Does not complete the deal.
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: X-Supplier-Id, in: header, required: false, schema: {type: string}}
+      responses:
+        "200": {description: Deal, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}/confirm-receipt:
+    post:
+      summary: Buyer confirms receipt (in_fulfilment -> completed; idempotent)
+      description: Only the buyer (403 for the supplier, 404 for strangers). 409 unless in_fulfilment.
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Deal, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}/events:
+    get:
+      summary: Immutable event log of a deal (buyer or supplier; others 404), oldest first
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200":
+          description: Events
+          content: {application/json: {schema: {$ref: "#/components/schemas/DealEventList"}}}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/internal/deals/{id}/payment-status:
+    post:
+      summary: INTERNAL (payments -> rfq). Never routed by the gateway (404 publicly).
+      description: |
+        Guarded by X-Internal-Token (401 `invalid_internal_token`). Idempotent by `event_id` (repeat -> outcome `duplicate`).
+        Rule: the deal becomes `paid` when every invoice kind payments has reported is paid. A kind is known once it was
+        settled or listed in `other_open_kinds` of another event, so with both invoices open BOTH must be paid, with a
+        single invoice that one suffices (FF_RFQ_REQUIRE_BOTH_INVOICES=true always requires both).
+        Refund: deal_payment -> `refunded` (pending_payment|paid) or `disputed` (in_fulfilment); commission while `paid`
+        -> back to `pending_payment`; after completion only recorded. Late `paid` events never resurrect a refunded deal.
+        422 `amount_mismatch` when amount/currency differ from the deal; 404 unknown deal.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/PaymentStatusCallback"}}}}
+      responses:
+        "200": {description: Applied, content: {application/json: {schema: {$ref: "#/components/schemas/PaymentStatusResult"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/reviews:
     post:
       summary: Buyer reviews a deal (once per deal)
@@ -317,7 +383,7 @@ components:
   schemas:
     RequestStatus: {type: string, enum: [open, negotiating, awarded, closed, expired, cancelled]}
     OfferStatus: {type: string, enum: [active, withdrawn, accepted, rejected, expired]}
-    DealStatus: {type: string, enum: [pending_payment, paid, in_fulfilment, completed, disputed, cancelled]}
+    DealStatus: {type: string, enum: [pending_payment, paid, in_fulfilment, completed, disputed, cancelled, refunded]}
     Money: {$ref: ../schemas/common.schema.json#/$defs/Money}
     RequestCreate:
       type: object
@@ -411,8 +477,53 @@ components:
             is_estimate: {type: boolean}
         supplier_net: {$ref: "#/components/schemas/Money"}
         status: {$ref: "#/components/schemas/DealStatus"}
+        payment:
+          type: object
+          description: Per invoice kind, as reported by payments (null = no invoice reported yet; open = required, unpaid).
+          properties:
+            commission: {type: [string, "null"], enum: [open, paid, refunded, null]}
+            deal_payment: {type: [string, "null"], enum: [open, paid, refunded, null]}
+        delivered_at: {type: [string, "null"], format: date-time}
+        completed_at: {type: [string, "null"], format: date-time}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+    DealEventList:
+      type: object
+      required: [items, total]
+      properties:
+        total: {type: integer}
+        items:
+          type: array
+          items:
+            type: object
+            required: [seq, action, actor_role, created_at]
+            properties:
+              seq: {type: integer}
+              action: {type: string, enum: [payment_paid, payment_refunded, fulfilment_started, delivered, receipt_confirmed]}
+              actor_role: {type: string, enum: [buyer, supplier, system]}
+              from_status: {type: [string, "null"]}
+              to_status: {type: [string, "null"]}
+              data: {type: object}
+              created_at: {type: string, format: date-time}
+    PaymentStatusCallback:
+      type: object
+      required: [invoice_id, kind, status, amount, event_id]
+      additionalProperties: false
+      properties:
+        invoice_id: {type: string}
+        kind: {type: string, enum: [commission, deal_payment]}
+        status: {type: string, enum: [paid, refunded]}
+        amount: {$ref: "#/components/schemas/Money"}
+        event_id: {type: string, maxLength: 128}
+        other_open_kinds: {type: array, items: {type: string, enum: [commission, deal_payment]}, description: Other invoice kinds of the deal still open at event time}
+    PaymentStatusResult:
+      type: object
+      required: [deal_id, outcome, deal_status, payment]
+      properties:
+        deal_id: {type: string}
+        outcome: {type: string, enum: [applied, recorded, ignored, duplicate]}
+        deal_status: {$ref: "#/components/schemas/DealStatus"}
+        payment: {type: object}
     Stars: {type: integer, minimum: 1, maximum: 5}
     ReviewInput:
       type: object

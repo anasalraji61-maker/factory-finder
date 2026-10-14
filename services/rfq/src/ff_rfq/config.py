@@ -26,4 +26,7 @@ class Settings(BaseSettings):
     commission_raw_material: Decimal = Decimal("0.02")
     commission_production_line: Decimal = Decimal("0.04")
     min_commission_usd: Decimal = Decimal("25")
+    # True: a deal is only `paid` once BOTH commission and deal_payment are paid, even if payments has not
+    # yet reported the second invoice (closes the 'pay supplier, skip commission' gap). Default: the rule in deals.py.
+    require_both_invoices: bool = False
     internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured

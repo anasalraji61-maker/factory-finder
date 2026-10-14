@@ -1,0 +1,5 @@
+2026-10-14 | Reviews UI lives in apps/mobile/lib/features/reviews; summary card on supplier screen, list at /supplier-reviews/:ref, write/edit/delete from the accepted-deal section in Requests | matches rfq reviews API via gateway; no new deps
+2026-10-14 | Buyer's own review found via GET reviews (page_size 100) `mine`, keyed by supplier of the accepted offer | API has no review-by-deal lookup; if the supplier id is unknown only "write" is offered and the server 409 is mapped
+2026-10-14 | Empty title/text are omitted from POST/PUT bodies | avoids guessing server min-length rules; consequence: an edit cannot clear a previously set text
+2026-10-14 | Client prohibited-content regexes (url/email/phone>=7 digits) are conservative approximations of the server rule | server stays authoritative; 422 prohibited_content maps to a generic localized hint (ApiException carries no details)
+2026-10-14 | Reply sheet shown only when Me.supplierId == supplier ref; mock reviews repo has 0 ms latency | no pending timers in widget tests

@@ -15,6 +15,7 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -94,8 +95,29 @@ class DealRow(Base):
     commission_amount: Mapped[str] = mapped_column(String(32))
     min_fee_applied: Mapped[bool] = mapped_column(default=False)
     status: Mapped[str] = mapped_column(String(20))
+    # per invoice kind: {"commission": {"invoice_id", "status": open|paid|refunded}, "deal_payment": {...}}
+    payment_state: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    delivered_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class DealEventRow(Base):
+    """Immutable per-deal audit log (who / when / what). ``event_id`` dedupes payments callbacks."""
+
+    __tablename__ = "deal_events"
+    __table_args__ = (UniqueConstraint("deal_id", "seq", name="uq_deal_events_deal_seq"),)
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    deal_id: Mapped[str] = mapped_column(ForeignKey("deals.id"), index=True)
+    seq: Mapped[int] = mapped_column(Integer)
+    action: Mapped[str] = mapped_column(String(32))
+    actor: Mapped[str] = mapped_column(String(64))  # user id, or "system:payments"
+    from_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    to_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    event_id: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 class ReviewRow(Base):
@@ -145,6 +167,16 @@ class ReviewReportRow(Base):
     reason: Mapped[str] = mapped_column(String(10))
     note: Mapped[str | None] = mapped_column(String(300), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class DealEventImmutable(RuntimeError):
+    pass
+
+
+@event.listens_for(DealEventRow, "before_update")
+@event.listens_for(DealEventRow, "before_delete")
+def _deal_events_append_only(*_: Any) -> None:
+    raise DealEventImmutable("deal_events are append-only")
 
 
 def make_engine(url: str) -> AsyncEngine:

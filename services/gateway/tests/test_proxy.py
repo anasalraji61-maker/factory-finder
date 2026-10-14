@@ -215,6 +215,29 @@ def test_internal_only_route_not_exposed(client, mock_upstream, hdr):
     assert r.status_code == 404 and not route.called
 
 
+@pytest.mark.parametrize("path", [
+    "/v1/internal/deals/deal_1/payment-status", "/v1/internal/deals/deal_1/payment-status/",
+    "/v1/deals/../internal/deals/deal_1/payment-status", "/v1/internal",
+])
+def test_rfq_internal_payment_callback_is_never_reachable(client, mock_upstream, hdr, path):
+    route = mock_upstream.post("http://localhost:8105/v1/internal/deals/deal_1/payment-status").mock(
+        return_value=httpx.Response(200, json={})
+    )
+    for h in (hdr, {}):
+        r = client.post(path, headers=h, json={"kind": "deal_payment", "status": "paid"})
+        assert r.status_code in (400, 404), (path, r.status_code)
+    assert not route.called
+
+
+def test_deal_lifecycle_routes_are_proxied_to_rfq(client, mock_upstream, hdr):
+    for sub in ("fulfilment/start", "delivered", "confirm-receipt"):
+        route = mock_upstream.post(f"http://localhost:8105/v1/deals/deal_1/{sub}").mock(
+            return_value=httpx.Response(200, json={"status": "ok"})
+        )
+        assert client.post(f"/v1/deals/deal_1/{sub}", headers=hdr).status_code == 200 and route.called
+        assert client.post(f"/v1/deals/deal_1/{sub}").status_code == 401
+
+
 def test_cors_default_denies_and_env_allows(make_client):
     c = make_client()
     r = c.options(

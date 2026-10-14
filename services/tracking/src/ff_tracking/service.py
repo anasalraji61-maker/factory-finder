@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -64,12 +65,55 @@ class ShipmentService:
         await self.repo.save(sh)
         return sh
 
-    async def _fetch(self, sh: Shipment, now: datetime, anchor: datetime) -> None:
+    async def refresh_system(self, sh: Shipment) -> int:
+        """Background refresh (no per-user throttle; the job enforces its own interval). Returns outbox rows added."""
+        now = self.clock()
+        sh.last_refresh_attempt_at = now
+        try:
+            changes = await self._fetch(sh, now, anchor=sh.created_at)
+        except ProviderFailed:
+            await self.repo.save(sh)  # remember the attempt so we do not hammer a failing provider
+            raise
+        await self.repo.save(sh)
+        return await self._emit(sh, changes, now)
+
+    async def _fetch(self, sh: Shipment, now: datetime, anchor: datetime) -> list[dict]:
+        """Pull + merge; returns the change records (status change, newly delayed) to put in the outbox."""
+        prev_status, prev_delayed, had_events = sh.status, sh.delayed, bool(sh.events)
         try:
             snap = await self.provider.track(sh.reference, sh.reference_type, sh.carrier, anchor=anchor, now=now)
         except ProviderUnavailable as exc:
-            raise ProviderFailed(str(exc)) from exc
+            raise ProviderFailed(str(exc), details={"reason": exc.reason}) from exc
         sh.apply_snapshot(snap, now)
+        if not had_events:
+            return []  # first fetch is the baseline, nothing changed yet
+        changes: list[dict] = []
+        if sh.status != prev_status:
+            last = sh.last_event
+            changes.append({"kind": "status_changed", "dedupe": f"{sh.id}:status:{sh.status.value}:{last.id if last else ''}",
+                            "previous_status": prev_status.value})
+        if sh.delayed and not prev_delayed:
+            changes.append({"kind": "shipment_delayed",
+                            "dedupe": f"{sh.id}:delayed:{sh.initial_eta.isoformat() if sh.initial_eta else ''}",
+                            "previous_status": prev_status.value})
+        return changes
+
+    async def _emit(self, sh: Shipment, changes: list[dict], now: datetime) -> int:
+        n = 0
+        for c in changes:
+            last = sh.last_event
+            payload = {
+                "shipment_id": sh.id, "owner_id": sh.owner_id, "reference": sh.reference,
+                "reference_type": sh.reference_type.value, "label": sh.label, "kind": c["kind"],
+                "status": sh.status.value, "previous_status": c["previous_status"],
+                "eta": sh.eta.isoformat() if sh.eta else None, "delayed": sh.delayed,
+                "delay_hours": sh.delay_hours, "event_id": last.id if last else None,
+                "occurred_at": last.timestamp.isoformat() if last else None,
+            }
+            if await self.repo.add_outbox(dedupe_key=c["dedupe"], shipment_id=sh.id, owner_id=sh.owner_id,
+                                          kind=c["kind"], payload=json.dumps(payload), created_at=now):
+                n += 1
+        return n
 
     async def get(self, owner_id: str, shipment_id: str) -> Shipment:
         sh = await self.repo.get(shipment_id)
@@ -85,8 +129,9 @@ class ShipmentService:
             wait = int((self.min_interval - (now - last)).total_seconds()) + 1
             raise RefreshThrottled(wait)
         sh.last_refresh_attempt_at = now
-        await self._fetch(sh, now, anchor=sh.created_at)
+        changes = await self._fetch(sh, now, anchor=sh.created_at)
         await self.repo.save(sh)
+        await self._emit(sh, changes, now)
         return sh
 
     async def delete(self, owner_id: str, shipment_id: str) -> None:

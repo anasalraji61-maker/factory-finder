@@ -109,12 +109,40 @@ paths:
   /v1/payments/sweep:
     post:
       operationId: sweepPayments
-      description: Admin / scheduler only. Expires overdue invoices and polls the provider for awaiting / confirming ones.
+      description: |
+        Admin / scheduler only. Expires overdue invoices, polls the provider for awaiting / confirming ones and drains the
+        rfq callback outbox (due events only; see /v1/payments/outbox).
       responses:
         "200":
           description: Report
-          content: {application/json: {schema: {type: object, properties: {expired: {type: integer}, polled: {type: integer}, updated: {type: integer}}}}}
+          content: {application/json: {schema: {type: object, properties: {expired: {type: integer}, polled: {type: integer}, updated: {type: integer}, outbox_delivered: {type: integer}, outbox_retry: {type: integer}, outbox_dead: {type: integer}}}}}
         "403": {$ref: "#/components/responses/Error"}
+  /v1/payments/outbox:
+    get:
+      operationId: listOutbox
+      description: |
+        Admin only. Settlement events owed to rfq (POST /v1/internal/deals/{id}/payment-status), written in the same
+        transaction as the paid / refunded transition. Delivery: idempotent by event_id, per-deal order kept, exponential
+        backoff (30 s doubling, max 1 h), `dead` after 8 attempts or a permanent rfq refusal (4xx).
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, delivered, dead]}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: Page
+          content: {application/json: {schema: {type: object, required: [items, total], properties: {total: {type: integer}, page: {type: integer}, page_size: {type: integer}, items: {type: array, items: {$ref: "#/components/schemas/OutboxEvent"}}}}}}
+        "403": {$ref: "#/components/responses/Error"}
+  /v1/payments/outbox/{id}/requeue:
+    post:
+      operationId: requeueOutbox
+      description: Admin only. Puts a dead-lettered event back to pending (attempts reset). 409 `not_dead` otherwise, 404 unknown.
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Requeued, content: {application/json: {schema: {$ref: "#/components/schemas/OutboxEvent"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
   /v1/payments/webhooks/{provider}:
     post:
       operationId: receiveWebhook
@@ -166,6 +194,20 @@ components:
           required: [subtotal, listing_kind]
           properties: {subtotal: {$ref: "#/components/schemas/Money"}, listing_kind: {type: string, enum: [product, raw_material, production_line]}}
         expires_in_minutes: {type: [integer, "null"], minimum: 1, maximum: 10080, description: admin only}
+    OutboxEvent:
+      type: object
+      required: [id, event_id, deal_id, status, attempts, payload]
+      properties:
+        id: {type: string}
+        event_id: {type: string, description: "<invoice_id>:<paid|refunded>"}
+        deal_id: {type: string}
+        status: {type: string, enum: [pending, delivered, dead]}
+        attempts: {type: integer}
+        next_attempt_at: {type: [string, "null"], format: date-time}
+        last_error: {type: [string, "null"]}
+        payload: {type: object}
+        created_at: {type: string, format: date-time}
+        delivered_at: {type: [string, "null"], format: date-time}
     Invoice:
       type: object
       required: [id, deal_id, payer_user_id, payee, kind, amount, status, expires_at, provider, created_at, updated_at]

@@ -10,6 +10,7 @@ import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart'
     show formatDate;
 import 'package:factory_finder/features/requests/screens/requests_screen.dart';
+import 'package:factory_finder/features/reviews/widgets/deal_review_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,12 +80,26 @@ class RequestDetailScreen extends ConsumerWidget {
               if (isMine && acceptedDeal != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 DealPaymentSection(deal: acceptedDeal),
+                const SizedBox(height: AppSpacing.lg),
+                DealReviewSection(
+                  deal: acceptedDeal,
+                  supplierRef: _supplierOf(offersAsync.valueOrNull, acceptedDeal),
+                ),
               ],
             ],
           );
         },
       ),
     );
+  }
+
+  /// Supplier id of the offer the deal was made on, when known.
+  static String? _supplierOf(List<Offer>? offers, Deal deal) {
+    if (offers == null) return null;
+    for (final o in offers) {
+      if (o.id == deal.offerId) return o.supplierId;
+    }
+    return null;
   }
 
   Future<void> _accept(

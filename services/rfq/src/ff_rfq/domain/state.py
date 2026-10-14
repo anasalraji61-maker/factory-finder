@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ff_rfq.domain.enums import DealStatus as D
 from ff_rfq.domain.enums import OfferStatus as O
 from ff_rfq.domain.enums import RequestStatus as R
 from ff_rfq.domain.errors import InvalidTransition
@@ -21,6 +22,15 @@ OFFER_ACTIONS: dict[str, tuple[frozenset[O], O]] = {
     "expire": (frozenset({O.ACTIVE}), O.EXPIRED),
 }
 
+DEAL_ACTIONS: dict[str, tuple[frozenset[D], D]] = {
+    "mark_paid": (frozenset({D.PENDING_PAYMENT}), D.PAID),  # all existing invoices settled
+    "start_fulfilment": (frozenset({D.PAID}), D.IN_FULFILMENT),
+    "confirm_receipt": (frozenset({D.IN_FULFILMENT}), D.COMPLETED),
+    "reopen_payment": (frozenset({D.PAID}), D.PENDING_PAYMENT),  # commission refunded before fulfilment
+    "refund": (frozenset({D.PENDING_PAYMENT, D.PAID}), D.REFUNDED),  # deal_payment refunded before fulfilment
+    "dispute": (frozenset({D.IN_FULFILMENT}), D.DISPUTED),  # refund after fulfilment began: human decides
+}
+
 
 def _apply(entity: str, table: dict, current, action: str, entity_id: str | None):
     allowed_from, target = table[action]
@@ -36,3 +46,7 @@ def request_transition(current: R, action: str, entity_id: str | None = None) ->
 
 def offer_transition(current: O, action: str, entity_id: str | None = None) -> O:
     return _apply("offer", OFFER_ACTIONS, current, action, entity_id)
+
+
+def deal_transition(current: D, action: str, entity_id: str | None = None) -> D:
+    return _apply("deal", DEAL_ACTIONS, current, action, entity_id)

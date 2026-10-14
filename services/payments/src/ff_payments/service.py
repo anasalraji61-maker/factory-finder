@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import contextlib
 import json
 import secrets
+import time
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -17,9 +20,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from ff_payments import webhooks
-from ff_payments.clients.deals import DealClient
+from ff_payments.clients.deals import DealClient, NotifyRejected
 from ff_payments.config import Settings
-from ff_payments.db import Base, InvoiceRow, LedgerEntryRow, PaymentAttemptRow, WebhookEventRow
+from ff_payments.db import (
+    Base,
+    InvoiceRow,
+    LedgerEntryRow,
+    OutboxEventRow,
+    PaymentAttemptRow,
+    WebhookEventRow,
+)
 from ff_payments.domain import ledger, state
 from ff_payments.domain.commission import DEFAULT_USD_RATES, compute_commission
 from ff_payments.domain.enums import Direction, InvoiceKind, InvoiceStatus, ListingKind
@@ -28,6 +38,7 @@ from ff_payments.domain.errors import (
     Forbidden,
     InvalidTransition,
     NotFound,
+    UpstreamUnavailable,
     ValidationFailed,
 )
 from ff_payments.providers.base import InvoiceSpec, Observation, PaymentProvider, TrackedInvoice
@@ -151,11 +162,26 @@ class PaymentsService:
                 LedgerEntryRow.invoice_id == r.id, LedgerEntryRow.reason == "payment"))).scalars().all()
             legs = [ledger.Leg(e.account, Direction(e.direction), Decimal(e.amount), e.currency) for e in rows]
             await self._post(s, r, ledger.refund_legs(legs), "refund")
+        if target in (S.PAID, S.REFUNDED):
+            await self._enqueue(s, r, target, now)
         att = (await s.execute(select(PaymentAttemptRow).where(PaymentAttemptRow.invoice_id == r.id)
                                .order_by(PaymentAttemptRow.created_at.desc()).limit(1))).scalar_one_or_none()
         if att and target in (S.CONFIRMING, S.PAID, S.FAILED):
             att.status = {S.CONFIRMING: "confirming", S.PAID: "confirmed", S.FAILED: "failed"}[target]
             att.tx_ref, att.updated_at = tx_ref or att.tx_ref, now
+
+    async def _enqueue(self, s: AsyncSession, r: InvoiceRow, target: S, now: datetime) -> None:
+        """Queue the rfq callback in the SAME transaction as the settlement (never lost, never blocks it)."""
+        others = (await s.execute(select(InvoiceRow.kind).where(
+            InvoiceRow.deal_id == r.deal_id, InvoiceRow.id != r.id, InvoiceRow.kind != r.kind,
+            InvoiceRow.status.in_([x.value for x in state.OPEN])))).scalars().all()
+        event_id = f"{r.id}:{target.value}"
+        s.add(OutboxEventRow(
+            id=f"obx_{time.time_ns():020d}_{uuid.uuid4().hex[:6]}", event_id=event_id, deal_id=r.deal_id,
+            payload={"invoice_id": r.id, "kind": r.kind, "status": target.value,
+                     "amount": _money(r.amount, r.currency), "event_id": event_id,
+                     "other_open_kinds": sorted(set(others))},
+            status="pending", attempts=0, next_attempt_at=now, created_at=now, updated_at=now))
 
     async def _post(self, s: AsyncSession, r: InvoiceRow, legs: list[ledger.Leg], reason: str) -> None:
         ledger.check_balanced(legs)
@@ -278,13 +304,99 @@ class PaymentsService:
             r = await self._load(s, invoice_id, None, True)
             await self._move(s, r, S.REFUNDED, reason="refunded")
             await s.commit()
-            return invoice_dict(r)
+            out = invoice_dict(r)
+        await self._drain_quiet()
+        return out
 
     async def list_ledger(self, invoice_id: str) -> dict[str, Any]:
         async with self.sessions() as s:
             rows = (await s.execute(select(LedgerEntryRow).where(LedgerEntryRow.invoice_id == invoice_id)
                                     .order_by(LedgerEntryRow.created_at, LedgerEntryRow.id))).scalars().all()
             return {"items": [ledger_dict(e) for e in rows], "total": len(rows)}
+
+    # ---- outbox: settlement -> rfq ---------------------------------------------------------
+    def _backoff(self, attempts: int) -> timedelta:
+        return timedelta(seconds=min(self.settings.outbox_backoff_seconds * 2 ** max(attempts - 1, 0), 3600))
+
+    async def drain_outbox(self, limit: int = 100) -> dict[str, int]:
+        """Deliver due events oldest-first; per deal the order is kept (a failing/dead event blocks later ones)."""
+        out = {"delivered": 0, "retry": 0, "dead": 0}
+        async with self.sessions() as s:
+            blocked = set((await s.execute(select(OutboxEventRow.deal_id).where(
+                OutboxEventRow.status == "dead"))).scalars().all())
+            rows = (await s.execute(select(OutboxEventRow).where(OutboxEventRow.status == "pending")
+                                    .order_by(OutboxEventRow.id).limit(limit * 4))).scalars().all()
+            done = 0
+            for row in rows:
+                if done >= limit:
+                    break
+                now = self.clock()
+                if row.deal_id in blocked:
+                    continue
+                if row.next_attempt_at > now:
+                    blocked.add(row.deal_id)  # an earlier event of this deal is waiting: keep the order
+                    continue
+                lease = now + timedelta(seconds=self.settings.outbox_lease_seconds)
+                res = await s.execute(update(OutboxEventRow).where(
+                    OutboxEventRow.id == row.id, OutboxEventRow.status == "pending",
+                    OutboxEventRow.next_attempt_at == row.next_attempt_at).values(next_attempt_at=lease)
+                    .execution_options(synchronize_session=False))
+                await s.commit()
+                if res.rowcount != 1:  # another worker holds it
+                    blocked.add(row.deal_id)
+                    continue
+                done += 1
+                row.attempts += 1
+                row.updated_at = now
+                try:
+                    await self.deals.notify_payment_status(row.deal_id, row.payload)
+                    row.status, row.delivered_at, row.last_error = "delivered", now, None
+                    out["delivered"] += 1
+                except NotifyRejected as exc:
+                    row.status, row.last_error = "dead", str(exc)[:500]
+                    out["dead"] += 1
+                    blocked.add(row.deal_id)
+                except (UpstreamUnavailable, OSError) as exc:
+                    row.last_error = str(exc)[:500] or exc.__class__.__name__
+                    if row.attempts >= self.settings.outbox_max_attempts:
+                        row.status = "dead"
+                        out["dead"] += 1
+                    else:
+                        row.next_attempt_at = now + self._backoff(row.attempts)
+                        out["retry"] += 1
+                    blocked.add(row.deal_id)
+                await s.commit()
+        return out
+
+    async def _drain_quiet(self) -> None:
+        """Best-effort immediate delivery after a settlement; failures stay in the outbox for the sweep."""
+        with contextlib.suppress(Exception):  # settlement already committed; the outbox keeps the event
+            await asyncio.wait_for(self.drain_outbox(20), self.settings.outbox_inline_timeout_seconds)
+
+    @staticmethod
+    def _outbox_dict(o: OutboxEventRow) -> dict[str, Any]:
+        return {"id": o.id, "event_id": o.event_id, "deal_id": o.deal_id, "status": o.status,
+                "attempts": o.attempts, "next_attempt_at": _iso(o.next_attempt_at), "last_error": o.last_error,
+                "payload": o.payload, "created_at": _iso(o.created_at), "delivered_at": _iso(o.delivered_at)}
+
+    async def list_outbox(self, status: str | None, page: int, size: int) -> dict[str, Any]:
+        async with self.sessions() as s:
+            conds = [OutboxEventRow.status == status] if status else []
+            total = (await s.execute(select(func.count()).select_from(OutboxEventRow).where(*conds))).scalar_one()
+            rows = (await s.execute(select(OutboxEventRow).where(*conds).order_by(OutboxEventRow.id.desc())
+                                    .limit(size).offset((page - 1) * size))).scalars().all()
+            return {"items": [self._outbox_dict(o) for o in rows], "total": total, "page": page, "page_size": size}
+
+    async def requeue_outbox(self, outbox_id: str) -> dict[str, Any]:
+        async with self.sessions() as s:
+            o = await s.get(OutboxEventRow, outbox_id)
+            if o is None:
+                raise NotFound("Outbox event not found", code="outbox_event_not_found")
+            if o.status != "dead":
+                raise Conflict("Only dead-lettered events can be requeued", code="not_dead")
+            o.status, o.attempts, o.next_attempt_at, o.updated_at = "pending", 0, self.clock(), self.clock()
+            await s.commit()
+            return self._outbox_dict(o)
 
     # ---- expiry / polling ----------------------------------------------------------------
     async def _expire_due(self, s: AsyncSession) -> int:
@@ -324,7 +436,9 @@ class PaymentsService:
                         updated += 1
                 await s.commit()
             expired = await self._expire_due(s)
-        return {"expired": expired, "polled": polled, "updated": updated}
+        box = await self.drain_outbox()
+        return {"expired": expired, "polled": polled, "updated": updated, "outbox_delivered": box["delivered"],
+                "outbox_retry": box["retry"], "outbox_dead": box["dead"]}
 
     async def _apply_observation(self, s: AsyncSession, r: InvoiceRow, obs: Observation) -> bool:
         target = S.PAID if obs.status == "paid" else S.CONFIRMING
@@ -369,7 +483,10 @@ class PaymentsService:
             except IntegrityError:  # concurrent delivery of the same event
                 await s.rollback()
                 return {"status": "duplicate", "invoice_id": None, "invoice_status": None}
-            return {"status": outcome, "invoice_id": r.id, "invoice_status": r.status}
+            res = {"status": outcome, "invoice_id": r.id, "invoice_status": r.status}
+        if outcome == "applied":
+            await self._drain_quiet()
+        return res
 
     async def _find_for_event(self, s: AsyncSession, provider: str, ev: WebhookEvent) -> InvoiceRow | None:
         if ev.invoice_id:

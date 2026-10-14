@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
+import hmac
 from typing import Annotated, Any
 from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request
 
+from ff_rfq.deals import DealService
 from ff_rfq.domain.enums import ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Unauthenticated
 from ff_rfq.reviews import ReviewService
-from ff_rfq.schemas import OfferCreate, ReplyCreate, ReportCreate, RequestCreate, ReviewCreate
+from ff_rfq.schemas import (
+    OfferCreate,
+    PaymentStatusCallback,
+    ReplyCreate,
+    ReportCreate,
+    RequestCreate,
+    ReviewCreate,
+)
 from ff_rfq.service import RfqService
 
 router = APIRouter(prefix="/v1")
@@ -35,6 +44,17 @@ def reviews_svc(request: Request) -> ReviewService:
     return request.app.state.reviews
 
 
+def deals_svc(request: Request) -> DealService:
+    return request.app.state.deals
+
+
+def internal_only(request: Request, x_internal_token: Annotated[str | None, Header()] = None) -> None:
+    """Service-to-service guard (defence in depth: the app middleware also enforces the token)."""
+    token = request.app.state.internal_token
+    if token and not hmac.compare_digest((x_internal_token or "").encode(), token.encode()):
+        raise Unauthenticated("Missing or invalid X-Internal-Token", code="invalid_internal_token")
+
+
 def optional_user(x_user_id: Annotated[str | None, Header()] = None) -> str | None:
     return x_user_id.strip() if x_user_id and x_user_id.strip() else None
 
@@ -48,6 +68,7 @@ User = Annotated[str, Depends(current_user)]
 Supplier = Annotated[str | None, Depends(verified_supplier)]
 Svc = Annotated[RfqService, Depends(svc)]
 Reviews = Annotated[ReviewService, Depends(reviews_svc)]
+Deals = Annotated[DealService, Depends(deals_svc)]
 MaybeUser = Annotated[str | None, Depends(optional_user)]
 SupplierRef = Annotated[str, Path(min_length=1, max_length=64)]
 Page = Annotated[int, Query(ge=1)]
@@ -113,6 +134,32 @@ async def withdraw_offer(offer_id: str, user: User, s: Svc) -> dict[str, Any]:
 @router.get("/deals/{deal_id}")
 async def get_deal(deal_id: str, user: User, s: Svc) -> dict[str, Any]:
     return await s.get_deal(user, deal_id)
+
+
+@router.post("/deals/{deal_id}/fulfilment/start")
+async def start_fulfilment(deal_id: str, user: User, supplier: Supplier, d: Deals) -> dict[str, Any]:
+    return await d.start_fulfilment(user, supplier, deal_id)
+
+
+@router.post("/deals/{deal_id}/delivered")
+async def mark_delivered(deal_id: str, user: User, supplier: Supplier, d: Deals) -> dict[str, Any]:
+    return await d.delivered(user, supplier, deal_id)
+
+
+@router.post("/deals/{deal_id}/confirm-receipt")
+async def confirm_receipt(deal_id: str, user: User, d: Deals) -> dict[str, Any]:
+    return await d.confirm_receipt(user, deal_id)
+
+
+@router.get("/deals/{deal_id}/events")
+async def deal_events(deal_id: str, user: User, d: Deals) -> dict[str, Any]:
+    return await d.events(user, deal_id)
+
+
+@router.post("/internal/deals/{deal_id}/payment-status", dependencies=[Depends(internal_only)])
+async def payment_status(deal_id: str, body: PaymentStatusCallback, d: Deals) -> dict[str, Any]:
+    """payments -> rfq only. Never routed by the gateway."""
+    return await d.apply_payment_status(deal_id, body)
 
 
 # ---- verified-deal reviews --------------------------------------------------------------------
