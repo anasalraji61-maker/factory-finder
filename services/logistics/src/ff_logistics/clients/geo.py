@@ -169,3 +169,51 @@ class HttpGeo:
         d = await self._get("/v1/distance", from_lat=a.lat, from_lon=a.lon, to_lat=b.lat,
                             to_lon=b.lon, mode=mode)
         return Decimal(str(d.get("distance_km", d.get("km"))))
+
+
+# ---------------------------------------------------------------- cache
+class CachedGeo:
+    """TTL + size bounded memoisation in front of any GeoClient.
+
+    Geo data (cities, hubs, distances) is static reference data and a landed-cost quote repeats the
+    same lookups dozens of times (once per mode x hub pair), each a network hop with the http client.
+    Errors are never cached. Results are returned as-is (hubs lists are copied so callers may mutate).
+    """
+
+    def __init__(self, inner: GeoClient, ttl_s: float = 600.0, max_entries: int = 4096, clock=None):
+        import time
+        self.inner, self.ttl_s, self.max_entries = inner, ttl_s, max_entries
+        self._now = clock or time.monotonic
+        self._data: dict = {}
+        self.hits = self.misses = 0
+
+    @property
+    def _client(self):  # lets the app lifespan close the wrapped httpx client
+        return getattr(self.inner, "_client", None)
+
+    async def _cached(self, key, call):
+        hit = self._data.get(key)
+        now = self._now()
+        if hit is not None and hit[0] > now:
+            self.hits += 1
+            return hit[1]
+        self.misses += 1
+        value = await call()
+        if len(self._data) >= self.max_entries:
+            for k in [k for k, (exp, _) in self._data.items() if exp <= now] or [next(iter(self._data))]:
+                self._data.pop(k, None)
+        self._data[key] = (now + self.ttl_s, value)
+        return value
+
+    async def resolve_city(self, country_code, city):
+        return await self._cached(("city", country_code, city), lambda: self.inner.resolve_city(country_code, city))
+
+    async def hubs(self, country_code, type=None):
+        return list(await self._cached(("hubs", country_code, type), lambda: self.inner.hubs(country_code, type)))
+
+    async def nearest_hubs(self, point, type, limit=2, country_code=None):
+        return list(await self._cached(("near", point, type, limit, country_code),
+                                       lambda: self.inner.nearest_hubs(point, type, limit, country_code)))
+
+    async def distance_km(self, a, b, mode="road"):
+        return await self._cached(("dist", a, b, mode), lambda: self.inner.distance_km(a, b, mode))

@@ -1,0 +1,3 @@
+2026-10-14 | Deals list (/deals) loads GET /v1/deals (role tabs buyer/supplier, status filter, "load more" button, pull-to-refresh); tiles open new /deals/:id (DealDetailScreen with DealLifecycleSection) | gives suppliers and reopened apps access to lifecycle actions without relying on in-memory state.
+2026-10-14 | Request detail falls back to GET /v1/requests/{id}/deal (404 -> null) when the deal is not in acceptedDealsProvider | buyer sees lifecycle/payment/review after app restart.
+2026-10-14 | Mock repo list/dealForRequest read its own tracked deals (accept now tracks); demo user counts as both roles | mock mode mirrors live behaviour.

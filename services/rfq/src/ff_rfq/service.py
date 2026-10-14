@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -20,6 +20,7 @@ from ff_rfq.domain.errors import Forbidden, NotFound, ValidationFailed
 from ff_rfq.domain.state import offer_transition, request_transition
 from ff_rfq.schemas import OfferCreate, RequestCreate
 
+SWEEP_MAX_AGE = timedelta(seconds=30)
 LIVE = (RequestStatus.OPEN.value, RequestStatus.NEGOTIATING.value)
 
 
@@ -87,6 +88,11 @@ class RfqService:
                  clock: Callable[[], datetime]) -> None:
         self.engine, self.settings, self.sourcing, self.clock = engine, settings, sourcing, clock
         self._sessions = async_sessionmaker(engine, expire_on_commit=False)
+        # Sweep throttle: skip the sweep SELECTs while nothing can be due. `_next_due` is the earliest
+        # deadline/valid_until seen at the last sweep; `_dirty` is set by writes that add new deadlines.
+        self._next_due: datetime | None = None
+        self._swept_at: datetime | None = None
+        self._dirty = True
         self.rates = {
             ListingKind.PRODUCT: settings.commission_product,
             ListingKind.RAW_MATERIAL: settings.commission_raw_material,
@@ -99,7 +105,13 @@ class RfqService:
 
     # ---- helpers -------------------------------------------------------------------------
     async def _sweep(self, s: AsyncSession, now: datetime) -> None:
-        """Lazily expire requests past their deadline (and their active offers) and stale offers."""
+        """Lazily expire requests past their deadline (and their active offers) and stale offers.
+
+        Throttled: reads only touch the DB when something is due (or may be, after a local write or
+        SWEEP_MAX_AGE without a sweep, which covers rows written by other processes)."""
+        if (not self._dirty and self._swept_at is not None and now - self._swept_at < SWEEP_MAX_AGE
+                and (self._next_due is None or now < self._next_due)):
+            return
         late = (await s.execute(select(RequestRow).where(
             RequestRow.status.in_(LIVE), RequestRow.deadline.is_not(None), RequestRow.deadline < now))).scalars()
         for r in late:
@@ -114,6 +126,14 @@ class RfqService:
             o.status = offer_transition(OfferStatus(o.status), "expire", o.id).value
             o.updated_at = now
         await s.flush()
+        due = [d for d in (
+            (await s.execute(select(func.min(RequestRow.deadline)).where(
+                RequestRow.status.in_(LIVE), RequestRow.deadline.is_not(None)))).scalar_one(),
+            (await s.execute(select(func.min(OfferRow.valid_until)).where(
+                OfferRow.status == OfferStatus.ACTIVE.value, OfferRow.valid_until.is_not(None)))).scalar_one(),
+        ) if d is not None]
+        self._next_due = min(d if d.tzinfo else d.replace(tzinfo=UTC) for d in due) if due else None
+        self._swept_at, self._dirty = now, False
 
     async def _request(self, s: AsyncSession, request_id: str) -> RequestRow:
         r = await s.get(RequestRow, request_id)
@@ -130,6 +150,14 @@ class RfqService:
     async def _count(self, s: AsyncSession, request_id: str) -> int:
         return (await s.execute(select(func.count()).select_from(OfferRow).where(
             OfferRow.request_id == request_id))).scalar_one()
+
+    async def _counts(self, s: AsyncSession, ids: list[str]) -> dict[str, int]:
+        """Offer counts for many requests in one GROUP BY."""
+        if not ids:
+            return {}
+        res = await s.execute(select(OfferRow.request_id, func.count()).where(
+            OfferRow.request_id.in_(ids)).group_by(OfferRow.request_id))
+        return {rid: n for rid, n in res.all()}
 
     async def _active_count(self, s: AsyncSession, request_id: str) -> int:
         return (await s.execute(select(func.count()).select_from(OfferRow).where(
@@ -158,6 +186,8 @@ class RfqService:
         )
         async with self._sessions() as s, s.begin():
             s.add(row)
+        if row.deadline is not None:
+            self._dirty = True
         return request_dict(row)
 
     async def list_requests(self, user: str, *, scope: str, status: str | None, kind: str | None,
@@ -173,7 +203,8 @@ class RfqService:
             total = (await s.execute(select(func.count()).select_from(RequestRow).where(*cond))).scalar_one()
             rows = (await s.execute(select(RequestRow).where(*cond).order_by(
                 RequestRow.created_at.desc(), RequestRow.id).offset((p - 1) * size).limit(size))).scalars().all()
-            items = [request_dict(r, await self._count(s, r.id)) for r in rows]
+            counts = await self._counts(s, [r.id for r in rows])
+            items = [request_dict(r, counts.get(r.id, 0)) for r in rows]
         return page(items, total, p, size)
 
     async def get_request(self, user: str, request_id: str) -> dict[str, Any]:
@@ -234,6 +265,8 @@ class RfqService:
                 incoterm=body.incoterm.value if body.incoterm else None, valid_until=body.valid_until,
                 notes=body.notes, status=OfferStatus.ACTIVE.value, created_at=now, updated_at=now)
             s.add(o)
+            if o.valid_until is not None:
+                self._dirty = True
             return offer_dict(o)
 
     async def list_offers(self, user: str, request_id: str, status: str | None, p: int, size: int) -> dict[str, Any]:

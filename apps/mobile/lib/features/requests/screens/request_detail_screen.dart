@@ -5,6 +5,7 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/deals/deals_models.dart';
+import 'package:factory_finder/features/deals/deals_repository.dart';
 import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart';
 import 'package:factory_finder/features/payments/widgets/deal_payment_section.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
@@ -26,7 +27,10 @@ class RequestDetailScreen extends ConsumerWidget {
     final reqAsync = ref.watch(rfqDetailProvider(requestId));
     final offersAsync = ref.watch(rfqOffersProvider(requestId));
     final me = ref.watch(authProvider);
-    final acceptedDeal = ref.watch(acceptedDealsProvider)[requestId];
+    final sessionDeal = ref.watch(acceptedDealsProvider)[requestId];
+    // Not in memory (supplier, reopened app): ask the backend.
+    final acceptedDeal = sessionDeal ??
+        ref.watch(requestDealProvider(requestId)).valueOrNull;
     final isMock = ref.watch(apiClientProvider).isMock;
     final myId = me?.id ?? (isMock ? kMockUserId : null);
 
@@ -130,6 +134,7 @@ class RequestDetailScreen extends ConsumerWidget {
     try {
       final deal = await ref.read(rfqRepositoryProvider).accept(offer);
       if (!context.mounted) return;
+      ref.read(dealsRepositoryProvider).track(deal);
       ref.read(acceptedDealsProvider.notifier).update(
             (m) => <String, Deal>{...m, requestId: deal},
           );

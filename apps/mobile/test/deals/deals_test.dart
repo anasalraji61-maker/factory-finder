@@ -7,9 +7,11 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/deals/deals_models.dart';
 import 'package:factory_finder/features/deals/deals_repository.dart';
+import 'package:factory_finder/features/deals/screens/deals_list_screen.dart';
 import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -102,6 +104,17 @@ void main() {
       expect(e.fromStatus, isNull);
     });
 
+    test('deals page parses via PageResult', () {
+      final p = PageResult.fromJson<Deal>(
+        Map<String, dynamic>.from(_load('deals_page') as Map),
+        Deal.fromJson,
+      );
+      expect(p.total, 3);
+      expect(p.pageSize, 2);
+      expect(p.items.map((d) => d.status), [kDealInFulfilment, kDealPaid]);
+      expect(p.items.last.deliveredAt, isNull);
+    });
+
     test('error mapping', () {
       ApiException ex(int s, String c) => ApiException(status: s, code: c, message: c);
       expect(dealErrorKey(ex(409, 'invalid_deal_transition')),
@@ -154,6 +167,46 @@ void main() {
       expect(b.deliveredAt, isNotNull);
       expect(c.id, startsWith('deal_'));
       expect(ev.items, hasLength(3));
+    });
+
+    test('listDeals sends role/status/paging query and parses the page', () async {
+      final adapter = _FakeAdapter((o) => _json(_load('deals_page')));
+      final repo = LiveDealsRepository(_client(adapter));
+      final page = await repo.listDeals(role: 'supplier', status: 'paid', page: 2, pageSize: 2);
+      final o = adapter.calls.single;
+      expect(o.method, 'GET');
+      expect(o.path, '/v1/deals');
+      expect(o.queryParameters, {
+        'role': 'supplier',
+        'status': 'paid',
+        'page': 2,
+        'page_size': 2,
+      });
+      expect(page.items, hasLength(2));
+      expect(page.total, 3);
+      await repo.listDeals();
+      expect(adapter.calls.last.queryParameters.containsKey('status'), isFalse);
+      expect(adapter.calls.last.queryParameters['role'], 'any');
+    });
+
+    test('dealForRequest returns the deal, null on 404, rethrows others', () async {
+      var mode = 200;
+      final adapter = _FakeAdapter((o) {
+        if (mode == 200) return _json(_load('deal_in_fulfilment'));
+        if (mode == 404) return _json({'error': {'code': 'not_found', 'message': 'nope'}}, 404);
+        return _json({'error': {'code': 'internal', 'message': 'boom'}}, 500);
+      });
+      final repo = LiveDealsRepository(_client(adapter));
+      final d = await repo.dealForRequest('req_1');
+      expect(d?.status, kDealInFulfilment);
+      expect(adapter.calls.single.path, '/v1/requests/req_1/deal');
+      mode = 404;
+      expect(await repo.dealForRequest('req_1'), isNull);
+      mode = 500;
+      await expectLater(
+        repo.dealForRequest('req_1'),
+        throwsA(isA<ApiException>().having((e) => e.status, 'status', 500)),
+      );
     });
 
     test('409 and 403 error bodies become ApiException codes', () async {
@@ -221,6 +274,116 @@ void main() {
         repo.get('nope'),
         throwsA(isA<ApiException>().having((e) => e.status, 'status', 404)),
       );
+    });
+  });
+
+  group('mock list', () {
+    test('filters by status, pages newest first, dealForRequest', () async {
+      final repo = MockDealsRepository();
+      Deal mk(String id, String status, int day) => Deal(
+            id: id,
+            requestId: 'r_$id',
+            offerId: 'o',
+            subtotal: const Money(amount: '10', currency: 'USD'),
+            commission: const Money(amount: '1', currency: 'USD'),
+            status: status,
+            createdAt: DateTime.utc(2026, 10, day),
+          );
+      repo.track(mk('a', kDealPaid, 1));
+      repo.track(mk('b', kDealPendingPayment, 2));
+      repo.track(mk('c', kDealPaid, 3));
+      final p1 = await repo.listDeals(page: 1, pageSize: 2);
+      expect(p1.items.map((d) => d.id), ['c', 'b']);
+      expect(p1.total, 3);
+      final p2 = await repo.listDeals(page: 2, pageSize: 2);
+      expect(p2.items.map((d) => d.id), ['a']);
+      final paid = await repo.listDeals(status: kDealPaid);
+      expect(paid.items.map((d) => d.id), ['c', 'a']);
+      expect((await repo.listDeals(page: 9)).items, isEmpty);
+      expect((await repo.dealForRequest('r_b'))?.id, 'b');
+      expect(await repo.dealForRequest('zzz'), isNull);
+    });
+  });
+
+  group('list screen', () {
+    Deal mk(String id, String status, {String? supplier}) => Deal(
+          id: id,
+          requestId: 'r_$id',
+          offerId: 'o',
+          subtotal: const Money(amount: '10', currency: 'USD'),
+          commission: const Money(amount: '1', currency: 'USD'),
+          status: status,
+          supplierUserId: supplier,
+          createdAt: DateTime.utc(2026, 10, 14),
+        );
+
+    Future<void> pumpList(WidgetTester tester, DealsRepository repo) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dealsRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(
+            supportedLocales: [Locale('ar'), Locale('en')],
+            locale: Locale('en'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: DealsListScreen(),
+          ),
+        ),
+      );
+      await settle(tester, frames: 4);
+    }
+
+    testWidgets('role tabs and status filter drive the repository', (tester) async {
+      final repo = _RecordingRepo();
+      await pumpList(tester, repo);
+      expect(repo.calls.last, 'buyer/null/1');
+      expect(find.byKey(const Key('deal_tile_d1')), findsOneWidget);
+      expect(find.byKey(const Key('deals_load_more')), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const Key('deals_load_more')));
+      await tester.tap(find.byKey(const Key('deals_load_more')));
+      await settle(tester, frames: 4);
+      expect(repo.calls.last, 'buyer/null/2');
+      expect(find.byKey(const Key('deal_tile_d2')), findsOneWidget);
+      expect(find.byKey(const Key('deals_load_more')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('deals_tab_supplier')));
+      await settle(tester, frames: 6);
+      expect(repo.calls.last, 'supplier/null/1');
+
+      await tester.ensureVisible(find.byKey(const Key('deals_filter_paid')));
+      await tester.tap(find.byKey(const Key('deals_filter_paid')));
+      await settle(tester, frames: 4);
+      expect(repo.calls.last, 'supplier/paid/1');
+      expect(find.byKey(const Key('deals_empty')), findsOneWidget);
+      expect(find.text('No deals with this status.'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('error state offers retry', (tester) async {
+      final repo = _RecordingRepo(fail: true);
+      await pumpList(tester, repo);
+      expect(find.byKey(const Key('deals_error')), findsOneWidget);
+      repo.fail = false;
+      await tester.tap(find.text('Retry'));
+      await settle(tester, frames: 4);
+      expect(find.byKey(const Key('deals_error')), findsNothing);
+      expect(find.byKey(const Key('deal_tile_d1')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+    });
+
+    testWidgets('mock repo empty state', (tester) async {
+      await pumpList(tester, MockDealsRepository());
+      expect(find.text('No deals yet'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
     });
   });
 
@@ -307,4 +470,43 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+}
+
+/// Two-page fake: page 1 has d1 (total 2, page size 1), page 2 has d2;
+/// role supplier + status filter returns nothing.
+class _RecordingRepo extends MockDealsRepository {
+  _RecordingRepo({this.fail = false});
+
+  bool fail;
+  final List<String> calls = <String>[];
+
+  @override
+  Future<PageResult<Deal>> listDeals({
+    String role = 'any',
+    String? status,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    calls.add('$role/$status/$page');
+    if (fail) {
+      throw ApiException(status: 500, code: 'internal', message: 'boom');
+    }
+    Deal mk(String id) => Deal(
+          id: id,
+          requestId: 'r_$id',
+          offerId: 'o',
+          subtotal: const Money(amount: '10', currency: 'USD'),
+          commission: const Money(amount: '1', currency: 'USD'),
+          createdAt: DateTime.utc(2026, 10, 14),
+        );
+    if (status != null) {
+      return PageResult<Deal>(items: <Deal>[], total: 0, page: page, pageSize: 1);
+    }
+    return PageResult<Deal>(
+      items: <Deal>[mk(page == 1 ? 'd1' : 'd2')],
+      total: 2,
+      page: page,
+      pageSize: 1,
+    );
+  }
 }

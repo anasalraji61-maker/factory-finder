@@ -127,3 +127,14 @@ def test_add_column_migration(tmp_path):
         return rows
 
     assert [tuple(r) for r in asyncio.run(run())] == [("u1", "pending"), ("u2", "none")]
+
+
+def test_claims_list_is_paginated_and_capped(admin):
+    for i in range(3):
+        _, h = _user(admin, f"p{i}@example.com")
+        admin.patch("/v1/me", headers=h, json={"supplier_id": f"sup_p{i}"})
+    r = admin.get("/v1/admin/supplier-claims?limit=2", headers=A).json()
+    assert len(r["items"]) == 2 and r["total"] == 3 and r["page_size"] == 2
+    r2 = admin.get("/v1/admin/supplier-claims?limit=2&page=2", headers=A).json()
+    assert len(r2["items"]) == 1
+    assert admin.get("/v1/admin/supplier-claims?limit=1000", headers=A).status_code == 422

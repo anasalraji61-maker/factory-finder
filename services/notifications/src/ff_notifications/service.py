@@ -141,8 +141,13 @@ class NotificationService:
         await self.store.insert_watch(watch)
         return watch, True
 
-    async def list_watches(self, owner_id: str) -> list[Watch]:
-        return await self.store.list_watches(owner_id)
+    async def list_watches(
+        self, owner_id: str, *, limit: int = 100, offset: int = 0
+    ) -> list[Watch]:
+        return await self.store.list_watches(owner_id, limit=limit, offset=offset)
+
+    async def count_watches(self, owner_id: str) -> int:
+        return await self.store.count_watches(owner_id)
 
     async def delete_watch(self, owner_id: str, watch_id: str) -> None:
         watch = await self.store.get_watch(watch_id)
@@ -207,9 +212,11 @@ class NotificationService:
         self, *, owner_id: str | None = None, watch_id: str | None = None
     ) -> EvaluationReport:
         report = EvaluationReport()
-        watches = await self.store.list_watches(owner_id, active_only=True)
         if watch_id is not None:
-            watches = [w for w in watches if w.id == watch_id]
+            w = await self.store.get_watch(watch_id)
+            watches = [w] if w and w.active and (owner_id is None or w.owner_id == owner_id) else []
+        else:
+            watches = [w async for w in self.store.iter_active_watches(owner_id)]
         created: dict[str, list[Alert]] = {}
         for watch in watches:
             alerts = await self.evaluate_watch(watch, report)

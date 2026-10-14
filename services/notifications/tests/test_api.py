@@ -243,3 +243,39 @@ async def test_fcm_stub_disabled_by_default():
 
     res = await FcmPushAdapter("p", tokens, enabled=False).send(dev, "a", "b", {})
     assert not res.sent and res.reason == "fcm_disabled"
+
+
+def test_watchlist_pagination_and_caps(env):
+    for i in range(5):
+        env.mock.put(listing(f"lst_p{i}"))
+        env.watch(lid=f"lst_p{i}")
+    page1 = env.c.get("/v1/watchlist?limit=2", headers=H("u1")).json()
+    page2 = env.c.get("/v1/watchlist?limit=2&offset=2", headers=H("u1")).json()
+    assert len(page1["items"]) == 2 and len(page2["items"]) == 2 and page1["total"] == 5
+    assert {w["id"] for w in page1["items"]}.isdisjoint(w["id"] for w in page2["items"])
+    assert env.c.get("/v1/watchlist?limit=100000", headers=H("u1")).status_code == 422
+    assert len(env.c.get("/v1/watchlist", headers=H("u1")).json()["items"]) == 5
+
+
+def test_store_caps_and_single_update_mark_read(env):
+    import asyncio
+
+    from ff_notifications.persistence import store as st
+
+    for i in range(3):
+        env.mock.put(listing(f"lst_m{i}"))
+        env.watch(lid=f"lst_m{i}")
+    env.evaluate()
+    for i in range(3):
+        env.mock.set_price(f"lst_m{i}", "50")
+    env.advance(hours=1)
+    assert env.evaluate()["alerts_created"] == 3
+    store = env.svc.store
+    assert len(asyncio.run(store.list_watches("u1", limit=10**6))) <= st.MAX_LIMIT
+    assert len(asyncio.run(store.list_watches("u1", limit=2))) == 2
+    assert len(asyncio.run(store.list_deliveries(limit=10**6))) <= st.MAX_LIMIT
+    done = env.c.post("/v1/alerts/read-all", headers=H("u1")).json()
+    assert done == {"marked": 3}
+    items = env.c.get("/v1/alerts", headers=H("u1")).json()["items"]
+    assert all(a["read"] and a["read_at"] for a in items)
+    assert env.c.post("/v1/alerts/read-all", headers=H("u1")).json() == {"marked": 0}

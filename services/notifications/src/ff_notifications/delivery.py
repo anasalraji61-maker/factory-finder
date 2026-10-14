@@ -81,7 +81,7 @@ class DeliveryPipeline:
         if self.email is None:
             return 0
         now, created = self.clock(), 0
-        for prefs in await self.store.owners_with_email_prefs():
+        async for prefs in self.store.iter_owners_with_email_prefs():
             local = now.astimezone(ZoneInfo(prefs.timezone))
             if local.hour < DIGEST_HOUR:
                 continue

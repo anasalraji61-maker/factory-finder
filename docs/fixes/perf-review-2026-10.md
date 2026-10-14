@@ -15,11 +15,13 @@ Run `python scripts/bench.py` (informational, exit 0).
 ## Fixed
 - rfq: composite indexes on requests (owner/status + created_at), deals (buyer/supplier + created_at).
 - demand: capped list_signals / list_drafts.
+- logistics landed-cost quote 143 -> 7.8 ms p50 (p95 166 -> 9.8). cProfile (`scripts/profile_quote.py`): engine compute is only ~2.4 ms; the rest was ~47 sequential HTTP calls to geo per quote (same hubs/nearest/distance lookups repeated per mode x hub pair). Added `CachedGeo` (TTL 600 s, bounded, errors never cached; `FF_LOGISTICS_GEO_CACHE_TTL_SECONDS`), origin/destination resolved concurrently, `load_json` memoised. Outputs unchanged (golden tests identical).
+- rfq `list_requests`: N+1 replaced with one GROUP BY count.
+- rfq `_sweep`: throttled; the two SELECTs only run when something is due (earliest deadline/valid_until tracked), after a local write that adds a deadline, or after 30 s (covers other processes).
+- notifications: list_watches / list_deliveries / owners_with_email_prefs capped (default 100, max 500) with offset/keyset paging; evaluate_all and digests iterate in batches; `GET /v1/watchlist` accepts limit (<=200, default 100) and offset; `mark_alerts_read` is one UPDATE (SQLite json_patch; PostgreSQL jsonb merge, not exercised here).
+- gateway admin supplier-claims: `page` + `limit` (default 50, max 200), response adds total/page/page_size.
 
 ## Open
-- logistics landed-cost quote is 8-40x slower than other paths: profile first.
-- rfq `list_requests`: one count query per row (N+1) -> single GROUP BY.
-- rfq `_sweep` writes on reads.
-- notifications unbounded reads: list_watches, list_deliveries, owners_with_email_prefs, mark_alerts_read.
-- gateway admin supplier-claims has no limit.
 - JSON blob columns (demand doc, rfq attachments/destination, messaging) need write-time caps.
+- notifications `mark_alerts_read` PostgreSQL branch is untested (no PG in CI).
+- logistics: first (cold-cache) quote still makes the geo hops sequentially; consider batching or a bulk geo endpoint if cold latency matters.

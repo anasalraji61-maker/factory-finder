@@ -1,4 +1,5 @@
 """Landed-cost engine. All internal money is USD Decimal; converted once to the display currency."""
+import asyncio
 import math
 import uuid
 from dataclasses import dataclass, field
@@ -159,8 +160,8 @@ class Engine:
             m3 = max(kg / D(250), D("0.01"))
             assumptions.append("Volume not given: estimated from weight at 250 kg/m3.")
 
-        o_pt = await self._resolve(req.origin, "origin")
-        d_pt = await self._resolve(req.destination, "destination")
+        o_pt, d_pt = await asyncio.gather(self._resolve(req.origin, "origin"),
+                                          self._resolve(req.destination, "destination"))
         self.ctx = {"req": req, "kg": kg, "m3": m3, "goods_usd": goods_usd, "o_pt": o_pt, "d_pt": d_pt,
                     "oc": oc, "dc": dc, "stages": BUYER_STAGES[req.supplier_incoterm]}
         inc = req.supplier_incoterm

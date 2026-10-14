@@ -3,8 +3,8 @@
 import hmac
 from typing import Literal
 
-from fastapi import APIRouter, Request
-from sqlalchemy import select
+from fastapi import APIRouter, Query, Request
+from sqlalchemy import func, select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway.db import User
@@ -43,17 +43,26 @@ def _claim(u: User) -> dict:
 
 
 @router.get("/v1/admin/supplier-claims")
-async def list_claims(request: Request, status: Literal["pending", "verified"] = "pending") -> dict:
+async def list_claims(
+    request: Request,
+    status: Literal["pending", "verified"] = "pending",
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+) -> dict:
     require_admin(request)
+    cond = (User.supplier_claim_status == status, User.supplier_id.is_not(None))
     async with request.app.state.sessionmaker() as s:
         rows = (
             await s.scalars(
                 select(User)
-                .where(User.supplier_claim_status == status, User.supplier_id.is_not(None))
-                .order_by(User.created_at)
+                .where(*cond)
+                .order_by(User.created_at, User.id)
+                .offset((page - 1) * limit)
+                .limit(limit)
             )
         ).all()
-    return {"items": [_claim(u) for u in rows]}
+        total = await s.scalar(select(func.count()).select_from(User).where(*cond))
+    return {"items": [_claim(u) for u in rows], "total": total, "page": page, "page_size": limit}
 
 
 async def _decide(request: Request, user_id: str, approve: bool) -> dict:

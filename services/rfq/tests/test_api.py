@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from conftest import BUYER, SUP_A, SUP_B, new_offer, new_request
 
 
@@ -158,3 +160,32 @@ def test_offer_identity_comes_from_headers_not_body(client):
     listed = client.get(f"/v1/requests/{rid}/offers", headers=BUYER).json()
     refs = {x["id"]: x["supplier_ref"] for x in listed["items"]}
     assert refs[o["id"]] is None and refs[o2["id"]] == "sup_real"
+
+
+def test_list_requests_single_count_query_and_correct_counts(client):
+    from sqlalchemy import event
+    a, b = new_request(client), new_request(client, title="Other")
+    new_offer(client, a["id"])
+    new_offer(client, a["id"], headers=SUP_B)
+    stmts: list[str] = []
+    eng = client.app.state.service.engine.sync_engine if hasattr(client.app.state, "service") else None
+    if eng is not None:
+        event.listen(eng, "before_cursor_execute", lambda c, cur, st, *a_: stmts.append(st))
+    r = client.get("/v1/requests?scope=mine", headers=BUYER).json()
+    counts = {i["id"]: i["offers_count"] for i in r["items"]}
+    assert counts == {a["id"]: 2, b["id"]: 0}
+    if eng is not None:
+        assert sum("count(" in s.lower() and "offers" in s.lower() and "group by" not in s.lower()
+                   and "requests" not in s.lower() for s in stmts) == 0
+
+
+def test_sweep_throttled_but_still_expires(client, clock):
+    req = new_request(client, deadline=(clock.now + timedelta(days=1)).isoformat())
+    off = new_offer(client, req["id"], valid_until=(clock.now + timedelta(days=5)).isoformat())
+    assert client.get(f"/v1/requests/{req['id']}", headers=BUYER).json()["status"] == "negotiating"
+    clock.advance(hours=1)
+    assert client.get(f"/v1/requests/{req['id']}", headers=BUYER).json()["status"] == "negotiating"
+    clock.advance(days=1)
+    assert client.get(f"/v1/requests/{req['id']}", headers=BUYER).json()["status"] == "expired"
+    offers = client.get(f"/v1/requests/{req['id']}/offers", headers=BUYER).json()["items"]
+    assert offers[0]["id"] == off["id"] and offers[0]["status"] == "expired"

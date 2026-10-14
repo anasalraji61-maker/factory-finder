@@ -33,6 +33,9 @@ paths:
   /v1/watchlist:
     get:
       operationId: listWatchlist
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
       responses:
         "200": {description: Caller's watches, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Watch"}}, total: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}

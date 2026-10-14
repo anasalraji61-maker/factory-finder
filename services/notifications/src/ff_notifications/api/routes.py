@@ -191,9 +191,11 @@ async def add_watch(
 
 
 @router.get("/watchlist")
-async def list_watchlist(user: User, s: Service) -> dict[str, Any]:
-    items = await s.list_watches(user)
-    return {"items": [watch_json(w) for w in items], "total": len(items)}
+async def list_watchlist(
+    user: User, s: Service, limit: int = Query(100, ge=1, le=200), offset: int = Query(0, ge=0)
+) -> dict[str, Any]:
+    items = await s.list_watches(user, limit=limit, offset=offset)
+    return {"items": [watch_json(w) for w in items], "total": await s.count_watches(user)}
 
 
 @router.delete("/watchlist/{watch_id}", status_code=204)

@@ -1,11 +1,13 @@
 import json
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import cache
 from importlib import resources
 
 from .money import D
 
 
+@cache
 def load_json(name: str) -> dict:
     return json.loads(resources.files("ff_logistics.data").joinpath(name).read_text("utf-8"))
 

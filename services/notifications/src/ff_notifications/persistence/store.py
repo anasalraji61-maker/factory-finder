@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime
 
 from sqlalchemy import (
@@ -14,12 +15,14 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    cast,
     delete,
     func,
     insert,
     select,
     update,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -29,6 +32,9 @@ from ff_notifications.domain.models import Alert, Device, RuleKind, Watch
 from ff_notifications.domain.policy import AlertHistory
 from ff_notifications.domain.verification import Verification
 from ff_notifications.persistence import serde
+
+DEFAULT_LIMIT = 100  # default page size for list reads
+MAX_LIMIT = 500  # hard cap on rows per query
 
 metadata = MetaData()
 
@@ -166,15 +172,33 @@ class Store:
         return serde.watch_from_row(row) if row else None
 
     async def list_watches(
-        self, owner_id: str | None = None, *, active_only: bool = False
+        self,
+        owner_id: str | None = None,
+        *,
+        active_only: bool = False,
+        limit: int = DEFAULT_LIMIT,
+        offset: int = 0,
     ) -> list[Watch]:
+        limit = max(1, min(limit, MAX_LIMIT))
         stmt = select(watches).order_by(watches.c.id)
         if owner_id is not None:
             stmt = stmt.where(watches.c.owner_id == owner_id)
         if active_only:
             stmt = stmt.where(watches.c.active.is_(True))
+        stmt = stmt.offset(max(0, offset)).limit(limit)
         async with self.engine.connect() as conn:
             return [serde.watch_from_row(r) for r in (await conn.execute(stmt)).mappings()]
+
+    async def iter_active_watches(self, owner_id: str | None = None, batch: int = 200):
+        """Yield every active watch in id-ordered batches (bounded memory per query)."""
+        offset = 0
+        while True:
+            chunk = await self.list_watches(owner_id, active_only=True, limit=batch, offset=offset)
+            for w in chunk:
+                yield w
+            if len(chunk) < min(batch, MAX_LIMIT):
+                return
+            offset += len(chunk)
 
     async def delete_watch(self, watch_id: str) -> None:
         async with self._lock, self.engine.begin() as conn:
@@ -286,22 +310,18 @@ class Store:
     async def mark_alerts_read(
         self, owner_id: str, at: datetime, alert_id: str | None = None
     ) -> int:
-        stmt = select(alerts).where(alerts.c.owner_id == owner_id, alerts.c.read.is_(False))
+        """One UPDATE: flips the indexed `read` column and patches the JSON doc in SQL."""
+        cond = [alerts.c.owner_id == owner_id, alerts.c.read.is_(False)]
         if alert_id:
-            stmt = stmt.where(alerts.c.id == alert_id)
+            cond.append(alerts.c.id == alert_id)
+        patch = json.dumps({"read": True, "read_at": serde.ts(at)})
+        if self.engine.dialect.name == "sqlite":
+            new_doc = func.json_patch(alerts.c.doc, patch)
+        else:  # PostgreSQL: jsonb merge (JSON column -> jsonb -> JSON)
+            new_doc = cast(cast(alerts.c.doc, JSONB).op("||")(cast(patch, JSONB)), JSON)
         async with self._lock, self.engine.begin() as conn:
-            rows = (await conn.execute(stmt)).mappings().all()
-            for row in rows:
-                alert = serde.alert_from_row(row)
-                from dataclasses import replace
-
-                alert = replace(alert, read=True, read_at=at)
-                await conn.execute(
-                    update(alerts)
-                    .where(alerts.c.id == alert.id)
-                    .values(read=True, doc=serde.alert_to_doc(alert))
-                )
-        return len(rows)
+            res = await conn.execute(update(alerts).where(*cond).values(read=True, doc=new_doc))
+        return int(res.rowcount)
 
     # ------------------------------------------------------------------ devices
 
@@ -403,10 +423,33 @@ class Store:
             if res.rowcount == 0:
                 await conn.execute(insert(prefs).values(owner_id=p.owner_id, doc=doc))
 
-    async def owners_with_email_prefs(self) -> list[Prefs]:
+    async def owners_with_email_prefs(
+        self, *, after_owner: str | None = None, limit: int = DEFAULT_LIMIT
+    ) -> list[Prefs]:
+        """Keyset-paged by owner_id: scans at most `limit` prefs rows per call and returns the
+        ones with digest_email set (use `iter_owners_with_email_prefs` to walk them all)."""
+        q = select(prefs).order_by(prefs.c.owner_id).limit(max(1, min(limit, MAX_LIMIT)))
+        if after_owner is not None:
+            q = q.where(prefs.c.owner_id > after_owner)
         async with self.engine.connect() as conn:
-            rows = (await conn.execute(select(prefs))).mappings().all()
+            rows = (await conn.execute(q)).mappings().all()
         return [x for x in (serde.prefs_from_row(r) for r in rows) if x.digest_email]
+
+    async def iter_owners_with_email_prefs(self, batch: int = 200):
+        after: str | None = None
+        while True:
+            q = select(prefs.c.owner_id).order_by(prefs.c.owner_id).limit(batch)
+            if after is not None:
+                q = q.where(prefs.c.owner_id > after)
+            async with self.engine.connect() as conn:
+                ids = [r[0] for r in (await conn.execute(q)).all()]
+            if not ids:
+                return
+            for p in await self.owners_with_email_prefs(after_owner=after, limit=batch):
+                yield p
+            after = ids[-1]
+            if len(ids) < batch:
+                return
 
     async def get_verification(self, owner_id: str) -> Verification | None:
         async with self.engine.connect() as conn:
@@ -464,8 +507,15 @@ class Store:
             )
         return serde.delivery_from_row(row) if row else None
 
-    async def list_deliveries(self, owner_id: str | None = None) -> list[Delivery]:
-        q = select(deliveries).order_by(deliveries.c.id)
+    async def list_deliveries(
+        self, owner_id: str | None = None, *, limit: int = DEFAULT_LIMIT, offset: int = 0
+    ) -> list[Delivery]:
+        q = (
+            select(deliveries)
+            .order_by(deliveries.c.id)
+            .offset(max(0, offset))
+            .limit(max(1, min(limit, MAX_LIMIT)))
+        )
         if owner_id:
             q = q.where(deliveries.c.owner_id == owner_id)
         async with self.engine.connect() as conn:

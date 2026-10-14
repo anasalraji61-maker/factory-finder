@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     geo_provider: str = "http"  # http | mock
     geo_url: str = "http://localhost:8103"
+    geo_cache_ttl_seconds: float = 600.0  # static reference data; 0 disables effectively
     fx_provider: str = "mock"  # mock | ecb (free, no key; falls back to mock on errors)
     fx_url: str = "https://api.frankfurter.dev/v1/latest"
     fx_cache_ttl_seconds: int = 6 * 3600

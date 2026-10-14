@@ -106,9 +106,12 @@ paths:
     get:
       operationId: listSupplierClaims
       description: "Admin only: header X-Admin-Token must equal FF_GATEWAY_ADMIN_TOKEN. 404 when the token is not configured, 401 when missing/wrong."
-      parameters: [{name: status, in: query, schema: {type: string, enum: [pending, verified], default: pending}}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, verified], default: pending}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
       responses:
-        "200": {description: Claims, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/SupplierClaim"}}}}}}}
+        "200": {description: Claims (one page, oldest first), content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/SupplierClaim"}}, total: {type: integer}, page: {type: integer}, page_size: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims/{user_id}/approve:

@@ -1,4 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/api/auth.dart' show kMockUserId;
+import 'package:factory_finder/core/models/models.dart' show PageResult;
 import 'package:factory_finder/features/deals/deals_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,18 @@ abstract class DealsRepository {
   void track(Deal deal);
 
   Future<Deal> get(String dealId);
+
+  /// The caller's deals, newest first. [role] is buyer, supplier or any.
+  Future<PageResult<Deal>> listDeals({
+    String role = 'any',
+    String? status,
+    int page = 1,
+    int pageSize = 20,
+  });
+
+  /// The accepted deal of a request (buyer only); null when there is none
+  /// (404) or the caller may not see it.
+  Future<Deal?> dealForRequest(String requestId);
 
   /// Supplier: paid -> in_fulfilment (idempotent).
   Future<Deal> startFulfilment(String dealId);
@@ -43,6 +57,39 @@ class LiveDealsRepository implements DealsRepository {
   @override
   Future<Deal> get(String dealId) async =>
       _deal(await _api.get('/v1/deals/${_enc(dealId)}'));
+
+  @override
+  Future<PageResult<Deal>> listDeals({
+    String role = 'any',
+    String? status,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final json = await _api.get('/v1/deals', query: {
+      'role': role,
+      if (status != null && status.isNotEmpty) 'status': status,
+      'page': page,
+      'page_size': pageSize,
+    });
+    if (json is! Map) {
+      throw ApiException(
+        status: 502,
+        code: 'bad_response',
+        message: 'Unexpected response from deals service',
+      );
+    }
+    return PageResult.fromJson<Deal>(Map<String, dynamic>.from(json), Deal.fromJson);
+  }
+
+  @override
+  Future<Deal?> dealForRequest(String requestId) async {
+    try {
+      return _deal(await _api.get('/v1/requests/${_enc(requestId)}/deal'));
+    } on ApiException catch (e) {
+      if (e.status == 404) return null;
+      rethrow;
+    }
+  }
 
   @override
   Future<Deal> startFulfilment(String dealId) async =>
@@ -146,6 +193,52 @@ class MockDealsRepository implements DealsRepository {
   }
 
   @override
+  Future<PageResult<Deal>> listDeals({
+    String role = 'any',
+    String? status,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    await _wait();
+    // Demo user is both buyer and supplier; ids that are set must match.
+    bool mine(Deal d) {
+      final asBuyer = d.buyerId == null || d.buyerId == kMockUserId;
+      final asSupplier = d.supplierUserId == null || d.supplierUserId == kMockUserId;
+      switch (role) {
+        case 'buyer':
+          return asBuyer;
+        case 'supplier':
+          return asSupplier;
+      }
+      return asBuyer || asSupplier;
+    }
+
+    final all = _deals.values
+        .where((d) => mine(d) && (status == null || d.status == status))
+        .toList()
+      ..sort((a, b) {
+        final c = b.createdAt.compareTo(a.createdAt);
+        return c != 0 ? c : b.id.compareTo(a.id);
+      });
+    final size = pageSize < 1 ? 20 : pageSize;
+    final p = page < 1 ? 1 : page;
+    final start = (p - 1) * size;
+    final items = start >= all.length
+        ? <Deal>[]
+        : all.sublist(start, (start + size) > all.length ? all.length : start + size);
+    return PageResult<Deal>(items: items, total: all.length, page: p, pageSize: size);
+  }
+
+  @override
+  Future<Deal?> dealForRequest(String requestId) async {
+    // In-memory lookup: no simulated latency (called on every request open).
+    for (final d in _deals.values) {
+      if (d.requestId == requestId) return d;
+    }
+    return null;
+  }
+
+  @override
   Future<Deal> startFulfilment(String dealId) async {
     await _wait();
     final d = _find(dealId);
@@ -205,4 +298,16 @@ final dealsRepositoryProvider = Provider<DealsRepository>((ref) {
 final dealEventsProvider =
     FutureProvider.autoDispose.family<DealEventList, String>(
   (ref, dealId) => ref.watch(dealsRepositoryProvider).events(dealId),
+);
+
+/// The deal of a request: from the in-session map when present, else loaded
+/// from the backend (buyer only; null when none / not visible).
+final requestDealProvider =
+    FutureProvider.autoDispose.family<Deal?, String>(
+  (ref, requestId) => ref.watch(dealsRepositoryProvider).dealForRequest(requestId),
+);
+
+/// One deal by id (deal detail screen).
+final dealDetailProvider = FutureProvider.autoDispose.family<Deal, String>(
+  (ref, dealId) => ref.watch(dealsRepositoryProvider).get(dealId),
 );
