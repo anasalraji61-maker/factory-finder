@@ -404,3 +404,10 @@ def test_media_attachments_idempotent_and_ws(client):
         assert _send(client, cid, **body).status_code == 201
         assert ws.receive_json()["message"]["attachments"][0]["kind"] == "image"
     assert _send(client, cid, **body).status_code == 200
+
+
+def test_media_attachments_absolute_urls_refused_without_allowed_hosts(client):
+    cid = new_conv(client)["id"]
+    r = _send(client, cid, attachments=[{"url": "https://evil.example.com" + MEDIA, "kind": "image"}])
+    assert r.status_code == 422 and r.json()["error"]["code"] == "attachment_url_not_allowed"
+    assert _send(client, cid, attachments=[{"url": MEDIA, "kind": "image"}]).status_code == 201

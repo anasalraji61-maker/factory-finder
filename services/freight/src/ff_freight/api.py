@@ -11,6 +11,7 @@ from ff_freight.errors import NotFound, Unauthenticated
 from ff_freight.schemas import (
     ID_RE,
     USER_RE,
+    AcceptIn,
     ApplicationCreate,
     NoteIn,
     ProfileUpdate,
@@ -192,8 +193,8 @@ async def withdraw_quote(quote_id: ObjId, s: S, user: User):
 
 
 @router.post("/quotes/{quote_id}/accept")
-async def accept_quote(quote_id: ObjId, s: S, user: User):
-    return await s.accept_quote(user, quote_id)
+async def accept_quote(quote_id: ObjId, s: S, user: User, body: AcceptIn | None = None):
+    return await s.accept_quote(user, quote_id, body.revision if body else None)
 
 
 @router.post("/quotes/{quote_id}/report", status_code=202)

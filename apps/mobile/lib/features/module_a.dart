@@ -31,6 +31,8 @@ import 'package:factory_finder/features/deals/screens/deals_list_screen.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_screen.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_strings.dart';
 import 'package:factory_finder/features/trust/trust_strings.dart';
+import 'package:factory_finder/features/trust/verification_screen.dart';
+import 'package:factory_finder/features/trust/verification_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Discover tab, listing detail, supplier page, Requests & Offers, auth screens.
@@ -77,6 +79,10 @@ final FeatureModule featureModuleA = FeatureModule(
       builder: (context, state) => const SupplierClaimScreen(),
     ),
     GoRoute(
+      path: '/verification',
+      builder: (context, state) => const VerificationScreen(),
+    ),
+    GoRoute(
       path: '/listing/:id',
       builder: (context, state) =>
           ListingDetailScreen(listingId: state.pathParameters['id']!),
@@ -110,5 +116,5 @@ final FeatureModule featureModuleA = FeatureModule(
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: mergeStringTables([discoverStrings, reportStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings, dealsStrings]),
+  strings: mergeStringTables([discoverStrings, reportStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, verificationStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings, dealsStrings]),
 );

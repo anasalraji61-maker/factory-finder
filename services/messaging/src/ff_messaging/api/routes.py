@@ -109,7 +109,7 @@ def current_user(
     x_internal_token: Annotated[str | None, Header()] = None,
 ) -> str:
     token = request.app.state.service.settings.internal_token_value
-    if token is not None and not hmac.compare_digest(x_internal_token or "", token):
+    if token is not None and not hmac.compare_digest((x_internal_token or "").encode(), (token).encode()):
         raise UnauthenticatedError("Invalid internal token")
     if not x_user_id or not is_valid_user_id(x_user_id):
         raise UnauthenticatedError("X-User-Id header is required")
@@ -243,9 +243,7 @@ async def conversation_socket(
         if not uid or not is_valid_user_id(uid):
             raise UnauthenticatedError("user required")
         token = settings.internal_token_value
-        if token is not None and not hmac.compare_digest(
-            websocket.headers.get("x-internal-token", ""), token
-        ):
+        if token is not None and not hmac.compare_digest((websocket.headers.get("x-internal-token", "")).encode(), (token).encode()):
             raise UnauthenticatedError("bad token")
         sup = websocket.headers.get("x-supplier-id")
         sup = sup if sup and sup.startswith("sup_") and is_valid_user_id(sup) else None

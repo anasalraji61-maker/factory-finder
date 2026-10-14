@@ -177,6 +177,8 @@ def test_internal_token_enforced_when_set():
     c = TestClient(create_app(Settings(internal_token="s3", geo_provider="mock")))
     assert c.get("/v1/carriers").status_code == 401
     assert c.get("/v1/carriers", headers={"X-Internal-Token": "s3"}).status_code == 200
+    # a non-ASCII token must be a clean 401, not a TypeError from hmac.compare_digest(str, str)
+    assert c.get("/v1/carriers", headers={"X-Internal-Token": "é".encode("latin-1")}).status_code == 401
     assert c.get("/health").status_code == 200
 
 

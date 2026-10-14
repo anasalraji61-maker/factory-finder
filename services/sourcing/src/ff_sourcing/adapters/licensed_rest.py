@@ -361,6 +361,12 @@ class LicensedRestAdapter(HttpProviderAdapter):
         native_id, title = g("id"), g("title")
         if native_id is None or title is None:
             return None
+        if not re.fullmatch(r"[A-Za-z0-9_.:\-]{1,100}", str(native_id)):
+            return None  # ids end up in /v1/listings/{id}: refuse anything that is not a plain token
+        title = str(title)[:300]  # bounded: titles feed the O(n^2) dedupe
+        url = g("url")
+        if url is not None and urlsplit(str(url)).scheme.lower() not in ("http", "https"):
+            url = None  # never keep javascript:/data: links from a feed
         text_for_ccy = g("price_range") if "price_range" in m else None
         if "price_range" in m and text_for_ccy is not None:
             rng = parse_price_range(text_for_ccy)
@@ -386,9 +392,9 @@ class LicensedRestAdapter(HttpProviderAdapter):
         item = build_listing(
             source=s.id, native_id=str(native_id), title=str(title).strip(), price_min=lo, price_max=hi,
             currency=ccy, supplier_native_id=str(g("supplier_id", g("supplier_name", ""))),
-            supplier_name=str(g("supplier_name", "")).strip(),
+            supplier_name=str(g("supplier_name", "")).strip()[:200],
             country=str(g("country", s.defaults.get("country", "CN"))).upper()[:2], city=g("city"),
-            url=g("url"), images=self._images(get_path(raw, m["images"]) if "images" in m else None),
+            url=url, images=self._images(get_path(raw, m["images"]) if "images" in m else None),
             moq=int(dec(moq_d[0])) if moq_d else None, unit=unit, verified=verified,
         )
         update: dict[str, Any] = {}

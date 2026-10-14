@@ -7,7 +7,7 @@ from ff_trust.api.errors import ApiError
 from ff_trust.api.schemas import BatchOut, HistoryOut, ReportIn, ReportOut, TrustScoreOut
 from ff_trust.domain.signals import SupplierSignals
 from ff_trust.service import TrustService, report_out
-from ff_trust.store import RateLimited
+from ff_trust.store import CapacityReached, RateLimited
 
 router = APIRouter(prefix="/v1/trust")
 
@@ -78,6 +78,8 @@ async def report(
     except AdapterDisabled as e:
         raise ApiError(503, "adapter_disabled", str(e)) from e
     try:
-        return report_out(svc.add_report(supplier_id, uid, body.type, body.text))
+        return report_out(await svc.add_report(supplier_id, uid, body.type, body.text))
     except RateLimited as e:
         raise ApiError(429, "rate_limited", "Too many reports; try again later", {"retry_after_seconds": e.retry_after}, {"Retry-After": str(e.retry_after)}) from e
+    except CapacityReached as e:
+        raise ApiError(503, "capacity_reached", "Report store is full; try later") from e

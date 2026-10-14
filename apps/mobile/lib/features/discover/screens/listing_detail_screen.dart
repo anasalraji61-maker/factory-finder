@@ -6,6 +6,7 @@ import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/discover/widgets/report_sheet.dart';
+import 'package:factory_finder/features/trust/verification_badge.dart';
 import 'package:factory_finder/features/watchlist/data/watch_models.dart';
 import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
 import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
@@ -386,6 +387,7 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                             band: l.supplier.trustBand,
                             score: l.supplier.trustScore,
                           ),
+                          SupplierVerificationBadge(supplierId: l.supplier.id),
                           if (l.supplier.verified)
                             _InfoPill(
                               icon: Icons.check_circle,

@@ -14,6 +14,7 @@ Money is parsed with Decimal; every listing carries its currency.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -36,6 +37,7 @@ log = logging.getLogger(__name__)
 
 GLOBAL_KILL_SWITCH_ENV = "FF_SOURCING_KILL_SWITCH"
 MIN_INTERVAL_FLOOR_S = 3.0
+MAX_RESPONSE_BYTES = 8 * 1024 * 1024  # provider responses above this are refused
 _TRUTHY = {"1", "true", "yes", "on"}
 _PRICE_NUM = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
@@ -183,13 +185,19 @@ class HttpProviderAdapter(SourceAdapter):
         client = self._client or httpx.AsyncClient(timeout=self.config.timeout_s)
         try:
             await self.limiter.wait(urlsplit(url).netloc)
-            r = await client.request(
+            # streamed with a hard size cap: a hostile/misconfigured provider cannot exhaust memory
+            async with client.stream(
                 self.config.method, url, params=params, headers=self.build_headers()
-            )
-            if r.status_code in (401, 403, 429):
-                raise SourceBlocked(f"{self.id}: HTTP {r.status_code}; not retrying or bypassing")
-            r.raise_for_status()
-            data = r.json()
+            ) as r:
+                if r.status_code in (401, 403, 429):
+                    raise SourceBlocked(f"{self.id}: HTTP {r.status_code}; not retrying or bypassing")
+                r.raise_for_status()
+                buf = bytearray()
+                async for chunk in r.aiter_bytes():
+                    buf += chunk
+                    if len(buf) > MAX_RESPONSE_BYTES:
+                        raise ValueError(f"{self.id}: response larger than {MAX_RESPONSE_BYTES} bytes")
+            data = json.loads(bytes(buf))
         finally:
             if self._client is None:
                 await client.aclose()

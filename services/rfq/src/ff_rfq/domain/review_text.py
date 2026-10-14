@@ -15,7 +15,7 @@ _TLDS = (
     "gl|be|us|uk|de|tk|ml|ga|cf|gq|vip|club|live|pro|dev|page|click|ir|tr|in|pk|sa|eg"
 )
 _DOMAIN = re.compile(rf"\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:{_TLDS})\b", re.I)
-_EMAIL = re.compile(r"[\w.+-]+\s*(?:@|\(at\)|\[at\])\s*[\w-]+", re.I)
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+\s*(?:@|\(at\)|\[at\])\s*[\w-]+", re.I)
 _PHONE = re.compile(r"(?:\+?\d[\s().\-_/]*){9,}")
 
 

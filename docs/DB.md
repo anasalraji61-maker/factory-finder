@@ -1,7 +1,7 @@
 # Database migrations (Alembic)
 
-Applies to the services with a database: **sourcing (native listings), rfq, messaging, tracking, notifications, demand, payments, media, feed, freight**
-(`trust` is stateless; `gateway` is handled separately). Each service owns its own Alembic
+Applies to the services with a database: **sourcing (native listings), rfq, messaging, tracking, notifications, demand, payments, media, feed, freight, trust**
+(`gateway` is handled separately). Each service owns its own Alembic
 setup (`services/<svc>/alembic.ini` + `migrations/`) and its **own database**; there is no shared schema.
 
 ## URLs
@@ -38,3 +38,10 @@ docker compose --profile pg run --rm rfq alembic upgrade head
 ```
 Money notes: rfq stores money/quantities as exact decimal strings (never floats); notifications/demand/tracking keep
 documents as JSON. A move to `Numeric(p, s)` columns would need a data-migrating revision.
+
+## trust
+`FF_TRUST_DATABASE_URL` / `FF_TRUST_DB_AUTO_CREATE`, default `sqlite+aiosqlite:///./data/trust.db`. Holds verification documents, the append-only
+`verification_audit` (UPDATE/DELETE rejected by triggers; the migration installs them on SQLite and PostgreSQL), buyer reports,
+score snapshots and `trust_meta`. Replaces the former loose DDL file. In `FF_ENV=production` the service also needs
+`FF_TRUST_VERIFICATION_HASH_KEY` (stable secret; changing it breaks duplicate detection and is refused at startup).
+Back up the database together with that key.

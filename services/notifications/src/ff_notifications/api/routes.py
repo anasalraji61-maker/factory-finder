@@ -25,7 +25,7 @@ def svc(request: Request) -> NotificationService:
 
 def _check_token(request: Request, token: str | None) -> None:
     expected = request.app.state.settings.internal_token_value
-    if expected is not None and not hmac.compare_digest(token or "", expected):
+    if expected is not None and not hmac.compare_digest((token or "").encode(), expected.encode()):
         raise Unauthenticated("Invalid internal token")
 
 

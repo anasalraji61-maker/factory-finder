@@ -375,7 +375,9 @@ def check_media_attachments(
         if parts.scheme or parts.netloc:
             if parts.scheme.lower() not in schemes or not host:
                 raise url_error
-            if rules.allowed_hosts and not _host_allowed(host, rules.allowed_hosts):
+            # absolute URLs only for explicitly configured media hosts: an empty list means relative paths only,
+            # otherwise any attacker host with a media-shaped path would be accepted and rendered by clients
+            if not rules.allowed_hosts or not _host_allowed(host, rules.allowed_hosts):
                 raise url_error
         path = parts.path
         prefix = next((p for p in rules.path_prefixes if path.startswith(p)), None)

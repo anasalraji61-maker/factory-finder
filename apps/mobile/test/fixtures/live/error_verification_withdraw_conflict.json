@@ -1,0 +1,1 @@
+{"error":{"code":"invalid_transition","message":"Cannot move a rejected document to withdrawn","details":{"from":"rejected","to":"withdrawn"}}}

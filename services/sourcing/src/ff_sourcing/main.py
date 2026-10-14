@@ -100,7 +100,7 @@ def create_app(
         if (
             token
             and (path.startswith(("/v1/my", "/v1/admin")) or path.endswith("/report"))
-            and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token)
+            and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode())
         ):
             body = {"error": {"code": "invalid_internal_token", "message": "Missing or invalid X-Internal-Token", "details": {}}}
             return JSONResponse(body, status_code=401)

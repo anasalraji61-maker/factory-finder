@@ -36,7 +36,7 @@ _URL = re.compile(
     rf"(?:https?://|ftp://|www\.)\S+|(?<![\w.@-])(?:[a-z0-9-]+\.)+(?:{_TLDS})(?![\w-])|\bdot\s*com\b|نقطة\s*كوم",
     re.IGNORECASE,
 )
-_EMAIL = re.compile(r"[\w.+-]+\s*(?:@|\[at\]|\(at\))\s*[\w-]+(?:\s*(?:\.|\[dot\]|\(dot\))\s*[\w-]+)+", re.IGNORECASE)
+_EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+\s*(?:@|\[at\]|\(at\))\s*[\w-]+(?:\s*(?:\.|\[dot\]|\(dot\))\s*[\w-]+)+", re.IGNORECASE)
 _PHONE = re.compile(r"(?<![\w.])\+?\(?\d[\d\s\-().]{6,}\d(?!\w)")
 _HANDLE = re.compile(
     r"(?<![\w@])@[a-z0-9_.]{3,}|"

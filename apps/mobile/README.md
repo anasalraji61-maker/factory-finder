@@ -9,6 +9,7 @@ Runs entirely in **mock mode** by default: no backend is needed.
 |---|---|---|
 | Discover | `/discover`, `/discover/search?q=` | feed, trending, kind/category chips, search, filters + sort |
 | Listing / Supplier | `/listing/:id`, `/supplier/:id` | detail, trust factors sheet, supplier page |
+| Business verification | `/verification` | supplier documents, status chips, submit/withdraw; public level badge on supplier and listing screens |
 | Requests & Offers | `/requests`, `/requests/new`, `/requests/:id` | my/open requests, create form, offers, accept -> deal summary (commission) |
 | Messages | `/messages` | placeholder |
 | Logistics | `/logistics`, `/logistics/calculator?listing_id=`, `/logistics/results` | landed-cost calculator + comparison results |

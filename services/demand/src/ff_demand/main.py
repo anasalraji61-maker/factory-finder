@@ -33,7 +33,9 @@ def admin(
     x_internal_token: Annotated[str | None, Header()] = None,
 ) -> str:
     expected = request.app.state.settings.internal_token_value
-    if expected is not None and not hmac.compare_digest(x_internal_token or "", expected):
+    if expected is not None and not hmac.compare_digest(
+        (x_internal_token or "").encode(), expected.encode()
+    ):
         raise Unauthenticated("Invalid internal token")
     if not x_user_id or len(x_user_id) > 64:
         raise Unauthenticated("X-User-Id header is required")

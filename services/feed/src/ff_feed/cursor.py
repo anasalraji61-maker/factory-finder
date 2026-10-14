@@ -38,12 +38,13 @@ def decode(cursor: str, allowed: tuple[str, ...]) -> dict:
             and t.tzinfo is not None
         )
         s = d.get("s")
-        if s is not None and (not isinstance(s, int) or isinstance(s, bool)):
+        if s is not None and (not isinstance(s, int) or isinstance(s, bool) or abs(s) > 2**53):
             ok = False
-    except (ValueError, KeyError, TypeError, binascii.Error, UnicodeDecodeError):
+        t = t.astimezone(UTC)  # may overflow near year 1 / 9999: caught below as a bad cursor
+    except (ValueError, KeyError, TypeError, OverflowError, binascii.Error, UnicodeDecodeError):
         raise bad from None
     if not ok:
         raise bad
     if (d["k"] == "t") != (s is not None):
         raise bad
-    return {"k": d["k"], "t": t.astimezone(UTC), "i": d["i"], "s": s}
+    return {"k": d["k"], "t": t, "i": d["i"], "s": s}

@@ -17,8 +17,12 @@
 ## Production mode guard (`FF_ENV=production`)
 Opt-in, fail closed. Default behaviour (variable unset or any other value) is unchanged.
 - rfq, payments, notifications, sourcing, tracking, messaging, media, feed, freight: refuse to start (`RuntimeError` in `create_app`) if `FF_INTERNAL_TOKEN` is unset/empty.
+- trust: refuses to start (`RuntimeError` in `create_app`) if `FF_TRUST_VERIFICATION_HASH_KEY` is unset (keyed duplicate detection for verification documents must survive restarts); startup also aborts if the key differs from the one the stored fingerprints were made with.
 - gateway: refuses to start if `FF_GATEWAY_JWT_SECRET` or `FF_GATEWAY_ADMIN_TOKEN` is missing.
 - Implemented per service as a tiny duplicated helper (`_require_production_token`), no cross-service imports. Tests: `tests/test_production_guard.py` in each service.
 - Gateway `/v1/admin/payments/outbox*` needs `FF_PAYMENTS_ADMIN_TOKEN` set on the gateway too (same value as the payments service's); unset = those routes answer 404.
 - Gateway `/v1/admin/trust/verification/*`, `/v1/admin/freight/*` and `/v1/admin/feed/*` (admin console passthroughs) need `FF_TRUST_ADMIN_TOKEN`, `FF_FREIGHT_ADMIN_TOKEN` and `FF_FEED_ADMIN_TOKEN` set on the gateway too (same values as each service's); unset = 404. All three default to empty in `docker-compose.yml` and `.env.example`.
 - Gateway also re-checks `is_active` on every proxied request (cached 5 s), so disabling a user takes effect within ~5 s instead of at access-token expiry.
+
+## Trust persistence
+`FF_TRUST_DATABASE_URL` (default SQLite `./data/trust.db`; in Docker that is inside the container, so mount a volume at `/app/data` or use PostgreSQL, otherwise a recreated container starts empty). Run `alembic upgrade head` in `services/trust` before starting on PostgreSQL. `/ready` returns 503 when the database is unreachable. The audit table is append-only by trigger: do not grant UPDATE/DELETE to the application role either.

@@ -66,15 +66,15 @@ class TrustService:
                 summary = None
             if summary is not None:
                 signals = signals.model_copy(update={"review_summary": summary})
-        accepted = self.reports.accepted_count(supplier_id)
+        accepted = await self.reports.accepted_count(supplier_id)
         if accepted:  # only reviewed (accepted) reports ever touch the score
             signals = signals.model_copy(update={"confirmed_reports": accepted})
-        evidence = self.verification.evidence_for(supplier_id)  # approved documents only; pending/rejected never count
+        evidence = await self.verification.evidence_for(supplier_id)  # approved documents only; pending/rejected never count
         if evidence is not None and signals.verification is None:
             signals = signals.model_copy(update={"verification": evidence})
         out = to_out(supplier_id, signals, self.cfg)
         self.cache.set(supplier_id, out)
-        self.snapshots.add(supplier_id, Snapshot(out.computed_at, out.score, out.band, out.confidence or 0))
+        await self.snapshots.add(supplier_id, Snapshot(out.computed_at, out.score, out.band, out.confidence or 0))
         return out
 
     def evaluate(self, signals: SupplierSignals) -> TrustScoreOut:
@@ -98,19 +98,19 @@ class TrustService:
                     score = min(score, self.cfg.sanctions_cap)
                 band = "red" if hard else "unknown" if cur.band == "unknown" else band_for(score, self.cfg).value
                 points.append(HistoryPoint(at=day - timedelta(days=30 * (self.history_months - i)), score=score, band=band, confidence=cur.confidence, source="mock"))  # fmt: skip
-        points += [HistoryPoint(at=s.at, score=s.score, band=s.band, confidence=s.confidence, source="snapshot") for s in self.snapshots.list(supplier_id)]  # fmt: skip
+        points += [HistoryPoint(at=s.at, score=s.score, band=s.band, confidence=s.confidence, source="snapshot") for s in await self.snapshots.list(supplier_id)]  # fmt: skip
         points.sort(key=lambda p: p.at)
         return HistoryOut(supplier_id=supplier_id, points=points)
 
-    def add_report(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
-        return self.reports.add(supplier_id, user_id, rtype, text)
+    async def add_report(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
+        return await self.reports.add(supplier_id, user_id, rtype, text)
 
     def invalidate(self, supplier_id: str) -> None:
         self.cache.delete(supplier_id)
 
-    def review_report(self, report_id: str, status: str) -> Report | None:
+    async def review_report(self, report_id: str, status: str) -> Report | None:
         """Moderator hook (not exposed over HTTP). Accepting re-scores the supplier."""
-        r = self.reports.review(report_id, status)
+        r = await self.reports.review(report_id, status)
         if r is not None:
             self.cache.delete(r.supplier_id)
         return r

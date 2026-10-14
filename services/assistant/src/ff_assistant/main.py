@@ -42,7 +42,7 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
     @app.middleware("http")
     async def internal_token(request: Request, call_next):
         guarded = s.internal_token and request.url.path.startswith("/v1/")
-        if guarded and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), s.internal_token.get_secret_value()):
+        if guarded and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (s.internal_token.get_secret_value()).encode()):
             return _error(401, "unauthorized", "invalid internal token")
         return await call_next(request)
 

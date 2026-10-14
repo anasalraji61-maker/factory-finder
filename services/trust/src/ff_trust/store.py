@@ -1,17 +1,22 @@
-"""In-memory stores: score snapshots (history) and buyer reports (moderation queue).
+"""DB-backed stores: score snapshots (history) and buyer reports (moderation queue).
 
-Process-local by design (this service has no database); both are bounded so they cannot grow without limit.
+Both live in the service database (``ff_trust.db``), so they survive restarts. Both are bounded: per-supplier /
+total caps and time-based retention (``purge``, run at startup and opportunistically at most once per hour).
+Accepted reports are the only rows that influence a score, so retention never deletes them.
 """
 
-import threading
 import uuid
-from collections import defaultdict, deque
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import delete, func, insert, select, update
+
+from ff_trust.db import Database, reports, score_snapshots
 
 REPORT_TYPES = ("fraud", "counterfeit", "non_delivery", "quality", "misrepresentation", "unsafe_product", "other")
 REPORT_STATUSES = ("pending_review", "accepted", "rejected")
+PURGE_EVERY = timedelta(hours=1)
 
 
 def _now() -> datetime:
@@ -43,63 +48,134 @@ class RateLimited(Exception):
         self.retry_after = retry_after
 
 
-@dataclass
+class CapacityReached(Exception):
+    """The report table is full of accepted reports (which are never evicted)."""
+
+
+def _default_db() -> Database:
+    return Database("sqlite+aiosqlite:///:memory:", True)
+
+
 class SnapshotStore:
-    max_per_supplier: int = 500
-    _data: dict[str, deque[Snapshot]] = field(default_factory=lambda: defaultdict(deque))
+    def __init__(self, db: Database | None = None, max_per_supplier: int = 500, max_total: int = 200_000, retention_days: int = 730, clock: Callable[[], datetime] = _now):
+        self.db = db or _default_db()
+        self.max_per_supplier, self.max_total, self.retention_days, self.clock = max_per_supplier, max_total, retention_days, clock
+        self._last_purge: datetime | None = None
 
-    def add(self, supplier_id: str, snap: Snapshot) -> None:
-        q = self._data[supplier_id]
-        if q and q[-1].score == snap.score and q[-1].band == snap.band and q[-1].confidence == snap.confidence:
-            return  # unchanged: do not store duplicates every cache refresh
-        q.append(snap)
-        while len(q) > self.max_per_supplier:
-            q.popleft()
+    async def add(self, supplier_id: str, snap: Snapshot) -> None:
+        t = score_snapshots
+        async with self.db.begin() as conn:
+            last = (await conn.execute(select(t.c.score, t.c.band, t.c.confidence).where(t.c.supplier_id == supplier_id).order_by(t.c.at.desc(), t.c.id.desc()).limit(1))).first()
+            if last and (last.score, last.band, last.confidence) == (snap.score, snap.band, snap.confidence):
+                return  # unchanged: do not store duplicates every cache refresh
+            await conn.execute(insert(t).values(supplier_id=supplier_id, at=snap.at, score=snap.score, band=snap.band, confidence=snap.confidence))
+            n = (await conn.execute(select(func.count()).select_from(t).where(t.c.supplier_id == supplier_id))).scalar_one()
+            if n > self.max_per_supplier:
+                old = select(t.c.id).where(t.c.supplier_id == supplier_id).order_by(t.c.at, t.c.id).limit(n - self.max_per_supplier)
+                await conn.execute(delete(t).where(t.c.id.in_(old.scalar_subquery())))
+        await self._maybe_purge()
 
-    def list(self, supplier_id: str) -> list[Snapshot]:
-        return sorted(self._data.get(supplier_id, ()), key=lambda s: s.at)
+    async def list(self, supplier_id: str) -> list[Snapshot]:
+        t = score_snapshots
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(t).where(t.c.supplier_id == supplier_id).order_by(t.c.at, t.c.id))).all()
+        return [Snapshot(r.at, r.score, r.band, r.confidence) for r in rows]
+
+    async def purge(self) -> int:
+        """Retention + global cap. Returns the number of deleted rows."""
+        t, gone = score_snapshots, 0
+        self._last_purge = self.clock()
+        async with self.db.begin() as conn:
+            gone += (await conn.execute(delete(t).where(t.c.at < self._last_purge - timedelta(days=self.retention_days)))).rowcount
+            total = (await conn.execute(select(func.count()).select_from(t))).scalar_one()
+            if total > self.max_total:
+                old = select(t.c.id).order_by(t.c.at, t.c.id).limit(total - self.max_total)
+                gone += (await conn.execute(delete(t).where(t.c.id.in_(old.scalar_subquery())))).rowcount
+        return gone
+
+    async def _maybe_purge(self) -> None:
+        if self._last_purge is None or self.clock() - self._last_purge >= PURGE_EVERY:
+            await self.purge()
 
 
 class ReportStore:
-    def __init__(self, limit: int = 5, window_seconds: int = 3600, clock: Callable[[], datetime] = _now, max_reports: int = 20000, max_users: int = 10000):
+    def __init__(
+        self, limit: int = 5, window_seconds: int = 3600, clock: Callable[[], datetime] = _now, max_reports: int = 20000,
+        *, db: Database | None = None, retention_days: int = 365,
+    ):  # fmt: skip
+        self.db = db or _default_db()
         self.limit, self.window, self.clock, self.max_reports = limit, window_seconds, clock, max_reports
-        self.max_users = max_users
-        self._reports: dict[str, Report] = {}
-        self._hits: dict[str, deque[datetime]] = defaultdict(deque)
-        self._lock = threading.Lock()
+        self.retention_days = retention_days
+        self._last_purge: datetime | None = None
 
-    def add(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
+    async def add(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
         """Store a report as pending_review. Raises RateLimited when the user exceeded the window quota."""
-        with self._lock:
+        t = reports
+        async with self.db.begin() as conn:
+            await self.db.lock(conn, f"report:{user_id}")
             now = self.clock()
-            if user_id not in self._hits and len(self._hits) >= self.max_users:
-                for uid in [u for u, h in self._hits.items() if not h or (now - h[-1]).total_seconds() >= self.window]:
-                    del self._hits[uid]
-                if len(self._hits) >= self.max_users:  # still full of active users: drop the oldest tracked one
-                    del self._hits[next(iter(self._hits))]
-            hits = self._hits[user_id]
-            while hits and (now - hits[0]).total_seconds() >= self.window:
-                hits.popleft()
-            if len(hits) >= self.limit:
-                raise RateLimited(max(1, int(self.window - (now - hits[0]).total_seconds())))
-            hits.append(now)
-            if len(self._reports) >= self.max_reports:
-                self._reports.pop(next(iter(self._reports)))
+            n, first = (await conn.execute(select(func.count(), func.min(t.c.created_at)).where(t.c.reporter_id == user_id, t.c.created_at > now - timedelta(seconds=self.window)))).one()
+            if n >= self.limit:
+                raise RateLimited(max(1, int(self.window - (now - first).total_seconds())))
+            total = (await conn.execute(select(func.count()).select_from(t))).scalar_one()
+            if total >= self.max_reports:  # make room: oldest rejected first, then oldest pending; accepted rows stay
+                for status in ("rejected", "pending_review"):
+                    victim = (await conn.execute(select(t.c.id).where(t.c.status == status).order_by(t.c.created_at).limit(1))).scalar()
+                    if victim:
+                        await conn.execute(delete(t).where(t.c.id == victim))
+                        break
+                else:
+                    raise CapacityReached
             r = Report(uuid.uuid4().hex, supplier_id, user_id, rtype, text, now)
-            self._reports[r.id] = r
-            return r
-
-    def get(self, report_id: str) -> Report | None:
-        return self._reports.get(report_id)
-
-    def review(self, report_id: str, status: str) -> Report | None:
-        """Moderator decision (internal use). Only accepted reports ever influence a score."""
-        if status not in ("accepted", "rejected"):
-            raise ValueError("status must be accepted or rejected")
-        r = self._reports.get(report_id)
-        if r is not None:
-            r.status, r.reviewed_at = status, self.clock()
+            await conn.execute(insert(t).values(id=r.id, supplier_id=supplier_id, reporter_id=user_id, type=rtype, text=text, status=r.status, created_at=now))
+        await self._maybe_purge()
         return r
 
-    def accepted_count(self, supplier_id: str) -> int:
-        return sum(1 for r in self._reports.values() if r.supplier_id == supplier_id and r.status == "accepted")
+    @staticmethod
+    def _report(row) -> Report:
+        m = row._mapping
+        return Report(m["id"], m["supplier_id"], m["reporter_id"], m["type"], m["text"], m["created_at"], m["status"], m["reviewed_at"])
+
+    async def get(self, report_id: str) -> Report | None:
+        async with self.db.begin() as conn:
+            row = (await conn.execute(select(reports).where(reports.c.id == report_id))).first()
+        return self._report(row) if row else None
+
+    async def review(self, report_id: str, status: str) -> Report | None:
+        """Moderator decision (internal use). Only accepted reports ever influence a score.
+
+        Conditional update on the status that was read: two concurrent reviews cannot both think they moved it."""
+        if status not in ("accepted", "rejected"):
+            raise ValueError("status must be accepted or rejected")
+        t = reports
+        async with self.db.begin() as conn:
+            row = (await conn.execute(select(t).where(t.c.id == report_id))).first()
+            if row is None:
+                return None
+            r = self._report(row)
+            if r.status == status:
+                return r
+            now = self.clock()
+            res = await conn.execute(update(t).where(t.c.id == report_id, t.c.status == r.status).values(status=status, reviewed_at=now))
+            if res.rowcount != 1:  # lost a race: report what is stored now
+                row = (await conn.execute(select(t).where(t.c.id == report_id))).first()
+                return self._report(row) if row else None
+            r.status, r.reviewed_at = status, now
+            return r
+
+    async def accepted_count(self, supplier_id: str) -> int:
+        t = reports
+        async with self.db.begin() as conn:
+            return (await conn.execute(select(func.count()).select_from(t).where(t.c.supplier_id == supplier_id, t.c.status == "accepted"))).scalar_one()
+
+    async def purge(self) -> int:
+        """Retention: rejected and stale pending reports older than ``retention_days``. Accepted reports are kept."""
+        self._last_purge = self.clock()
+        t = reports
+        async with self.db.begin() as conn:
+            res = await conn.execute(delete(t).where(t.c.status != "accepted", t.c.created_at < self._last_purge - timedelta(days=self.retention_days)))
+        return res.rowcount
+
+    async def _maybe_purge(self) -> None:
+        if self._last_purge is None or self.clock() - self._last_purge >= PURGE_EVERY:
+            await self.purge()

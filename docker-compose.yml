@@ -156,6 +156,9 @@ services:
       PORT: '8104'
       FF_ENV: ${FF_ENV:-}
       FF_TRUST_ADMIN_TOKEN: ${FF_TRUST_ADMIN_TOKEN:-}
+      FF_TRUST_DATABASE_URL: ${FF_TRUST_DATABASE_URL:-}
+      FF_TRUST_DB_AUTO_CREATE: ${FF_TRUST_DB_AUTO_CREATE:-}
+      FF_TRUST_VERIFICATION_HASH_KEY: ${FF_TRUST_VERIFICATION_HASH_KEY:-}
     restart: unless-stopped
     healthcheck:
       test:

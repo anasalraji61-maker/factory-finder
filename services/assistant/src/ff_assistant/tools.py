@@ -140,7 +140,7 @@ class Tools:
         if deal is None and "deals_unavailable" in warnings:
             return ToolOutput(compose.msg(L, "خدمة الصفقات غير متاحة هسه، جرّب بعد شوي.", "The deals service is unavailable, please try again shortly."))
         # same answer for "no such deal" and "not your deal": no existence leak; defensive party check
-        if deal is None or ((deal.buyer_id or deal.supplier_user_id) and user_id not in (deal.buyer_id, deal.supplier_user_id)):
+        if deal is None or user_id not in (deal.buyer_id, deal.supplier_user_id):  # fail closed on missing party ids
             return ToolOutput(compose.msg(L, f"ما لقيت الصفقة {p.deal_id} ضمن صفقاتك.", f"I could not find deal {p.deal_id} among your deals."),
                               [notice("deal_not_found", "Deal not found", "الصفقة غير موجودة بين صفقاتك")])
         card = self._deal_card(deal, user_id)

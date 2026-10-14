@@ -251,6 +251,15 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => context.push('/my-products'),
                   ),
                   const Divider(height: 1),
+                  ListTile(
+                    key: const ValueKey('profile-verification'),
+                    leading: const Icon(Icons.domain_verification),
+                    title: Text(context.tr('ver.tile')),
+                    subtitle: Text(context.tr('ver.tile_sub')),
+                    trailing: const Icon(Icons.chevron_right, size: 20),
+                    onTap: () => context.push('/verification'),
+                  ),
+                  const Divider(height: 1),
                 ],
                 ListTile(
                   leading: const Icon(Icons.bookmark_border),

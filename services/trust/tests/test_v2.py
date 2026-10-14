@@ -268,26 +268,26 @@ def test_report_rate_limit_per_user():
     assert post("b").status_code == 201  # other users unaffected
 
 
-def test_report_rate_limit_window_expires():
+async def test_report_rate_limit_window_expires():
     now = [datetime(2026, 1, 1, tzinfo=UTC)]
     rs = ReportStore(limit=1, window_seconds=60, clock=lambda: now[0])
-    rs.add("s", "u", "fraud", "x")
+    await rs.add("s", "u", "fraud", "x")
     from ff_trust.store import RateLimited
 
     with pytest.raises(RateLimited):
-        rs.add("s", "u", "fraud", "y")
+        await rs.add("s", "u", "fraud", "y")
     now[0] += timedelta(seconds=61)
-    rs.add("s", "u", "fraud", "z")
+    await rs.add("s", "u", "fraud", "z")
 
 
-def test_report_affects_score_only_after_accept():
+async def test_report_affects_score_only_after_accept():
     app = create_app(Settings())
     c = TestClient(app)
     svc = app.state.service
     base = c.get("/v1/trust/suppliers/sup_demo_avg").json()["score"]
     rid = c.post("/v1/trust/suppliers/sup_demo_avg/report", json={"type": "fraud", "text": "x"}, headers=H).json()["id"]
     assert c.get("/v1/trust/suppliers/sup_demo_avg").json()["score"] == base
-    svc.review_report(rid, "rejected")
+    await svc.review_report(rid, "rejected")
     assert c.get("/v1/trust/suppliers/sup_demo_avg").json()["score"] == base
-    svc.review_report(rid, "accepted")
+    await svc.review_report(rid, "accepted")
     assert c.get("/v1/trust/suppliers/sup_demo_avg").json()["score"] < base

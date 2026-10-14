@@ -247,7 +247,10 @@ class QuoteCreate(_Body):
 
 
 class AcceptIn(_Body):
-    pass
+    """Optional guard against bait-and-switch: the revision the buyer saw. A forwarder revising the quote
+    between the buyer's comparison and the accept makes the accept fail with 409 `quote_changed`."""
+
+    revision: Annotated[int | None, Field(ge=1, le=1_000_000)] = None
 
 
 class RatingIn(_Body):

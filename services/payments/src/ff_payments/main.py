@@ -67,7 +67,7 @@ def create_app(
     async def internal_auth(request: Request, call_next):
         path = request.url.path
         exempt = path in ("/health", "/ready") or path.startswith(WEBHOOK_PREFIX)  # webhooks: HMAC instead
-        if token and not exempt and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
+        if token and not exempt and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode()):
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 

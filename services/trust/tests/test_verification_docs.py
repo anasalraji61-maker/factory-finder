@@ -1,7 +1,4 @@
-import json
-import sqlite3
 from datetime import UTC, date, datetime, timedelta
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -155,8 +152,8 @@ def test_no_number_leakage_anywhere(client):
     assert "fingerprint" not in "".join(blobs)
     pub = client.get("/v1/trust/suppliers/sup_a/verification").text
     assert F1 not in pub and "9876" not in pub
-    store = client.app.state.service.verification
-    assert NUM not in repr(store._docs) and NUM not in repr(list(store.audit._entries))
+    dump = "\n".join(_dump_db(client.app))  # nothing in the database contains the raw number
+    assert NUM not in dump and "91310000MA1K3" not in dump
 
 
 def test_mask_short_numbers_fully():
@@ -188,27 +185,27 @@ def test_rate_limit_and_caps():
     assert submit(c2, doc_type="iso_certificate", number="ISO-123456").status_code == 409  # supplier cap 3
 
 
-def test_rate_limit_window_slides():
+async def test_rate_limit_window_slides():
     now = [datetime(2026, 10, 15, tzinfo=UTC)]
     s = VerificationStore(rate_limit=1, rate_window=60, clock=lambda: now[0])
-    s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-1", None, True)
+    await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-1", None, True)
     with pytest.raises(VerificationError) as ei:
-        s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
+        await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
     assert ei.value.status == 429
     now[0] += timedelta(seconds=61)
-    s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
+    await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
 
 
-def test_total_cap_evicts_only_closed_docs():
+async def test_total_cap_evicts_only_closed_docs():
     s = VerificationStore(rate_limit=100, max_total=2, max_per_type=10)
-    a = s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-1", None, True)
-    s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
+    a = await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-1", None, True)
+    await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-2", None, True)
     with pytest.raises(VerificationError) as ei:
-        s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-3", None, True)
+        await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-3", None, True)
     assert ei.value.status == 503
-    s.withdraw("s", a.id)
-    s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-3", None, True)
-    assert len(s._docs) == 2
+    await s.withdraw("s", a.id)
+    await s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-3", None, True)
+    assert len((await s.list_by_status(None, 10, 0))[0]) == 2
 
 
 # ---------------- expiry ----------------
@@ -333,7 +330,7 @@ def test_evaluate_accepts_inline_evidence_and_old_payloads_unchanged(client):
 
 
 # ---------------- audit log ----------------
-def test_audit_append_only_and_sanitised(client):
+async def test_audit_append_only_and_sanitised(client):
     did = submit(client).json()["id"]
     client.post(f"/v1/admin/trust/verification/documents/{did}/decision", json={"decision": "approve", "reason": "ok\n\x00 checked"}, headers={**ADM, "X-Reviewer": "bob<script>"})
     rows = client.get("/v1/admin/trust/verification/audit", headers=ADM).json()["items"]
@@ -341,24 +338,31 @@ def test_audit_append_only_and_sanitised(client):
     assert rows[0]["actor"] == "admin" and rows[0]["reason"] == "ok checked" and rows[1]["actor"] == "supplier:sup_a"
     log = client.app.state.service.verification.audit
     assert not any(hasattr(log, m) for m in ("update", "delete", "remove", "clear", "pop"))
+    entry = (await log.list(limit=1))[0]
     with pytest.raises(Exception):
-        log._entries[0].action = "x"  # frozen entry
+        entry.action = "x"  # frozen entry
     assert client.get("/v1/admin/trust/verification/audit?limit=0", headers=ADM).status_code == 422
 
 
-def test_submit_leaves_no_rejected_state_on_failure(client):
+async def test_submit_leaves_no_rejected_state_on_failure(client):
     submit(client, consent=False)
     assert client.get("/v1/trust/verification/documents", headers=SUP).json()["items"] == []
-    assert len(client.app.state.service.verification.audit) == 0
+    assert await client.app.state.service.verification.audit.count() == 0
 
 
-def test_migration_sql_is_valid():
-    sql = (Path(__file__).parents[1] / "migrations" / "0001_verification_documents.sql").read_text()
-    con = sqlite3.connect(":memory:")
-    con.executescript(sql)
-    cols = {r[1] for r in con.execute("pragma table_info(verification_documents)")}
-    assert "number_masked" in cols and "number" not in cols
-    con.execute("insert into verification_audit(seq, at, actor, action, document_id, supplier_id) values (1,'2026-01-01','a','submit','d','s')")
-    with pytest.raises(sqlite3.IntegrityError):
-        con.execute("insert into verification_audit(seq, at, actor, action, document_id, supplier_id) values (2,'2026-01-01','a','delete','d','s')")
-    assert json.dumps(sorted(cols))
+def _dump_db(app):
+    """Every row of every table as text (runs the async engine on a private loop)."""
+    import asyncio
+
+    from sqlalchemy import text
+
+    from ff_trust.db import metadata
+
+    async def go():
+        out = []
+        async with app.state.db.begin() as conn:
+            for name in metadata.tables:
+                out += [repr(tuple(r)) for r in (await conn.execute(text(f"select * from {name}"))).all()]
+        return out
+
+    return asyncio.run(go())

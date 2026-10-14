@@ -485,6 +485,11 @@ paths:
     post:
       operationId: acceptQuote
       summary: Award the request to this quote (owner only). Idempotent for the already-accepted quote; another quote after an award is 409 already_awarded
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AcceptRequest'}
       responses:
         '200':
           description: Awarded
@@ -875,6 +880,12 @@ components:
       type: string
       enum: [score, price, transit, rating]
       default: score
+    AcceptRequest:
+      type: object
+      additionalProperties: false
+      description: Optional bait-and-switch guard. When `revision` is the revision the buyer saw and the quote was revised since, the accept is 409 `quote_changed`.
+      properties:
+        revision: {type: integer, minimum: 1, maximum: 1000000}
     Lane:
       type: object
       additionalProperties: false

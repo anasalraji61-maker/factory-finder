@@ -3,6 +3,8 @@
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ff_trust.dburl import resolve_auto_create
+
 DEFAULT_WEIGHTS: dict[str, float] = {
     "years_in_business": 8,
     "verified": 8,
@@ -66,8 +68,10 @@ class ScoringConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="FF_TRUST_", env_file=".env", extra="ignore", populate_by_name=True)
+    model_config = SettingsConfigDict(env_prefix="FF_TRUST_", env_file=".env", extra="ignore", populate_by_name=True, env_ignore_empty=True)
 
+    database_url: str = "sqlite+aiosqlite:///./data/trust.db"  # FF_TRUST_DATABASE_URL; postgresql://... is rewritten to asyncpg
+    db_auto_create: bool | None = None  # FF_TRUST_DB_AUTO_CREATE; unset = true for SQLite, false for PostgreSQL (use Alembic)
     adapter: str = "mock"  # mock | alibaba | made_in_china (real ones are disabled stubs)
     cache_ttl_seconds: int = 300
     cache_max_entries: int = 5000
@@ -86,8 +90,17 @@ class Settings(BaseSettings):
     verification_max_docs_per_type: int = 5
     verification_max_files: int = 10
     verification_max_total_docs: int = 20000
-    verification_hash_key: str | None = None  # HMAC key for document-number fingerprints (random per process if unset)
+    verification_hash_key: str | None = None  # HMAC key for document-number fingerprints; REQUIRED when FF_ENV=production
+    report_max_total: int = 20000  # stored buyer reports (accepted ones are never evicted)
+    report_retention_days: int = 365  # rejected / stale pending reports are purged after this; accepted are kept
+    snapshot_max_per_supplier: int = 500
+    snapshot_max_total: int = 200000
+    snapshot_retention_days: int = 730
     verification_media_prefixes: list[str] = ["/v1/media/files/"]
     verification_media_hosts: list[str] = []  # absolute media URLs need a host listed here; empty = relative paths only
     verification_allow_http: bool = False
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)

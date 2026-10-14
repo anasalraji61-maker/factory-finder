@@ -100,7 +100,9 @@ def _is_listing_report(path: str) -> bool:
 @router.api_route("/{full_path:path}", methods=METHODS, include_in_schema=False)
 async def proxy(full_path: str, request: Request) -> Response:
     path = "/" + full_path
-    if ".." in path.split("/"):
+    if ".." in path.split("/") or "." in path.split("/"):
+        # "." too: httpx collapses dot segments upstream, which would sidestep the exact-path internal-only /
+        # verified-email / supplier-claim checks done on the pre-normalised path
         raise InvalidPath()
     upstream = resolve_upstream(path)
     if upstream is None:

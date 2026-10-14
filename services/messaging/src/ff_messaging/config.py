@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     attachment_allow_http: bool = False
 
     # --- media attachments (attachments[]: URLs of files held by the media service) ------------
-    # Absolute URLs must use one of these hosts (empty = any host); the path must start with one
+    # Absolute URLs must use one of these hosts (empty = relative URLs only); the path must start with one
     # of the prefixes. Relative URLs ("/v1/media/files/<id>.<ext>") are accepted as-is.
     media_allowed_hosts: StrList = Field(default_factory=list)
     media_path_prefixes: StrList = Field(default_factory=lambda: ["/v1/media/files/"])

@@ -68,9 +68,8 @@ def _out(request: Request, d: Document) -> dict:
     )  # fmt: skip
 
 
-def _admin_out(request: Request, d: Document) -> AdminDocumentOut:
-    st = _svc(request).verification
-    return AdminDocumentOut(**_out(request, d), supplier_id=d.supplier_id, reviewed_by=d.reviewed_by, approved_on=d.approved_on, duplicate_elsewhere=st.duplicate_elsewhere(d))
+def _admin_out(request: Request, d: Document, duplicate: bool) -> AdminDocumentOut:
+    return AdminDocumentOut(**_out(request, d), supplier_id=d.supplier_id, reviewed_by=d.reviewed_by, approved_on=d.approved_on, duplicate_elsewhere=duplicate)
 
 
 async def _level(svc: TrustService, sid: str) -> str:
@@ -85,7 +84,7 @@ async def _level(svc: TrustService, sid: str) -> str:
 @router.post("/v1/trust/verification/documents", response_model=DocumentOut, status_code=201)
 async def submit_document(body: DocumentIn, request: Request, sid: Supplier) -> DocumentOut:
     try:
-        d = _svc(request).verification.submit(sid, body.doc_type, body.issuing_country, body.files, body.number, body.expires_on, body.consent)
+        d = await _svc(request).verification.submit(sid, body.doc_type, body.issuing_country, body.files, body.number, body.expires_on, body.consent)
     except VerificationError as e:
         raise _fail(e) from e
     return DocumentOut(**_out(request, d))
@@ -94,14 +93,14 @@ async def submit_document(body: DocumentIn, request: Request, sid: Supplier) -> 
 @router.get("/v1/trust/verification/documents", response_model=DocumentListOut)
 async def my_documents(request: Request, sid: Supplier) -> DocumentListOut:
     svc = _svc(request)
-    return DocumentListOut(items=[DocumentOut(**_out(request, d)) for d in svc.verification.list_for_supplier(sid)], verification_level=await _level(svc, sid))  # type: ignore[arg-type]
+    return DocumentListOut(items=[DocumentOut(**_out(request, d)) for d in await svc.verification.list_for_supplier(sid)], verification_level=await _level(svc, sid))  # type: ignore[arg-type]
 
 
 @router.delete("/v1/trust/verification/documents/{document_id}", response_model=DocumentOut)
 async def withdraw_document(document_id: str, request: Request, sid: Supplier) -> DocumentOut:
     svc = _svc(request)
     try:
-        d = svc.verification.withdraw(sid, document_id)
+        d = await svc.verification.withdraw(sid, document_id)
     except VerificationError as e:
         raise _fail(e) from e
     svc.invalidate(sid)
@@ -118,7 +117,7 @@ async def public_verification(supplier_id: str, request: Request) -> PublicVerif
         raise ApiError(503, "adapter_disabled", str(e)) from e
     if r is None:
         raise ApiError(404, "supplier_not_found", f"No trust data for {supplier_id}")
-    ev = svc.verification.evidence_for(supplier_id)
+    ev = await svc.verification.evidence_for(supplier_id)
     types: list[str] = []
     if ev is not None and r.verification_level != "none":
         from ff_trust.domain.verification import valid_docs
@@ -137,8 +136,10 @@ async def admin_list(
     request: Request, status: Literal["pending", "approved", "rejected", "withdrawn", "all"] = "pending",
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0, le=100000),
 ) -> AdminDocumentPage:  # fmt: skip
-    rows, total = _svc(request).verification.list_by_status(None if status == "all" else status, limit, offset)
-    return AdminDocumentPage(items=[_admin_out(request, d) for d in rows], total=total, limit=limit, offset=offset)
+    st = _svc(request).verification
+    rows, total = await st.list_by_status(None if status == "all" else status, limit, offset)
+    dups = await st.duplicate_flags(rows)
+    return AdminDocumentPage(items=[_admin_out(request, d, d.id in dups) for d in rows], total=total, limit=limit, offset=offset)
 
 
 @admin.post("/documents/{document_id}/decision", response_model=AdminDocumentOut)
@@ -147,11 +148,11 @@ async def admin_decide(
 ) -> AdminDocumentOut:
     svc = _svc(request)
     try:
-        d = svc.verification.decide(document_id, body.decision, body.reason, reviewer_label(x_reviewer), body.expires_on)
+        d = await svc.verification.decide(document_id, body.decision, body.reason, reviewer_label(x_reviewer), body.expires_on)
     except VerificationError as e:
         raise _fail(e) from e
     svc.invalidate(d.supplier_id)  # the score and badge change on the next read
-    return _admin_out(request, d)
+    return _admin_out(request, d, await svc.verification.duplicate_elsewhere(d))
 
 
 @admin.put("/documents/{document_id}/expiry", response_model=AdminDocumentOut)
@@ -160,16 +161,16 @@ async def admin_expiry(
 ) -> AdminDocumentOut:
     svc = _svc(request)
     try:
-        d = svc.verification.set_expiry(document_id, body.expires_on, body.reason, reviewer_label(x_reviewer))
+        d = await svc.verification.set_expiry(document_id, body.expires_on, body.reason, reviewer_label(x_reviewer))
     except VerificationError as e:
         raise _fail(e) from e
     svc.invalidate(d.supplier_id)
-    return _admin_out(request, d)
+    return _admin_out(request, d, await svc.verification.duplicate_elsewhere(d))
 
 
 @admin.get("/audit", response_model=AuditOut)
 async def admin_audit(request: Request, document_id: str | None = Query(None, max_length=64), supplier_id: str | None = Query(None, max_length=128), limit: int = Query(100, ge=1, le=500)) -> AuditOut:
-    rows = _svc(request).verification.audit.list(document_id, supplier_id, limit)
+    rows = await _svc(request).verification.audit.list(document_id, supplier_id, limit)
     return AuditOut(items=[AuditEntryOut(**{k: getattr(e, k) for k in AuditEntryOut.model_fields}) for e in rows])
 
 

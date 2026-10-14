@@ -1,8 +1,8 @@
-"""Supplier verification documents: store, state machine, append-only audit log, media-path validation.
+"""Supplier verification documents: DB-backed store, state machine, append-only audit log, media-path validation.
 
-Process-local like the other stores (this service has no database; DDL for a future table lives in
-`migrations/`). Raw document numbers are NEVER stored: only an HMAC fingerprint (duplicate detection) and a masked
-suffix. Everything is bounded.
+Persistence: SQLAlchemy async (see ``ff_trust.db``). Raw document numbers are NEVER stored: only a keyed (HMAC)
+fingerprint for duplicate detection and a masked suffix. Every state change is one transaction that does a
+conditional ``UPDATE ... WHERE status = <expected>`` (row-level check, no double-approve race) and appends the audit row.
 
 States: pending -> approved | rejected | withdrawn;  approved -> rejected (revoke, reason required) | withdrawn.
 rejected / withdrawn are terminal. "expired" is derived (effective expiry < today), never stored.
@@ -10,17 +10,20 @@ rejected / withdrawn are terminal. "expired" is derived (effective expiry < toda
 
 import hashlib
 import hmac
+import logging
 import re
 import secrets
-import threading
 import unicodedata
 import uuid
-from collections import defaultdict, deque
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from dataclasses import dataclass, replace
+from datetime import UTC, date, datetime, timedelta
 from urllib.parse import urlsplit
 
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
+
+from ff_trust.db import Database, trust_meta, verification_audit, verification_documents
 from ff_trust.domain.verification import (
     DOC_TYPES,
     NUMBERED,
@@ -28,6 +31,8 @@ from ff_trust.domain.verification import (
     VerifiedDoc,
     effective_expiry,
 )
+
+log = logging.getLogger("ff_trust.verification")
 
 STATUSES = ("pending", "approved", "rejected", "withdrawn")
 ACTIVE = ("pending", "approved")
@@ -149,55 +154,99 @@ class AuditEntry:
     detail: str | None = None  # e.g. "expires_on: 2027-01-01 -> 2028-01-01"
 
 
-@dataclass
+_D = verification_documents
+_A = verification_audit
+
+
+def _doc(row) -> Document:
+    m = row._mapping
+    return Document(
+        id=m["id"], supplier_id=m["supplier_id"], doc_type=m["doc_type"], issuing_country=m["issuing_country"],
+        files=tuple(m["files"]), number_masked=m["number_masked"], number_fingerprint=m["number_fingerprint"],
+        expires_on=m["expires_on"], consent=bool(m["consent"]), created_at=m["created_at"], status=m["status"],
+        reason=m["reason"], reviewed_by=m["reviewed_by"], reviewed_at=m["reviewed_at"], approved_on=m["approved_on"],
+    )  # fmt: skip
+
+
 class AuditLog:
-    """Append-only: exposes `append` and read access only (entries are frozen). Oldest dropped past `max_entries`."""
+    """Append-only: the only write path is the private in-transaction ``_append`` used by the store (there is no
+    update / delete / clear API, and the table has database triggers that reject UPDATE and DELETE)."""
 
-    max_entries: int = 200_000
-    _entries: deque[AuditEntry] = field(default_factory=deque)
-    _seq: int = 0
+    def __init__(self, db: Database, clock: Callable[[], datetime]):
+        self._db, self._clock = db, clock
 
-    def append(self, clock: Callable[[], datetime], **kw) -> AuditEntry:
-        self._seq += 1
-        e = AuditEntry(seq=self._seq, at=clock(), **kw)
-        self._entries.append(e)
-        while len(self._entries) > self.max_entries:
-            self._entries.popleft()
-        return e
+    @staticmethod
+    async def _append(conn, at: datetime, **kw) -> None:
+        await conn.execute(insert(_A).values(at=at, **kw))
 
-    def list(self, document_id: str | None = None, supplier_id: str | None = None, limit: int = 100) -> list[AuditEntry]:
-        rows = [e for e in self._entries if (document_id is None or e.document_id == document_id) and (supplier_id is None or e.supplier_id == supplier_id)]
-        return rows[-limit:][::-1]  # newest first
+    async def list(self, document_id: str | None = None, supplier_id: str | None = None, limit: int = 100) -> list[AuditEntry]:
+        q = select(_A).order_by(_A.c.seq.desc()).limit(limit)  # newest first
+        if document_id is not None:
+            q = q.where(_A.c.document_id == document_id)
+        if supplier_id is not None:
+            q = q.where(_A.c.supplier_id == supplier_id)
+        async with self._db.begin() as conn:
+            rows = (await conn.execute(q)).all()
+        return [AuditEntry(**{k: r._mapping[k] for k in AuditEntry.__dataclass_fields__}) for r in rows]
 
-    def __len__(self) -> int:
-        return len(self._entries)
+    async def count(self) -> int:
+        async with self._db.begin() as conn:
+            return (await conn.execute(select(func.count()).select_from(_A))).scalar_one()
 
 
 class VerificationStore:
     def __init__(
-        self, rules: MediaRules | None = None, *, rate_limit: int = 10, rate_window: int = 3600, max_per_supplier: int = 30,
-        max_per_type: int = 5, max_total: int = 20000, hash_key: str | None = None, max_suppliers: int = 10000,
+        self, rules: MediaRules | None = None, *, db: Database | None = None, rate_limit: int = 10, rate_window: int = 3600,
+        max_per_supplier: int = 30, max_per_type: int = 5, max_total: int = 20000, hash_key: str | None = None,
         clock: Callable[[], datetime] = _now,
     ):  # fmt: skip
+        self.db = db or Database("sqlite+aiosqlite:///:memory:", True)
         self.rules = rules or MediaRules()
         self.rate_limit, self.rate_window = rate_limit, rate_window
         self.max_per_supplier, self.max_per_type, self.max_total = max_per_supplier, max_per_type, max_total
-        self.max_suppliers = max_suppliers
-        self._key = (hash_key or secrets.token_hex(32)).encode()
+        self._cfg_key = hash_key or None
+        self._key: bytes | None = self._cfg_key.encode() if self._cfg_key else None
         self.clock = clock
-        self.audit = AuditLog()
-        self._docs: dict[str, Document] = {}
-        self._hits: dict[str, deque[datetime]] = defaultdict(deque)
-        self._lock = threading.RLock()
+        self.audit = AuditLog(self.db, clock)
 
     def today(self) -> date:
         return self.clock().date()
 
-    def _fingerprint(self, doc_type: str, country: str, norm: str) -> str:
-        return hmac.new(self._key, f"{doc_type}|{country}|{norm}".encode(), hashlib.sha256).hexdigest()
+    # ---- keyed fingerprints ----
+    async def _hmac_key(self) -> bytes:
+        """Configured key, else (dev only) a random key persisted in ``trust_meta`` so restarts keep working."""
+        if self._key is None:
+            async with self.db.begin() as conn:
+                val = (await conn.execute(select(trust_meta.c.value).where(trust_meta.c.key == "dev_hash_key"))).scalar()
+                if val is None:
+                    val = secrets.token_hex(32)
+                    await conn.execute(insert(trust_meta).values(key="dev_hash_key", value=val))
+            self._key = val.encode()
+        return self._key
+
+    @staticmethod
+    def key_check(key: bytes) -> str:
+        return hmac.new(key, b"ff-trust-key-check", hashlib.sha256).hexdigest()[:16]
+
+    async def verify_key(self, *, strict: bool) -> None:
+        """Startup check: the key must be the one that produced the stored fingerprints (else duplicates go undetected)."""
+        check = self.key_check(await self._hmac_key())
+        async with self.db.begin() as conn:
+            old = (await conn.execute(select(trust_meta.c.value).where(trust_meta.c.key == "hash_key_check"))).scalar()
+            if old is None:
+                await conn.execute(insert(trust_meta).values(key="hash_key_check", value=check))
+                return
+        if old != check:
+            msg = "FF_TRUST_VERIFICATION_HASH_KEY differs from the key that produced the stored document fingerprints"
+            if strict:
+                raise RuntimeError(msg + " (refusing to start)")
+            log.warning(msg)
+
+    def _fingerprint(self, key: bytes, doc_type: str, country: str, norm: str) -> str:
+        return hmac.new(key, f"{doc_type}|{country}|{norm}".encode(), hashlib.sha256).hexdigest()
 
     # ---- supplier side ----
-    def submit(self, supplier_id: str, doc_type: str, issuing_country: str, files: list[str], number: str | None, expires_on: date | None, consent: bool) -> Document:
+    async def submit(self, supplier_id: str, doc_type: str, issuing_country: str, files: list[str], number: str | None, expires_on: date | None, consent: bool) -> Document:
         if doc_type not in DOC_TYPES:
             raise VerificationError(422, "invalid_doc_type", "Unknown document type", {"allowed": list(DOC_TYPES)})
         if consent is not True:
@@ -211,88 +260,113 @@ class VerificationStore:
         if doc_type not in NUMBERED and norm:
             raise VerificationError(422, "number_not_allowed", "This document type carries no number")
         paths = check_media(files, self.rules)
-        with self._lock:
-            now = self.clock()
-            self._rate_check(supplier_id, now)
-            mine = [d for d in self._docs.values() if d.supplier_id == supplier_id and d.status in ACTIVE]
-            if len(mine) >= self.max_per_supplier:
-                raise VerificationError(409, "document_limit_reached", "Too many active documents", {"max": self.max_per_supplier})
-            if sum(1 for d in mine if d.doc_type == doc_type) >= self.max_per_type:
-                raise VerificationError(409, "document_type_limit_reached", "Too many active documents of this type", {"max": self.max_per_type})
-            fp = self._fingerprint(doc_type, issuing_country, norm) if norm else None
-            if fp and any(d.number_fingerprint == fp for d in mine):
-                raise VerificationError(409, "duplicate_document", "This document was already submitted")
-            if len(self._docs) >= self.max_total:
-                self._evict_one()
-            self._hits[supplier_id].append(now)
-            doc = Document(uuid.uuid4().hex, supplier_id, doc_type, issuing_country, paths, mask_number(norm) if norm else None, fp, expires_on, True, now)
-            self._docs[doc.id] = doc
-            self.audit.append(self.clock, actor=f"supplier:{supplier_id}", action="submit", document_id=doc.id, supplier_id=supplier_id, from_status=None, to_status="pending")
-            return doc
+        fp = self._fingerprint(await self._hmac_key(), doc_type, issuing_country, norm) if norm else None
+        try:
+            async with self.db.begin() as conn:
+                await self.db.lock(conn, f"verification:{supplier_id}")
+                now = self.clock()
+                await self._rate_check(conn, supplier_id, now)
+                mine = (await conn.execute(select(_D.c.doc_type, _D.c.number_fingerprint).where(_D.c.supplier_id == supplier_id, _D.c.status.in_(ACTIVE)))).all()
+                if len(mine) >= self.max_per_supplier:
+                    raise VerificationError(409, "document_limit_reached", "Too many active documents", {"max": self.max_per_supplier})
+                if sum(1 for r in mine if r.doc_type == doc_type) >= self.max_per_type:
+                    raise VerificationError(409, "document_type_limit_reached", "Too many active documents of this type", {"max": self.max_per_type})
+                if fp and any(r.number_fingerprint == fp for r in mine):
+                    raise VerificationError(409, "duplicate_document", "This document was already submitted")
+                total = (await conn.execute(select(func.count()).select_from(_D))).scalar_one()
+                if total >= self.max_total:
+                    await self._evict_one(conn)
+                doc = Document(uuid.uuid4().hex, supplier_id, doc_type, issuing_country, paths, mask_number(norm) if norm else None, fp, expires_on, True, now)
+                await conn.execute(insert(_D).values(
+                    id=doc.id, supplier_id=supplier_id, doc_type=doc_type, issuing_country=issuing_country, files=list(paths),
+                    number_masked=doc.number_masked, number_fingerprint=fp, expires_on=expires_on, consent=True, status="pending", created_at=now,
+                ))  # fmt: skip
+                await AuditLog._append(conn, now, actor=f"supplier:{supplier_id}", action="submit", document_id=doc.id, supplier_id=supplier_id, from_status=None, to_status="pending")
+                return doc
+        except IntegrityError as exc:  # unique live-fingerprint index: a concurrent identical submission won the race
+            raise VerificationError(409, "duplicate_document", "This document was already submitted") from exc
 
-    def _rate_check(self, supplier_id: str, now: datetime) -> None:
-        if supplier_id not in self._hits and len(self._hits) >= self.max_suppliers:
-            for sid in [s for s, h in self._hits.items() if not h or (now - h[-1]).total_seconds() >= self.rate_window]:
-                del self._hits[sid]
-            if len(self._hits) >= self.max_suppliers:
-                del self._hits[next(iter(self._hits))]
-        hits = self._hits[supplier_id]
-        while hits and (now - hits[0]).total_seconds() >= self.rate_window:
-            hits.popleft()
-        if len(hits) >= self.rate_limit:
-            raise VerificationRateLimited(max(1, int(self.rate_window - (now - hits[0]).total_seconds())))
+    async def _rate_check(self, conn, supplier_id: str, now: datetime) -> None:
+        """Submissions per supplier in the sliding window, counted from the (append-only, never evicted) audit log."""
+        cutoff = now - timedelta(seconds=self.rate_window)
+        n, first = (await conn.execute(select(func.count(), func.min(_A.c.at)).where(_A.c.supplier_id == supplier_id, _A.c.action == "submit", _A.c.at > cutoff))).one()
+        if n >= self.rate_limit:
+            raise VerificationRateLimited(max(1, int(self.rate_window - (now - first).total_seconds())))
 
-    def _evict_one(self) -> None:
-        for did, d in self._docs.items():  # oldest closed document first; never drop live evidence
-            if d.status in ("rejected", "withdrawn"):
-                del self._docs[did]
-                return
-        raise VerificationError(503, "capacity_reached", "Verification store is full; try later")
+    async def _evict_one(self, conn) -> None:
+        oldest = (await conn.execute(select(_D.c.id).where(_D.c.status.in_(("rejected", "withdrawn"))).order_by(_D.c.created_at).limit(1))).scalar()
+        if oldest is None:  # never drop live evidence
+            raise VerificationError(503, "capacity_reached", "Verification store is full; try later")
+        await conn.execute(delete(_D).where(_D.c.id == oldest))
 
-    def list_for_supplier(self, supplier_id: str) -> list[Document]:
-        with self._lock:
-            return sorted((d for d in self._docs.values() if d.supplier_id == supplier_id), key=lambda d: d.created_at)
+    async def list_for_supplier(self, supplier_id: str) -> list[Document]:
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id).order_by(_D.c.created_at, _D.c.id))).all()
+        return [_doc(r) for r in rows]
 
-    def withdraw(self, supplier_id: str, doc_id: str) -> Document:
-        with self._lock:
-            d = self._docs.get(doc_id)
+    async def withdraw(self, supplier_id: str, doc_id: str) -> Document:
+        async with self.db.begin() as conn:
+            d = await self._load(conn, doc_id)
             if d is None or d.supplier_id != supplier_id:  # other suppliers' documents look nonexistent
                 raise VerificationError(404, "document_not_found", "Document not found")
-            return self._move(d, "withdrawn", f"supplier:{supplier_id}", "withdraw", None)
+            return await self._move(conn, d, "withdrawn", f"supplier:{supplier_id}", "withdraw", None)
 
     # ---- admin side ----
-    def get(self, doc_id: str) -> Document | None:
-        return self._docs.get(doc_id)
+    @staticmethod
+    async def _load(conn, doc_id: str) -> Document | None:
+        row = (await conn.execute(select(_D).where(_D.c.id == doc_id))).first()
+        return _doc(row) if row else None
 
-    def list_by_status(self, status: str | None, limit: int, offset: int) -> tuple[list[Document], int]:
-        with self._lock:
-            rows = sorted((d for d in self._docs.values() if status is None or d.status == status), key=lambda d: d.created_at)
-            return rows[offset: offset + limit], len(rows)
+    async def get(self, doc_id: str) -> Document | None:
+        async with self.db.begin() as conn:
+            return await self._load(conn, doc_id)
 
-    def duplicate_elsewhere(self, d: Document) -> bool:
-        """True when another supplier holds an active document with the same type+country+number fingerprint."""
-        if not d.number_fingerprint:
-            return False
-        return any(o.number_fingerprint == d.number_fingerprint and o.supplier_id != d.supplier_id and o.status in ACTIVE for o in self._docs.values())
+    async def list_by_status(self, status: str | None, limit: int, offset: int) -> tuple[list[Document], int]:
+        cond = [] if status is None else [_D.c.status == status]
+        async with self.db.begin() as conn:
+            total = (await conn.execute(select(func.count()).select_from(_D).where(*cond))).scalar_one()
+            rows = (await conn.execute(select(_D).where(*cond).order_by(_D.c.created_at, _D.c.id).limit(limit).offset(offset))).all()
+        return [_doc(r) for r in rows], total
 
-    def _move(self, d: Document, to: str, actor: str, action: str, reason: str | None) -> Document:
+    async def duplicate_flags(self, docs: list[Document]) -> set[str]:
+        """Ids of documents whose type+country+number fingerprint is also held, active, by another supplier."""
+        fps = {d.number_fingerprint for d in docs if d.number_fingerprint}
+        if not fps:
+            return set()
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(_D.c.number_fingerprint, _D.c.supplier_id).where(_D.c.number_fingerprint.in_(fps), _D.c.status.in_(ACTIVE)))).all()
+        holders: dict[str, set[str]] = {}
+        for fp, sid in rows:
+            holders.setdefault(fp, set()).add(sid)
+        return {d.id for d in docs if d.number_fingerprint and (holders.get(d.number_fingerprint, set()) - {d.supplier_id})}
+
+    async def duplicate_elsewhere(self, d: Document) -> bool:
+        return d.id in await self.duplicate_flags([d])
+
+    async def _move(self, conn, d: Document, to: str, actor: str, action: str, reason: str | None, **extra) -> Document:
+        """One state transition: conditional UPDATE on the status we read (row-level check) + audit row, same transaction."""
         if to not in TRANSITIONS[d.status]:
             raise VerificationError(409, "invalid_transition", f"Cannot move a {d.status} document to {to}", {"from": d.status, "to": to})
-        frm = d.status
         now = self.clock()
-        d.status = to
+        vals: dict = {"status": to, **extra}
         if to != "withdrawn" or actor.startswith("admin"):
-            d.reviewed_by, d.reviewed_at = actor, now
+            vals["reviewed_by"], vals["reviewed_at"] = actor, now
         if reason is not None:
-            d.reason = reason
+            vals["reason"] = reason
         if to == "approved":
-            d.approved_on = now.date()
-        self.audit.append(self.clock, actor=actor, action=action, document_id=d.id, supplier_id=d.supplier_id, from_status=frm, to_status=to, reason=reason)
-        return d
+            vals["approved_on"] = now.date()
+        res = await conn.execute(update(_D).where(_D.c.id == d.id, _D.c.status == d.status).values(**vals))
+        if res.rowcount != 1:  # somebody else moved it first
+            cur = (await conn.execute(select(_D.c.status).where(_D.c.id == d.id))).scalar()
+            if cur is None:
+                raise VerificationError(404, "document_not_found", "Document not found")
+            raise VerificationError(409, "invalid_transition", f"Cannot move a {cur} document to {to}", {"from": cur, "to": to})
+        await AuditLog._append(conn, now, actor=actor, action=action, document_id=d.id, supplier_id=d.supplier_id, from_status=d.status, to_status=to, reason=reason)
+        return replace(d, **vals)
 
-    def decide(self, doc_id: str, decision: str, reason: str | None, reviewer: str, expires_on: date | None = None) -> Document:
-        with self._lock:
-            d = self._docs.get(doc_id)
+    async def decide(self, doc_id: str, decision: str, reason: str | None, reviewer: str, expires_on: date | None = None) -> Document:
+        async with self.db.begin() as conn:
+            d = await self._load(conn, doc_id)
             if d is None:
                 raise VerificationError(404, "document_not_found", "Document not found")
             reason = clean_reason(reason)
@@ -302,32 +376,33 @@ class VerificationStore:
                     raise VerificationError(422, "already_expired", "Cannot approve an expired document")
                 if d.status != "pending":
                     raise VerificationError(409, "invalid_transition", f"Cannot move a {d.status} document to approved", {"from": d.status, "to": "approved"})
-                if expires_on is not None:
-                    d.expires_on = expires_on
-                return self._move(d, "approved", reviewer, "approve", reason)
+                extra = {"expires_on": expires_on} if expires_on is not None else {}
+                return await self._move(conn, d, "approved", reviewer, "approve", reason, **extra)
             if not reason:
                 raise VerificationError(422, "reason_required", "A reason is required to reject or revoke")
             action = "revoke" if d.status == "approved" else "reject"
-            return self._move(d, "rejected", reviewer, action, reason)
+            return await self._move(conn, d, "rejected", reviewer, action, reason)
 
-    def set_expiry(self, doc_id: str, expires_on: date | None, reason: str | None, reviewer: str) -> Document:
-        with self._lock:
-            d = self._docs.get(doc_id)
+    async def set_expiry(self, doc_id: str, expires_on: date | None, reason: str | None, reviewer: str) -> Document:
+        async with self.db.begin() as conn:
+            d = await self._load(conn, doc_id)
             if d is None:
                 raise VerificationError(404, "document_not_found", "Document not found")
             if d.status not in ACTIVE:
                 raise VerificationError(409, "invalid_transition", f"Cannot change expiry of a {d.status} document", {"from": d.status})
             if expires_on is not None and expires_on < self.today():
                 raise VerificationError(422, "already_expired", "Expiry date is in the past")
-            old = d.expires_on
-            d.expires_on = expires_on
-            self.audit.append(self.clock, actor=reviewer, action="set_expiry", document_id=d.id, supplier_id=d.supplier_id, from_status=d.status, to_status=d.status, reason=clean_reason(reason), detail=f"expires_on: {old} -> {expires_on}")
-            return d
+            res = await conn.execute(update(_D).where(_D.c.id == d.id, _D.c.status == d.status).values(expires_on=expires_on))
+            if res.rowcount != 1:
+                raise VerificationError(409, "invalid_transition", "Document changed state; retry", {"from": d.status})
+            await AuditLog._append(conn, self.clock(), actor=reviewer, action="set_expiry", document_id=d.id, supplier_id=d.supplier_id, from_status=d.status, to_status=d.status, reason=clean_reason(reason), detail=f"expires_on: {d.expires_on} -> {expires_on}")
+            return replace(d, expires_on=expires_on)
 
     # ---- scoring ----
-    def evidence_for(self, supplier_id: str) -> VerificationEvidence | None:
-        with self._lock:
-            docs = [VerifiedDoc(doc_type=d.doc_type, approved_on=d.approved_on or d.created_at.date(), expires_on=d.expires_on) for d in self._docs.values() if d.supplier_id == supplier_id and d.status == "approved"]  # type: ignore[arg-type]
+    async def evidence_for(self, supplier_id: str) -> VerificationEvidence | None:
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(_D.c.doc_type, _D.c.approved_on, _D.c.created_at, _D.c.expires_on).where(_D.c.supplier_id == supplier_id, _D.c.status == "approved"))).all()
+        docs = [VerifiedDoc(doc_type=r.doc_type, approved_on=r.approved_on or r.created_at.date(), expires_on=r.expires_on) for r in rows]  # type: ignore[arg-type]
         return VerificationEvidence(documents=docs) if docs else None
 
     def is_expired(self, d: Document, default_validity_days: int) -> bool:
@@ -336,4 +411,4 @@ class VerificationStore:
         return effective_expiry(VerifiedDoc(doc_type=d.doc_type, approved_on=d.approved_on, expires_on=d.expires_on), default_validity_days) < self.today()  # type: ignore[arg-type]
 
 
-__all__ = ["Document", "AuditEntry", "VerificationStore", "VerificationError", "MediaRules"]
+__all__ = ["Document", "AuditEntry", "AuditLog", "VerificationStore", "VerificationError", "MediaRules"]

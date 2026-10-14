@@ -10,3 +10,41 @@ def test_admin_token_is_never_forwarded_and_admin_paths_are_rate_limited(make_cl
     assert "x-admin-token" not in route.calls.last.request.headers
     codes = [c.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": f"guess{i}"}).status_code for i in range(12)]
     assert 429 in codes  # admin-token guessing is throttled like auth
+
+
+def _raw(app, method, path, headers=()):
+    """Send a request whose path is NOT normalised by a client (like curl --path-as-is)."""
+    import asyncio
+
+    out = {}
+
+    async def run():
+        scope = {
+            "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": method, "path": path,
+            "raw_path": path.encode(), "query_string": b"", "headers": [(k.lower().encode(), v.encode()) for k, v in headers],
+            "client": ("203.0.113.9", 1234), "server": ("testserver", 80), "scheme": "http", "root_path": "",
+        }  # fmt: skip
+        sent = False
+
+        async def receive():
+            nonlocal sent
+            if not sent:
+                sent = True
+                return {"type": "http.request", "body": b"", "more_body": False}
+            return {"type": "http.disconnect"}
+
+        async def send(msg):
+            if msg["type"] == "http.response.start":
+                out["status"] = msg["status"]
+
+        await app(scope, receive, send)
+
+    asyncio.run(run())
+    return out["status"]
+
+
+def test_dot_segments_cannot_sidestep_path_policies(client, hdr):
+    """httpx collapses '/./' upstream, so '/v1/alerts/./evaluate' used to skip the exact-match internal-only block."""
+    h = [("authorization", hdr["Authorization"])]
+    for p in ("/v1/alerts/./evaluate", "/v1/feed/./posts", "/v1/trust/./verification/documents", "/v1/alerts/../alerts/evaluate"):
+        assert _raw(client.app, "POST", p, h) == 400, p

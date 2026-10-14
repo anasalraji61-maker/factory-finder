@@ -8,6 +8,7 @@ import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
 import 'package:factory_finder/features/reviews/widgets/review_widgets.dart';
 import 'package:factory_finder/features/trust/trust_widgets.dart';
+import 'package:factory_finder/features/trust/verification_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,6 +68,7 @@ class SupplierScreen extends ConsumerWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           TrustBadge(band: s.trustBand, score: s.trustScore),
+                          SupplierVerificationBadge(supplierId: supplierId),
                           if (s.verified)
                             Chip(
                               avatar: const Icon(Icons.check_circle, size: 16),

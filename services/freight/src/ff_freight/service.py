@@ -868,7 +868,7 @@ class FreightService:
             "excluded": excluded,
         }
 
-    async def accept_quote(self, user: str, qid: str) -> dict:
+    async def accept_quote(self, user: str, qid: str, expected_revision: int | None = None) -> dict:
         """Award the request to a quote. Idempotent for the already-accepted quote."""
         t = self.clock()
         async with self.engine.begin() as c:
@@ -891,6 +891,11 @@ class FreightService:
                 raise Conflict("This quote is not available", code="quote_not_available", details={"status": q.status})
             if q.valid_until <= t:
                 raise Conflict("This quote has expired", code="quote_expired")
+            if expected_revision is not None and q.revision != expected_revision:
+                raise Conflict(
+                    "The quote was revised after you viewed it; review it again", code="quote_changed",
+                    details={"revision": q.revision},
+                )
             if f.status != "active":
                 raise Conflict("The forwarder is suspended", code="forwarder_suspended")
             won = await c.execute(
@@ -900,7 +905,13 @@ class FreightService:
             )
             if not won.rowcount:  # lost a race with a concurrent accept/close/expiry
                 raise Conflict("The request is no longer open", code="state_changed")
-            await c.execute(update(quotes).where(quotes.c.id == qid).values(status="accepted", updated_at=t))
+            # CAS on the exact revision read above: a concurrent revise/withdraw must not slip in under the accept
+            took = await c.execute(
+                update(quotes).where(quotes.c.id == qid, quotes.c.status == "submitted", quotes.c.revision == q.revision)
+                .values(status="accepted", updated_at=t)
+            )
+            if not took.rowcount:
+                raise Conflict("The quote changed while accepting; retry", code="quote_changed")
             await c.execute(
                 update(quotes).where(quotes.c.request_id == r.id, quotes.c.id != qid, quotes.c.status == "submitted")
                 .values(status="rejected", updated_at=t)
