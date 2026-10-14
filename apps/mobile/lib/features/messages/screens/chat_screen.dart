@@ -28,7 +28,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Object? _error;
   Timer? _poll;
   int _seq = 0;
-  ChatSocket? _socket;
   ProviderSubscription<ChatSocket>? _keepAlive;
   StreamSubscription<ChatMessage>? _wsMsgs;
   StreamSubscription<ChatSocketStatus>? _wsStatus;
@@ -44,7 +43,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Keep the autoDispose provider alive while this screen is open.
     _keepAlive = ref.listenManual(chatSocketProvider(widget.conversationId), (_, __) {});
     final socket = _keepAlive!.read();
-    _socket = socket;
     _wsMsgs = socket.messages.listen((m) {
       if (!mounted) return;
       setState(() => _messages = appendIncoming(_messages, m));

@@ -61,7 +61,11 @@ class ListingCard extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
+          Expanded(
+            child: ClipRect(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,6 +114,9 @@ class ListingCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+              ),
             ),
           ),
         ],

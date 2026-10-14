@@ -39,7 +39,7 @@ class DiscoverRepository {
         ? null
         : (hasSlugMap ? kLiveCategorySlugs[cat] : cat);
     final keyword = (hasSlugMap && categorySlug == null && q.query.isEmpty)
-        ? cat!.replaceAll('_', ' ')
+        ? cat.replaceAll('_', ' ')
         : q.query;
     final json = await _api.get('/v1/search', query: {
       if (keyword.isNotEmpty) 'q': keyword,
