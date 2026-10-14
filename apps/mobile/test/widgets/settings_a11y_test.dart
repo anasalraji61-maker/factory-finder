@@ -135,6 +135,9 @@ void main() {
       expect(c.read(displayCurrencyProvider), 'EUR');
       expect(store.data['display_currency'], 'EUR');
 
+      c.read(destinationProvider.notifier).state =
+          const Location(countryCode: 'IQ', city: 'Baghdad');
+      await settle(tester, frames: 3);
       await _tapKey(tester, 'settings-city-Basra');
       expect(c.read(destinationProvider)?.city, 'Basra');
       expect(c.read(destinationProvider)?.countryCode, 'IQ');
