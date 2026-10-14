@@ -1,4 +1,4 @@
-# Status — 2026-10-14 evening (architect)
+# Status — 2026-10-14 night (architect)
 
 **Goal:** Phases 0–3 on mock adapters (done), now hardening before Phase 4 (real data).
 
@@ -16,6 +16,11 @@
 
 - 13 services now (+media). Suppliers can publish their own listings (native source), upload images, verify digest email. Contract validation (132 responses, 0 drift) and e2e (31 steps) in CI.
 - Gateway: public image GETs have their own rate bucket (media_rate_limit_per_minute).
+
+- Deal lifecycle: payments -> rfq outbox hook (paid/refunded), fulfilment/delivered/confirm-receipt, event log; mobile deal UI + deals list. Verified-deal reviews (rfq) + mobile UI + trust signal.
+- Tracking: real-provider skeletons (off by default), normalization, outbox + relay to notifications (shipment alerts in the app).
+- Gateway: email verification, optional Redis rate limits, moderation routes, is_active re-check, FF_ENV=production fail-closed guard. Sourcing: listing moderation + reports. Messaging: media attachments (mobile composer too).
+- Backend: 140 responses validated (0 drift), e2e 33 steps; security reviews a/b/c in docs/fixes.
 
 ## Next (needs owner input)
 - Phase 4: official supplier API account (Alibaba or licensed provider) and a freight-rate provider; until then all data is mock.
