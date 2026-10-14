@@ -48,6 +48,9 @@ services:
       PORT: '8101'
       FF_SOURCING_TRUST_MODE: http
       FF_SOURCING_TRUST_BASE_URL: http://trust:8104
+      FF_SOURCING_DATABASE_URL: ${FF_SOURCING_DATABASE_URL:-}
+      FF_SOURCING_DB_AUTO_CREATE: ${FF_SOURCING_DB_AUTO_CREATE:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
     healthcheck:
       test:

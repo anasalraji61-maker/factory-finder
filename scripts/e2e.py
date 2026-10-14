@@ -372,6 +372,38 @@ def scenario() -> None:
 
     admin_h = {"X-Admin-Token": ADMIN_TOKEN}
 
+    def native_listings():
+        pool = [i["supplier"] for i in (found.get("en") or []) + (found.get("ar") or [])]
+        sid = next((x["id"] for x in pool if x.get("trust_band") in ("green", "yellow")), found["listing"]["supplier"]["id"])
+        body = {
+            "kind": "product", "title": "E2E native ceramic planter", "category": "furniture", "unit": "piece", "moq": 5,
+            "price": {"min": {"amount": "2.50", "currency": "USD"}, "max": {"amount": "3.00", "currency": "USD"}},
+            "origin": {"country_code": "IQ", "city": "Baghdad"},
+        }
+        assert c.post("/v1/my/listings", json=body, headers=h("supplier")).status_code == 403, "unclaimed user can create"
+        ok(c.patch("/v1/me", headers=h("supplier"), json={"supplier_id": sid}))
+        r = c.post("/v1/my/listings", json=body, headers=h("supplier"))
+        assert r.status_code == 403, "pending claim must not be trusted"
+        r = c.post(f"/v1/admin/supplier-claims/{users['supplier']['id']}/approve", headers=admin_h)
+        if r.status_code in (404, 502, 503, 504):
+            return skip("native listings via gateway", f"admin claims not available ({r.status_code})")
+        ok(r)
+        lst = ok(c.post("/v1/my/listings", json=body, headers=h("supplier")), 201)
+        assert lst["status"] == "draft" and lst["id"].startswith("nat_") and lst["supplier"]["id"] == sid
+        assert ok(c.get("/v1/my/listings", headers=h("supplier")))["total"] == 1
+        assert c.get(f"/v1/my/listings/{lst['id']}", headers=h("buyer")).status_code == 403
+        r = c.post(f"/v1/my/listings/{lst['id']}/publish", headers=h("supplier"))
+        if r.status_code in (403, 503):  # supplier trust band red / trust not computable for this id
+            return skip("native listings publish", f"publish gated: {r.json()['error']['code']}")
+        assert ok(r)["status"] == "published"
+        hits = items(ok(c.get("/v1/search", params={"q": "E2E native ceramic planter"})))
+        assert any(i["id"] == lst["id"] and i["source"] == "native" for i in hits), "published listing not searchable"
+        ok(c.post(f"/v1/my/listings/{lst['id']}/unpublish", headers=h("supplier")))
+        hits = items(ok(c.get("/v1/search", params={"q": "E2E native ceramic planter"})))
+        assert not any(i["id"] == lst["id"] for i in hits), "archived listing still searchable"
+
+    step("sourcing: supplier-owned listings (claim -> create -> publish -> search)", native_listings)
+
     def demand():
         r = c.get("/v1/admin/demand/quota", headers=admin_h)
         if r.status_code in (404, 502, 503, 504):

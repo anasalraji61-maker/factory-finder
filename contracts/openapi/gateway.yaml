@@ -234,7 +234,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/{proxied_path}:
     x-proxy:
-      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources]
+      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my]
       logistics: [/v1/quotes, /v1/fx, /v1/carriers]
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]

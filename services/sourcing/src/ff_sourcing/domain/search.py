@@ -106,6 +106,8 @@ def dedupe(items: list[tuple[Listing, Match]]) -> list[tuple[Listing, Match]]:
     best: dict[tuple, tuple[Listing, Match]] = {}
     for listing, m in items:
         key = (listing.supplier.id, " ".join(tokens(listing.title)))
+        if listing.source == "native":  # a supplier's own distinct listings are never merged
+            key = (*key, listing.id)
         cur = best.get(key)
         if cur is None or listing.price.min.amount < cur[0].price.min.amount:
             best[key] = (listing, m)

@@ -1,14 +1,24 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+import hmac
+import os
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from . import __version__
+from .adapters.native import NativeAdapter, NativeStore
 from .adapters.registry import AdapterRegistry, build_registry
 from .api.errors import install_error_handlers
+from .api.my import router as my_router
 from .api.routes import router
 from .clients.trust import HttpTrustClient, MockTrustClient, NullTrustClient, TrustClient
 from .config import Settings
-from .obs import install_observability, ready_response
+from .db import make_engine
+from .domain.models import SupplierSummary
+from .native_service import NativeService
+from .obs import db_ready, install_observability, ready_response
 from .service import SourcingService
 
 
@@ -26,16 +36,64 @@ def create_app(
     trust: TrustClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
-    app = FastAPI(title="Factory Finder - sourcing", version=__version__)
-    app.state.service = SourcingService(
-        registry or build_registry(settings),
-        trust or build_trust(settings),
+    registry = registry or build_registry(settings)
+    trust = trust or build_trust(settings)
+    engine = make_engine(settings.database_url)
+    store = NativeStore(engine, settings.auto_create_tables)
+    native_adapter = NativeAdapter(store)
+    registry.register(native_adapter)  # the native source is always on (it is our own data)
+    registry.enable("native")
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        await store.ensure_ready()
+        yield
+        await engine.dispose()
+
+    app = FastAPI(title="Factory Finder - sourcing", version=__version__, lifespan=lifespan)
+    service = SourcingService(
+        registry,
+        trust,
         adapter_timeout_s=settings.adapter_timeout_s,
         cache_ttl_s=settings.cache_ttl_s,
         trust_cache_ttl_s=settings.trust_cache_ttl_s,
     )
+    app.state.service = service
+
+    async def resolve_supplier(supplier_id: str):
+        for a in registry.enabled():
+            if a.id == "native":
+                continue
+            sup = await a.get_supplier(supplier_id)
+            if sup is not None:
+                return SupplierSummary(**sup.model_dump(include=set(SupplierSummary.model_fields)))
+        return None
+
+    native_adapter.resolver = resolve_supplier
+    app.state.native = NativeService(
+        native_adapter,
+        trust,
+        settings.max_listings_per_supplier,
+        settings.create_rate_per_hour,
+    )
+    token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
+
+    @app.middleware("http")
+    async def internal_auth(request: Request, call_next):
+        # /v1/my/* trusts X-Supplier-Id, which only the gateway may set: when an internal
+        # token is configured, calls without it are rejected (mirrors rfq).
+        if (
+            token
+            and request.url.path.startswith("/v1/my")
+            and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token)
+        ):
+            body = {"error": {"code": "invalid_internal_token", "message": "Missing or invalid X-Internal-Token", "details": {}}}
+            return JSONResponse(body, status_code=401)
+        return await call_next(request)
+
     install_error_handlers(app)
     app.include_router(router)
+    app.include_router(my_router)
 
     @app.get("/health")
     async def health() -> dict:
@@ -43,7 +101,7 @@ def create_app(
 
     @app.get("/ready")
     async def ready() -> object:
-        return ready_response("sourcing", {})
+        return ready_response("sourcing", {"database": await db_ready(engine)})
 
     install_observability(app, "sourcing")
     return app

@@ -18,7 +18,10 @@ def _body(code: str, message: str, details: dict | None = None) -> dict:
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _api(_: Request, exc: ApiError) -> JSONResponse:
-        return JSONResponse(_body(exc.code, exc.message, exc.details), status_code=exc.status)
+        headers = {"Retry-After": str(exc.details["retry_after_s"])} if exc.status == 429 else None
+        return JSONResponse(
+            _body(exc.code, exc.message, exc.details), status_code=exc.status, headers=headers
+        )
 
     @app.exception_handler(RequestValidationError)
     async def _val(_: Request, exc: RequestValidationError) -> JSONResponse:

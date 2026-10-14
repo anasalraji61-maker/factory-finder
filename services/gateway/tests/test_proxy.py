@@ -12,7 +12,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
-        ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
+        ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
 )  # fmt: skip
 def test_resolve(path, upstream):
@@ -25,7 +25,7 @@ def test_resolve(path, upstream):
         ("GET", "/health", True), ("POST", "/v1/auth/login", True), ("GET", "/v1/search", True),
         ("GET", "/v1/fx/rates", True), ("GET", "/v1/hs/search", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
         ("POST", "/v1/search", False), ("GET", "/v1/trust/suppliers/s", False), ("GET", "/v1/requests", False),
-        ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False),
+        ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False),
     ],
 )  # fmt: skip
 def test_public_policy(method, path, public):
@@ -227,4 +227,45 @@ def test_rfq_gets_verified_supplier_header_only(client, auth, hdr, mock_upstream
         return_value=httpx.Response(201, json={})
     )
     client.post("/v1/requests/req_1/offers", json={}, headers={**hdr, "X-Supplier-Id": "sup_spoof"})
+    assert "x-supplier-id" not in route.calls.last.request.headers
+
+
+def _sourcing_my_upstream(mock_upstream):
+    """Stand-in for sourcing: 403 unless the (gateway-set) X-Supplier-Id header is present."""
+
+    def reply(request):
+        sid = request.headers.get("x-supplier-id")
+        if not sid:
+            return httpx.Response(403, json={"error": {"code": "supplier_required", "message": "m"}})
+        return httpx.Response(200, json={"items": [], "supplier": sid})
+
+    return mock_upstream.get("http://localhost:8101/v1/my/listings").mock(side_effect=reply)
+
+
+def test_my_listings_requires_login(client, mock_upstream):
+    route = _sourcing_my_upstream(mock_upstream)
+    assert client.get("/v1/my/listings").status_code == 401 and not route.called
+
+
+def test_my_listings_supplier_header_only_from_verified_claim(client, hdr, mock_upstream):
+    route = _sourcing_my_upstream(mock_upstream)
+    spoof = {**hdr, "X-Supplier-Id": "sup_evil"}
+    r = client.get("/v1/my/listings", headers=spoof)  # no claim: spoofed header is dropped
+    assert r.status_code == 403 and "x-supplier-id" not in route.calls.last.request.headers
+    client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
+    r = client.get("/v1/my/listings", headers=spoof)  # claim still unverified
+    assert r.status_code == 403 and "x-supplier-id" not in route.calls.last.request.headers
+    uid = client.get("/v1/me", headers=hdr).json()["id"]
+    client.app.state.settings.admin_token = "adm"
+    client.post(f"/v1/admin/supplier-claims/{uid}/approve", headers={"X-Admin-Token": "adm"})
+    r = client.get("/v1/my/listings", headers=spoof)  # verified: header comes from our DB
+    assert r.status_code == 200 and r.json()["supplier"] == "sup_cn_018"
+    assert route.calls.last.request.headers["x-supplier-id"] == "sup_cn_018"
+
+
+def test_public_sourcing_routes_do_not_get_supplier_header(client, hdr, mock_upstream):
+    route = mock_upstream.get("http://localhost:8101/v1/search").mock(
+        return_value=httpx.Response(200, json={"items": []})
+    )
+    client.get("/v1/search", headers=hdr)
     assert "x-supplier-id" not in route.calls.last.request.headers

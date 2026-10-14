@@ -1,0 +1,1 @@
+2026-10-14 | Native listings: unpublish=archive, DELETE=hard delete; publish fails closed on unknown trust band (503); create rate limit is per-process in memory; /v1/my/* enforces X-Internal-Token only when configured | simplest safe option

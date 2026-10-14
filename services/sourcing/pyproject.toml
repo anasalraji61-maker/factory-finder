@@ -12,10 +12,14 @@ dependencies = [
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
     "httpx>=0.27",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "greenlet>=3.0",
+    "aiosqlite>=0.20",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-asyncio", "respx", "ruff"]
+pg = ["asyncpg>=0.29", "alembic>=1.13"]
+dev = ["alembic>=1.13", "pytest", "pytest-asyncio", "respx", "ruff"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ff_sourcing"]

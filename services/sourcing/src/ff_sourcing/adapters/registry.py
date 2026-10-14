@@ -24,6 +24,14 @@ class AdapterRegistry:
     def is_enabled(self, adapter_id: str) -> bool:
         return adapter_id in self._enabled
 
+    def register(self, adapter: SourceAdapter, enabled: bool = True) -> None:
+        self._adapters[adapter.id] = adapter
+        if enabled:
+            self._enabled.add(adapter.id)
+
+    def get(self, adapter_id: str) -> SourceAdapter | None:
+        return self._adapters.get(adapter_id)
+
     def enable(self, adapter_id: str) -> None:
         if adapter_id not in self._adapters:
             raise KeyError(adapter_id)

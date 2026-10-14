@@ -186,6 +186,26 @@ def scenario() -> None:
     c("sourcing", "GET", "/v1/listings/does-not-exist", want=(404,))
     c("sourcing", "GET", "/v1/categories")
     c("sourcing", "GET", "/v1/sources")
+    # supplier-owned listings (X-Supplier-Id is what the gateway forwards for a verified claim)
+    hsup = {"X-Supplier-Id": f"sup_cv{sfx}"}
+    my_body = {
+        "kind": "product", "title": f"Contract widget {sfx}", "category": "furniture", "unit": "piece", "moq": 10,
+        "price": {"min": {"amount": "1.50", "currency": "USD"}, "max": {"amount": "2.00", "currency": "USD"}},
+        "origin": {"country_code": "IQ", "city": "Baghdad"}, "lead_time_days": {"min": 3, "max": 7}, "hs_code": "940360",
+        "images": ["https://example.com/a.jpg"], "specs": {"Color": "Blue"}, "description": "d",
+    }
+    c("sourcing", "POST", "/v1/my/listings", json=my_body, want=(403,))
+    c("sourcing", "POST", "/v1/my/listings", json={**my_body, "moq": 0}, headers=hsup, want=(422,))
+    mine = c("sourcing", "POST", "/v1/my/listings", json=my_body, headers=hsup, template="/v1/my/listings") or {}
+    if mine.get("id"):
+        mid = mine["id"]
+        c("sourcing", "GET", "/v1/my/listings", headers=hsup)
+        c("sourcing", "GET", f"/v1/my/listings/{mid}", headers=hsup, template="/v1/my/listings/{id}")
+        c("sourcing", "PUT", f"/v1/my/listings/{mid}", json=my_body, headers=hsup, template="/v1/my/listings/{id}")
+        c("sourcing", "GET", f"/v1/my/listings/{mid}", headers={"X-Supplier-Id": "sup_other"}, want=(404,), template="/v1/my/listings/{id}")
+        c("sourcing", "POST", f"/v1/my/listings/{mid}/publish", headers=hsup, want=(200, 403, 503), template="/v1/my/listings/{id}/publish")
+        c("sourcing", "POST", f"/v1/my/listings/{mid}/unpublish", headers=hsup, want=(200, 409), template="/v1/my/listings/{id}/unpublish")
+        c("sourcing", "DELETE", f"/v1/my/listings/{mid}", headers=hsup, want=(204,), template="/v1/my/listings/{id}")
 
     # -- logistics
     quote_body = {

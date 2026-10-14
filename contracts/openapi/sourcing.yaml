@@ -146,12 +146,138 @@ paths:
                   properties:
                     id: {type: string}
                     name: {type: string}
-                    mode: {type: string, enum: [mock, official_api, licensed_feed]}
+                    mode: {type: string, enum: [mock, official_api, licensed_feed, native]}
                     enabled: {type: boolean}
                     configured: {type: boolean}
                     status: {type: string, enum: [ok, error, timeout, disabled]}
                     compliance: {type: string}
+  /v1/my/listings:
+    post:
+      summary: Create a listing owned by the calling (verified) supplier; starts as draft
+      description: |
+        Identity is the gateway-set X-Supplier-Id (only forwarded for an admin-verified claim); it is never read from the
+        body (supplier/source/status/id fields in the body are ignored). 403 supplier_required without it; when
+        FF_INTERNAL_TOKEN is configured, calls lacking a valid X-Internal-Token get 401. At most 200 listings per
+        supplier (409 listing_cap_reached) and 30 creates per hour (429 rate_limited + Retry-After).
+      parameters:
+        - {$ref: "#/components/parameters/SupplierId"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ListingWrite"}
+      responses:
+        "201":
+          description: Created (status draft, id nat_xxxxxxxx)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OwnedListing"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+    get:
+      summary: List the caller's own listings (all statuses), newest first
+      parameters:
+        - {$ref: "#/components/parameters/SupplierId"}
+        - {name: status, in: query, schema: {type: string, enum: [draft, published, archived]}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    properties:
+                      items: {type: array, items: {$ref: "#/components/schemas/OwnedListing"}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/my/listings/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+      - {$ref: "#/components/parameters/SupplierId"}
+    get:
+      summary: One of the caller's listings (404 for anyone else's)
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OwnedListing"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+    put:
+      summary: Replace the listing's content (status is unchanged)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ListingWrite"}
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OwnedListing"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    delete:
+      summary: Permanently delete the listing
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/my/listings/{id}/publish:
+    post:
+      summary: Make the listing searchable (draft or archived -> published)
+      description: Blocked (403 trust_blocked) while the supplier trust band is red. Fails closed with 503 trust_unavailable when trust cannot be checked or is unknown.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {$ref: "#/components/parameters/SupplierId"}
+      responses:
+        "200":
+          description: Published listing
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OwnedListing"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+  /v1/my/listings/{id}/unpublish:
+    post:
+      summary: Remove the listing from search (published -> archived)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {$ref: "#/components/parameters/SupplierId"}
+      responses:
+        "200":
+          description: Archived listing
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OwnedListing"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
 components:
+  parameters:
+    SupplierId:
+      name: X-Supplier-Id
+      in: header
+      required: true
+      description: Set by the gateway from an admin-verified supplier claim (pattern ^sup_[A-Za-z0-9_.:-]{1,59}$); clients never send it.
+      schema: {type: string}
   responses:
     Error:
       description: Error body
@@ -159,6 +285,45 @@ components:
         application/json:
           schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
   schemas:
+    ListingWrite:
+      type: object
+      description: Unknown fields are ignored (supplier, source, status, id can not be set by the client). Text is stripped of control/bidi-override characters.
+      required: [kind, title, category, price, unit, origin]
+      properties:
+        kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
+        condition: {$ref: ../schemas/common.schema.json#/$defs/Condition}
+        title: {type: string, minLength: 3, maxLength: 140}
+        title_ar: {type: string, minLength: 3, maxLength: 140}
+        description: {type: string, maxLength: 4000}
+        description_ar: {type: string, maxLength: 4000}
+        category: {type: string, description: Leaf slug from /v1/categories that belongs to kind}
+        price:
+          type: object
+          required: [min, max]
+          description: Same currency on both ends, amounts > 0 (<= 6 decimals, <= 1e9), min <= max
+          properties:
+            min: {$ref: ../schemas/common.schema.json#/$defs/Money}
+            max: {$ref: ../schemas/common.schema.json#/$defs/Money}
+        unit: {type: string, minLength: 1, maxLength: 24}
+        moq: {type: integer, minimum: 1, default: 1}
+        incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
+        unit_weight_kg: {type: number, exclusiveMinimum: 0, maximum: 1000000}
+        unit_volume_m3: {type: number, exclusiveMinimum: 0, maximum: 100000}
+        hs_code: {type: string, pattern: "^[0-9]{6,10}$"}
+        lead_time_days: {$ref: ../schemas/common.schema.json#/$defs/DayRange}
+        images: {type: array, maxItems: 8, items: {type: string, description: http(s) URL, maxLength: 2048}}
+        origin: {$ref: ../schemas/common.schema.json#/$defs/Location}
+        specs: {type: object, maxProperties: 20, additionalProperties: {type: string, maxLength: 200}}
+    OwnedListing:
+      allOf:
+        - $ref: "#/components/schemas/ListingDetail"
+        - type: object
+          required: [status, created_at, updated_at]
+          properties:
+            status: {type: string, enum: [draft, published, archived]}
+            created_at: {type: string, format: date-time}
+            updated_at: {type: string, format: date-time}
+            published_at: {type: string, format: date-time}
     ListingDetail:
       allOf:
         - $ref: ../schemas/common.schema.json#/$defs/Listing

@@ -89,7 +89,7 @@ class SourcingService:
         self, adapter: SourceAdapter, query: SearchQuery
     ) -> tuple[SourceStatus, list[Listing]]:
         key = (adapter.id, query.model_dump_json())
-        cached = self._results.get(key)
+        cached = self._results.get(key) if adapter.cacheable else None
         if cached is not None:
             return SourceStatus(source=adapter.id, status="ok"), cached
         try:
@@ -100,7 +100,8 @@ class SourcingService:
         except Exception as exc:  # isolate: one bad source never fails the search
             log.warning("adapter %s failed: %s", adapter.id, type(exc).__name__)
             return SourceStatus(source=adapter.id, status="error"), []
-        self._results.set(key, items)
+        if adapter.cacheable:
+            self._results.set(key, items)
         return SourceStatus(source=adapter.id, status="ok"), items
 
     async def search(

@@ -19,6 +19,7 @@ class SourceAdapter(ABC):
     name: str
     mode: str = "mock"  # mock | official_api | licensed_feed
     compliance: str = ""
+    cacheable: bool = True  # False for live local stores whose results must never be stale
 
     @abstractmethod
     async def search(self, query: SearchQuery) -> list[ListingDetail]:

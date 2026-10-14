@@ -13,7 +13,9 @@ cd services/sourcing
 
 ## Endpoints (contract: `contracts/openapi/sourcing.yaml`)
 `GET /health` · `GET /v1/search` · `GET /v1/listings/{id}` · `GET /v1/suppliers/{id}` ·
-`GET /v1/categories` · `GET /v1/sources`
+`GET /v1/categories` · `GET /v1/sources` ·
+supplier-owned listings: `POST|GET /v1/my/listings` · `GET|PUT|DELETE /v1/my/listings/{id}` ·
+`POST /v1/my/listings/{id}/publish|unpublish`
 
 ## Layout
 - `domain/`: pure logic. `text.py` (Arabic normalization, stemming, bilingual synonyms), `search.py`
@@ -37,6 +39,16 @@ cd services/sourcing
 - `sort` = `relevance` (default) | `price_asc` | `price_desc` | `trust` | `moq`. Response `facets`
   (kind, condition, origin_country, category counts) cover the whole matched set, not just the page.
 
+## Native (supplier-owned) listings
+Persistent `native` source (SQLAlchemy async, table `native_listings`, Alembic in `migrations/`, see `docs/DB.md`).
+Caller identity = gateway-set `X-Supplier-Id` (verified claims only; 403 `supplier_required` without it; with
+`FF_INTERNAL_TOKEN` configured, `/v1/my/*` also needs `X-Internal-Token`, else 401). Listings start `draft`, only
+`published` ones appear in search/detail (id `nat_xxxxxxxx`, `source: native`); `unpublish` archives. Publish needs a
+non-red trust band and fails closed (503 `trust_unavailable`) if trust is down/unknown. Caps: 200 listings per supplier
+(409), 30 creates/hour per supplier per process (429 + Retry-After). Others' listings answer 404. Code: `domain/native.py`
+(validation), `adapters/native.py` (store + adapter), `native_service.py`, `api/my.py`.
+Env: `DATABASE_URL`, `DB_AUTO_CREATE`, `MAX_LISTINGS_PER_SUPPLIER`, `CREATE_RATE_PER_HOUR`, `INTERNAL_TOKEN`.
+
 ## Env (prefix `FF_SOURCING_`)
 `ENABLED_SOURCES` (default `mock`; e.g. `mock,alibaba`), `ADAPTER_TIMEOUT_S` (3), `CACHE_TTL_S` (60),
 `TRUST_MODE` (`mock`|`http`|`off`), `TRUST_BASE_URL`, `TRUST_TIMEOUT_S` (0.8), `MIN_REQUEST_INTERVAL_S` (3),
@@ -53,4 +65,4 @@ Enable with `FF_SOURCING_ADAPTERS=alibaba_openapi`; extra env: `ALIBABA_ACCESS_T
 
 
 ## Ops (logging / readiness)
-`GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+`GET /ready` (unauthenticated, exempt from the internal token): 200 when the database is reachable, else 503. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

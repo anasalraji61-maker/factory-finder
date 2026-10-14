@@ -24,7 +24,7 @@ def svc(request: Request) -> SourcingService:
     return request.app.state.service
 
 
-@router.get("/search", response_model=SearchResponse)
+@router.get("/search", response_model=SearchResponse, response_model_exclude_none=True)
 async def search(
     request: Request,
     q: str = Query("", max_length=200),
@@ -56,7 +56,7 @@ async def search(
     return await svc(request).search(query, page, page_size, sort)
 
 
-@router.get("/listings/{listing_id}", response_model=ListingDetail)
+@router.get("/listings/{listing_id}", response_model=ListingDetail, response_model_exclude_none=True)
 async def get_listing(listing_id: str, request: Request) -> ListingDetail:
     item = await svc(request).get_listing(listing_id)
     if item is None:

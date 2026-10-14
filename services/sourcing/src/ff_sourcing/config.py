@@ -3,19 +3,28 @@ from __future__ import annotations
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .dburl import resolve_auto_create
+
 
 class Settings(BaseSettings):
     """Env prefix FF_SOURCING_. Secrets come from env only; never log them."""
 
-    model_config = SettingsConfigDict(env_prefix="FF_SOURCING_", env_file=None, extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="FF_SOURCING_", env_file=None, extra="ignore", env_ignore_empty=True)
 
     # Comma separated adapter ids. Real adapters are off unless listed here.
-    enabled_sources: str = "mock"
+    enabled_sources: str = "mock,native"
     # FF_SOURCING_ADAPTERS: extra adapter ids to enable (e.g. "alibaba_openapi"). Empty = mock only.
     adapters: str = ""
     adapter_timeout_s: float = 3.0
     cache_ttl_s: float = 60.0
     trust_cache_ttl_s: float = 300.0
+
+    # Persistent supplier-owned ("native") listings. SQLite by default; see docs/DB.md.
+    database_url: str = "sqlite+aiosqlite:///./sourcing.db"
+    db_auto_create: bool | None = None  # None = true for SQLite, false for PostgreSQL
+    internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured (see main.py)
+    max_listings_per_supplier: int = 200
+    create_rate_per_hour: int = 30
 
     trust_mode: str = "mock"  # mock | http | off
     trust_base_url: str = "http://localhost:8104"
@@ -39,6 +48,10 @@ class Settings(BaseSettings):
     s1688_app_key: str = Field(default="", repr=False)
     s1688_app_secret: str = Field(default="", repr=False)
     s1688_api_base: str = "https://gw.open.1688.com/openapi"
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)
 
     def enabled_set(self) -> set[str]:
         ids = f"{self.enabled_sources},{self.adapters}".split(",")

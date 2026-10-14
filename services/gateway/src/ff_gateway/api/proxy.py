@@ -75,7 +75,8 @@ async def proxy(full_path: str, request: Request) -> Response:
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
     if (
-        upstream in ("messaging", "rfq") and user_id
+        user_id
+        and (upstream in ("messaging", "rfq") or (upstream == "sourcing" and path.startswith("/v1/my")))
     ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
             claimed = await s.scalar(
