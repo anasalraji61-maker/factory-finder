@@ -24,7 +24,7 @@ router = APIRouter(prefix="/v1", dependencies=[Depends(_auth)])
 async def landed_cost(body: LandedCostRequest, request: Request):
     st = request.app.state
     try:
-        return await Engine(st.geo, st.fx).quote(body)
+        return await Engine(st.geo, st.fx, st.freight, st.settings.freight_max_calls_per_quote).quote(body)
     except httpx.HTTPError as exc:
         raise ApiError("geo_unavailable", "Geo service unavailable", 502, {"reason": type(exc).__name__}) from exc
 

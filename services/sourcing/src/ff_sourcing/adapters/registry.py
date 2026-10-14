@@ -17,6 +17,10 @@ class AdapterRegistry:
     def enabled(self) -> list[SourceAdapter]:
         return [a for a in self._adapters.values() if a.id in self._enabled]
 
+    def fallback(self) -> SourceAdapter | None:
+        """Mock adapter used when a real adapter fails (works even if mock is not enabled)."""
+        return self._adapters.get("mock")
+
     def is_enabled(self, adapter_id: str) -> bool:
         return adapter_id in self._enabled
 
@@ -31,6 +35,7 @@ class AdapterRegistry:
 
 def build_registry(settings: Settings) -> AdapterRegistry:
     from .alibaba import AlibabaAdapter
+    from .alibaba_openapi import AlibabaOpenApiAdapter
     from .aliexpress import AliExpressAdapter
     from .made_in_china import MadeInChinaAdapter
     from .mock import MockAdapter
@@ -39,6 +44,7 @@ def build_registry(settings: Settings) -> AdapterRegistry:
     adapters: list[SourceAdapter] = [
         MockAdapter(),
         AlibabaAdapter(settings),
+        AlibabaOpenApiAdapter(),
         MadeInChinaAdapter(settings),
         AliExpressAdapter(settings),
         Source1688Adapter(settings),

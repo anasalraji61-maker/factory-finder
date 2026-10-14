@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info: {title: Factory Finder demand, version: 0.1.0, description: "Phase 5 demand matching with a human in the loop (CLAUDE.md rule 7). Detects PUBLIC buy-requests (manual import or a SignalSource adapter; no scraping here) and prepares DRAFT public replies with matched listings. The service never posts anything and never sends private messages: a human must approve each draft, then post it by hand and call mark-published. Daily approval cap (FF_DEMAND_DAILY_CAP, default 20) and a global kill-switch (FF_DEMAND_ENABLED, default false => approve and mark-published return 403). Admin only: X-User-Id is required (401 otherwise) and X-Internal-Token when FF_INTERNAL_TOKEN is set."}
+servers: [{url: http://localhost:8110}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /v1/signals:
+    post:
+      operationId: importSignal
+      description: Manual import of a PUBLIC post (URL and/or pasted text). Idempotent - the same URL or normalized text returns the existing signal (200); a new one is 201. A buy-intent signal with matches also gets one draft.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SignalCreate"}}}}
+      responses:
+        "200": {description: Existing signal, content: {application/json: {schema: {$ref: "#/components/schemas/SignalResult"}}}}
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/SignalResult"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    get:
+      operationId: listSignals
+      responses:
+        "200": {description: Signals newest first, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Signal"}}, total: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/signals/poll:
+    post:
+      operationId: pollSignals
+      description: Pull new posts from the configured SignalSource adapter (mock by default) and process each like an import.
+      responses:
+        "200": {description: Results, content: {application/json: {schema: {type: object, required: [items], properties: {items: {type: array, items: {$ref: "#/components/schemas/SignalResult"}}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/signals/{id}:
+    get:
+      operationId: getSignal
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Signal, content: {application/json: {schema: {$ref: "#/components/schemas/Signal"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/drafts:
+    get:
+      operationId: listDrafts
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [draft, approved, rejected, published]}}
+      responses:
+        "200": {description: Drafts newest first, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Draft"}}, total: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/drafts/{id}:
+    get:
+      operationId: getDraft
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Draft with audit log, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/drafts/{id}/approve:
+    post:
+      operationId: approveDraft
+      description: draft -> approved. 403 when the kill-switch is off, 429 when today's cap is used up (counted at approval time, UTC day), 409 when not in draft.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {text: {type: string, description: "Optional human-edited reply text"}}}}}}
+      responses:
+        "200": {description: Approved, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/drafts/{id}/reject:
+    post:
+      operationId: rejectDraft
+      description: draft or approved -> rejected.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {reason: {type: string}}}}}}
+      responses:
+        "200": {description: Rejected, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/drafts/{id}/mark-published:
+    post:
+      operationId: markPublished
+      description: approved -> published. Records that a human posted the reply by hand; the service posts nothing. 403 when the kill-switch is off, 409 unless approved.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {published_url: {type: string}}}}}}
+      responses:
+        "200": {description: Published, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/drafts/{id}/outcome:
+    post:
+      operationId: recordOutcome
+      description: Minimal conversion tracking; only for published drafts (409 otherwise).
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [outcome], properties: {outcome: {type: string, enum: [replied, converted, no_response]}, note: {type: string}}}}}}
+      responses:
+        "200": {description: Updated, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/quota:
+    get:
+      operationId: getQuota
+      responses:
+        "200": {description: Today's usage, content: {application/json: {schema: {type: object, required: [enabled, daily_cap, used_today, remaining], properties: {enabled: {type: boolean}, daily_cap: {type: integer}, used_today: {type: integer}, remaining: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    Id: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    SignalCreate:
+      type: object
+      required: [text]
+      properties:
+        text: {type: string, minLength: 3, maxLength: 5000}
+        url: {type: string, description: Public post URL (reference only; never fetched)}
+        source: {type: string, default: manual}
+        language: {type: string, enum: [ar, en], description: Override auto-detected language}
+    Signal:
+      type: object
+      required: [id, status, language, text, source, created_at]
+      properties:
+        id: {type: string}
+        status: {type: string, enum: [drafted, ignored, no_match]}
+        language: {type: string, enum: [ar, en]}
+        text: {type: string}
+        url: {type: [string, "null"]}
+        source: {type: string}
+        intent: {type: [object, "null"], properties: {query: {type: string}, origin_country: {type: [string, "null"]}}}
+        created_at: {type: string, format: date-time}
+    SignalResult:
+      type: object
+      required: [signal]
+      properties:
+        signal: {$ref: "#/components/schemas/Signal"}
+        draft: {oneOf: [{$ref: "#/components/schemas/Draft"}, {type: "null"}]}
+        duplicate: {type: boolean}
+    AuditEntry:
+      type: object
+      required: [at, actor, action]
+      properties: {at: {type: string, format: date-time}, actor: {type: string}, action: {type: string}, note: {type: [string, "null"]}}
+    Draft:
+      type: object
+      required: [id, signal_id, status, language, text, listing_ids, disclosure, audit, created_at]
+      properties:
+        id: {type: string}
+        signal_id: {type: string}
+        status: {type: string, enum: [draft, approved, rejected, published]}
+        language: {type: string, enum: [ar, en]}
+        text: {type: string}
+        listing_ids: {type: array, items: {type: string}}
+        disclosure: {type: boolean, description: Reply text contains the platform disclosure}
+        approved_by: {type: [string, "null"]}
+        approved_at: {type: [string, "null"], format: date-time}
+        published_url: {type: [string, "null"]}
+        outcome: {type: [string, "null"], enum: [replied, converted, no_response, null]}
+        audit: {type: array, items: {$ref: "#/components/schemas/AuditEntry"}}
+        created_at: {type: string, format: date-time}

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     # Comma separated adapter ids. Real adapters are off unless listed here.
     enabled_sources: str = "mock"
+    # FF_SOURCING_ADAPTERS: extra adapter ids to enable (e.g. "alibaba_openapi"). Empty = mock only.
+    adapters: str = ""
     adapter_timeout_s: float = 3.0
     cache_ttl_s: float = 60.0
     trust_cache_ttl_s: float = 300.0
@@ -39,4 +41,5 @@ class Settings(BaseSettings):
     s1688_api_base: str = "https://gw.open.1688.com/openapi"
 
     def enabled_set(self) -> set[str]:
-        return {s.strip() for s in self.enabled_sources.split(",") if s.strip()}
+        ids = f"{self.enabled_sources},{self.adapters}".split(",")
+        return {s.strip() for s in ids if s.strip()}

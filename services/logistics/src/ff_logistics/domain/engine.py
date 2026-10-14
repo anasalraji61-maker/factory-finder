@@ -4,6 +4,7 @@ import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from ..adapters.freight import FreightRateProvider, FreightRequest, FreightUnavailable
 from ..adapters.fx import FxService, utcnow_iso
 from ..clients.geo import GeoClient, Hub, Point
 from ..errors import ApiError
@@ -33,6 +34,7 @@ class Line:
     usd: Decimal
     source: str
     estimate: bool = True
+    spread: Decimal | None = None  # overrides SPREAD[stage] (e.g. a live quote's own range)
 
 
 @dataclass
@@ -120,8 +122,11 @@ def air_rate_per_kg(lane: dict, chargeable: Decimal) -> Decimal:
 class Engine:
     """One instance per request (holds request context and a distance cache)."""
 
-    def __init__(self, geo: GeoClient, fx: FxService):
-        self.geo, self.fx = geo, fx
+    def __init__(self, geo: GeoClient, fx: FxService, freight: FreightRateProvider | None = None,
+                 freight_max_calls: int = 6):
+        self.geo, self.fx, self.freight = geo, fx, freight
+        self.freight_calls_left = freight_max_calls
+        self.freight_notes: list[str] = []
         self._dist: dict = {}
         self.ctx: dict = {}
 
@@ -190,6 +195,7 @@ class Engine:
         sw = sanctions_warning({oc, dc})
         if sw:
             quote_warn.append(sw)
+        assumptions.extend(dict.fromkeys(self.freight_notes))
         assumptions.append(f"FX: {table.source} rates as of {table.timestamp}; 1 USD = {usd_rate:.6g} {disp}.")
         return {"id": "qte_" + uuid.uuid4().hex, "currency": disp, "origin": req.origin.model_dump(exclude_none=True),
                 "destination": req.destination.model_dump(exclude_none=True), "options": options,
@@ -293,6 +299,33 @@ class Engine:
             best.summary += " | alternatives: " + "; ".join(others)
         return best
 
+    async def _live_freight(self, mode: str, oh: Hub, alt: Alt, kg, m3, n):
+        """Main-leg line from the live provider, or None => built-in tables (errors never propagate)."""
+        if self.freight is None or self.freight_calls_left <= 0:
+            return None
+        self.freight_calls_left -= 1
+        fq = None
+        try:
+            fq = await self.freight.quote(FreightRequest(
+                mode, oh.id, oh.name, oh.country_code, alt.hub.id, alt.hub.name,
+                alt.hub.country_code, kg, m3, n if mode.startswith("sea_fcl") else None))
+            if fq is None:
+                return None
+            rate = (await self.fx.rate(fq.currency, "USD"))[0]
+        except (FreightUnavailable, ApiError) as exc:
+            self.freight_notes.append(
+                f"Live freight rates unavailable ({exc}); built-in rate tables were used instead.")
+            return None
+        lo, hi = fq.low * rate, fq.high * rate
+        mid = (lo + hi) / 2
+        spread = max((hi - lo) / 2 / mid, Decimal("0.05"))  # never claim tighter than +-5%
+        self.freight_notes.append(
+            "Main-leg freight uses live rate estimates where available "
+            f"({fq.source}, fetched {fq.fetched_at}); other lines use the approximate tables.")
+        line = Line("main_leg", "", mid, f"{fq.source}; {fq.currency} {fq.low}-{fq.high} at {fq.fetched_at}",
+                    fq.estimate, spread)
+        return line, *(fq.days or (0, 0))
+
     async def _build(self, mode: str, oh: Hub | None, alt: Alt | None) -> Draft:
         c, fam = self.ctx, family(mode)
         kg, m3, oc, dc = c["kg"], c["m3"], c["oc"], c["dc"]
@@ -375,8 +408,13 @@ class Engine:
             else:
                 ml, desc = D(lane["rail_40"]) * n, f"{n} x 40' rail container"
                 dmin, dmax = lane["rail_days"]
-            lines["main_leg"] = Line("main_leg", f"{oh.name} to {alt.hub.name}: {desc}{dg_txt}", ml * dgf,
-                                     src + (" (synthetic lane from distance)" if lane.get("synthetic") else ""))
+            ml_line = Line("main_leg", f"{oh.name} to {alt.hub.name}: {desc}{dg_txt}", ml * dgf,
+                           src + (" (synthetic lane from distance)" if lane.get("synthetic") else ""))
+            live = None if dg else await self._live_freight(mode, oh, alt, kg, m3, n)
+            if live:
+                ml_line, dmin, dmax = live[0], live[1] or dmin, live[2] or dmax
+                ml_line.description = f"{oh.name} to {alt.hub.name}: {desc} (live rate)"
+            lines["main_leg"] = ml_line
             days_min += dmin
             days_max += dmax
             # destination handling
@@ -467,7 +505,7 @@ class Engine:
         for ln in raw:
             amt = quantize(ln.usd * rate, disp)
             total += amt
-            spread += quantize(amt * D(SPREAD[ln.stage]), disp) if ln.estimate else 0
+            spread += quantize(amt * (ln.spread if ln.spread is not None else D(SPREAD[ln.stage])), disp) if ln.estimate else 0
             entry = {"stage": ln.stage, "description": ln.description, "amount": money(amt, disp),
                      "original_amount": money(ln.usd, "USD"), "fx_rate": f"{rate:.8g}",
                      "source": ln.source, "estimate": ln.estimate}

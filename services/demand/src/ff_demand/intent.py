@@ -1,0 +1,85 @@
+"""Simple keyword rules: language detection, buy-intent, product phrase, origin country."""
+
+from __future__ import annotations
+
+import hashlib
+import re
+from dataclasses import dataclass
+
+_AR_RE = re.compile(r"[؀-ۿ]")
+_LATIN_RE = re.compile(r"[A-Za-z]")
+
+_BUY_AR = (
+    "أحتاج",
+    "احتاج",
+    "أريد",
+    "اريد",
+    "أبي",
+    "ابي",
+    "أبحث عن",
+    "ابحث عن",
+    "مطلوب",
+    "شلون أحصل",
+    "وين الاقي",
+    "وين ألقى",
+    "محتاج",
+    "نحتاج",
+    "أرغب بشراء",
+    "للشراء",
+)
+_BUY_EN = (
+    "looking for",
+    "need ",
+    "i need",
+    "we need",
+    "want to buy",
+    "wtb",
+    "wanted:",
+    "where can i buy",
+    "where to buy",
+    "in search of",
+    "buy ",
+)
+_ORIGINS = {"CN": ("الصين", "صيني", "china", "chinese")}
+_ORIGIN_PHRASE = re.compile(r"\s*(من|from)\s+(الصين|china)\b", re.IGNORECASE)
+_LEAD = re.compile(
+    "^(" + "|".join(re.escape(w) for w in (*_BUY_AR, *_BUY_EN)) + r"|please|مرحبا|السلام عليكم)\s*",
+    re.IGNORECASE,
+)
+_PUNCT = re.compile(r"[.!?؟،,:;\n\r]+")
+
+
+@dataclass(frozen=True)
+class Intent:
+    query: str
+    origin_country: str | None
+
+
+def detect_language(text: str, override: str | None = None) -> str:
+    if override in ("ar", "en"):
+        return override
+    ar, lat = len(_AR_RE.findall(text)), len(_LATIN_RE.findall(text))
+    return "ar" if ar >= lat and ar > 0 else "en"
+
+
+def extract_intent(text: str) -> Intent | None:
+    """``None`` when the post is not a buy-request."""
+    low = text.casefold()
+    if not any(k.casefold() in low for k in (*_BUY_AR, *_BUY_EN)):
+        return None
+    origin = next((cc for cc, words in _ORIGINS.items() if any(w in low for w in words)), None)
+    phrase = _PUNCT.split(text.strip())[0]
+    phrase = _ORIGIN_PHRASE.sub("", phrase).strip()
+    for _ in range(3):  # strip stacked lead words ("hello, I need ...")
+        phrase = _LEAD.sub("", phrase, count=1).strip()
+    phrase = phrase[:120].strip()
+    if len(phrase) < 2:
+        return None
+    return Intent(query=phrase, origin_country=origin)
+
+
+def signal_key(text: str, url: str | None) -> str:
+    basis = (url or "").strip().casefold().rstrip("/") or re.sub(
+        r"\s+", " ", text
+    ).strip().casefold()
+    return hashlib.sha256(basis.encode()).hexdigest()

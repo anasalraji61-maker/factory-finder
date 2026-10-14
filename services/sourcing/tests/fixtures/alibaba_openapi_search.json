@@ -1,0 +1,29 @@
+{
+  "_note": "SYNTHETIC fixture shaped like the assumed Alibaba Open Platform response. UNVERIFIED: replace with a real recorded response before enabling.",
+  "alibaba_icbu_product_search_response": {
+    "total_count": 3,
+    "products": {
+      "product": [
+        {
+          "product_id": 1600123456,
+          "subject": "PP Granules Injection Grade",
+          "price": "US $900.00 - 1,100.50",
+          "currency": "usd",
+          "min_order_quantity": "20 Tons",
+          "unit": "ton",
+          "detail_url": "https://www.alibaba.com/product-detail/PP-Granules_1600123456.html",
+          "images": [{"url": "https://s.alicdn.com/a.jpg"}, {"url": "https://s.alicdn.com/b.jpg"}],
+          "supplier": {"id": "cn123", "name": "Ningbo Plastics Co", "country": "cn", "city": "Ningbo", "is_verified": "true"}
+        },
+        {
+          "product_id": 1600123457,
+          "subject": "Used Extrusion Line",
+          "price": "25000",
+          "min_order_quantity": 1,
+          "supplier": {"id": "cn124", "name": "Suzhou Machinery", "country": "CN"}
+        },
+        {"subject": "record without id is skipped", "price": "1"}
+      ]
+    }
+  }
+}

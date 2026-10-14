@@ -19,7 +19,7 @@ jobs:
         run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets
       - name: Install service deps
         run: |
-          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant; do
+          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand; do
             python scripts/install_service.py services/$s --deps-only
           done
       - run: python scripts/e2e.py

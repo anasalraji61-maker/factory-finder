@@ -64,6 +64,29 @@ class SourcingService:
     async def _query_adapter(
         self, adapter: SourceAdapter, query: SearchQuery
     ) -> tuple[SourceStatus, list[Listing]]:
+        status, items = await self._query_adapter_raw(adapter, query)
+        if status.status == "ok" or adapter.mode == "mock":
+            return status, items
+        return await self._degrade(adapter, query, status)
+
+    async def _degrade(
+        self, adapter: SourceAdapter, query: SearchQuery, failed: SourceStatus
+    ) -> tuple[SourceStatus, list[Listing]]:
+        """A real source failed: serve mock results (labelled) instead of nothing. Never raises."""
+        fb = self.registry.fallback()
+        if fb is None or self.registry.is_enabled(fb.id):
+            return failed, []
+        warning = f"{adapter.id} {failed.status}; showing mock results instead"
+        log.warning(warning)
+        try:
+            items = await asyncio.wait_for(fb.search(query), timeout=self.timeout)
+        except Exception:
+            return failed.model_copy(update={"warning": warning + " (mock also failed)"}), []
+        return failed.model_copy(update={"warning": warning}), items
+
+    async def _query_adapter_raw(
+        self, adapter: SourceAdapter, query: SearchQuery
+    ) -> tuple[SourceStatus, list[Listing]]:
         key = (adapter.id, query.model_dump_json())
         cached = self._results.get(key)
         if cached is not None:

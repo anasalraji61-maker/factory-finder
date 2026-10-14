@@ -102,6 +102,7 @@ class SourceStatus(BaseModel):
     source: str
     status: Literal["ok", "timeout", "error"]
     count: int = 0
+    warning: str | None = None  # e.g. real source failed and mock results were substituted
 
 
 class SearchResponse(BaseModel):

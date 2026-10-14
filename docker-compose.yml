@@ -218,3 +218,27 @@ services:
       retries: 5
     expose:
     - '8109'
+  demand:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: demand
+    environment:
+      PORT: '8110'
+      FF_DEMAND_SOURCING_BASE_URL: http://sourcing:8101
+      FF_DEMAND_ENABLED: ${FF_DEMAND_ENABLED:-false}
+      FF_DEMAND_DAILY_CAP: ${FF_DEMAND_DAILY_CAP:-20}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8110/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    expose:
+    - '8110'

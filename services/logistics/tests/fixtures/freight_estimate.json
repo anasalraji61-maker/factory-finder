@@ -1,0 +1,11 @@
+{
+  "_note": "SYNTHETIC fixture shaped like the assumed Freightos-style estimator response. UNVERIFIED: replace with a real recorded response before enabling.",
+  "response": {
+    "estimatedFreightRates": {
+      "mode": "FCL",
+      "numQuotes": 7,
+      "min": {"price": {"moneyAmount": {"amount": 2100, "currencyCode": "USD"}}, "transitTime": {"unit": "days", "min": 28, "max": 33}},
+      "max": {"price": {"moneyAmount": {"amount": 3900, "currencyCode": "USD"}}, "transitTime": {"unit": "days", "min": 35, "max": 45}}
+    }
+  }
+}

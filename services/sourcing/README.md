@@ -34,3 +34,10 @@ Query terms are AND-ed; each term may match any of its synonyms (title hit = 3, 
 `USER_AGENT`, and credentials (empty = adapter unconfigured): `ALIBABA_APP_KEY/_APP_SECRET`,
 `ALIEXPRESS_APP_KEY/_APP_SECRET/_TRACKING_ID`, `MIC_API_BASE/_API_KEY/_ALLOW_PUBLIC_PAGES`,
 `S1688_APP_KEY/_APP_SECRET`. Never commit values.
+
+## Licensed/official API adapters (Phase 4 prep, OFF by default, UNVERIFIED)
+`adapters/http_provider.py`: `ProviderConfig` (base URL, key env-var NAME, field-mapping table, >=3 s/host
+limit, cache TTL, honest UA, ToS note, kill-switch env) + `HttpProviderAdapter`. `alibaba_openapi.py` is the
+Alibaba Open Platform skeleton (assumed shape, replace `tests/fixtures/*.json` with real recordings).
+Enable with `FF_SOURCING_ADAPTERS=alibaba_openapi`; extra env: `ALIBABA_ACCESS_TOKEN`, `ALIBABA_OPENAPI_DISABLED`,
+`KILL_SWITCH` (all real adapters). A failing real adapter yields mock results plus `sources[].warning`.
