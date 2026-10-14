@@ -2,12 +2,13 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/registry/feature_module.dart';
 import 'package:factory_finder/features/module_a.dart';
 import 'package:factory_finder/features/module_b.dart';
+import 'package:factory_finder/features/module_c.dart';
 import 'package:factory_finder/features/profile/profile_screen.dart';
 import 'package:factory_finder/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-final List<FeatureModule> featureModules = [featureModuleA, featureModuleB];
+final List<FeatureModule> featureModules = [featureModuleA, featureModuleB, featureModuleC];
 
 /// Registers every module's i18n tables. Call once at startup.
 void registerFeatureStrings() {

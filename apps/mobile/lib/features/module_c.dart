@@ -1,0 +1,25 @@
+import 'package:factory_finder/core/registry/feature_module.dart';
+import 'package:factory_finder/features/my_products/my_products_strings.dart';
+import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
+import 'package:factory_finder/features/my_products/screens/product_editor_screen.dart';
+import 'package:go_router/go_router.dart';
+
+/// Supplier "My products" (list + editor).
+final FeatureModule featureModuleC = FeatureModule(
+  overlayRoutes: [
+    GoRoute(
+      path: '/my-products',
+      builder: (context, state) => const MyProductsScreen(),
+    ),
+    GoRoute(
+      path: '/my-products/new',
+      builder: (context, state) => const ProductEditorScreen(),
+    ),
+    GoRoute(
+      path: '/my-products/:id',
+      builder: (context, state) =>
+          ProductEditorScreen(listingId: state.pathParameters['id']),
+    ),
+  ],
+  strings: myProductsStrings,
+);

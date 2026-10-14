@@ -1,0 +1,7 @@
+- 2026-10-14 | "My products" lives in its own module (`features/my_products`, `module_c.dart`) registered by one line in `app_router.dart` | avoids merge conflicts in module_a/b.
+- 2026-10-14 | Profile tile shows when onboarding role is supplier OR claim is verified; the screen itself is gated on a verified claim and otherwise shows a claim-flow card linking to /supplier-claim (mock mode bypasses the gate so the demo works) | server enforces 403 supplier_required anyway.
+- 2026-10-14 | Category chips come from GET /v1/categories (children of the node whose slug equals the kind) with a built-in fallback tree identical to the gateway slugs; mock mode returns an empty tree so it uses the fallback | backend needs leaf slugs belonging to the kind.
+- 2026-10-14 | HS code is sent digits-only (dots/spaces stripped, 6-10 digits) even though the HS picker returns dotted codes | contract says 6-10 digits.
+- 2026-10-14 | Prices stay decimal strings end to end; min<=max is compared on the strings, never via double | CLAUDE.md rule 8.
+- 2026-10-14 | List uses its own paging state (page_size 50 + "Load more"), not a Riverpod family | simple invalidation after edits/actions.
+- 2026-10-14 | Retry-After on 429 is not surfaced (ApiException carries no headers); the message says to wait and retry | avoids changing core api_client.

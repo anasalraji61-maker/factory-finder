@@ -5,6 +5,7 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +25,9 @@ class ProfileScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final me = ref.watch(authProvider);
     final serverUrl = ref.watch(serverUrlProvider);
+    final role = ref.watch(userRoleProvider);
+    final showMyProducts =
+        role == UserRole.supplier || me?.supplierClaimStatus == 'verified';
 
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('profile.title'))),
@@ -210,6 +214,17 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/supplier-claim'),
                 ),
                 const Divider(height: 1),
+                if (showMyProducts) ...[
+                  ListTile(
+                    key: const ValueKey('profile-my-products'),
+                    leading: const Icon(Icons.inventory_2_outlined),
+                    title: Text(context.tr('myp.tile')),
+                    subtitle: Text(context.tr('myp.tile_sub')),
+                    trailing: const Icon(Icons.chevron_right, size: 20),
+                    onTap: () => context.push('/my-products'),
+                  ),
+                  const Divider(height: 1),
+                ],
                 ListTile(
                   leading: const Icon(Icons.bookmark_border),
                   title: Text(context.tr('profile.watchlist')),
