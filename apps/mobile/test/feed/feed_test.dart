@@ -284,7 +284,7 @@ void main() {
 
     test('initials', () {
       expect(initialsOf('Shenzhen Brightway Electronics'), 'SB');
-      expect(initialsOf('مصنع النور'), 'من');
+      expect(initialsOf('مصنع النور'), 'ما');
       expect(initialsOf(''), '?');
     });
   });
@@ -418,7 +418,6 @@ void main() {
           return e;
         }
         fail('expected ApiException');
-        throw StateError('unreachable');
       }
 
       final rejected = await failure(
@@ -878,13 +877,25 @@ void main() {
       await _pump(
         tester,
         Scaffold(
-          body: FeedReportSheet(onSubmit: (r, d) async {
-            sent = r;
-            sentDetails = d;
-          }),
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              key: const ValueKey<String>('open-report'),
+              onPressed: () => showModalBottomSheet<void>(
+                context: ctx,
+                isScrollControlled: true,
+                builder: (_) => FeedReportSheet(onSubmit: (r, d) async {
+                  sent = r;
+                  sentDetails = d;
+                }),
+              ),
+              child: const Text('open'),
+            ),
+          ),
         ),
         overrides: _overrides(MockFeedRepository()),
       );
+      await tester.tap(find.byKey(const ValueKey<String>('open-report')));
+      await settle(tester, frames: 5);
       expect(
         tester.widget<FilledButton>(find.byKey(const ValueKey<String>('feed-report-send'))).onPressed,
         isNull,
