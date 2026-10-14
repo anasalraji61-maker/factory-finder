@@ -18,6 +18,7 @@ from ff_tracking.adapters.real import LicensedProviderStub
 from ff_tracking.api.routes import router
 from ff_tracking.config import Settings
 from ff_tracking.domain.errors import DomainError, RefreshThrottled, Unauthenticated
+from ff_tracking.obs import db_ready, install_observability, ready_response
 from ff_tracking.repository import ShipmentRepository, make_engine
 from ff_tracking.service import ShipmentService
 
@@ -51,7 +52,7 @@ def create_app(
 
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
-        if token and request.url.path != "/health" and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
+        if token and request.url.path not in ("/health", "/ready") and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
@@ -73,7 +74,12 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "tracking", "version": __version__}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("tracking", {"database": await db_ready(repo.engine)})
+
     app.include_router(router)
+    install_observability(app, "tracking")
     return app
 
 

@@ -19,3 +19,7 @@ cd services/geo && ../../.venv/bin/python -m uvicorn ff_geo.main:app --port 8103
 - Arabic search normalization: strips diacritics/tatweel, unifies أإآ->ا, ى->ي, ة->ه.
 - Distances are estimates: road = straight-line x country road factor; sea = lane-graph approximation.
 - Env (prefix `FF_GEO_`): `PORT`, `DEFAULT_ROAD_FACTOR`. No network access anywhere.
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): 503 if the bundled dataset fails to load. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

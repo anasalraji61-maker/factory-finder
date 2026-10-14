@@ -11,3 +11,7 @@ Phase 5 demand matching with a **human in the loop** (CLAUDE.md rule 7). Contrac
 Run: `uvicorn ff_demand.main:app --port 8110` (from `src/`). Test: `../../.venv/bin/python -m pytest -q`.
 
 Env (prefix `FF_DEMAND_`): `ENABLED` (default **false**, kill-switch), `DAILY_CAP` (20), `DATABASE_URL`, `SOURCING_BASE_URL`, `USE_MOCK_SOURCING`, `MAX_CANDIDATES`, `SIGNAL_SOURCE` (mock); shared `FF_INTERNAL_TOKEN`.
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

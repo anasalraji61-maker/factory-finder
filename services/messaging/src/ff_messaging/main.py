@@ -17,6 +17,7 @@ from ff_messaging.domain.safety import (
     ContentPolicy,
     load_default_abuse_terms,
 )
+from ff_messaging.obs import db_ready, install_observability, ready_response
 from ff_messaging.persistence.database import Database
 from ff_messaging.realtime.hub import ConversationHub
 from ff_messaging.service import MessagingService
@@ -109,7 +110,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "messaging", "version": VERSION}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("messaging", {"database": await db_ready(db.engine)})
+
     app.include_router(router)
+    install_observability(app, "messaging")
     return app
 
 

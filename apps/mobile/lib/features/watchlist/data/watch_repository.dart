@@ -17,6 +17,13 @@ abstract class WatchlistRepository {
     Money? currentPrice,
   });
 
+  /// Saves a search (`SearchQuery` body of POST /v1/watchlist). Idempotent.
+  Future<WatchItem> addSearch(
+    Map<String, dynamic> search, {
+    String? title,
+    String? titleAr,
+  });
+
   Future<void> remove(String watchId);
   Future<AlertPage> alerts({bool unreadOnly = false});
   Future<PriceAlert> markRead(String alertId);
@@ -46,6 +53,16 @@ class LiveWatchlistRepository implements WatchlistRepository {
       if (dropThresholdPct != null && dropThresholdPct.isNotEmpty)
         'drop_threshold_pct': dropThresholdPct,
     });
+    return WatchItem.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  @override
+  Future<WatchItem> addSearch(
+    Map<String, dynamic> search, {
+    String? title,
+    String? titleAr,
+  }) async {
+    final data = await _api.post('/v1/watchlist', body: {'search': search});
     return WatchItem.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
@@ -150,6 +167,32 @@ class MockWatchlistRepository implements WatchlistRepository {
       baselinePrice: currentPrice,
       currentPrice: currentPrice,
       available: true,
+      createdAt: _clock(),
+      lastCheckedAt: _clock(),
+    );
+    _watches.add(w);
+    return w;
+  }
+
+  @override
+  Future<WatchItem> addSearch(
+    Map<String, dynamic> search, {
+    String? title,
+    String? titleAr,
+  }) async {
+    final key = search.toString();
+    for (final w in _watches) {
+      if (w.type == 'search' && w.search != null && w.search.toString() == key) {
+        return w; // idempotent per target
+      }
+    }
+    final w = WatchItem(
+      id: 'wat_${(++_seq).toString().padLeft(3, '0')}',
+      type: 'search',
+      search: Map<String, dynamic>.from(search),
+      title: title,
+      titleAr: titleAr,
+      resultCount: 0,
       createdAt: _clock(),
       lastCheckedAt: _clock(),
     );

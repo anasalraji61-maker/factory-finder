@@ -13,6 +13,7 @@ from ff_trust.api import errors
 from ff_trust.api.routes import router
 from ff_trust.cache import TTLCache
 from ff_trust.config import ScoringConfig, Settings
+from ff_trust.obs import install_observability, ready_response
 from ff_trust.service import TrustService
 
 
@@ -34,7 +35,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
     async def internal_token(request: Request, call_next):
         if (
             settings.internal_token
-            and request.url.path != "/health"
+            and request.url.path not in ("/health", "/ready")
             and not hmac.compare_digest(request.headers.get("x-internal-token", ""), settings.internal_token)
         ):
             return JSONResponse({"error": {"code": "forbidden", "message": "Invalid internal token", "details": {}}}, status_code=403)
@@ -44,7 +45,12 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": SERVICE_NAME, "version": __version__}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("trust", {})
+
     app.include_router(router)
+    install_observability(app, "trust")
     return app
 
 

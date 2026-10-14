@@ -14,3 +14,7 @@ Normalized statuses (booked ... delivered), bilingual event timeline, progress %
 | `FF_TRACKING_PROVIDER` | `mock` |
 | `FF_TRACKING_PROVIDER_API_KEY` | empty |
 | `FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS` | `60` |
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

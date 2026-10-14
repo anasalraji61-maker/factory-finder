@@ -1,8 +1,9 @@
 """Gateway app factory."""
 
+import asyncio
+import json
 import logging
 import re
-import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -16,13 +17,16 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway import SERVICE_NAME, __version__
 from ff_gateway.api import admin, admin_demand, auth, me, proxy, ws
+from ff_gateway.api.deps import bearer_token
 from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
+from ff_gateway.domain.client_ip import client_ip
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
 from ff_gateway.domain.rate_limit import RateLimiter
 from ff_gateway.domain.security import TokenService
+from ff_gateway.obs import db_ready, install_observability, ready_response
 
 log = logging.getLogger("ff_gateway")
 
@@ -84,7 +88,10 @@ def create_app(
         if settings.home_client == "mock"
         else HttpHomeClient(http, settings.upstream_map())
     )
-    limiter = RateLimiter(clock)
+    limiter = RateLimiter(clock, max_keys=settings.rate_limit_max_keys)
+    trusted_nets = settings.trusted_proxy_networks()  # fails at startup on a bad CIDR
+    app.state.engine = engine
+    write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 
     @app.exception_handler(GatewayError)
     async def _gw(_: Request, e: GatewayError) -> JSONResponse:
@@ -118,24 +125,56 @@ def create_app(
                 if auth_route
                 else settings.rate_limit_per_minute
             )
-            ip = request.client.host if request.client else "unknown"
+            peer = request.client.host if request.client else None
+            ip = client_ip(peer, request.headers.get("x-forwarded-for"), trusted_nets)
             wait = limiter.check(f"{'auth' if auth_route else 'api'}:{ip}", limit)
             if wait is not None:
                 e = RateLimited(wait, limit)
                 return _error(e.status_code, e.code, e.message, e.details, e.headers)
+            ulimit = settings.user_write_rate_limit_per_minute
+            if ulimit > 0 and request.method in write_methods and not auth_route:
+                uid = None
+                if (tok := bearer_token(request)) is not None:
+                    try:  # invalid tokens are left to the route (401); the IP limit already applied
+                        uid = app.state.tokens.decode(tok, "access")
+                    except Exception:
+                        uid = None
+                if uid:
+                    wait = limiter.check(f"user:{uid}", ulimit)
+                    if wait is not None:
+                        e = RateLimited(wait, ulimit)
+                        return _error(e.status_code, e.code, e.message, e.details, e.headers)
         return await call_next(request)
-
-    @app.middleware("http")
-    async def request_id(request: Request, call_next):
-        rid = request.headers.get("x-request-id") or uuid.uuid4().hex
-        request.state.request_id = rid
-        response = await call_next(request)
-        response.headers["X-Request-Id"] = rid
-        return response
 
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": SERVICE_NAME, "version": __version__}
+
+    probe_cache: dict[str, object] = {"at": None, "result": {}}
+
+    async def _probe(name: str, base: str) -> tuple[str, bool]:
+        try:
+            r = await http.get(base.rstrip("/") + "/health", timeout=2.0)
+            return name, r.status_code == 200
+        except Exception:
+            return name, False
+
+    @app.get("/ready")
+    async def ready():
+        db_ok = await db_ready(engine)
+        now = clock.monotonic()
+        at = probe_cache["at"]
+        if at is None or now - at > 5.0:  # type: ignore[operator]  # cache: /ready is public
+            results = await asyncio.gather(
+                *(_probe(n, u) for n, u in settings.upstream_map().items())
+            )
+            probe_cache["result"], probe_cache["at"] = dict(results), now
+        ups: dict[str, bool] = dict(probe_cache["result"])  # type: ignore[arg-type]
+        resp = ready_response("gateway", {"database": db_ok})
+        body = {**json.loads(resp.body), "upstreams": ups}
+        if db_ok and not all(ups.values()):
+            body["status"] = "degraded"
+        return JSONResponse(body, status_code=resp.status_code)
 
     app.include_router(auth.router)
     app.include_router(me.router)
@@ -157,6 +196,7 @@ def create_app(
         CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"],
         expose_headers=["X-Request-Id"], allow_credentials=False,
     )  # fmt: skip
+    install_observability(app, "gateway", trust_user_header=False)  # outermost
     return app
 
 

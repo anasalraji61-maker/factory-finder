@@ -1,10 +1,14 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
+import 'package:factory_finder/features/discover/data/saved_search.dart';
+import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,6 +42,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (result != null) setState(() => _query = result);
   }
 
+  void _snack(String text) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _saveSearch() async {
+    final q = _query.copyWith(query: _controller.text.trim());
+    final emptyText = context.tr('compare.search_empty');
+    final savedText = context.tr('compare.search_saved');
+    final loginText = context.tr('watch.login_required');
+    final failText = context.tr('watch.failed');
+    if (!canSaveSearch(q)) {
+      _snack(emptyText);
+      return;
+    }
+    try {
+      await ref.read(watchlistRepositoryProvider).addSearch(
+            savedSearchPayload(q),
+            title: savedSearchTitle(q),
+            titleAr: savedSearchTitle(q),
+          );
+      if (!mounted) return;
+      ref.invalidate(watchlistProvider);
+      _snack(savedText);
+    } on ApiException catch (e) {
+      if (mounted) _snack(e.isUnauthorized ? loginText : failText);
+    } catch (_) {
+      if (mounted) _snack(failText);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final results = ref.watch(listingsProvider(_query));
@@ -48,6 +84,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       context.tr('discover.sort.trust'),
     ];
     return Scaffold(
+      bottomNavigationBar: const CompareTray(),
       appBar: AppBar(
         title: TextField(
           controller: _controller,
@@ -60,6 +97,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: context.tr('compare.save_search'),
+            onPressed: _saveSearch,
+            icon: const Icon(Icons.bookmark_add_outlined),
+          ),
           IconButton(
             tooltip: context.tr('discover.filters'),
             onPressed: _openFilters,

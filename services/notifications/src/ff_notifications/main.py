@@ -15,6 +15,7 @@ from ff_notifications.api.routes import router
 from ff_notifications.clients.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
 from ff_notifications.config import Settings
 from ff_notifications.errors import ApiError
+from ff_notifications.obs import db_ready, install_observability, ready_response
 from ff_notifications.persistence.store import Store
 from ff_notifications.service import NotificationService
 
@@ -88,7 +89,12 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "notifications", "version": VERSION}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("notifications", {"database": await db_ready(store.engine)})
+
     app.include_router(router)
+    install_observability(app, "notifications")
     return app
 
 

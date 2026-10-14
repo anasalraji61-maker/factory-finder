@@ -18,7 +18,9 @@ def current_user_id(request: Request) -> str:
     token = bearer_token(request)
     if token is None:
         raise AuthenticationRequired()
-    return request.app.state.tokens.decode(token, "access")
+    uid = request.app.state.tokens.decode(token, "access")
+    request.state.user_id = uid  # picked up by the request log
+    return uid
 
 
 async def current_user(request: Request) -> User:

@@ -17,6 +17,7 @@ from ff_rfq.clients.sourcing import HttpSourcingClient, MockSourcingClient, Sour
 from ff_rfq.config import Settings
 from ff_rfq.db import make_engine
 from ff_rfq.domain.errors import DomainError
+from ff_rfq.obs import db_ready, install_observability, ready_response
 from ff_rfq.service import RfqService
 
 
@@ -49,7 +50,7 @@ def create_app(
 
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
-        if token and request.url.path != "/health" and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
+        if token and request.url.path not in ("/health", "/ready") and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token):
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
@@ -70,7 +71,12 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "rfq", "version": __version__}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("rfq", {"database": await db_ready(engine)})
+
     app.include_router(router)
+    install_observability(app, "rfq")
     return app
 
 

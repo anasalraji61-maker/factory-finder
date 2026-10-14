@@ -41,6 +41,11 @@ def resolve_upstream(path: str) -> str | None:
     return None
 
 
+def matched_prefix(path: str) -> str | None:
+    """Routing-table prefix for a path (low-cardinality label for logs)."""
+    return next((p for p in PREFIX_TO_UPSTREAM if _under(path, p)), None)
+
+
 def is_public(method: str, path: str) -> bool:
     path = path.rstrip("/") or "/"
     if path == "/health" or _under(path, "/v1/auth"):

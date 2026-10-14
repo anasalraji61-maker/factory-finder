@@ -12,6 +12,7 @@ from ff_assistant.api.routes import router
 from ff_assistant.clients import Clients, build_http_clients, build_mock_clients
 from ff_assistant.config import Settings, get_settings
 from ff_assistant.llm import LlmClient, build_llm
+from ff_assistant.obs import install_observability, ready_response
 from ff_assistant.service import Assistant
 
 
@@ -53,7 +54,12 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "assistant", "version": __version__}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("assistant", {})
+
     app.include_router(router)
+    install_observability(app, "assistant")
     return app
 
 

@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     upstream_timeout_seconds: float = 15.0
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300
+    # Per authenticated user on write routes (POST/PUT/PATCH/DELETE outside /v1/auth); 0 disables.
+    user_write_rate_limit_per_minute: int = 120
+    rate_limit_max_keys: int = 50_000  # cap on limiter memory (oldest windows are evicted)
+    # FF_GATEWAY_TRUSTED_PROXIES: comma-separated CIDRs/IPs of reverse proxies whose
+    # X-Forwarded-For is honoured (only when the direct peer is in this list). Empty = never.
+    trusted_proxies: str = ""
     auth_rate_limit_per_minute: int = 30
     cors_origins: list[str] = Field(
         default_factory=list
@@ -49,6 +55,11 @@ class Settings(BaseSettings):
     admin_dir: str | None = None  # FF_GATEWAY_ADMIN_DIR override (default: <repo>/apps/admin)
     home_client: str = "http"  # http | mock
     bcrypt_rounds: int = 12
+
+    def trusted_proxy_networks(self) -> list:
+        from ff_gateway.domain.client_ip import parse_networks
+
+        return parse_networks(self.trusted_proxies)
 
     def resolved_secret(self) -> str:
         """Configured secret or an ephemeral per-process one (tokens die on restart)."""

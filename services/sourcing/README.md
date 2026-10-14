@@ -41,3 +41,7 @@ limit, cache TTL, honest UA, ToS note, kill-switch env) + `HttpProviderAdapter`.
 Alibaba Open Platform skeleton (assumed shape, replace `tests/fixtures/*.json` with real recordings).
 Enable with `FF_SOURCING_ADAPTERS=alibaba_openapi`; extra env: `ALIBABA_ACCESS_TOKEN`, `ALIBABA_OPENAPI_DISABLED`,
 `KILL_SWITCH` (all real adapters). A failing real adapter yields mock results plus `sources[].warning`.
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

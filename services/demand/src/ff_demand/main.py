@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ff_demand.config import Settings
 from ff_demand.errors import ApiError, NotFound, Unauthenticated
+from ff_demand.obs import db_ready, install_observability, ready_response
 from ff_demand.service import DemandService
 from ff_demand.signals import MockSignalSource, RawSignal, SignalSource
 from ff_demand.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
@@ -195,7 +196,12 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "demand", "version": VERSION}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("demand", {"database": await db_ready(store.engine)})
+
     app.include_router(router)
+    install_observability(app, "demand")
     return app
 
 

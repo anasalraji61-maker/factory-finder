@@ -2,7 +2,9 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/discover/data/compare_logic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 String unitLabel(BuildContext context, String unit) {
@@ -11,19 +13,37 @@ String unitLabel(BuildContext context, String unit) {
   return label == key ? unit : label;
 }
 
-class ListingCard extends StatelessWidget {
+/// Adds/removes [l] from the compare tray; warns when the tray is full.
+void toggleCompare(BuildContext context, WidgetRef ref, Listing l) {
+  final result = ref.read(compareProvider.notifier).toggle(l);
+  if (result == CompareToggle.full) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr('compare.full', {'n': '${CompareNotifier.maxItems}'}),
+        ),
+      ),
+    );
+  }
+}
+
+class ListingCard extends ConsumerWidget {
   const ListingCard({super.key, required this.listing});
 
   final Listing listing;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inCompare = ref.watch(compareProvider).any((x) => x.id == listing.id);
     final lang = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final l = listing;
     return AppCard(
       padding: EdgeInsets.zero,
       onTap: () => context.push('/listing/${l.id}'),
+      onLongPress: () => toggleCompare(context, ref, l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -36,6 +56,31 @@ class ListingCard extends StatelessWidget {
                   url: l.images.isEmpty ? null : l.images.first,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(AppRadius.md),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: 6,
+                  end: 6,
+                  child: Tooltip(
+                    message: context.tr(inCompare ? 'compare.remove' : 'compare.add'),
+                    child: Material(
+                      color: inCompare
+                          ? theme.colorScheme.primary
+                          : Colors.black.withOpacity(0.45),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => toggleCompare(context, ref, l),
+                        child: Padding(
+                          padding: const EdgeInsets.all(5),
+                          child: Icon(
+                            inCompare ? Icons.check : Icons.compare_arrows,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 if (l.condition != ItemCondition.brandNew)

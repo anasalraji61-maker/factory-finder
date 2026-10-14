@@ -18,3 +18,7 @@ estimator). Quotes feed the main-leg line (midpoint, range from the quote, never
 source+timestamp); any error falls back to the tables and adds an assumption line. Env: `FF_LOGISTICS_FREIGHT_PROVIDER`
 (mock|http), `_FREIGHT_URL`, `_FREIGHT_API_KEY`, `_FREIGHT_DISABLED`, `FF_LOGISTICS_KILL_SWITCH`, `_FREIGHT_MIN_INTERVAL_S`,
 `_FREIGHT_CACHE_TTL_SECONDS`, `_FREIGHT_MAX_CALLS_PER_QUOTE`.
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

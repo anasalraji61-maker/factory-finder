@@ -14,6 +14,18 @@ services:
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-[]}
+      FF_GATEWAY_ADMIN_TOKEN: ${FF_GATEWAY_ADMIN_TOKEN:-}
+    depends_on:
+      sourcing: {condition: service_healthy}
+      logistics: {condition: service_healthy}
+      trust: {condition: service_healthy}
+      rfq: {condition: service_healthy}
+      messaging: {condition: service_healthy}
+      tracking: {condition: service_healthy}
+      notifications: {condition: service_healthy}
+      assistant: {condition: service_healthy}
+      demand: {condition: service_healthy}
+      geo: {condition: service_healthy}
     restart: unless-stopped
     healthcheck:
       test:
@@ -24,6 +36,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
   sourcing:
     build:
       context: .
@@ -44,6 +57,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8101'
   logistics:
@@ -65,6 +79,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8102'
   geo:
@@ -85,6 +100,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8103'
   trust:
@@ -105,6 +121,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8104'
   rfq:
@@ -130,6 +147,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8105'
   messaging:
@@ -154,6 +172,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8106'
   tracking:
@@ -178,6 +197,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8107'
   notifications:
@@ -203,6 +223,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8108'
   assistant:
@@ -228,6 +249,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8109'
   demand:
@@ -255,6 +277,7 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+      start_period: 20s
     expose:
     - '8110'
   # Optional PostgreSQL (not started by default). Usage:

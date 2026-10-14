@@ -4,6 +4,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
+import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +61,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      bottomNavigationBar: const CompareTray(),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {

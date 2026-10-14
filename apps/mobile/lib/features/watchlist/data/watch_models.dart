@@ -29,6 +29,7 @@ class WatchItem {
     required this.id,
     this.type = 'listing',
     this.listingId,
+    this.search,
     this.targetPrice,
     this.dropThresholdPct = '5',
     this.active = true,
@@ -45,6 +46,9 @@ class WatchItem {
   final String id;
   final String type; // 'listing' | 'search'
   final String? listingId;
+
+  /// Saved-search query (`SearchQuery` in notifications.yaml) for type 'search'.
+  final Map<String, dynamic>? search;
   final Money? targetPrice;
   final String dropThresholdPct;
   final bool active;
@@ -79,6 +83,7 @@ class WatchItem {
         id: (j['id'] ?? '').toString(),
         type: (j['type'] ?? 'listing').toString(),
         listingId: _str(j['listing_id']),
+        search: j['search'] is Map ? Map<String, dynamic>.from(j['search'] as Map) : null,
         targetPrice: _money(j['target_price']),
         dropThresholdPct: (j['drop_threshold_pct'] ?? '5').toString(),
         active: j['active'] is bool ? j['active'] as bool : true,

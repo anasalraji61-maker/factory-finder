@@ -25,3 +25,9 @@ With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pen
 - CORS: no origins allowed unless `FF_GATEWAY_CORS_ORIGINS` (JSON list) is set.
 - WebSocket auth accepts `?token=<access jwt>` (clients cannot set headers); uvicorn access logs are redacted, any proxy in front must scrub it too.
 - Verified `X-Supplier-Id` (admin-verified claims only) is forwarded to messaging and rfq; client-sent values are never forwarded.
+
+## Ops (logging / readiness / rate limits)
+- `GET /ready`: 503 if the database is down; otherwise 200 with `checks` and `upstreams` as `{name: up|down boolean}` only (no URLs; probed via each upstream `/health`, cached 5 s). `status` is `degraded` when any upstream is down.
+- Logs: one JSON line per HTTP request (`FF_LOG_FORMAT=text` for dev); `X-Request-Id` is accepted (sanitised) or generated, returned, and forwarded to upstreams. Path is the route template (proxied routes log as `/v1/<prefix>/*`); query strings, tokens and Authorization are never logged. `user_id` comes only from the verified JWT, never from client headers.
+- Client IP: `FF_GATEWAY_TRUSTED_PROXIES` (comma-separated CIDRs/IPs, default empty). `X-Forwarded-For` is used only when the direct peer is in that list (right-most non-proxy hop); otherwise the peer. Invalid CIDRs fail startup.
+- Limits: `RATE_LIMIT_PER_MINUTE`/`AUTH_RATE_LIMIT_PER_MINUTE` per IP, plus `USER_WRITE_RATE_LIMIT_PER_MINUTE` (default 120, 0 = off) per verified user on POST/PUT/PATCH/DELETE outside `/v1/auth`. Limiter memory is capped by `RATE_LIMIT_MAX_KEYS` (default 50000; expired windows swept, oldest evicted). Still per process: use a shared store for multiple replicas.

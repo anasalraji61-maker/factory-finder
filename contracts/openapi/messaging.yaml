@@ -4,6 +4,32 @@ servers: [{url: http://localhost:8106}]
 paths:
   /health:
     get: {operationId: health, responses: {"200": {description: ok}}}
+  /ready:
+    get:
+      summary: Readiness (dependencies reachable)
+      description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, checks]
+                properties:
+                  status: {type: string, enum: [ready]}
+                  service: {type: string, const: messaging}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+        "503":
+          description: Not ready (a required dependency such as the database is down)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: unavailable}
+                  service: {type: string, const: messaging}
+                  checks: {type: object, additionalProperties: {type: boolean}}
   /v1/conversations:
     get:
       operationId: listConversations

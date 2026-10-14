@@ -1,0 +1,7 @@
+2026-10-14 | Per-service self-contained `obs.py` (pure ASGI middleware, copied) | Rule 1 forbids cross-module imports and packages/py-common does not exist; pure ASGI also leaves WebSockets untouched.
+2026-10-14 | Log `path` = route template (`<unmatched>` for 404s; gateway proxy = `/v1/<prefix>/*`) | Avoids logging ids/query strings and keeps cardinality low.
+2026-10-14 | Gateway logs `user_id` only from the verified JWT; backends from `X-User-Id` (set by gateway) | Client-supplied identity headers must not pollute gateway logs.
+2026-10-14 | `/ready` is exempt from the internal-token guard; gateway returns 200 `degraded` when only upstreams are down, 503 only if its own DB is down | LB should not eject the gateway because one backend is down; probes need no secrets. Upstream results cached 5 s (public endpoint).
+2026-10-14 | XFF honoured only if direct peer in FF_GATEWAY_TRUSTED_PROXIES; right-most non-trusted hop; malformed chain -> peer | Left entries are client-forgeable.
+2026-10-14 | Limiter bounded by max_keys: sweep expired once per window, then evict oldest windows (fails open for evicted keys) | Prevents unbounded growth under IP-rotating floods; still per-process (Redis remains the multi-replica answer).
+2026-10-14 | Per-user write limit default 120/min keyed on verified JWT sub, only for non-auth write routes | Generous default; invalid tokens fall through to the IP limit and route 401.

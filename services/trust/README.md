@@ -8,3 +8,7 @@ Run: `uvicorn ff_trust.main:app --port 8104`. Test: `../../.venv/bin/python -m p
 
 Env: `FF_TRUST_ADAPTER` (mock default; alibaba/made_in_china are disabled stubs), `FF_TRUST_CACHE_TTL_SECONDS` (300), `FF_TRUST_MAX_BATCH` (50), `FF_INTERNAL_TOKEN` (optional).
 Mock ids: any id works (sha256-derived); curated `sup_demo_gold|avg|scam|sanctioned`.
+
+
+## Ops (logging / readiness)
+`GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

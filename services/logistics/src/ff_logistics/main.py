@@ -9,6 +9,7 @@ from .api.routes import router
 from .clients.geo import GeoClient, HttpGeo, MockGeo
 from .config import Settings
 from .errors import install_handlers
+from .obs import install_observability, ready_response
 
 
 def create_app(settings: Settings | None = None, geo: GeoClient | None = None,
@@ -41,7 +42,12 @@ def create_app(settings: Settings | None = None, geo: GeoClient | None = None,
     async def health():
         return {"status": "ok", "service": "logistics", "version": __version__}
 
+    @app.get("/ready")
+    async def ready():
+        return ready_response("logistics", {})
+
     app.include_router(router)
+    install_observability(app, "logistics")
     return app
 
 

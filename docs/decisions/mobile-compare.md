@@ -1,0 +1,3 @@
+2026-10-14 | Compare tray is provider state (`compareProvider`, max 3), shown as bottomNavigationBar on Discover/Search; ListingCard gets a compare icon + long-press | simplest entry points that keep the card overflow-safe.
+2026-10-14 | Compare landed cost = prefill + calculate per listing at MOQ quantity, recommended option (else cheapest midpoint); best = lowest per-unit midpoint | MOQs differ, so totals alone are not comparable; always labeled as estimate with range.
+2026-10-14 | Saved search = POST /v1/watchlist {search: SearchQuery} via new `WatchlistRepository.addSearch`; `WatchItem.search` added (additive) | contract already supports it; no contract change.

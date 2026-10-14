@@ -25,7 +25,10 @@ SERVICES = {  # name: (port, module)
     "messaging": (8106, "ff_messaging.main:app"), "tracking": (8107, "ff_tracking.main:app"),
     "notifications": (8108, "ff_notifications.main:app"), "assistant": (8109, "ff_assistant.main:app"),
 }  # fmt: skip
-GW = "http://localhost:8000"
+# FF_E2E_BASE_URL=http://localhost:8000 -> run against an already running stack (e.g. docker compose);
+# no local processes are spawned and the steps that need direct (unpublished) service ports are skipped.
+REMOTE = os.environ.get("FF_E2E_BASE_URL", "").rstrip("/")
+GW = REMOTE or "http://localhost:8000"
 RESULTS: list[tuple[str, bool, str]] = []
 
 
@@ -276,6 +279,8 @@ def scenario() -> None:
         assert w["id"]
         assert items(ok(c.get("/v1/watchlist", headers=h("buyer"))))
         r = c.post("/v1/alerts/evaluate", headers=h("buyer"), json={})
+        if r.status_code in (401, 403, 404) and REMOTE:
+            return  # internal route is not published in compose; covered by the local run
         if r.status_code in (401, 403, 404):  # blocked at the gateway by design -> internal route
             r = httpx.post("http://localhost:8108/v1/alerts/evaluate", json={"owner_id": users["buyer"]["id"]}, timeout=30)
         ok(r)
@@ -292,6 +297,8 @@ def scenario() -> None:
     step("assistant: Arabic query -> listings + quote", assistant)
 
     def inject():
+        if REMOTE:
+            return  # needs direct access to tracking/messaging ports
         r = httpx.get("http://localhost:8107/v1/shipments", headers={"X-User-Id": users["buyer"]["id"]})
         assert items(ok(r)), "buyer's shipment not visible with injected X-User-Id"
         r = httpx.get("http://localhost:8107/v1/shipments", headers={"X-User-Id": users["supplier"]["id"]})
@@ -305,8 +312,20 @@ def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="ff-e2e-"))
     procs: list[subprocess.Popen] = []
     try:
-        procs = start_services(tmp)
-        wait_health(tmp)
+        if REMOTE:
+            deadline = time.time() + 120
+            while True:
+                try:
+                    if httpx.get(f"{GW}/health", timeout=3).status_code == 200:
+                        break
+                except httpx.HTTPError:
+                    pass
+                if time.time() > deadline:
+                    raise SystemExit(f"gateway not healthy at {GW}")
+                time.sleep(1)
+        else:
+            procs = start_services(tmp)
+            wait_health(tmp)
         print("all services healthy")
         scenario()
     finally:

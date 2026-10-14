@@ -8,6 +8,7 @@ from .api.errors import install_error_handlers
 from .api.routes import router
 from .clients.trust import HttpTrustClient, MockTrustClient, NullTrustClient, TrustClient
 from .config import Settings
+from .obs import install_observability, ready_response
 from .service import SourcingService
 
 
@@ -40,6 +41,11 @@ def create_app(
     async def health() -> dict:
         return {"status": "ok", "service": "sourcing", "version": __version__}
 
+    @app.get("/ready")
+    async def ready() -> object:
+        return ready_response("sourcing", {})
+
+    install_observability(app, "sourcing")
     return app
 
 

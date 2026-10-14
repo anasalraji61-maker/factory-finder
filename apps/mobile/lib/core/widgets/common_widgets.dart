@@ -5,10 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AppCard extends StatelessWidget {
-  const AppCard({super.key, required this.child, this.onTap, this.padding});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.onLongPress,
+    this.padding,
+  });
 
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final EdgeInsetsGeometry? padding;
 
   @override
@@ -22,6 +29,7 @@ class AppCard extends StatelessWidget {
       child: InkWell(
         borderRadius: radius,
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           padding: padding ?? const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
