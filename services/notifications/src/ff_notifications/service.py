@@ -16,6 +16,7 @@ from ff_notifications.adapters.push import PushProvider
 from ff_notifications.clients.sourcing import SourcingClient, SourcingUnavailableError
 from ff_notifications.config import Settings
 from ff_notifications.delivery import DeliveryPipeline, load_prefs
+from ff_notifications.domain import verification as ver
 from ff_notifications.domain.delivery import CHANNELS, Prefs, QuietHours, parse_hhmm, valid_timezone
 from ff_notifications.domain.models import (
     Alert,
@@ -33,7 +34,7 @@ from ff_notifications.domain.models import (
 from ff_notifications.domain.money import Money
 from ff_notifications.domain.policy import CooldownPolicy, decide
 from ff_notifications.domain.rules import RuleConfig, equivalence_query, evaluate
-from ff_notifications.errors import Forbidden, Invalid, NotFound
+from ff_notifications.errors import Conflict, Forbidden, Invalid, NotFound, TooManyRequests
 from ff_notifications.persistence.store import Store, watch_identity
 
 
@@ -61,6 +62,18 @@ _EMAIL_RE = re.compile(
 )
 
 
+def verification_text(code: str) -> tuple[str, str]:
+    """Bilingual, link-free verification mail."""
+    subject = "رمز التحقق / Verification code"
+    body = (
+        f"رمز التحقق الخاص بك: {code}\n"
+        "صالح لمدة 15 دقيقة. لا تشاركه مع أحد. إن لم تطلبه فتجاهل هذه الرسالة.\n\n"
+        f"Your verification code: {code}\n"
+        "Valid for 15 minutes. Do not share it. If you did not request it, ignore this message."
+    )
+    return subject, body
+
+
 class NotificationService:
     def __init__(
         self,
@@ -78,6 +91,7 @@ class NotificationService:
         self.email = email
         self.settings = settings
         self.clock = clock
+        self._vlock = asyncio.Lock()
         self.cooldown = CooldownPolicy(default=timedelta(hours=settings.cooldown_hours))
         self.rule_config = RuleConfig(Decimal(settings.equivalent_min_saving_pct))
         self.delivery = DeliveryPipeline(
@@ -282,7 +296,7 @@ class NotificationService:
         quiet_hours: dict[str, str] | None,
         timezone: str | None,
         language: Locale | None,
-        email: str | None,
+        digest_email: str | None = None,
     ) -> Prefs:
         current = await self.get_prefs(owner_id)
         merged = dict(current.channels)
@@ -308,23 +322,125 @@ class NotificationService:
                         "quiet_hours needs start/end as HH:MM", code="invalid_prefs"
                     ) from exc
                 qh = QuietHours(quiet_hours["start"], quiet_hours["end"])
-        if (
-            email is not None
-            and email != ""
-            and not (len(email) <= 254 and _EMAIL_RE.fullmatch(email))
-        ):
+        email = digest_email
+        if email and not (len(email) <= 254 and _EMAIL_RE.fullmatch(email)):
             raise Invalid("Invalid email address", code="invalid_prefs")
-        prefs = Prefs(
-            owner_id=owner_id,
-            channels=merged,
-            quiet_hours=qh,
-            timezone=tz,
-            language=language or current.language,
-            email=(email or None) if email is not None else current.email,
-            explicit=True,
-        )
-        await self.store.put_prefs(prefs)
+        async with self._vlock:
+            verified, pending = await self._apply_digest_email(owner_id, current, email)
+            prefs = Prefs(
+                owner_id=owner_id,
+                channels=merged,
+                quiet_hours=qh,
+                timezone=tz,
+                language=language or current.language,
+                digest_email=verified,
+                digest_email_pending=pending,
+                explicit=True,
+            )
+            await self.store.put_prefs(prefs)
         return prefs
+
+    # ------------------------------------------------------------ digest e-mail verification
+
+    async def _issue_code(self, owner_id: str, email: str, v: ver.Verification) -> None:
+        """Generate + store a fresh code for ``email`` and mail it (caller holds ``_vlock``)."""
+        now = self.clock()
+        window = now - timedelta(seconds=ver.SEND_WINDOW_SECONDS)
+        sends = tuple(t for t in v.sends if t > window)
+        if len(sends) >= ver.MAX_SENDS_PER_HOUR:
+            raise TooManyRequests(
+                "Too many verification codes requested; try again later", code="send_limit"
+            )
+        if self.email is None:  # provider off: nothing can be sent, keep pending without a code
+            await self.store.put_verification(ver.Verification(owner_id, email, sends=sends))
+            return
+        code, salt = ver.new_code(), ver.new_salt()
+        locked = v.locked_until if v.locked_until and v.locked_until > now else None
+        await self.store.put_verification(
+            ver.Verification(
+                owner_id=owner_id,
+                email=email,
+                salt=salt,
+                code_hash=ver.hash_code(salt, owner_id, email, code),
+                expires_at=now + timedelta(seconds=ver.CODE_TTL_SECONDS),
+                attempts=0,
+                locked_until=locked,
+                sends=(*sends, now),
+            )
+        )
+        subject, body = verification_text(code)
+        await self.email.send(email, subject, body)  # failure => user can resend (counted)
+
+    async def _apply_digest_email(
+        self, owner_id: str, current: Prefs, email: str | None
+    ) -> tuple[str | None, str | None]:
+        """Returns (verified, pending) after applying a requested digest address."""
+        if email is None:
+            return current.digest_email, current.digest_email_pending
+        v = await self.store.get_verification(owner_id) or ver.Verification(owner_id)
+        if email == "":
+            await self.store.put_verification(
+                ver.Verification(owner_id, sends=v.sends, locked_until=v.locked_until)
+            )
+            return None, None
+        same = lambda a: a is not None and a.casefold() == email.casefold()  # noqa: E731
+        if same(current.digest_email):
+            return current.digest_email, None
+        if same(current.digest_email_pending):
+            return None, current.digest_email_pending
+        await self._issue_code(owner_id, email, v)  # raises before anything changes
+        return None, email  # changing the address resets verification
+
+    async def verify_digest_email(self, owner_id: str, code: str) -> Prefs:
+        async with self._vlock:
+            now = self.clock()
+            prefs = await self.get_prefs(owner_id)
+            v = await self.store.get_verification(owner_id)
+            if (
+                v is None
+                or not prefs.digest_email_pending
+                or v.email is None
+                or v.email.casefold() != prefs.digest_email_pending.casefold()
+            ):
+                raise Conflict("No e-mail address is waiting for verification", code="no_pending")
+            if v.locked_until and v.locked_until > now:
+                raise TooManyRequests("Too many wrong codes; try again later", code="locked")
+            if v.locked_until:  # lock elapsed: fresh attempts
+                v = replace(v, locked_until=None, attempts=0)
+            attempts = v.attempts + 1
+            ok = ver.code_matches(v, code)
+            expired = v.expires_at is None or now >= v.expires_at
+            if not ok or expired:
+                lock = (
+                    now + timedelta(seconds=ver.LOCK_SECONDS)
+                    if attempts >= ver.MAX_ATTEMPTS
+                    else None
+                )
+                await self.store.put_verification(replace(v, attempts=attempts, locked_until=lock))
+                if lock:
+                    raise TooManyRequests("Too many wrong codes; try again later", code="locked")
+                if ok and expired:
+                    raise Invalid("Code expired; request a new one", code="code_expired")
+                raise Invalid("Invalid code", code="invalid_code")
+            await self.store.put_verification(
+                ver.Verification(owner_id, sends=v.sends)  # burn the code
+            )
+            done = replace(
+                prefs, digest_email=prefs.digest_email_pending, digest_email_pending=None
+            )
+            await self.store.put_prefs(done)
+            return done
+
+    async def resend_digest_code(self, owner_id: str) -> Prefs:
+        async with self._vlock:
+            prefs = await self.get_prefs(owner_id)
+            if not prefs.digest_email_pending:
+                raise Conflict("No e-mail address is waiting for verification", code="no_pending")
+            if self.email is None:
+                raise Conflict("E-mail delivery is not enabled", code="email_disabled")
+            v = await self.store.get_verification(owner_id) or ver.Verification(owner_id)
+            await self._issue_code(owner_id, prefs.digest_email_pending, v)
+            return prefs
 
     async def send_digests(self) -> int:
         await self.delivery.enqueue_digests()

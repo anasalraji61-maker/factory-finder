@@ -24,3 +24,11 @@ class Unauthenticated(ApiError):
 
 class Invalid(ApiError):
     status, code = 422, "validation_error"
+
+
+class TooManyRequests(ApiError):
+    status, code = 429, "too_many_requests"
+
+
+class Conflict(ApiError):
+    status, code = 409, "conflict"

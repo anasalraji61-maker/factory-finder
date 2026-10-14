@@ -26,6 +26,7 @@ from ff_notifications.dburl import normalize_database_url
 from ff_notifications.domain.delivery import Delivery, DeliveryStatus, Prefs
 from ff_notifications.domain.models import Alert, Device, RuleKind, Watch
 from ff_notifications.domain.policy import AlertHistory
+from ff_notifications.domain.verification import Verification
 from ff_notifications.persistence import serde
 
 metadata = MetaData()
@@ -64,6 +65,12 @@ devices = Table(
 )
 prefs = Table(
     "notification_prefs",
+    metadata,
+    Column("owner_id", String(64), primary_key=True),
+    Column("doc", JSON, nullable=False),
+)
+email_verifications = Table(
+    "email_verifications",
     metadata,
     Column("owner_id", String(64), primary_key=True),
     Column("doc", JSON, nullable=False),
@@ -367,7 +374,33 @@ class Store:
     async def owners_with_email_prefs(self) -> list[Prefs]:
         async with self.engine.connect() as conn:
             rows = (await conn.execute(select(prefs))).mappings().all()
-        return [x for x in (serde.prefs_from_row(r) for r in rows) if x.email]
+        return [x for x in (serde.prefs_from_row(r) for r in rows) if x.digest_email]
+
+    async def get_verification(self, owner_id: str) -> Verification | None:
+        async with self.engine.connect() as conn:
+            row = (
+                (
+                    await conn.execute(
+                        select(email_verifications).where(
+                            email_verifications.c.owner_id == owner_id
+                        )
+                    )
+                )
+                .mappings()
+                .first()
+            )
+        return serde.verification_from_row(row) if row else None
+
+    async def put_verification(self, v: Verification) -> None:
+        doc = serde.verification_to_doc(v)
+        async with self._lock, self.engine.begin() as conn:
+            res = await conn.execute(
+                update(email_verifications)
+                .where(email_verifications.c.owner_id == v.owner_id)
+                .values(doc=doc)
+            )
+            if res.rowcount == 0:
+                await conn.execute(insert(email_verifications).values(owner_id=v.owner_id, doc=doc))
 
     # ------------------------------------------------------------------ deliveries
 

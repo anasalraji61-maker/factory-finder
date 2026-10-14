@@ -215,10 +215,10 @@ class DeliveryPipeline:
         if self.email is None:
             return await self._skip(d, "email_off")
         alerts = await self._alerts(d, prefs, EMAIL)
-        if not alerts or not prefs.email:
+        if not alerts or not prefs.digest_email:  # verified address only
             return await self._skip(d, "prefs_disabled")
         subject, body = digest_text(alerts, prefs.language or Locale.AR)
-        res = await self.email.send(prefs.email, subject, body)
+        res = await self.email.send(prefs.digest_email, subject, body)
         if res.sent:
             await self._finish(d, DeliveryStatus.SENT)
             return True

@@ -1,0 +1,3 @@
+media-data/*
+!media-data/.gitkeep
+*.db

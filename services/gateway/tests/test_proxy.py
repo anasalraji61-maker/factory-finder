@@ -11,6 +11,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/countries", "geo"), ("/v1/trust/suppliers/sup_1", "trust"), ("/v1/trust/suppliers:batch", "trust"),
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
+        ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
         ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
@@ -26,6 +27,9 @@ def test_resolve(path, upstream):
         ("GET", "/v1/fx/rates", True), ("GET", "/v1/hs/search", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
         ("POST", "/v1/search", False), ("GET", "/v1/trust/suppliers/s", False), ("GET", "/v1/requests", False),
         ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False),
+        ("GET", "/v1/media/files/abc.jpg", True), ("HEAD", "/v1/media/files/abc.jpg", True), ("POST", "/v1/media/images", False),
+        ("DELETE", "/v1/media/images/abc", False), ("POST", "/v1/media/files/abc.jpg", False), ("DELETE", "/v1/media/files/abc.jpg", False),
+        ("GET", "/v1/media/images/abc", False), ("GET", "/v1/media/filesx", False),
     ],
 )  # fmt: skip
 def test_public_policy(method, path, public):
@@ -269,3 +273,51 @@ def test_public_sourcing_routes_do_not_get_supplier_header(client, hdr, mock_ups
     )
     client.get("/v1/search", headers=hdr)
     assert "x-supplier-id" not in route.calls.last.request.headers
+
+
+def test_media_upload_requires_auth_and_forwards_multipart(make_client, mock_upstream):
+    c = make_client(internal_token="int-secret")
+    tok = c.post("/v1/auth/register", json={"email": "m@example.com", "password": "password123", "name": "M"}).json()
+    route = mock_upstream.post("http://localhost:8112/v1/media/images").mock(
+        return_value=httpx.Response(201, json={"id": "a" * 32})
+    )
+    files = {"file": ("p.png", b"\x89PNG-bytes", "image/png")}
+    assert c.post("/v1/media/images", files=files).status_code == 401 and not route.called
+    r = c.post(
+        "/v1/media/images", files=files, data={"kind": "avatar"},
+        headers={"Authorization": f"Bearer {tok['access_token']}", "X-User-Id": "usr_evil"},
+    )
+    assert r.status_code == 201
+    req = route.calls.last.request
+    assert req.headers["content-type"].startswith("multipart/form-data; boundary=")
+    assert req.headers["x-user-id"] == tok["user"]["id"] and req.headers["x-internal-token"] == "int-secret"
+    assert b"\x89PNG-bytes" in req.content and b'name="kind"' in req.content
+
+
+def test_media_delete_requires_auth(client, hdr, mock_upstream):
+    route = mock_upstream.delete(f"http://localhost:8112/v1/media/images/{'a' * 32}").mock(return_value=httpx.Response(204))
+    assert client.delete(f"/v1/media/images/{'a' * 32}").status_code == 401 and not route.called
+    assert client.delete(f"/v1/media/images/{'a' * 32}", headers=hdr).status_code == 204 and route.called
+
+
+def test_media_files_public_binary_and_security_headers_pass_through(client, mock_upstream):
+    png = b"\x89PNG\r\n\x1a\n" + bytes(range(256))
+    route = mock_upstream.get(f"http://localhost:8112/v1/media/files/{'a' * 32}.png").mock(
+        return_value=httpx.Response(
+            200, content=png,
+            headers={"Content-Type": "image/png", "Cache-Control": "public, max-age=31536000, immutable",
+                     "X-Content-Type-Options": "nosniff", "ETag": '"e1"', "Set-Cookie": "no=1"},
+        )
+    )
+    r = client.get(f"/v1/media/files/{'a' * 32}.png?w=200")  # no token
+    assert r.status_code == 200 and r.content == png
+    assert r.headers["x-content-type-options"] == "nosniff" and r.headers["content-type"] == "image/png"
+    assert "immutable" in r.headers["cache-control"] and r.headers["etag"] == '"e1"' and "set-cookie" not in r.headers
+    req = route.calls.last.request
+    assert req.url.params["w"] == "200" and "x-user-id" not in req.headers
+
+
+def test_media_traversal_is_rejected_at_gateway(client, mock_upstream):
+    route = mock_upstream.get(url__regex=r"http://localhost:8112/.*").mock(return_value=httpx.Response(200))
+    assert client.get("/v1/media/files/../../auth/me").status_code in (400, 404, 401)
+    assert not route.called

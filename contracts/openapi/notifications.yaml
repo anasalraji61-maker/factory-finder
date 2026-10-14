@@ -111,6 +111,24 @@ paths:
       responses:
         "200": {description: Saved, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/notification-prefs/verify-email:
+    post:
+      operationId: verifyDigestEmail
+      description: Promotes the pending digest address to verified when the code matches (15 min expiry; 5 wrong tries lock verification for 1 hour).
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerifyEmail"}}}}
+      responses:
+        "200": {description: Verified (digest_email set, digest_email_verified true), content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/notification-prefs/resend-code:
+    post:
+      operationId: resendDigestEmailCode
+      description: Mails a fresh code to the pending address (max 3 sends/hour/user, shared with address changes). Invalidates the previous code.
+      responses:
+        "200": {description: Sent, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
+        "409": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/alerts/digest:
     post:
       operationId: sendDigests
@@ -209,7 +227,10 @@ components:
         quiet_hours: {type: [object, "null"], properties: {start: {type: string, example: "22:00"}, end: {type: string, example: "07:00"}}}
         timezone: {type: string, example: Asia/Baghdad}
         language: {type: [string, "null"], enum: [ar, en, null]}
-        email: {type: [string, "null"]}
+        email: {type: [string, "null"], deprecated: true, description: "Deprecated alias of digest_email (the VERIFIED address only)."}
+        digest_email: {type: [string, "null"], description: "VERIFIED digest address; the only one the digest is ever sent to."}
+        digest_email_verified: {type: boolean}
+        digest_email_pending: {type: [string, "null"], description: "Masked (a***@e***.com) address awaiting its 6-digit code. The code is never returned."}
     NotificationPrefsUpdate:
       type: object
       properties:
@@ -218,4 +239,9 @@ components:
         clear_quiet_hours: {type: boolean}
         timezone: {type: string}
         language: {type: string, enum: [ar, en]}
-        email: {type: string}
+        email: {type: string, deprecated: true, description: "Deprecated alias of digest_email."}
+        digest_email: {type: string, maxLength: 254, description: "Set/change => becomes digest_email_pending, verification reset, a 6-digit code is mailed (max 3 sends/hour/user; 429 send_limit). Empty string clears. No-op if equal to the verified or pending address."}
+    VerifyEmail:
+      type: object
+      required: [code]
+      properties: {code: {type: string, pattern: "^[0-9]{6}$"}}

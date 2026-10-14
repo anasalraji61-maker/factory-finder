@@ -20,6 +20,7 @@ DEFAULT_UPSTREAMS: dict[str, str] = {
     "assistant": "http://localhost:8109",
     "demand": "http://localhost:8110",
     "payments": "http://localhost:8111",
+    "media": "http://localhost:8112",
 }
 
 

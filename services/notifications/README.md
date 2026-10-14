@@ -18,7 +18,15 @@ Env (prefix `FF_NOTIFICATIONS_`): `DATABASE_URL`, `SOURCING_BASE_URL`, `USE_MOCK
 
 ## Delivery (push / email digest) — all off by default
 - Devices: `POST/GET /v1/devices`, `DELETE /v1/devices/{id}`; max 10 active per user (422 `device_limit`), deduped by token, token never logged. Provider-reported invalid tokens deactivate the device (`active:false`); re-registering reactivates it.
-- Prefs: `GET/PUT /v1/notification-prefs` — channels per alert type (`in_app|push|email`), quiet hours (`HH:MM`, wraps midnight) in the user's IANA timezone (default Asia/Baghdad), language `ar|en` (else per-device locale), digest `email`. Re-read at send time. Quiet hours defer push to the window end (not an attempt). `in_app` never suppresses the inbox.
+- Prefs: `GET/PUT /v1/notification-prefs` — channels per alert type (`in_app|push|email`), quiet hours (`HH:MM`, wraps midnight) in the user's IANA timezone (default Asia/Baghdad), language `ar|en` (else per-device locale), digest `digest_email` (must be verified, see below). Re-read at send time. Quiet hours defer push to the window end (not an attempt). `in_app` never suppresses the inbox.
 - Pipeline (`delivery.py`): alerts commit first; `deliveries` rows have deterministic ids (idempotent), retry with exponential backoff (`DELIVERY_BACKOFF_BASE_SECONDS`/`_MAX_SECONDS`) up to `DELIVERY_MAX_ATTEMPTS`, then status `dead`. Processed right after evaluation and by the scheduler; failures never affect alert creation.
 - Providers: `FF_NOTIFY_PUSH=off|mock|fcm` (`MockPush`; `FcmPush` = FCM HTTP v1 + service-account JWT via `ServiceAccountTokenProvider`, needs `pip install .[fcm]`; UNVERIFIED against live FCM). `FF_NOTIFY_EMAIL=off|mock|smtp` (`MockEmail`; `SmtpEmail` skeleton, UNVERIFIED). FCM creds: `FF_NOTIFY_FCM_PROJECT_ID` + `FF_NOTIFY_FCM_CREDENTIALS_FILE` or `_JSON`; SMTP: `FF_NOTIFY_SMTP_HOST/PORT/USER/PASSWORD/FROM`.
 - Digest: `POST /v1/alerts/digest` (internal; also run by the scheduler) mails alerts of the last 24h where the user enabled `email`, after 08:00 local, once per local day.
+
+## Digest e-mail verification
+`PUT /v1/notification-prefs {digest_email}` stores the address as `digest_email_pending` (verification reset) and mails a 6-digit code
+(bilingual, no links; HMAC-SHA256 with per-record salt stored, never the code; 15 min expiry; 5 wrong tries lock 1 hour;
+3 sends/hour/user). `POST /v1/notification-prefs/verify-email {code}` promotes it; `POST /v1/notification-prefs/resend-code` resends.
+The digest is only ever sent to the verified `digest_email`. Unsubscribe = disable the `email` channel / clear `digest_email` in prefs
+(no public unsubscribe links). Legacy unverified `email` values are ignored. State lives in table `email_verifications` (migration 0003);
+limits are enforced per process (single replica; use a DB lock/Redis before scaling out).

@@ -25,6 +25,7 @@ SERVICES = {  # name: (port, module)
     "messaging": (8106, "ff_messaging.main:app"), "tracking": (8107, "ff_tracking.main:app"),
     "notifications": (8108, "ff_notifications.main:app"), "assistant": (8109, "ff_assistant.main:app"),
     "demand": (8110, "ff_demand.main:app"), "payments": (8111, "ff_payments.main:app"),
+    "media": (8112, "ff_media.main:app"),
 }  # fmt: skip
 ADMIN_TOKEN = os.environ.get("FF_E2E_ADMIN_TOKEN", "e2e-admin-token")  # local run: also configured on the spawned services
 # FF_E2E_BASE_URL=http://localhost:8000 -> run against an already running stack (e.g. docker compose);
@@ -78,6 +79,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE": "100000", "FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS": "3600",
         "FF_GATEWAY_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_PROVIDER": "mock",
         "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
+        "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
     }  # fmt: skip
     base_env.pop("FF_INTERNAL_TOKEN", None)
     base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
@@ -438,6 +440,38 @@ def scenario() -> None:
         assert r.status_code in (403, 404), f"unrelated user can read invoice: {r.status_code}"
 
     step("payments: commission invoice (idempotent, owner-only) via gateway", payments)
+
+    def media():
+        import struct
+        import zlib
+
+        def chunk(t: bytes, d: bytes) -> bytes:
+            return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+
+        raw = b"".join(b"\x00" + bytes([(x * 7 + y * 3 + int(sfx, 16)) % 256 for x in range(16) for _ in range(3)]) for y in range(16))
+        png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 16, 16, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+        files = {"file": ("photo.jpg", png, "image/jpeg")}  # name/type lie on purpose: magic bytes decide
+        r = c.post("/v1/media/images", files=files)
+        assert r.status_code == 401, f"upload without token -> {r.status_code}"
+        r = c.post("/v1/media/images", files=files, data={"kind": "listing"}, headers=h("supplier"))
+        if r.status_code in (404, 502, 503, 504) and r.json().get("error", {}).get("code") != "not_found":
+            return skip("media upload via gateway", f"media not reachable ({r.status_code})")
+        img = ok(r, 201)
+        assert img["content_type"] == "image/png" and (img["width"], img["height"]) == (16, 16), str(img)[:200]
+        path = "/" + img["url"].split("/", 3)[3] if img["url"].startswith("http") else img["url"]
+        assert path == f"/v1/media/files/{img['id']}.png", path
+        g = c.get(path)  # public, no token
+        assert g.status_code == 200 and g.headers["content-type"] == "image/png", g.status_code
+        assert g.headers.get("x-content-type-options") == "nosniff" and "immutable" in g.headers.get("cache-control", "")
+        assert g.content[:8] == b"\x89PNG\r\n\x1a\n"
+        r = c.post("/v1/media/images", files={"file": ("a.png", b"<html><script>1</script></html>", "image/png")}, headers=h("supplier"))
+        assert r.status_code == 415, f"html disguised as png -> {r.status_code}"
+        r = c.delete(f"/v1/media/images/{img['id']}", headers=h("buyer"))
+        assert r.status_code == 404, f"other user's delete -> {r.status_code}"
+        ok(c.delete(f"/v1/media/images/{img['id']}", headers=h("supplier")), 204)
+        assert c.get(path).status_code == 404
+
+    step("media: upload (magic-byte check, public GET, owner-only delete) via gateway", media)
 
 
 

@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ff_notifications.domain.delivery import Prefs
 from ff_notifications.domain.models import Alert, Device, Locale, Platform, SearchQuery, Watch
 from ff_notifications.domain.money import Money, MoneyError
+from ff_notifications.domain.verification import mask_email
 from ff_notifications.errors import Invalid, Unauthenticated
 from ff_notifications.service import NotificationService
 
@@ -96,7 +97,12 @@ class PrefsIn(_Body):
     clear_quiet_hours: bool = False
     timezone: str | None = Field(default=None, max_length=64)
     language: Locale | None = None
-    email: str | None = Field(default=None, max_length=254)
+    digest_email: str | None = Field(default=None, max_length=254)
+    email: str | None = Field(default=None, max_length=254)  # deprecated alias of digest_email
+
+
+class VerifyEmailIn(_Body):
+    code: str = Field(pattern=r"^\d{6}$")
 
 
 class EvaluateIn(_Body):
@@ -269,7 +275,10 @@ def prefs_json(p: Prefs) -> dict[str, Any]:
         else None,
         "timezone": p.timezone,
         "language": p.language.value if p.language else None,
-        "email": p.email,
+        "digest_email": p.digest_email,
+        "digest_email_verified": p.digest_email is not None,
+        "digest_email_pending": mask_email(p.digest_email_pending),
+        "email": p.digest_email,  # deprecated: the VERIFIED address only
     }
 
 
@@ -291,9 +300,19 @@ async def put_prefs(body: PrefsIn, user: User, s: Service) -> dict[str, Any]:
         quiet_hours=qh,
         timezone=body.timezone,
         language=body.language,
-        email=body.email,
+        digest_email=body.digest_email if body.digest_email is not None else body.email,
     )
     return prefs_json(prefs)
+
+
+@router.post("/notification-prefs/verify-email")
+async def verify_email(body: VerifyEmailIn, user: User, s: Service) -> dict[str, Any]:
+    return prefs_json(await s.verify_digest_email(user, body.code))
+
+
+@router.post("/notification-prefs/resend-code")
+async def resend_code(user: User, s: Service) -> dict[str, Any]:
+    return prefs_json(await s.resend_digest_code(user))
 
 
 @router.post("/alerts/digest", dependencies=[Depends(internal_only)])

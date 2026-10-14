@@ -21,6 +21,7 @@ from ff_notifications.domain.models import (
     WatchType,
 )
 from ff_notifications.domain.money import Money, format_amount, parse_amount
+from ff_notifications.domain.verification import Verification
 
 _MONEY_FIELDS = {"baseline_price", "current_price", "equivalent_price"}
 _TS_FIELDS = {"last_checked_at", "baseline_at"}
@@ -156,7 +157,8 @@ def prefs_to_doc(p: Prefs) -> dict[str, Any]:
         else None,
         "timezone": p.timezone,
         "language": p.language.value if p.language else None,
-        "email": p.email,
+        "digest_email": p.digest_email,
+        "digest_email_pending": p.digest_email_pending,
     }
 
 
@@ -169,7 +171,9 @@ def prefs_from_row(row: Mapping[str, Any]) -> Prefs:
         quiet_hours=QuietHours(qh["start"], qh["end"]) if qh else None,
         timezone=d["timezone"],
         language=Locale(d["language"]) if d.get("language") else None,
-        email=d.get("email"),
+        # legacy docs stored an unverified "email": deliberately ignored (never verified)
+        digest_email=d.get("digest_email"),
+        digest_email_pending=d.get("digest_email_pending"),
         explicit=True,
     )
 
@@ -202,4 +206,30 @@ def delivery_from_row(row: Mapping[str, Any]) -> Delivery:
         attempts=d["attempts"],
         last_error=d.get("last_error"),
         updated_at=parse_ts(d["updated_at"]) if d.get("updated_at") else None,
+    )
+
+
+def verification_to_doc(v: Verification) -> dict[str, Any]:
+    return {
+        "email": v.email,
+        "salt": v.salt,
+        "code_hash": v.code_hash,
+        "expires_at": ts(v.expires_at) if v.expires_at else None,
+        "attempts": v.attempts,
+        "locked_until": ts(v.locked_until) if v.locked_until else None,
+        "sends": [ts(t) for t in v.sends],
+    }
+
+
+def verification_from_row(row: Mapping[str, Any]) -> Verification:
+    d = row["doc"]
+    return Verification(
+        owner_id=row["owner_id"],
+        email=d.get("email"),
+        salt=d.get("salt", ""),
+        code_hash=d.get("code_hash", ""),
+        expires_at=parse_ts(d["expires_at"]) if d.get("expires_at") else None,
+        attempts=int(d.get("attempts", 0)),
+        locked_until=parse_ts(d["locked_until"]) if d.get("locked_until") else None,
+        sends=tuple(parse_ts(t) for t in d.get("sends", [])),
     )

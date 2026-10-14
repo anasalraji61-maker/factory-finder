@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from ff_media.dburl import resolve_auto_create
+
+
+class Settings(BaseSettings):
+    """Env prefix FF_MEDIA_. Secrets come from the environment only; none has a default."""
+
+    model_config = SettingsConfigDict(env_prefix="FF_MEDIA_", env_file=".env", extra="ignore", env_ignore_empty=True)
+
+    database_url: str = "sqlite+aiosqlite:///./media.db"
+    db_auto_create: bool | None = None  # None = auto: true for SQLite, false for PostgreSQL (use Alembic)
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)
+
+    internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured
+
+    # Absolute URLs handed to clients: "<public_base_url>/v1/media/files/<id>.<ext>". Point it at the public
+    # gateway origin (e.g. https://api.example.com). Unset -> relative "/v1/media/files/..." paths.
+    public_base_url: str | None = None
+
+    storage_backend: str = "local"  # local | s3 (s3 is UNVERIFIED)
+    storage_root: str = "./media-data"
+
+    # S3-compatible storage (UNVERIFIED against a real bucket). Credentials: environment only.
+    s3_bucket: str | None = None
+    s3_region: str | None = None
+    s3_endpoint_url: str | None = None
+    s3_prefix: str = "media/"
+    s3_access_key_id: SecretStr | None = None
+    s3_secret_access_key: SecretStr | None = None
+
+    max_upload_bytes: int = 5 * 1024 * 1024
+    max_dimension: int = 8000  # per side, pixels (decompression-bomb guard)
+    max_pixels: int = 40_000_000
+    jpeg_quality: int = 85
+    max_files_per_user: int = 200
+    max_uploads_per_hour: int = 30
+
+    @property
+    def base(self) -> str:
+        return (self.public_base_url or "").rstrip("/")

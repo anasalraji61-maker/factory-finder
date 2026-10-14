@@ -1,0 +1,130 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder media
+  version: 0.1.0
+  description: |
+    Image upload and serving (listing photos, avatars, message attachments). Reached through the gateway at /v1/media.
+    POST and DELETE need X-User-Id (401 otherwise; the gateway derives it from the bearer token). GET of image bytes
+    (/v1/media/files/{id}.{ext}) is PUBLIC so that listing images can be referenced by an absolute URL
+    `<FF_MEDIA_PUBLIC_BASE_URL>/v1/media/files/{id}.{ext}` from other services, native listings and the apps.
+    Safety: only JPEG, PNG and WebP, decided by MAGIC BYTES (client content-type and filename are ignored); SVG, HTML,
+    GIF and everything else is rejected with 415. The size limit (FF_MEDIA_MAX_UPLOAD_BYTES, default 5 MiB) is enforced while
+    streaming; width and height are capped (default 8000 px) as a decompression-bomb guard. Every image is re-encoded
+    (EXIF / GPS / ICC / text chunks are dropped, EXIF orientation is applied first; animated inputs keep their first frame).
+    Ids are random 128-bit hex; an image is deduplicated per owner by the SHA-256 of the re-encoded bytes.
+    Quotas per user (defaults): 200 stored files, 30 upload requests per rolling hour (429). Another user's image is 404 on DELETE.
+    Deleted images may stay in downstream caches for the immutable cache lifetime.
+servers: [{url: http://localhost:8112}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /ready:
+    get:
+      summary: Readiness (database reachable and storage writable)
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, checks]
+                properties:
+                  status: {type: string, enum: [ready]}
+                  service: {type: string, const: media}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: unavailable}
+                  service: {type: string, const: media}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+  /v1/media/images:
+    post:
+      operationId: uploadImage
+      summary: Upload an image (multipart/form-data)
+      description: |
+        Fields: `file` (required, exactly one) and `kind` (optional: listing | avatar | attachment, default listing).
+        Uploading the same pixels again as the same user returns the existing image with 200 instead of 201.
+        Error codes: missing_user 401, file_too_large 413, unsupported_media_type 415, invalid_image 422,
+        image_dimensions_exceeded 422, validation_error 422, quota_files_exceeded 429, quota_uploads_exceeded 429 (Retry-After).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+                kind: {$ref: "#/components/schemas/MediaKind"}
+      responses:
+        "200": {description: Same image already stored for this user, content: {application/json: {schema: {$ref: "#/components/schemas/MediaImage"}}}}
+        "201": {description: Stored, content: {application/json: {schema: {$ref: "#/components/schemas/MediaImage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+        "415": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+  /v1/media/images/{id}:
+    delete:
+      operationId: deleteImage
+      summary: Delete an image (owner only; 404 for anyone else, never 403)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}$'}}
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/media/files/{filename}:
+    get:
+      operationId: getImageFile
+      summary: Image bytes (PUBLIC, no auth)
+      description: |
+        `filename` is `<id>.<ext>` with ext jpg | png | webp as returned in `url`. Optional `w` selects a resized variant
+        (only 200, 400, 800 are allowed; 422 otherwise); when the image is not wider than `w` the original is served.
+        Immutable cache headers, ETag (If-None-Match gives 304), `X-Content-Type-Options: nosniff`, correct Content-Type,
+        `Content-Security-Policy: default-src 'none'`. Unknown or malformed names are 404.
+      parameters:
+        - {name: filename, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}\.(jpg|png|webp)$'}}
+        - {name: w, in: query, required: false, schema: {type: integer, enum: [200, 400, 800]}}
+      responses:
+        "200":
+          description: Image bytes
+          headers:
+            Cache-Control: {schema: {type: string}, description: "public, max-age=31536000, immutable"}
+            X-Content-Type-Options: {schema: {type: string, const: nosniff}}
+            ETag: {schema: {type: string}}
+          content:
+            image/jpeg: {schema: {type: string, format: binary}}
+            image/png: {schema: {type: string, format: binary}}
+            image/webp: {schema: {type: string, format: binary}}
+        "304": {description: Not modified}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    MediaKind: {type: string, enum: [listing, avatar, attachment], default: listing}
+    MediaImage:
+      type: object
+      required: [id, url, width, height, bytes, content_type, sha256]
+      properties:
+        id: {type: string, pattern: '^[a-f0-9]{32}$'}
+        url: {type: string, description: "absolute when FF_MEDIA_PUBLIC_BASE_URL is set, else a path: <base>/v1/media/files/<id>.<ext>; append ?w=200|400|800 for a resized variant"}
+        width: {type: integer, minimum: 1}
+        height: {type: integer, minimum: 1}
+        bytes: {type: integer, minimum: 1, description: size of the stored (re-encoded) original}
+        content_type: {type: string, enum: [image/jpeg, image/png, image/webp]}
+        sha256: {type: string, pattern: '^[a-f0-9]{64}$', description: SHA-256 of the stored bytes}
+        kind: {$ref: "#/components/schemas/MediaKind"}
+        widths: {type: array, items: {type: integer, enum: [200, 400, 800]}, description: "variants that exist (those narrower than the original)"}
+        created_at: {type: string, format: date-time}

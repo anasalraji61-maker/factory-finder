@@ -156,7 +156,9 @@ class Calls:
             MISMATCHES.append((spec or svc, method, template or path, r.status_code, "status", f"unexpected status (wanted {want}): {r.text[:160]}"))
             return None
         validate(spec or svc, r, template=template)
-        return r.json() if r.content else None
+        if not r.content or not r.headers.get("content-type", "").startswith("application/json"):
+            return None  # 204 / binary bodies (e.g. image bytes)
+        return r.json()
 
 
 def scenario() -> None:
@@ -284,6 +286,8 @@ def scenario() -> None:
     c("notifications", "POST", "/v1/alerts/read-all", headers=hb, want=(200, 204))
     c("notifications", "GET", "/v1/notification-prefs", headers=hb)
     c("notifications", "PUT", "/v1/notification-prefs", headers=hb, json={"language": "en", "timezone": "Asia/Baghdad", "quiet_hours": {"start": "22:00", "end": "07:00"}})
+    c("notifications", "POST", "/v1/notification-prefs/verify-email", headers=hb, json={"code": "000000"}, want=(409, 422))
+    c("notifications", "POST", "/v1/notification-prefs/resend-code", headers=hb, want=(409,))
     c("notifications", "POST", "/v1/devices", headers=hb, json={"token": f"tok-{sfx}", "platform": "android"}, want=(200, 201, 422))
     c("notifications", "GET", "/v1/devices", headers=hb)
     if w.get("id"):
@@ -320,6 +324,27 @@ def scenario() -> None:
             c("payments", "POST", f"/v1/invoices/{inv['id']}/cancel", headers=hb)
         c("payments", "POST", "/v1/payments/sweep", headers={"X-Admin-Token": e2e.ADMIN_TOKEN})
     c("payments", "GET", "/v1/invoices/nope", headers=hb, want=(404,))
+
+    # -- media (multipart upload; image bytes are not JSON so GET /files is only status-checked)
+    import struct
+    import zlib
+
+    def _chunk(t: bytes, d: bytes) -> bytes:
+        return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+
+    raw = b"".join(b"\x00" + bytes((x * 5 + y + int(sfx, 16)) % 256 for x in range(8) for _ in range(3)) for y in range(8))
+    png = b"\x89PNG\r\n\x1a\n" + _chunk(b"IHDR", struct.pack(">IIBBBBB", 8, 8, 8, 2, 0, 0, 0)) + _chunk(b"IDAT", zlib.compress(raw)) + _chunk(b"IEND", b"")
+    up = c("media", "POST", "/v1/media/images", headers=hb, files={"file": ("a.png", png, "image/png")}, data={"kind": "avatar"}) or {}
+    c("media", "POST", "/v1/media/images", headers=hb, files={"file": ("a.png", png, "image/png")}, want=(200,))
+    c("media", "POST", "/v1/media/images", headers=hb, files={"file": ("a.png", b"<html></html>", "image/png")}, want=(415,))
+    c("media", "POST", "/v1/media/images", headers=hb, files={"file": ("a.png", png, "image/png")}, data={"kind": "x"}, want=(422,))
+    c("media", "POST", "/v1/media/images", files={"file": ("a.png", png, "image/png")}, want=(401,))
+    if up.get("id"):
+        c("media", "GET", f"/v1/media/files/{up['id']}.png", template="/v1/media/files/{filename}", want=(200,))
+        c("media", "GET", f"/v1/media/files/{up['id']}.png", params={"w": 100}, template="/v1/media/files/{filename}", want=(422,))
+        c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hs, want=(404,))
+        c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hb, want=(204,))
+    c("media", "GET", f"/v1/media/files/{'0' * 32}.png", template="/v1/media/files/{filename}", want=(404,))
 
     # -- gateway (own routes; admin-demand proxy is validated against the demand contract)
     gw = httpx.Client(base_url=e2e.GW, timeout=30)

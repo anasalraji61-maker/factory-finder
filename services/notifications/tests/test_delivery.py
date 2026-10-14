@@ -46,6 +46,20 @@ class Env:
         assert r.status_code == 200, r.text
         return r.json()
 
+    def last_code(self) -> str:
+        import re
+
+        return re.search(r"\b(\d{6})\b", self.email.sent[-1]["body"]).group(1)
+
+    async def verify(self, user="u1", code=None):
+        r = await self.c.post(
+            "/v1/notification-prefs/verify-email",
+            headers={"X-User-Id": user},
+            json={"code": code or self.last_code()},
+        )
+        assert r.status_code == 200, r.text
+        return r.json()
+
     async def alert(self, user="u1"):
         """Create one price_drop alert (baseline then a price drop) and run delivery."""
         r = await self.c.post(
@@ -262,8 +276,12 @@ async def test_daily_digest_idempotent_and_localised(env):
     await env.device()
     await env.alert()
     await env.prefs(
-        channels={"price_drop": ["in_app", "email"]}, email="buyer@example.com", language="ar"
+        channels={"price_drop": ["in_app", "email"]},
+        digest_email="buyer@example.com",
+        language="ar",
     )
+    await env.verify()
+    env.email.sent.clear()  # drop the verification mail
     env.now = datetime(2026, 10, 13, 4, 0, tzinfo=UTC) + timedelta(hours=9)  # 16:00 Baghdad
     assert await env.svc.send_digests() == 1
     assert await env.svc.send_digests() == 0  # same local day

@@ -36,6 +36,11 @@ FORWARD_RESPONSE_HEADERS = {
     "last-modified",
     "content-language",
     "location",
+    "x-content-type-options",  # media files: nosniff must reach the client
+    "content-security-policy",
+    "content-disposition",
+    "cross-origin-resource-policy",
+    "retry-after",
 }
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 

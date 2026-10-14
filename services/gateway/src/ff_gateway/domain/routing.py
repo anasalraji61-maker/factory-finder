@@ -13,11 +13,13 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/notification-prefs": "notifications",
     "/v1/assistant": "assistant",
     "/v1/invoices": "payments", "/v1/ledger": "payments", "/v1/payments": "payments",
+    "/v1/media": "media",
 }  # fmt: skip
 
 PUBLIC_GET_PREFIXES = (
     "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories",
     "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs",
+    "/v1/media/files",  # image bytes only; upload/delete (/v1/media/images) stay authenticated
 )  # fmt: skip
 PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost")}
 

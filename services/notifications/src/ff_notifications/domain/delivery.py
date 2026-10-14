@@ -71,7 +71,8 @@ class Prefs:
     quiet_hours: QuietHours | None = None
     timezone: str = DEFAULT_TIMEZONE
     language: Locale | None = None  # None = per-device locale
-    email: str | None = None
+    digest_email: str | None = None  # VERIFIED address; the only one the digest is sent to
+    digest_email_pending: str | None = None  # awaiting the code; never mailed a digest
     explicit: bool = False  # True once the user saved prefs
 
     def allows(self, rule: str, channel: str) -> bool:

@@ -74,3 +74,14 @@ def test_url_normalisation_and_auto_create_flag():
     assert Settings(database_url="postgresql://u:p@h/db").auto_create_tables is False
     forced = Settings(database_url="postgresql://u:p@h/db", db_auto_create=True)
     assert forced.auto_create_tables is True
+
+
+def test_0003_creates_verification_table_and_downgrades(tmp_path):
+    db = tmp_path / "mig.db"
+    cfg = _cfg(db)
+    command.upgrade(cfg, "0002")
+    assert "email_verifications" not in _tables(db)
+    command.upgrade(cfg, "0003")
+    assert "email_verifications" in _tables(db)
+    command.downgrade(cfg, "0002")
+    assert "email_verifications" not in _tables(db) and "notification_prefs" in _tables(db)
