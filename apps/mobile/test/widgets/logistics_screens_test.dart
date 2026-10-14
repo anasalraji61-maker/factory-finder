@@ -32,8 +32,6 @@ void main() {
     await tester.ensureVisible(find.text('احسب الكلفة'));
     await tester.tap(find.text('احسب الكلفة'));
     await settle(tester, frames: 30);
-    // ignore: avoid_print
-    print('VISIBLE: ' + find.byType(Text).evaluate().map((e) => (e.widget as Text).data ?? '').where((t) => t.isNotEmpty).take(25).join(' | '));
 
     expect(find.text('نتائج التسعير'), findsOneWidget);
     expect(find.text('لا توجد تسعيرة بعد'), findsNothing);
