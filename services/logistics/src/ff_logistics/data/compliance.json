@@ -1,0 +1,3462 @@
+{
+ "version": 1,
+ "as_of": "2026-10",
+ "indicative": true,
+ "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+ "label_en": "Indicative, verify with a licensed customs broker",
+ "label_ar": "إرشادي، تحقّق من مخلّص جمركي مرخّص",
+ "disclaimer_en": "Indicative only. Requirements change often; verify with a licensed customs broker before shipping.",
+ "disclaimer_ar": "بيانات إرشادية فقط. تتغير المتطلبات كثيراً؛ تحقّق من مخلّص جمركي مرخّص قبل الشحن.",
+ "groups": {
+  "live_animals": {
+   "name_en": "Live animals",
+   "name_ar": "حيوانات حية",
+   "chapters": [
+    "01"
+   ]
+  },
+  "food_animal": {
+   "name_en": "Meat, fish, dairy, eggs",
+   "name_ar": "لحوم وأسماك وألبان وبيض",
+   "chapters": [
+    "02",
+    "03",
+    "04",
+    "05",
+    "16"
+   ]
+  },
+  "food_plant": {
+   "name_en": "Plant foods, grains, oils, sugar, preparations",
+   "name_ar": "أغذية نباتية وحبوب وزيوت وسكر ومحضّرات غذائية",
+   "chapters": [
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "23"
+   ]
+  },
+  "beverages": {
+   "name_en": "Beverages, spirits, vinegar",
+   "name_ar": "مشروبات وكحوليات وخل",
+   "chapters": [
+    "22"
+   ]
+  },
+  "tobacco": {
+   "name_en": "Tobacco",
+   "name_ar": "تبغ",
+   "chapters": [
+    "24"
+   ]
+  },
+  "plants_wood": {
+   "name_en": "Live plants, wood and wood products",
+   "name_ar": "نباتات حية وأخشاب ومنتجاتها",
+   "chapters": [
+    "06",
+    "44",
+    "45",
+    "46"
+   ]
+  },
+  "minerals_fuels": {
+   "name_en": "Minerals, ores, fuels",
+   "name_ar": "معادن خام ووقود",
+   "chapters": [
+    "25",
+    "26",
+    "27"
+   ]
+  },
+  "chemicals": {
+   "name_en": "Chemicals",
+   "name_ar": "مواد كيميائية",
+   "chapters": [
+    "28",
+    "29",
+    "32",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38"
+   ]
+  },
+  "pharma": {
+   "name_en": "Pharmaceuticals",
+   "name_ar": "أدوية",
+   "chapters": [
+    "30"
+   ]
+  },
+  "agro_chemicals": {
+   "name_en": "Fertilizers",
+   "name_ar": "أسمدة",
+   "chapters": [
+    "31"
+   ]
+  },
+  "cosmetics": {
+   "name_en": "Cosmetics and perfumery",
+   "name_ar": "مستحضرات تجميل وعطور",
+   "chapters": [
+    "33"
+   ]
+  },
+  "plastics_rubber": {
+   "name_en": "Plastics and rubber",
+   "name_ar": "بلاستيك ومطاط",
+   "chapters": [
+    "39",
+    "40"
+   ]
+  },
+  "leather_textiles": {
+   "name_en": "Leather, textiles and apparel",
+   "name_ar": "جلود ومنسوجات وملابس",
+   "chapters": [
+    "41",
+    "42",
+    "43",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62",
+    "63"
+   ]
+  },
+  "footwear": {
+   "name_en": "Footwear, headgear",
+   "name_ar": "أحذية وأغطية رأس",
+   "chapters": [
+    "64",
+    "65",
+    "66",
+    "67"
+   ]
+  },
+  "paper": {
+   "name_en": "Paper and printed matter",
+   "name_ar": "ورق ومطبوعات",
+   "chapters": [
+    "47",
+    "48",
+    "49"
+   ]
+  },
+  "ceramics_glass": {
+   "name_en": "Ceramics, stone, glass",
+   "name_ar": "خزف وحجر وزجاج",
+   "chapters": [
+    "68",
+    "69",
+    "70"
+   ]
+  },
+  "jewellery": {
+   "name_en": "Jewellery, precious metals",
+   "name_ar": "مجوهرات ومعادن ثمينة",
+   "chapters": [
+    "71"
+   ]
+  },
+  "metals": {
+   "name_en": "Base metals and articles",
+   "name_ar": "معادن أساسية ومصنوعاتها",
+   "chapters": [
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "83"
+   ]
+  },
+  "machinery": {
+   "name_en": "Machinery and mechanical appliances",
+   "name_ar": "آلات ومعدات ميكانيكية",
+   "chapters": [
+    "84"
+   ]
+  },
+  "electrical": {
+   "name_en": "Electrical machinery and electronics",
+   "name_ar": "أجهزة كهربائية وإلكترونيات",
+   "chapters": [
+    "85"
+   ]
+  },
+  "vehicles": {
+   "name_en": "Vehicles, rail, aircraft, vessels",
+   "name_ar": "مركبات وسكك حديد وطائرات وسفن",
+   "chapters": [
+    "86",
+    "87",
+    "88",
+    "89"
+   ]
+  },
+  "medical_optical": {
+   "name_en": "Optical, measuring and medical instruments",
+   "name_ar": "أجهزة بصرية وقياس وأجهزة طبية",
+   "chapters": [
+    "90",
+    "91",
+    "92"
+   ]
+  },
+  "arms": {
+   "name_en": "Arms and ammunition",
+   "name_ar": "أسلحة وذخائر",
+   "chapters": [
+    "93"
+   ]
+  },
+  "furniture": {
+   "name_en": "Furniture, bedding, lighting",
+   "name_ar": "أثاث ومفروشات وإنارة",
+   "chapters": [
+    "94"
+   ]
+  },
+  "toys": {
+   "name_en": "Toys, games, sports goods",
+   "name_ar": "ألعاب ومعدات رياضية",
+   "chapters": [
+    "95"
+   ]
+  },
+  "general_goods": {
+   "name_en": "Other manufactured goods",
+   "name_ar": "سلع مصنّعة أخرى",
+   "chapters": [
+    "96",
+    "97"
+   ]
+  }
+ },
+ "category_aliases": {
+  "electronics": "electrical",
+  "batteries": "electrical",
+  "generators": "electrical",
+  "solar": "electrical",
+  "lighting": "furniture",
+  "appliances": "electrical",
+  "machinery": "machinery",
+  "industrial": "machinery",
+  "production_line": "machinery",
+  "equipment": "machinery",
+  "used_machinery": "machinery",
+  "textiles": "leather_textiles",
+  "apparel": "leather_textiles",
+  "clothing": "leather_textiles",
+  "leather": "leather_textiles",
+  "furniture": "furniture",
+  "plastics": "plastics_rubber",
+  "raw_material": "plastics_rubber",
+  "packaging": "plastics_rubber",
+  "film": "plastics_rubber",
+  "rubber": "plastics_rubber",
+  "tires": "plastics_rubber",
+  "steel": "metals",
+  "metal": "metals",
+  "metals": "metals",
+  "vehicles": "vehicles",
+  "auto_parts": "vehicles",
+  "cars": "vehicles",
+  "toys": "toys",
+  "tiles": "ceramics_glass",
+  "ceramics": "ceramics_glass",
+  "glass": "ceramics_glass",
+  "wood": "plants_wood",
+  "timber": "plants_wood",
+  "plants": "plants_wood",
+  "paper": "paper",
+  "fertilizer": "agro_chemicals",
+  "chemicals": "chemicals",
+  "pharma": "pharma",
+  "medicine": "pharma",
+  "cosmetics": "cosmetics",
+  "medical": "medical_optical",
+  "medical_devices": "medical_optical",
+  "optical": "medical_optical",
+  "food": "food_plant",
+  "grains": "food_plant",
+  "oil": "food_plant",
+  "meat": "food_animal",
+  "dairy": "food_animal",
+  "fish": "food_animal",
+  "seafood": "food_animal",
+  "beverages": "beverages",
+  "tobacco": "tobacco",
+  "footwear": "footwear",
+  "shoes": "footwear",
+  "jewelry": "jewellery",
+  "jewellery": "jewellery",
+  "minerals": "minerals_fuels",
+  "fuel": "minerals_fuels",
+  "arms": "arms",
+  "livestock": "live_animals"
+ },
+ "documents": {
+  "commercial_invoice": {
+   "stage": "shipping",
+   "name_en": "Commercial invoice",
+   "name_ar": "فاتورة تجارية",
+   "note_en": "Original, signed and stamped by the seller: full goods description, HS code, unit price, total, currency, incoterm, origin, buyer and seller details. Customs value is based on it.",
+   "note_ar": "أصلية وموقّعة ومختومة من البائع: وصف كامل للبضاعة ورمز HS وسعر الوحدة والإجمالي والعملة والإنكوترم وبلد المنشأ وبيانات البائع والمشتري. تُحتسب عليها القيمة الجمركية."
+  },
+  "packing_list": {
+   "stage": "shipping",
+   "name_en": "Packing list",
+   "name_ar": "قائمة التعبئة",
+   "note_en": "Packages, gross/net weight, dimensions, marks and container/seal numbers; must match the invoice.",
+   "note_ar": "عدد الطرود والأوزان القائمة والصافية والأبعاد والعلامات وأرقام الحاوية والختم؛ ويجب أن تطابق الفاتورة."
+  },
+  "bill_of_lading": {
+   "stage": "shipping",
+   "name_en": "Bill of lading (B/L)",
+   "name_ar": "بوليصة الشحن البحري (B/L)",
+   "note_en": "Ocean B/L or sea waybill from the carrier/forwarder; consignee must match the importer of record.",
+   "note_ar": "بوليصة شحن بحري أو سي وي بل من الناقل أو وكيل الشحن؛ يجب أن يطابق المستلم اسم المستورد."
+  },
+  "air_waybill": {
+   "stage": "shipping",
+   "name_en": "Air waybill (AWB)",
+   "name_ar": "بوليصة الشحن الجوي (AWB)",
+   "note_en": "House/master AWB issued by the airline or forwarder; not a document of title.",
+   "note_ar": "بوليصة شحن جوي (House/Master) من شركة الطيران أو وكيل الشحن؛ وهي ليست سند ملكية."
+  },
+  "cmr_waybill": {
+   "stage": "shipping",
+   "name_en": "Road consignment note (CMR)",
+   "name_ar": "بوليصة الشحن البري (CMR)",
+   "note_en": "International road consignment note signed by sender, carrier and consignee.",
+   "note_ar": "بوليصة شحن بري دولية موقّعة من المرسل والناقل والمستلم."
+  },
+  "rail_waybill": {
+   "stage": "shipping",
+   "name_en": "Rail consignment note (CIM/SMGS)",
+   "name_ar": "بوليصة الشحن بالسكك الحديد (CIM/SMGS)",
+   "note_en": "Rail consignment note covering the whole rail leg.",
+   "note_ar": "بوليصة شحن بالقطار تغطي مسار السكك الحديد كاملاً."
+  },
+  "certificate_of_origin": {
+   "stage": "pre_shipment",
+   "name_en": "Certificate of origin",
+   "name_ar": "شهادة المنشأ",
+   "note_en": "Issued by a chamber of commerce / authority in the country of origin; needed for preferential duty, origin-based rules and anti-dumping.",
+   "note_ar": "تصدر عن غرفة التجارة أو جهة رسمية في بلد المنشأ؛ تلزم للرسوم التفضيلية والقواعد المبنية على المنشأ ومكافحة الإغراق."
+  },
+  "insurance_certificate": {
+   "stage": "shipping",
+   "name_en": "Cargo insurance certificate",
+   "name_ar": "شهادة تأمين على البضاعة",
+   "note_en": "Mandatory from the seller under CIF; otherwise strongly recommended (all-risks, 110% of CIF).",
+   "note_ar": "إلزامية على البائع في CIF؛ وفي غيره يُنصح بها بشدة (جميع المخاطر، 110% من CIF)."
+  },
+  "wood_packaging_ispm15": {
+   "stage": "shipping",
+   "name_en": "ISPM-15 wood packaging mark / fumigation certificate",
+   "name_ar": "ختم ISPM-15 أو شهادة تبخير للتغليف الخشبي",
+   "note_en": "Needed only when pallets, crates or dunnage are made of raw wood; unmarked wood is refused or re-exported by many countries.",
+   "note_ar": "تلزم فقط عند استخدام منصّات أو صناديق أو حشوات من الخشب الخام؛ ترفض دول كثيرة الخشب غير المختوم أو تعيد تصديره."
+  },
+  "customs_declaration": {
+   "stage": "clearance",
+   "name_en": "Import customs declaration",
+   "name_ar": "البيان الجمركي للاستيراد",
+   "note_en": "Filed electronically by the importer or a licensed clearing agent using the commercial documents.",
+   "note_ar": "يقدَّم إلكترونياً من المستورد أو المخلّص الجمركي المرخّص استناداً إلى المستندات التجارية."
+  },
+  "importer_registration": {
+   "stage": "clearance",
+   "name_en": "Importer registration / tax ID",
+   "name_ar": "تسجيل المستورد / الرقم الضريبي",
+   "note_en": "Valid commercial registration and tax number of the importer of record in the destination country.",
+   "note_ar": "سجل تجاري ورقم ضريبي ساري للمستورد في بلد الوجهة."
+  },
+  "health_certificate": {
+   "stage": "pre_shipment",
+   "name_en": "Official health / veterinary certificate",
+   "name_ar": "شهادة صحية / بيطرية رسمية",
+   "note_en": "Issued by the competent authority of the exporting country for animal products.",
+   "note_ar": "تصدر عن الجهة المختصة في بلد التصدير للمنتجات الحيوانية."
+  },
+  "halal_certificate": {
+   "stage": "pre_shipment",
+   "name_en": "Halal certificate",
+   "name_ar": "شهادة حلال",
+   "note_en": "From a certification body recognised by the destination authority.",
+   "note_ar": "من جهة اعتماد معترف بها لدى سلطة بلد الوجهة."
+  },
+  "phytosanitary_certificate": {
+   "stage": "pre_shipment",
+   "name_en": "Phytosanitary certificate",
+   "name_ar": "شهادة صحة نباتية",
+   "note_en": "Issued by the plant protection authority of the origin; for plants, seeds, grains, fresh produce and raw wood.",
+   "note_ar": "تصدر عن هيئة وقاية النباتات في بلد المنشأ؛ للنباتات والبذور والحبوب والمنتجات الطازجة والأخشاب الخام."
+  },
+  "certificate_of_analysis": {
+   "stage": "pre_shipment",
+   "name_en": "Certificate of analysis (CoA)",
+   "name_ar": "شهادة تحليل (CoA)",
+   "note_en": "Lab analysis of the shipped batch (composition, contaminants, shelf life).",
+   "note_ar": "تحليل مخبري للدفعة المشحونة (التركيب والملوثات وفترة الصلاحية)."
+  },
+  "safety_data_sheet": {
+   "stage": "shipping",
+   "name_en": "Safety data sheet (SDS/MSDS)",
+   "name_ar": "صحيفة بيانات السلامة (SDS/MSDS)",
+   "note_en": "16-section SDS in the destination language where required.",
+   "note_ar": "صحيفة بيانات سلامة من 16 قسماً وبلغة بلد الوجهة عند الاقتضاء."
+  },
+  "dangerous_goods_declaration": {
+   "stage": "shipping",
+   "name_en": "Dangerous goods declaration (IMDG / IATA)",
+   "name_ar": "إقرار البضائع الخطرة (IMDG / IATA)",
+   "note_en": "Shipper's declaration with UN number, class and packing group; carrier acceptance required beforehand.",
+   "note_ar": "إقرار الشاحن برقم UN والصنف ومجموعة التعبئة؛ ويلزم قبول الناقل مسبقاً."
+  },
+  "un38_3_report": {
+   "stage": "pre_shipment",
+   "name_en": "UN 38.3 test summary (lithium batteries)",
+   "name_ar": "ملخص اختبار UN 38.3 (بطاريات الليثيوم)",
+   "note_en": "Required by carriers for lithium cells/batteries and equipment containing them.",
+   "note_ar": "يطلبه الناقلون لخلايا وبطاريات الليثيوم والأجهزة التي تحتويها."
+  },
+  "gmp_certificate": {
+   "stage": "pre_shipment",
+   "name_en": "GMP certificate / pharmaceutical product certificate",
+   "name_ar": "شهادة GMP / شهادة المنتج الدوائي",
+   "note_en": "Manufacturer's GMP certificate and product registration evidence.",
+   "note_ar": "شهادة GMP للمصنّع وإثبات تسجيل المنتج."
+  },
+  "product_registration": {
+   "stage": "pre_shipment",
+   "name_en": "Product registration / notification",
+   "name_ar": "تسجيل / إشعار المنتج",
+   "note_en": "Product must be registered or notified with the destination regulator before import (cosmetics, medical devices, pharmaceuticals).",
+   "note_ar": "يجب تسجيل المنتج أو الإخطار عنه لدى الجهة الرقابية في الوجهة قبل الاستيراد (تجميل، أجهزة طبية، أدوية)."
+  },
+  "mill_test_certificate": {
+   "stage": "shipping",
+   "name_en": "Mill test certificate (EN 10204 3.1)",
+   "name_ar": "شهادة اختبار المصنع (EN 10204 3.1)",
+   "note_en": "Chemical and mechanical properties of steel/metal lots; often requested by customs and buyers.",
+   "note_ar": "الخواص الكيميائية والميكانيكية لدفعات الفولاذ والمعادن؛ كثيراً ما تطلبها الجمارك والمشترون."
+  },
+  "pre_shipment_inspection_used": {
+   "stage": "pre_shipment",
+   "name_en": "Independent inspection report for used goods",
+   "name_ar": "تقرير فحص مستقل للبضاعة المستعملة",
+   "note_en": "Age, condition, serial numbers and value of used machinery/production lines by an independent surveyor; many countries require it for used-goods clearance.",
+   "note_ar": "عمر وحالة وأرقام تسلسلية وقيمة الآلات وخطوط الإنتاج المستعملة بفحص جهة مستقلة؛ تشترطه دول كثيرة لتخليص المستعمل."
+  },
+  "vehicle_title_docs": {
+   "stage": "pre_shipment",
+   "name_en": "Vehicle title and export deregistration",
+   "name_ar": "سند ملكية المركبة وشهادة شطب التصدير",
+   "note_en": "Original title and export deregistration for used vehicles; VIN must match all documents.",
+   "note_ar": "سند الملكية الأصلي وشطب التسجيل للتصدير للمركبات المستعملة؛ ويجب أن يطابق رقم الهيكل كل المستندات."
+  }
+ },
+ "base_documents": [
+  {
+   "id": "commercial_invoice",
+   "requirement": "required"
+  },
+  {
+   "id": "packing_list",
+   "requirement": "required"
+  },
+  {
+   "id": "certificate_of_origin",
+   "requirement": "conditional"
+  },
+  {
+   "id": "insurance_certificate",
+   "requirement": "recommended"
+  },
+  {
+   "id": "wood_packaging_ispm15",
+   "requirement": "conditional"
+  },
+  {
+   "id": "customs_declaration",
+   "requirement": "required"
+  },
+  {
+   "id": "importer_registration",
+   "requirement": "required"
+  }
+ ],
+ "transport_documents": {
+  "sea": "bill_of_lading",
+  "air": "air_waybill",
+  "road": "cmr_waybill",
+  "rail": "rail_waybill"
+ },
+ "group_documents": [
+  {
+   "id": "health_certificate",
+   "requirement": "required",
+   "groups": [
+    "food_animal",
+    "live_animals"
+   ]
+  },
+  {
+   "id": "phytosanitary_certificate",
+   "requirement": "required",
+   "groups": [
+    "plants_wood",
+    "food_plant"
+   ]
+  },
+  {
+   "id": "certificate_of_analysis",
+   "requirement": "recommended",
+   "groups": [
+    "food_animal",
+    "food_plant",
+    "chemicals",
+    "agro_chemicals",
+    "pharma",
+    "cosmetics",
+    "minerals_fuels"
+   ]
+  },
+  {
+   "id": "safety_data_sheet",
+   "requirement": "required",
+   "groups": [
+    "chemicals",
+    "agro_chemicals",
+    "minerals_fuels"
+   ]
+  },
+  {
+   "id": "gmp_certificate",
+   "requirement": "required",
+   "groups": [
+    "pharma"
+   ]
+  },
+  {
+   "id": "product_registration",
+   "requirement": "required",
+   "groups": [
+    "pharma",
+    "cosmetics",
+    "medical_optical"
+   ]
+  },
+  {
+   "id": "mill_test_certificate",
+   "requirement": "recommended",
+   "groups": [
+    "metals"
+   ]
+  },
+  {
+   "id": "un38_3_report",
+   "requirement": "required",
+   "groups": [
+    "electrical"
+   ],
+   "hs_prefixes": [
+    "8506",
+    "8507"
+   ]
+  },
+  {
+   "id": "pre_shipment_inspection_used",
+   "requirement": "required",
+   "groups": [
+    "machinery",
+    "electrical",
+    "medical_optical",
+    "vehicles"
+   ],
+   "condition": "used"
+  },
+  {
+   "id": "vehicle_title_docs",
+   "requirement": "required",
+   "groups": [
+    "vehicles"
+   ],
+   "condition": "used"
+  }
+ ],
+ "dangerous_goods_documents": [
+  {
+   "id": "dangerous_goods_declaration",
+   "requirement": "required"
+  },
+  {
+   "id": "safety_data_sheet",
+   "requirement": "required"
+  }
+ ],
+ "incoterms": {
+  "EXW": {
+   "text_en": "Ex Works: seller makes goods available at its premises; buyer carries all cost and risk from there, including export clearance.",
+   "text_ar": "تسليم المصنع: يضع البائع البضاعة في مقرّه والمشتري يتحمل كل التكاليف والمخاطر من هناك بما فيها التخليص التصديري.",
+   "sea_only": false
+  },
+  "FCA": {
+   "text_en": "Free Carrier: seller delivers to the buyer's carrier at a named place and clears export; risk passes at handover.",
+   "text_ar": "التسليم للناقل: يسلّم البائع للناقل الذي يحدده المشتري في مكان متفق عليه ويخلّص التصدير؛ تنتقل المخاطر عند التسليم.",
+   "sea_only": false
+  },
+  "FOB": {
+   "text_en": "Free on Board (sea only): seller loads on the vessel at the origin port and clears export; risk passes on board.",
+   "text_ar": "التسليم على ظهر السفينة (بحري فقط): يحمّل البائع على السفينة في ميناء المنشأ ويخلّص التصدير؛ تنتقل المخاطر عند التحميل.",
+   "sea_only": true
+  },
+  "CFR": {
+   "text_en": "Cost and Freight (sea only): seller pays main-leg freight to the destination port; risk passes on board at origin; buyer insures.",
+   "text_ar": "التكلفة والشحن (بحري فقط): يدفع البائع أجرة الشحن الرئيسي حتى ميناء الوجهة؛ تنتقل المخاطر عند التحميل ويؤمّن المشتري.",
+   "sea_only": true
+  },
+  "CIF": {
+   "text_en": "Cost, Insurance and Freight (sea only): like CFR plus minimum cargo insurance paid by the seller.",
+   "text_ar": "التكلفة والتأمين والشحن (بحري فقط): مثل CFR مع تأمين أدنى على البضاعة يدفعه البائع.",
+   "sea_only": true
+  },
+  "DAP": {
+   "text_en": "Delivered at Place: seller delivers to the named destination, unloading and import clearance excluded; buyer pays import duties/taxes and clearance.",
+   "text_ar": "التسليم في المكان: يسلّم البائع حتى المكان المسمّى في الوجهة دون التفريغ والتخليص الاستيرادي؛ يدفع المشتري الرسوم والضرائب والتخليص.",
+   "sea_only": false
+  },
+  "DDP": {
+   "text_en": "Delivered Duty Paid: seller delivers cleared and duty-paid at the destination; seller carries maximum cost and risk and acts as importer.",
+   "text_ar": "التسليم مدفوع الرسوم: يسلّم البائع البضاعة مخلّصة ومدفوعة الرسوم في الوجهة؛ يتحمل أقصى التكاليف والمخاطر ويعمل كمستورد.",
+   "sea_only": false
+  }
+ },
+ "stage_labels": {
+  "origin_inland": {
+   "en": "Inland haul in origin country",
+   "ar": "النقل الداخلي في بلد المنشأ"
+  },
+  "origin_handling": {
+   "en": "Origin handling and export clearance",
+   "ar": "المناولة والتخليص التصديري في المنشأ"
+  },
+  "main_leg": {
+   "en": "Main leg (sea / air / rail / road)",
+   "ar": "الشحن الرئيسي (بحري / جوي / سكة / بري)"
+  },
+  "insurance": {
+   "en": "Cargo insurance",
+   "ar": "التأمين على البضاعة"
+  },
+  "destination_handling": {
+   "en": "Destination port/terminal handling",
+   "ar": "المناولة في ميناء / محطة الوجهة"
+  },
+  "duties": {
+   "en": "Import duties",
+   "ar": "الرسوم الجمركية"
+  },
+  "taxes": {
+   "en": "VAT / import taxes",
+   "ar": "ضريبة القيمة المضافة / الضرائب"
+  },
+  "clearance": {
+   "en": "Customs clearance and broker fees",
+   "ar": "التخليص الجمركي وأجور المخلّص"
+  },
+  "destination_inland": {
+   "en": "Inland haul in destination country",
+   "ar": "النقل الداخلي في بلد الوجهة"
+  }
+ },
+ "countries": {
+  "IQ": {
+   "code": "IQ",
+   "name_en": "Iraq",
+   "name_ar": "العراق",
+   "authority_en": "General Commission for Customs; COSQC (Central Organization for Standardization and Quality Control)",
+   "authority_ar": "الهيئة العامة للكمارك؛ الجهاز المركزي للتقييس والسيطرة النوعية (COSQC)",
+   "customs_system": "ASYCUDA World",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 1,
+   "covered": true,
+   "notes_en": "The Kurdistan Region applies its own entry procedures and fees in parallel with federal customs; confirm which border/port and which authority clears. Conformity-program operators and scope lists are changed by decree; ask the broker for the current list.",
+   "notes_ar": "يطبّق إقليم كردستان إجراءات ورسوماً موازية للكمارك الاتحادية؛ تأكّد من المنفذ والجهة المخلِّصة. تتغير الجهات المنفّذة لبرنامج المطابقة وقوائم النطاق بقرارات؛ اطلب القائمة الحالية من المخلّص.",
+   "documents": [
+    {
+     "id": "coc_cosqc",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "vehicles",
+      "toys",
+      "furniture",
+      "plastics_rubber",
+      "chemicals",
+      "ceramics_glass",
+      "leather_textiles",
+      "footwear",
+      "paper",
+      "metals",
+      "cosmetics",
+      "food_animal",
+      "food_plant",
+      "beverages",
+      "medical_optical"
+     ],
+     "name_en": "Iraq conformity certificate (COSQC conformity / pre-shipment inspection program)",
+     "name_ar": "شهادة المطابقة العراقية (برنامج المطابقة / الفحص قبل الشحن – COSQC)",
+     "note_en": "Issued by a COSQC-approved inspection company on the basis of factory/product checks before shipment; commonly requested by Iraqi customs for regulated goods. Scope list and approved inspectors change; verify.",
+     "note_ar": "تصدر عن شركة فحص معتمدة لدى COSQC بعد فحص المصنع/المنتج قبل الشحن؛ تطلبها الكمارك العراقية عادةً للسلع الخاضعة. تتغير قائمة النطاق والجهات المعتمدة؛ تحقّق منها.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 5,
+      "max": 15
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Required by Iraqi customs; normally issued/attested by a chamber of commerce and legalized (embassy/consulate or e-attestation) together with the commercial invoice.",
+     "note_ar": "تطلبها الكمارك العراقية؛ تصدر وتُصدَّق عادةً من غرفة التجارة وتُوثَّق (سفارة/قنصلية أو توثيق إلكتروني) مع الفاتورة التجارية.",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     }
+    },
+    {
+     "id": "invoice_legalization",
+     "requirement": "conditional",
+     "groups": "*",
+     "name_en": "Chamber / embassy legalization of invoice",
+     "name_ar": "تصديق الفاتورة من الغرفة التجارية / السفارة",
+     "note_en": "Iraqi customs often ask for the commercial invoice to be attested by the origin chamber of commerce and the Iraqi embassy; requirements vary by border and goods.",
+     "note_ar": "تطلب الكمارك العراقية غالباً تصديق الفاتورة من غرفة التجارة في بلد المنشأ والسفارة العراقية؛ تختلف المتطلبات حسب المنفذ والسلعة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Filed in ASYCUDA by a licensed Iraqi clearing agent; the importer must hold a valid commercial registration.",
+     "note_ar": "يقدَّم في أسيكودا عبر مخلّص جمركي عراقي مرخّص؛ ويجب أن يملك المستورد سجلاً تجارياً ساري المفعول."
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "moh_agri_approval",
+     "requirement": "required",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "live_animals",
+      "plants_wood"
+     ],
+     "name_en": "Ministry of Health / Agriculture import approval and border lab inspection",
+     "name_ar": "موافقة استيراد وفحص مختبري حدودي من وزارتي الصحة / الزراعة",
+     "note_en": "Food, live animals and plants need prior approval and sampling at entry; health/phytosanitary certificates are checked.",
+     "note_ar": "تحتاج الأغذية والحيوانات الحية والنباتات موافقة مسبقة وأخذ عينات عند الدخول؛ وتُدقَّق الشهادات الصحية والنباتية.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 5,
+      "max": 20
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Iraqi authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات العراقية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "israel_origin",
+     "severity": "prohibited",
+     "text_en": "Goods of Israeli origin are prohibited under Iraqi boycott law.",
+     "text_ar": "البضائع ذات المنشأ الإسرائيلي ممنوعة بموجب قانون المقاطعة العراقي.",
+     "origins": [
+      "IL"
+     ]
+    },
+    {
+     "id": "alcohol",
+     "severity": "restricted",
+     "text_en": "Import/sale of alcohol is restricted or banned under recent legislation; enforcement varies by region.",
+     "text_ar": "استيراد وبيع الكحول مقيّد أو ممنوع بموجب تشريعات حديثة؛ ويختلف التطبيق حسب المنطقة.",
+     "groups": [
+      "beverages"
+     ],
+     "hs_prefixes": [
+      "2203",
+      "2204",
+      "2205",
+      "2206",
+      "2207",
+      "2208"
+     ],
+     "confidence": "low"
+    },
+    {
+     "id": "pork",
+     "severity": "restricted",
+     "text_en": "Pork products are prohibited or tightly restricted.",
+     "text_ar": "منتجات الخنزير ممنوعة أو مقيّدة بشدة.",
+     "groups": [
+      "food_animal"
+     ],
+     "hs_prefixes": [
+      "0203",
+      "1601",
+      "1602"
+     ],
+     "confidence": "low"
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from the Communications and Media Commission (CMC).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة الإعلام والاتصالات (CMC).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with the Ministry of Health (KIMADIA / registration) before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى وزارة الصحة (كيمادية / التسجيل) قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Ministry of Health and Ministry of Agriculture; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من وزارتي الصحة والزراعة؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "agro_chem_licence",
+     "severity": "licence_required",
+     "text_en": "Pesticides and fertilizers need a Ministry of Agriculture import licence.",
+     "text_ar": "المبيدات والأسمدة تحتاج إجازة استيراد من وزارة الزراعة.",
+     "groups": [
+      "agro_chemicals"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "used_vehicles",
+     "severity": "restricted",
+     "text_en": "Used vehicles are subject to an age limit and technical conditions; very old vehicles are not admitted.",
+     "text_ar": "المركبات المستعملة خاضعة لحد أقصى للعمر وشروط فنية؛ ولا تُقبل المركبات القديمة جداً.",
+     "groups": [
+      "vehicles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "used_equipment",
+     "severity": "restricted",
+     "text_en": "Used machinery/production lines may need ministry approval and inspection; some used equipment categories are not admitted.",
+     "text_ar": "قد تحتاج الآلات وخطوط الإنتاج المستعملة موافقة الوزارة المختصة وفحصاً؛ وبعض فئات المعدات المستعملة غير مقبولة.",
+     "groups": [
+      "machinery",
+      "electrical",
+      "medical_optical"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "used_clothing",
+     "severity": "restricted",
+     "text_en": "Second-hand clothing is banned or heavily restricted.",
+     "text_ar": "الملابس المستعملة محظورة أو مقيّدة بشدة.",
+     "groups": [
+      "leather_textiles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "tobacco",
+     "severity": "restricted",
+     "text_en": "Tobacco imports are restricted and heavily taxed; approval and tax stamps apply.",
+     "text_ar": "استيراد التبغ مقيّد وعليه ضرائب مرتفعة؛ تلزم موافقة وطوابع ضريبية.",
+     "groups": [
+      "tobacco"
+     ],
+     "confidence": "low"
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 5,
+     "max": 21
+    },
+    "air": {
+     "min": 1,
+     "max": 5
+    },
+    "road": {
+     "min": 3,
+     "max": 14
+    },
+    "rail": {
+     "min": 3,
+     "max": 14
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "SA": {
+   "code": "SA",
+   "name_en": "Saudi Arabia",
+   "name_ar": "السعودية",
+   "authority_en": "ZATCA (customs, FASAH); SASO (conformity, SABER); SFDA",
+   "authority_ar": "هيئة الزكاة والضريبة والجمارك (فسح)؛ الهيئة السعودية للمواصفات (سابر)؛ هيئة الغذاء والدواء",
+   "customs_system": "FASAH",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "Regulated products need a SABER Product Certificate of Conformity (PCoC) before a Shipment Certificate of Conformity (SCoC) can be issued per consignment. GCC common external tariff (5% typical) and 15% VAT apply.",
+   "notes_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة منتج (PCoC) عبر سابر قبل إصدار شهادة مطابقة شحنة (SCoC) لكل إرسالية. تُطبّق التعرفة الخليجية الموحدة (5% غالباً) وضريبة 15%.",
+   "documents": [
+    {
+     "id": "saber_pcoc",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "vehicles",
+      "furniture",
+      "plastics_rubber",
+      "leather_textiles",
+      "footwear",
+      "ceramics_glass",
+      "metals",
+      "chemicals",
+      "paper"
+     ],
+     "name_en": "SABER Product Certificate of Conformity (PCoC)",
+     "name_ar": "شهادة مطابقة المنتج عبر سابر (PCoC)",
+     "note_en": "Issued by an accredited body through the SABER platform, linked to the product's technical regulation; valid for a period, re-used across shipments.",
+     "note_ar": "تصدر عن جهة معتمدة عبر منصة سابر وفق اللائحة الفنية للمنتج؛ صالحة لمدة وتُستخدم لعدة شحنات.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true
+    },
+    {
+     "id": "saber_scoc",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "vehicles",
+      "furniture",
+      "plastics_rubber",
+      "leather_textiles",
+      "footwear",
+      "ceramics_glass",
+      "metals",
+      "chemicals",
+      "paper"
+     ],
+     "name_en": "SABER Shipment Certificate of Conformity (SCoC)",
+     "name_ar": "شهادة مطابقة الشحنة عبر سابر (SCoC)",
+     "note_en": "Per-consignment certificate required for clearance; requires a valid PCoC and shipment documents.",
+     "note_ar": "شهادة لكل إرسالية مطلوبة للتخليص؛ تتطلب PCoC سارية ومستندات الشحنة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 1,
+      "max": 5
+     },
+     "program": true
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Chamber-attested certificate of origin is normally required (electronic attestation accepted for many origins).",
+     "note_ar": "تُطلب عادةً شهادة منشأ مصدّقة من الغرفة التجارية (التصديق الإلكتروني مقبول لأصول كثيرة).",
+     "lead_days": {
+      "min": 1,
+      "max": 5
+     }
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Filed through the FASAH platform by the importer or a licensed clearing agent.",
+     "note_ar": "تقدَّم عبر منصة فسح من المستورد أو المخلّص المرخّص."
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "arabic_labelling",
+     "requirement": "conditional",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages",
+      "cosmetics",
+      "toys",
+      "electrical",
+      "furniture",
+      "chemicals",
+      "plastics_rubber"
+     ],
+     "name_en": "Arabic labels / manuals",
+     "name_ar": "بطاقات وأدلة استخدام بالعربية",
+     "note_en": "Consumer goods generally need Arabic labelling with origin, importer and dates.",
+     "note_ar": "تحتاج السلع الاستهلاكية عادةً إلى بيان بالعربية يتضمن المنشأ والمستورد والتواريخ.",
+     "stage": "pre_shipment"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by SFDA is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى هيئة الغذاء والدواء إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "prohibited",
+     "text_en": "Alcohol and pork products are prohibited.",
+     "text_ar": "الكحول ومنتجات الخنزير ممنوعة."
+    },
+    {
+     "id": "used_tyres",
+     "severity": "prohibited",
+     "text_en": "Used/retreaded tyres are prohibited.",
+     "text_ar": "الإطارات المستعملة / المعاد تجديدها ممنوعة.",
+     "hs_prefixes": [
+      "4012"
+     ],
+     "condition": "used",
+     "confidence": "medium"
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from CST (Communications, Space and Technology Commission).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة الاتصالات والفضاء والتقنية (CST).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with SFDA before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى هيئة الغذاء والدواء (SFDA) قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by SFDA; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من هيئة الغذاء والدواء (SFDA)؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "used_goods",
+     "severity": "restricted",
+     "text_en": "Used vehicles, machinery and appliances face age limits, inspection or outright bans by category.",
+     "text_ar": "المركبات والآلات والأجهزة المستعملة تخضع لحدود عمر وفحص أو حظر حسب الفئة.",
+     "groups": [
+      "vehicles",
+      "machinery",
+      "electrical"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "used_clothing",
+     "severity": "restricted",
+     "text_en": "Second-hand clothing is banned or heavily restricted.",
+     "text_ar": "الملابس المستعملة محظورة أو مقيّدة بشدة.",
+     "groups": [
+      "leather_textiles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "tobacco",
+     "severity": "restricted",
+     "text_en": "Tobacco is allowed with SFDA approval, warnings and high excise.",
+     "text_ar": "التبغ مسموح بموافقة الهيئة وتحذيرات صحية وضريبة انتقائية مرتفعة.",
+     "groups": [
+      "tobacco"
+     ],
+     "confidence": "medium"
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 6
+    },
+    "rail": {
+     "min": 2,
+     "max": 6
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  "AE": {
+   "code": "AE",
+   "name_en": "United Arab Emirates",
+   "name_ar": "الإمارات",
+   "authority_en": "Federal Authority for Identity, Citizenship, Customs & Port Security; MoIAT; Dubai Customs (Mirsal 2) / local customs",
+   "authority_ar": "الهيئة الاتحادية للهوية والجنسية والجمارك وأمن المنافذ؛ وزارة الصناعة والتكنولوجيا المتقدمة؛ جمارك دبي (مرسال 2)",
+   "customs_system": "Mirsal 2 (Dubai) / emirate systems",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "possible",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "Customs is administered per emirate (Dubai, Abu Dhabi, Sharjah...); the importer code is registered with the emirate's customs. GCC CET (5% typical) and 5% VAT.",
+   "notes_ar": "تُدار الجمارك لكل إمارة (دبي، أبوظبي، الشارقة...)؛ ويُسجَّل كود المستورد لدى جمارك الإمارة. التعرفة الخليجية الموحدة (5% غالباً) وضريبة 5%.",
+   "documents": [
+    {
+     "id": "ecas_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "vehicles",
+      "machinery",
+      "plastics_rubber",
+      "ceramics_glass",
+      "furniture",
+      "chemicals"
+     ],
+     "name_en": "MoIAT ECAS / Emirates conformity certificate (GCC G-Mark where applicable)",
+     "name_ar": "شهادة مطابقة ECAS من وزارة الصناعة (علامة G الخليجية عند الانطباق)",
+     "note_en": "Regulated products need a conformity certificate from an accredited body under the Emirates Conformity Assessment Scheme / GSO technical regulations; scope varies by product.",
+     "note_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة من جهة معتمدة ضمن نظام التقييم الإماراتي / اللوائح الفنية الخليجية؛ ويختلف النطاق حسب المنتج.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "conditional",
+     "groups": "*",
+     "note_en": "Not universally required but requested for preferential duty and many food/regulated goods; chamber attestation common.",
+     "note_ar": "ليست مطلوبة دائماً لكنها تُطلب للرسوم التفضيلية وللأغذية والسلع الخاضعة؛ وتصديق الغرفة شائع."
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Filed electronically in the emirate's customs system by the importer or clearing agent.",
+     "note_ar": "يقدَّم إلكترونياً في نظام جمارك الإمارة من المستورد أو المخلّص."
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Trade licence and customs importer code with the emirate's customs.",
+     "note_ar": "رخصة تجارية وكود مستورد لدى جمارك الإمارة."
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by MoIAT is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى وزارة الصناعة إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol and pork products are allowed only for licensed non-Muslim outlets/hotels under permit.",
+     "text_ar": "الكحول ومنتجات الخنزير تُسمح فقط للجهات المرخّصة (غير المسلمين/الفنادق) بتصريح."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from TDRA (Telecommunications and Digital Government Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من الهيئة العامة لتنظيم قطاع الاتصالات.",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with the Ministry of Health and Prevention / local health authorities before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى وزارة الصحة ووقاية المجتمع / الجهات الصحية المحلية قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the municipality / food-safety authority of the emirate; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من بلدية / جهة سلامة الغذاء في الإمارة؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "used_goods",
+     "severity": "restricted",
+     "text_en": "Used tyres, vehicles and some machinery face age/condition limits.",
+     "text_ar": "الإطارات والمركبات وبعض الآلات المستعملة تخضع لحدود عمر وحالة.",
+     "groups": [
+      "vehicles",
+      "machinery"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 1,
+     "max": 5
+    },
+    "air": {
+     "min": 1,
+     "max": 2
+    },
+    "road": {
+     "min": 1,
+     "max": 4
+    },
+    "rail": {
+     "min": 1,
+     "max": 4
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  "KW": {
+   "code": "KW",
+   "name_en": "Kuwait",
+   "name_ar": "الكويت",
+   "authority_en": "Kuwait Customs; Public Authority for Industry (PAI)",
+   "authority_ar": "الإدارة العامة للجمارك؛ الهيئة العامة للصناعة (PAI)",
+   "customs_system": "Kuwait Customs electronic system",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "GCC common external tariff (5% typical) and national conformity schemes apply; details here are coarse and lower-confidence than Saudi/UAE.",
+   "notes_ar": "تُطبّق التعرفة الخليجية الموحدة (5% غالباً) وأنظمة مطابقة وطنية؛ التفاصيل هنا عامة وأقل ثقة من السعودية والإمارات.",
+   "documents": [
+    {
+     "id": "gcc_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "vehicles",
+      "machinery",
+      "plastics_rubber",
+      "furniture",
+      "ceramics_glass",
+      "chemicals",
+      "leather_textiles"
+     ],
+     "name_en": "Kuwait PAI Certificate of Conformity (CoC) / GSO conformity",
+     "name_ar": "شهادة مطابقة الهيئة العامة للصناعة (CoC) / المطابقة الخليجية",
+     "note_en": "Regulated products need a conformity certificate under the Kuwaiti conformity scheme and GSO technical regulations; verify scope.",
+     "note_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة وفق نظام المطابقة الكويتي واللوائح الفنية الخليجية؛ تحقق من النطاق.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Chamber-attested certificate of origin is normally requested; embassy legalization may still apply.",
+     "note_ar": "تُطلب عادةً شهادة منشأ مصدّقة من الغرفة؛ وقد يُشترط توثيق السفارة.",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Kuwaiti authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات الكويتية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from CITRA (Communications and Information Technology Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من الهيئة العامة للاتصالات وتقنية المعلومات (CITRA).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Public Authority for Food and Nutrition / Ministry of Health; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من الهيئة العامة للغذاء والتغذية / وزارة الصحة؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with the Ministry of Health before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى وزارة الصحة قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "prohibited",
+     "text_en": "Alcohol and pork products are prohibited.",
+     "text_ar": "الكحول ومنتجات الخنزير ممنوعة."
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 3,
+     "max": 10
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 7
+    },
+    "rail": {
+     "min": 2,
+     "max": 7
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "QA": {
+   "code": "QA",
+   "name_en": "Qatar",
+   "name_ar": "قطر",
+   "authority_en": "General Authority of Customs; Ministry of Commerce and Industry (MoCI)",
+   "authority_ar": "الهيئة العامة للجمارك؛ وزارة التجارة والصناعة",
+   "customs_system": "Qatar customs electronic system",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "GCC common external tariff (5% typical) and national conformity schemes apply; details here are coarse and lower-confidence than Saudi/UAE.",
+   "notes_ar": "تُطبّق التعرفة الخليجية الموحدة (5% غالباً) وأنظمة مطابقة وطنية؛ التفاصيل هنا عامة وأقل ثقة من السعودية والإمارات.",
+   "documents": [
+    {
+     "id": "gcc_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "vehicles",
+      "machinery",
+      "plastics_rubber",
+      "furniture",
+      "ceramics_glass",
+      "chemicals",
+      "leather_textiles"
+     ],
+     "name_en": "Qatar conformity certificate (Qatar Standards / GSO technical regulations)",
+     "name_ar": "شهادة مطابقة قطرية (المواصفات القطرية / اللوائح الفنية الخليجية)",
+     "note_en": "Regulated products need a conformity certificate from an accepted body; verify scope with MoCI.",
+     "note_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة من جهة مقبولة؛ تحقق من النطاق لدى الوزارة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Chamber-attested certificate of origin is normally requested; embassy legalization may still apply.",
+     "note_ar": "تُطلب عادةً شهادة منشأ مصدّقة من الغرفة؛ وقد يُشترط توثيق السفارة.",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Qatari authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات القطرية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from CRA (Communications Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة تنظيم الاتصالات (CRA).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Ministry of Public Health / MoCI; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من وزارة الصحة العامة / وزارة التجارة؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with the Ministry of Public Health before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى وزارة الصحة العامة قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol and pork products are allowed only for licensed non-Muslim outlets/hotels under permit.",
+     "text_ar": "الكحول ومنتجات الخنزير تُسمح فقط للجهات المرخّصة (غير المسلمين/الفنادق) بتصريح."
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 6
+    },
+    "rail": {
+     "min": 2,
+     "max": 6
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "OM": {
+   "code": "OM",
+   "name_en": "Oman",
+   "name_ar": "عُمان",
+   "authority_en": "Oman Customs (Royal Oman Police); DGSM",
+   "authority_ar": "جمارك سلطنة عُمان (شرطة عُمان السلطانية)؛ المديرية العامة للمواصفات والمقاييس",
+   "customs_system": "Oman Customs electronic system",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "GCC common external tariff (5% typical) and national conformity schemes apply; details here are coarse and lower-confidence than Saudi/UAE.",
+   "notes_ar": "تُطبّق التعرفة الخليجية الموحدة (5% غالباً) وأنظمة مطابقة وطنية؛ التفاصيل هنا عامة وأقل ثقة من السعودية والإمارات.",
+   "documents": [
+    {
+     "id": "gcc_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "vehicles",
+      "machinery",
+      "plastics_rubber",
+      "furniture",
+      "ceramics_glass",
+      "chemicals",
+      "leather_textiles"
+     ],
+     "name_en": "Oman conformity certificate (DGSM / GSO technical regulations)",
+     "name_ar": "شهادة مطابقة عُمانية (المديرية العامة للمواصفات والمقاييس / اللوائح الخليجية)",
+     "note_en": "Regulated products need a conformity certificate; verify scope with DGSM.",
+     "note_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة؛ تحقق من النطاق لدى المديرية.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Chamber-attested certificate of origin is normally requested; embassy legalization may still apply.",
+     "note_ar": "تُطلب عادةً شهادة منشأ مصدّقة من الغرفة؛ وقد يُشترط توثيق السفارة.",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Omani authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات العُمانية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from TRA (Telecommunications Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة تنظيم الاتصالات (TRA).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Ministry of Health / Consumer Protection Authority; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من وزارة الصحة / هيئة حماية المستهلك؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with the Ministry of Health before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى وزارة الصحة قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol and pork products are allowed only for licensed non-Muslim outlets/hotels under permit.",
+     "text_ar": "الكحول ومنتجات الخنزير تُسمح فقط للجهات المرخّصة (غير المسلمين/الفنادق) بتصريح."
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 6
+    },
+    "rail": {
+     "min": 2,
+     "max": 6
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "BH": {
+   "code": "BH",
+   "name_en": "Bahrain",
+   "name_ar": "البحرين",
+   "authority_en": "Bahrain Customs Affairs; Ministry of Industry and Commerce",
+   "authority_ar": "شؤون الجمارك البحرينية؛ وزارة الصناعة والتجارة",
+   "customs_system": "Bahrain customs electronic system",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 2,
+   "covered": true,
+   "notes_en": "GCC common external tariff (5% typical) and national conformity schemes apply; details here are coarse and lower-confidence than Saudi/UAE.",
+   "notes_ar": "تُطبّق التعرفة الخليجية الموحدة (5% غالباً) وأنظمة مطابقة وطنية؛ التفاصيل هنا عامة وأقل ثقة من السعودية والإمارات.",
+   "documents": [
+    {
+     "id": "gcc_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "vehicles",
+      "machinery",
+      "plastics_rubber",
+      "furniture",
+      "ceramics_glass",
+      "chemicals",
+      "leather_textiles"
+     ],
+     "name_en": "Bahrain conformity certificate (MOIC / GSO technical regulations)",
+     "name_ar": "شهادة مطابقة بحرينية (وزارة الصناعة والتجارة / اللوائح الخليجية)",
+     "note_en": "Regulated products need a conformity certificate; verify scope with MOIC.",
+     "note_ar": "تحتاج المنتجات الخاضعة شهادة مطابقة؛ تحقق من النطاق لدى الوزارة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 15
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Chamber-attested certificate of origin is normally requested; embassy legalization may still apply.",
+     "note_ar": "تُطلب عادةً شهادة منشأ مصدّقة من الغرفة؛ وقد يُشترط توثيق السفارة.",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Bahraini authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات البحرينية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from TRA (Telecommunications Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة تنظيم الاتصالات (TRA).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Ministry of Health / NHRA; labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من وزارة الصحة / الهيئة الوطنية لتنظيم المهن والخدمات الصحية؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with NHRA before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى الهيئة الوطنية لتنظيم المهن والخدمات الصحية قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol and pork products are allowed only for licensed non-Muslim outlets/hotels under permit.",
+     "text_ar": "الكحول ومنتجات الخنزير تُسمح فقط للجهات المرخّصة (غير المسلمين/الفنادق) بتصريح."
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 6
+    },
+    "rail": {
+     "min": 2,
+     "max": 6
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "TR": {
+   "code": "TR",
+   "name_en": "Turkey",
+   "name_ar": "تركيا",
+   "authority_en": "Ministry of Trade (customs and product inspection, TAREKS); Ministry of Agriculture and Forestry",
+   "authority_ar": "وزارة التجارة (الجمارك وتفتيش المنتجات، TAREKS)؛ وزارة الزراعة والغابات",
+   "customs_system": "Ministry of Trade electronic customs system",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 3,
+   "covered": true,
+   "notes_en": "Many China-origin goods carry additional customs duties and import-surveillance measures on top of the base tariff (ilave gümrük vergisi); EU-origin goods move under the EU-Turkey customs union (A.TR). VAT 20% typical.",
+   "notes_ar": "تخضع بضائع كثيرة من منشأ صيني لرسوم جمركية إضافية وتدابير رقابة استيراد فوق التعرفة الأساسية؛ وتتحرك بضائع المنشأ الأوروبي بموجب الاتحاد الجمركي (A.TR). ضريبة 20% غالباً.",
+   "documents": [
+    {
+     "id": "tareks_control",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "plastics_rubber",
+      "leather_textiles",
+      "footwear",
+      "furniture",
+      "chemicals",
+      "vehicles",
+      "ceramics_glass",
+      "cosmetics",
+      "medical_optical",
+      "food_animal",
+      "food_plant",
+      "beverages",
+      "paper"
+     ],
+     "name_en": "TAREKS product control / inspection certificate",
+     "name_ar": "شهادة فحص ومراقبة المنتج عبر TAREKS",
+     "note_en": "The Turkish importer applies in TAREKS (risk-based product safety and inspection) before import; the product is inspected at the border or in the warehouse and a conformity document is issued. Needs supplier test reports/CE or equivalent.",
+     "note_ar": "يقدّم المستورد التركي طلباً في TAREKS (نظام السلامة والتفتيش القائم على المخاطر) قبل الاستيراد؛ ويُفحص المنتج على الحدود أو في المستودع وتصدر وثيقة مطابقة. تلزم تقارير اختبار المورد وCE أو ما يعادلها.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 10
+     },
+     "program": true
+    },
+    {
+     "id": "ce_declaration",
+     "requirement": "conditional",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "medical_optical"
+     ],
+     "name_en": "CE marking and EU/Turkish declaration of conformity",
+     "name_ar": "علامة CE وإعلان المطابقة الأوروبي/التركي",
+     "note_en": "Turkey follows EU new-approach directives; supplier CE marking and technical file are requested during TAREKS inspection.",
+     "note_ar": "تتبع تركيا توجيهات النهج الجديد الأوروبية؛ وتُطلب علامة CE والملف الفني خلال فحص TAREKS.",
+     "stage": "pre_shipment"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "conditional",
+     "groups": "*",
+     "note_en": "Needed to claim preferential tariffs and for anti-dumping/additional-duty origin checks.",
+     "note_ar": "تلزم للتعرفة التفضيلية ولفحوص المنشأ الخاصة بمكافحة الإغراق والرسوم الإضافية."
+    },
+    {
+     "id": "movement_certificate_atr",
+     "requirement": "conditional",
+     "groups": "*",
+     "name_en": "A.TR movement certificate / EUR.1",
+     "name_ar": "شهادة الحركة A.TR / EUR.1",
+     "note_en": "For EU-origin goods under the customs union to avoid duties.",
+     "note_ar": "للبضائع ذات المنشأ الأوروبي ضمن الاتحاد الجمركي لتجنب الرسوم.",
+     "origins": [
+      "EU",
+      "DE",
+      "FR",
+      "IT",
+      "ES",
+      "NL",
+      "PL",
+      "BE",
+      "GR",
+      "RO",
+      "CZ",
+      "AT",
+      "SE",
+      "PT",
+      "HU",
+      "BG"
+     ]
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Filed electronically by a licensed Turkish customs broker; importer needs a tax number and e-signature.",
+     "note_ar": "يقدَّم إلكترونياً عبر مخلّص جمركي تركي مرخّص؛ ويحتاج المستورد رقماً ضريبياً وتوقيعاً إلكترونياً."
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "turkish_labelling",
+     "requirement": "conditional",
+     "groups": [
+      "electrical",
+      "toys",
+      "cosmetics",
+      "food_animal",
+      "food_plant",
+      "leather_textiles",
+      "furniture",
+      "chemicals"
+     ],
+     "name_en": "Turkish-language labels and manuals",
+     "name_ar": "بطاقات وأدلة استخدام بالتركية",
+     "note_en": "Consumer goods must carry Turkish labelling/instructions at placing on market.",
+     "note_ar": "يجب أن تحمل السلع الاستهلاكية بطاقات وتعليمات بالتركية عند طرحها في السوق.",
+     "stage": "clearance"
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "surveillance_extra_duties",
+     "severity": "enhanced_scrutiny",
+     "text_en": "Import surveillance and additional customs duties apply to many China-origin goods (textiles, footwear, some electronics, steel); check current lists.",
+     "text_ar": "تُطبّق رقابة استيراد ورسوم جمركية إضافية على سلع صينية كثيرة (منسوجات، أحذية، بعض الإلكترونيات، فولاذ)؛ راجع القوائم الحالية.",
+     "groups": [
+      "leather_textiles",
+      "footwear",
+      "electrical",
+      "metals",
+      "furniture"
+     ],
+     "origins": [
+      "CN"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "used_vehicles",
+     "severity": "prohibited",
+     "text_en": "Import of used passenger vehicles is generally prohibited (narrow exceptions).",
+     "text_ar": "استيراد المركبات المستعملة للركاب ممنوع عموماً (مع استثناءات ضيقة).",
+     "groups": [
+      "vehicles"
+     ],
+     "condition": "used",
+     "confidence": "medium"
+    },
+    {
+     "id": "used_machinery",
+     "severity": "restricted",
+     "text_en": "Used machinery needs a used-goods control certificate and inspection; not all categories are admitted.",
+     "text_ar": "الآلات المستعملة تحتاج شهادة رقابة للبضائع المستعملة وفحصاً؛ ولا تُقبل كل الفئات.",
+     "groups": [
+      "machinery",
+      "electrical",
+      "medical_optical"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "used_clothing",
+     "severity": "restricted",
+     "text_en": "Second-hand clothing is banned or heavily restricted.",
+     "text_ar": "الملابس المستعملة محظورة أو مقيّدة بشدة.",
+     "groups": [
+      "leather_textiles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from BTK (Information and Communication Technologies Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة تكنولوجيا المعلومات والاتصالات (BTK).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with TITCK (Turkish Medicines and Medical Devices Agency) before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى الوكالة التركية للأدوية والأجهزة الطبية (TITCK) قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by the Ministry of Agriculture and Forestry (TAREKS); labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من وزارة الزراعة والغابات (TAREKS)؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "alcohol_tobacco",
+     "severity": "licence_required",
+     "text_en": "Alcohol and tobacco need a licence and tax banderoles.",
+     "text_ar": "الكحول والتبغ يحتاجان ترخيصاً وطوابع ضريبية.",
+     "groups": [
+      "beverages",
+      "tobacco"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 5
+    },
+    "rail": {
+     "min": 2,
+     "max": 5
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  "JO": {
+   "code": "JO",
+   "name_en": "Jordan",
+   "name_ar": "الأردن",
+   "authority_en": "Jordan Customs Department; JSMO (standards); JFDA",
+   "authority_ar": "دائرة الجمارك الأردنية؛ مؤسسة المواصفات والمقاييس (JSMO)؛ المؤسسة العامة للغذاء والدواء",
+   "customs_system": "ASYCUDA World",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 3,
+   "covered": true,
+   "notes_en": "Sea cargo normally enters through Aqaba; Aqaba Special Economic Zone has its own customs regime. 16% general sales tax typical.",
+   "notes_ar": "تدخل الشحنات البحرية عادةً عبر العقبة؛ ولمنطقة العقبة الاقتصادية الخاصة نظام جمركي مستقل. ضريبة مبيعات 16% غالباً.",
+   "documents": [
+    {
+     "id": "jsmo_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "plastics_rubber",
+      "leather_textiles",
+      "footwear",
+      "furniture",
+      "chemicals",
+      "ceramics_glass",
+      "vehicles",
+      "paper",
+      "cosmetics",
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "name_en": "JSMO conformity / technical-regulation compliance document",
+     "name_ar": "وثيقة مطابقة المواصفات الأردنية / اللوائح الفنية (JSMO)",
+     "note_en": "Regulated goods are checked against mandatory Jordanian technical regulations at entry; a recognised certificate of conformity or test report speeds clearance.",
+     "note_ar": "تُفحص السلع الخاضعة وفق اللوائح الفنية الأردنية الإلزامية عند الدخول؛ وتُسرّع شهادة مطابقة أو تقرير اختبار معترف به التخليص.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 10
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "jfda_approval",
+     "requirement": "required",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages",
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "name_en": "JFDA import approval / registration",
+     "name_ar": "موافقة استيراد / تسجيل من المؤسسة العامة للغذاء والدواء",
+     "note_en": "Food, drugs, cosmetics and medical devices need JFDA registration/approval and border inspection.",
+     "note_ar": "الأغذية والأدوية والتجميل والأجهزة الطبية تحتاج تسجيلاً/موافقة وفحصاً حدودياً.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 5,
+      "max": 20
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "conditional",
+     "groups": "*",
+     "note_en": "Requested for preferential duty (e.g. trade agreements) and by customs for many goods.",
+     "note_ar": "تُطلب للرسوم التفضيلية (اتفاقيات تجارية) ومن الجمارك لسلع كثيرة."
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*"
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Importer must be registered with the Chamber of Commerce/Industry and hold a tax number.",
+     "note_ar": "يجب تسجيل المستورد لدى غرفة التجارة/الصناعة وامتلاك رقم ضريبي."
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by JFDA is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى المؤسسة العامة للغذاء والدواء إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol and pork products are allowed only for licensed non-Muslim outlets/hotels under permit.",
+     "text_ar": "الكحول ومنتجات الخنزير تُسمح فقط للجهات المرخّصة (غير المسلمين/الفنادق) بتصريح."
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from TRC (Telecommunications Regulatory Commission).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من هيئة تنظيم قطاع الاتصالات (TRC).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with JFDA before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى المؤسسة العامة للغذاء والدواء قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "used_vehicles",
+     "severity": "restricted",
+     "text_en": "Used vehicles are subject to an age limit and conditions.",
+     "text_ar": "المركبات المستعملة خاضعة لحد عمر وشروط.",
+     "groups": [
+      "vehicles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "used_clothing",
+     "severity": "restricted",
+     "text_en": "Second-hand clothing is banned or heavily restricted.",
+     "text_ar": "الملابس المستعملة محظورة أو مقيّدة بشدة.",
+     "groups": [
+      "leather_textiles"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 3,
+     "max": 8
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 2,
+     "max": 6
+    },
+    "rail": {
+     "min": 2,
+     "max": 6
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "low"
+  },
+  "EG": {
+   "code": "EG",
+   "name_en": "Egypt",
+   "name_ar": "مصر",
+   "authority_en": "Egyptian Customs Authority (Nafeza platform); GOEIC; EOS; EDA / NFSA",
+   "authority_ar": "مصلحة الجمارك المصرية (منصة نافذة)؛ الهيئة العامة للرقابة على الصادرات والواردات (GOEIC)؛ هيئة المواصفات (EOS)؛ هيئة الدواء / هيئة سلامة الغذاء",
+   "customs_system": "Nafeza (ACI/ACID) + Customs",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "rarely",
+   "priority": 3,
+   "covered": true,
+   "notes_en": "Without a valid ACID number the carrier may refuse to load and customs will not release the cargo. Importers for trade must be on the Importers' Register (Egyptian-owned). 14% VAT typical (some goods have table tax).",
+   "notes_ar": "بدون رقم ACID صالح قد يرفض الناقل التحميل ولن تُفرج الجمارك عن الشحنة. يجب أن يكون المستورد لأغراض التجارة مقيداً في سجل المستوردين (مصري الملكية). ضريبة 14% غالباً.",
+   "documents": [
+    {
+     "id": "aci_acid",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Advance Cargo Information (ACI) / ACID number",
+     "name_ar": "المعلومات المسبقة عن الشحنة (ACI) ورقم ACID",
+     "note_en": "The Egyptian importer registers on the Nafeza platform and obtains an ACID number before shipping; the foreign exporter must be registered on the ACI platform and the ACID must appear on the B/L/AWB. Filed at least ~48h before loading (check current rule).",
+     "note_ar": "يسجّل المستورد المصري في منصة نافذة ويحصل على رقم ACID قبل الشحن؛ ويجب تسجيل المصدّر الأجنبي في منصة ACI وأن يظهر الرقم على بوليصة الشحن. يُقدَّم قبل التحميل بنحو 48 ساعة على الأقل (راجع القاعدة الحالية).",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 1,
+      "max": 4
+     },
+     "program": true,
+     "modes": [
+      "sea",
+      "air"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "goeic_conformity",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "leather_textiles",
+      "footwear",
+      "furniture",
+      "plastics_rubber",
+      "ceramics_glass",
+      "chemicals",
+      "cosmetics",
+      "vehicles",
+      "paper"
+     ],
+     "name_en": "GOEIC conformity certificate / factory registration (Registry of Factories)",
+     "name_ar": "شهادة مطابقة GOEIC / تسجيل المصنع (سجل المصانع)",
+     "note_en": "Regulated goods need a conformity certificate (pre-shipment inspection by an approved body) and the foreign factory registered with GOEIC for listed products.",
+     "note_ar": "تحتاج السلع الخاضعة شهادة مطابقة (فحص قبل الشحن من جهة معتمدة) وتسجيل المصنع الأجنبي لدى GOEIC للمنتجات المدرجة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 7,
+      "max": 30
+     },
+     "program": true,
+     "confidence": "low"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Required and normally attested by the origin chamber of commerce (and legalized/e-attested as currently required).",
+     "note_ar": "مطلوبة وتُصدَّق عادةً من غرفة التجارة في بلد المنشأ (مع التوثيق المطلوب حالياً).",
+     "lead_days": {
+      "min": 2,
+      "max": 7
+     }
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "note_en": "Filed on Nafeza by the importer or licensed clearing agent.",
+     "note_ar": "يقدَّم عبر نافذة من المستورد أو المخلّص المرخّص."
+    },
+    {
+     "id": "importer_registration",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Importers' Register / commercial register entry",
+     "name_ar": "القيد في سجل المستوردين / السجل التجاري",
+     "note_en": "Only registered (Egyptian-owned) importers may import for trade.",
+     "note_ar": "لا يستورد للاتجار إلا المستورد المقيد (المملوك لمصريين)."
+    },
+    {
+     "id": "nfsa_eda_approval",
+     "requirement": "required",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages",
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "name_en": "NFSA / EDA import approval and registration",
+     "name_ar": "موافقة استيراد وتسجيل من هيئة سلامة الغذاء / هيئة الدواء",
+     "note_en": "Food is cleared by NFSA; drugs, cosmetics and medical devices by EDA registration.",
+     "note_ar": "تخلّص هيئة سلامة الغذاء الأغذية؛ وتسجّل هيئة الدواء الأدوية والتجميل والأجهزة الطبية.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 5,
+      "max": 30
+     },
+     "confidence": "low"
+    },
+    {
+     "id": "halal_certificate",
+     "requirement": "required",
+     "groups": [
+      "food_animal"
+     ],
+     "note_en": "Halal certificate from a body recognised by the Egyptian authorities is required for meat, poultry and derived products.",
+     "note_ar": "شهادة حلال من جهة معترف بها لدى السلطات المصرية إلزامية للحوم والدواجن ومشتقاتها."
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "used_cars",
+     "severity": "prohibited",
+     "text_en": "Used passenger cars are generally prohibited (limited exceptions).",
+     "text_ar": "السيارات المستعملة للركاب ممنوعة عموماً (مع استثناءات محدودة).",
+     "groups": [
+      "vehicles"
+     ],
+     "condition": "used",
+     "confidence": "medium"
+    },
+    {
+     "id": "used_clothing_tyres",
+     "severity": "prohibited",
+     "text_en": "Second-hand clothing and used tyres are prohibited.",
+     "text_ar": "الملابس والإطارات المستعملة ممنوعة.",
+     "groups": [
+      "leather_textiles"
+     ],
+     "hs_prefixes": [
+      "4012"
+     ],
+     "condition": "used",
+     "confidence": "medium"
+    },
+    {
+     "id": "used_machinery",
+     "severity": "restricted",
+     "text_en": "Used machinery/production lines face age limits and require inspection/approval.",
+     "text_ar": "الآلات وخطوط الإنتاج المستعملة تخضع لحدود عمر وتتطلب فحصاً/موافقة.",
+     "groups": [
+      "machinery",
+      "electrical",
+      "medical_optical"
+     ],
+     "condition": "used",
+     "confidence": "low"
+    },
+    {
+     "id": "telecom_type_approval",
+     "severity": "licence_required",
+     "text_en": "Radio/telecom equipment (phones, Wi-Fi, radios, drones) needs type approval from NTRA (National Telecommunications Regulatory Authority).",
+     "text_ar": "أجهزة الاتصالات واللاسلكي (هواتف، واي فاي، أجهزة لاسلكية، طائرات مسيّرة) تحتاج إلى اعتماد نوع من الجهاز القومي لتنظيم الاتصالات (NTRA).",
+     "hs_prefixes": [
+      "8517",
+      "8525",
+      "8526",
+      "8527"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "pharma_cosmetic_med_registration",
+     "severity": "licence_required",
+     "text_en": "Pharmaceuticals, cosmetics and medical devices must be registered/licensed with EDA (Egyptian Drug Authority) before import.",
+     "text_ar": "الأدوية ومستحضرات التجميل والأجهزة الطبية يجب تسجيلها/ترخيصها لدى هيئة الدواء المصرية قبل الاستيراد.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_regulator",
+     "severity": "licence_required",
+     "text_en": "Food and beverages need import approval/inspection by NFSA (National Food Safety Authority); labels in Arabic with production/expiry dates.",
+     "text_ar": "الأغذية والمشروبات تحتاج موافقة استيراد/فحصاً من الهيئة القومية لسلامة الغذاء؛ وبطاقة بيان بالعربية مع تاريخي الإنتاج والانتهاء.",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "alcohol_pork",
+     "severity": "restricted",
+     "text_en": "Alcohol is licensed; pork is restricted.",
+     "text_ar": "الكحول بترخيص؛ ولحم الخنزير مقيّد.",
+     "groups": [
+      "beverages"
+     ],
+     "hs_prefixes": [
+      "0203",
+      "2208"
+     ],
+     "confidence": "low"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 5,
+     "max": 21
+    },
+    "air": {
+     "min": 2,
+     "max": 7
+    },
+    "road": {
+     "min": 4,
+     "max": 14
+    },
+    "rail": {
+     "min": 4,
+     "max": 14
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium"
+  },
+  "EU": {
+   "code": "EU",
+   "name_en": "European Union (27 member states)",
+   "name_ar": "الاتحاد الأوروبي (27 دولة)",
+   "authority_en": "National customs (EU Union Customs Code); EU product-safety authorities; TRACES for food/feed",
+   "authority_ar": "الجمارك الوطنية (مدونة الجمارك الاتحادية)؛ هيئات سلامة المنتجات؛ نظام TRACES للأغذية",
+   "customs_system": "National systems + ICS2/UCC",
+   "customs_value_basis": "CIF",
+   "ddp_feasible": "possible",
+   "priority": 4,
+   "covered": true,
+   "notes_en": "Duty is set by the EU tariff (TARIC); VAT is national (about 17-27%). Rules are common across members but clearance practice differs per port. The carrier (not the importer) files the ICS2 entry summary declaration, but the importer/seller must supply a precise HS-6 goods description.",
+   "notes_ar": "الرسم وفق التعرفة الأوروبية (TARIC)؛ وضريبة القيمة المضافة وطنية (نحو 17-27%). القواعد موحدة لكن ممارسة التخليص تختلف حسب الميناء. يقدّم الناقل (لا المستورد) بيان الدخول ICS2 لكن على المستورد/البائع تزويده بوصف دقيق للبضاعة ورمز HS من 6 أرقام.",
+   "documents": [
+    {
+     "id": "eori_number",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "EORI number of the importer",
+     "name_ar": "رقم EORI للمستورد",
+     "note_en": "Importer of record needs an EORI registration; non-EU sellers acting as importer need an EU customs representative.",
+     "note_ar": "يحتاج المستورد المسجّل رقم EORI؛ والبائع من خارج الاتحاد الذي يعمل كمستورد يحتاج ممثلاً جمركياً أوروبياً.",
+     "stage": "clearance"
+    },
+    {
+     "id": "ens_ics2",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Entry Summary Declaration (ICS2) data",
+     "name_ar": "بيانات بيان الدخول الموجز (ICS2)",
+     "note_en": "Filed by the carrier/forwarder before loading (air: before departure; sea: 24h before loading, EU-bound); needs the seller's accurate goods description and HS-6.",
+     "note_ar": "يقدّمه الناقل/وكيل الشحن قبل التحميل (جواً: قبل الإقلاع؛ بحراً: 24 ساعة قبل التحميل)؛ ويتطلب وصفاً دقيقاً للبضاعة ورمز HS من 6 أرقام من البائع.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 0,
+      "max": 1
+     },
+     "program": true
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Import declaration (SAD) with customs value declaration",
+     "name_ar": "البيان الجمركي للاستيراد (SAD) مع إقرار القيمة",
+     "note_en": "Filed by the importer or customs broker/representative in the member state of entry or destination.",
+     "note_ar": "يقدّمه المستورد أو المخلّص/الممثل الجمركي في دولة الدخول أو الوجهة."
+    },
+    {
+     "id": "vat_registration",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "VAT number of the importer",
+     "name_ar": "الرقم الضريبي (VAT) للمستورد",
+     "note_en": "Needed to import and to use import-VAT deferment schemes.",
+     "note_ar": "لازم للاستيراد وللاستفادة من أنظمة تأجيل ضريبة الاستيراد.",
+     "stage": "clearance"
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "conditional",
+     "groups": "*",
+     "note_en": "Required for preferential tariffs; also used for anti-dumping/origin checks.",
+     "note_ar": "مطلوبة للتعرفة التفضيلية وتستخدم أيضاً لفحوص مكافحة الإغراق والمنشأ."
+    },
+    {
+     "id": "ce_doc",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "machinery",
+      "toys",
+      "medical_optical"
+     ],
+     "name_en": "CE marking, EU Declaration of Conformity and technical file",
+     "name_ar": "علامة CE وإعلان المطابقة الأوروبي والملف الفني",
+     "note_en": "Mandatory under the applicable directives/regulations (LVD, EMC, RED, Machinery, Toy Safety, MDR/IVDR). An EU-established economic operator/authorised representative is needed.",
+     "note_ar": "إلزامية وفق التوجيهات واللوائح السارية (LVD وEMC وRED والآلات وسلامة الألعاب وMDR/IVDR). ويلزم متعامل اقتصادي/ممثل مفوّض داخل الاتحاد.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 10,
+      "max": 60
+     },
+     "program": true
+    },
+    {
+     "id": "reach_rohs",
+     "requirement": "conditional",
+     "groups": [
+      "chemicals",
+      "electrical",
+      "plastics_rubber",
+      "leather_textiles",
+      "footwear",
+      "toys",
+      "furniture",
+      "cosmetics"
+     ],
+     "name_en": "REACH / RoHS compliance evidence",
+     "name_ar": "إثبات الامتثال لـ REACH / RoHS",
+     "note_en": "REACH registration is required for chemicals above 1 tonne/year (by an EU entity or Only Representative); REACH Annex XVII/SVHC limits apply to articles and RoHS to electronics.",
+     "note_ar": "يلزم تسجيل REACH للمواد الكيميائية فوق طن/سنة (عبر كيان أوروبي أو ممثل وحيد)؛ وتنطبق قيود الملحق XVII/SVHC على المصنوعات وRoHS على الإلكترونيات.",
+     "stage": "pre_shipment",
+     "program": true
+    },
+    {
+     "id": "gpsr_operator",
+     "requirement": "required",
+     "groups": [
+      "electrical",
+      "toys",
+      "furniture",
+      "footwear",
+      "leather_textiles",
+      "ceramics_glass",
+      "plastics_rubber",
+      "general_goods"
+     ],
+     "name_en": "EU responsible person under the General Product Safety Regulation",
+     "name_ar": "الشخص المسؤول في الاتحاد وفق لائحة السلامة العامة للمنتجات (GPSR)",
+     "note_en": "Consumer products need an EU-based responsible person named on the product/packaging, plus traceability info.",
+     "note_ar": "تحتاج المنتجات الاستهلاكية شخصاً مسؤولاً داخل الاتحاد مذكوراً على المنتج/العبوة مع معلومات التتبع.",
+     "stage": "pre_shipment"
+    },
+    {
+     "id": "ched_traces",
+     "requirement": "required",
+     "groups": [
+      "food_animal",
+      "live_animals"
+     ],
+     "name_en": "CHED via TRACES with official health certificate; border control post",
+     "name_ar": "وثيقة CHED عبر TRACES مع شهادة صحية رسمية ونقطة تفتيش حدودية",
+     "note_en": "Animal products enter only from approved third countries/establishments, via a Border Control Post, pre-notified in TRACES.",
+     "note_ar": "تدخل المنتجات الحيوانية فقط من دول/منشآت معتمدة عبر نقطة تفتيش حدودية مع إخطار مسبق في TRACES.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 3,
+      "max": 10
+     },
+     "program": true
+    },
+    {
+     "id": "cbam",
+     "requirement": "conditional",
+     "groups": [
+      "metals",
+      "agro_chemicals",
+      "minerals_fuels"
+     ],
+     "name_en": "CBAM declaration (authorised declarant)",
+     "name_ar": "إقرار CBAM (مصرّح مفوّض)",
+     "note_en": "Carbon Border Adjustment Mechanism applies to listed steel, aluminium, cement, fertiliser, hydrogen and electricity products above an annual threshold (about 50 tonnes); importer needs authorised-declarant status.",
+     "note_ar": "تنطبق آلية تعديل حدود الكربون على منتجات مدرجة (فولاذ وألمنيوم وإسمنت وأسمدة وهيدروجين وكهرباء) فوق عتبة سنوية (نحو 50 طناً)؛ ويلزم صفة المصرّح المفوّض.",
+     "stage": "clearance",
+     "confidence": "low"
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "cites_pops",
+     "severity": "restricted",
+     "text_en": "Endangered species (CITES), ozone-depleting substances, certain POP chemicals and some pesticides need permits or are banned.",
+     "text_ar": "الأنواع المهددة (CITES) والمواد المستنفدة للأوزون وبعض الملوثات العضوية الثابتة وبعض المبيدات تحتاج تصاريح أو ممنوعة.",
+     "groups": [
+      "live_animals",
+      "chemicals",
+      "agro_chemicals",
+      "plants_wood"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "animal_origin",
+     "severity": "restricted",
+     "text_en": "Animal products are accepted only from approved countries/establishments; many China-origin items are not eligible.",
+     "text_ar": "تُقبل المنتجات الحيوانية فقط من دول/منشآت معتمدة؛ وكثير من المنتجات الصينية غير مؤهلة.",
+     "groups": [
+      "food_animal"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "plant_health",
+     "severity": "restricted",
+     "text_en": "Plants, wood and plant products need phytosanitary certificates; some are prohibited; timber and commodity due-diligence rules (EUDR) apply with changing dates.",
+     "text_ar": "النباتات والأخشاب ومنتجاتها تحتاج شهادات صحة نباتية؛ وبعضها ممنوع؛ وتنطبق قواعد العناية الواجبة للأخشاب والسلع (EUDR) بمواعيد متغيرة.",
+     "groups": [
+      "plants_wood",
+      "food_plant"
+     ],
+     "confidence": "low"
+    },
+    {
+     "id": "medical_pharma_cosmetics",
+     "severity": "licence_required",
+     "text_en": "Medicines need marketing authorisation; cosmetics need a responsible person and CPNP notification; medical devices need MDR conformity.",
+     "text_ar": "الأدوية تحتاج ترخيص تسويق؛ والتجميل يحتاج شخصاً مسؤولاً وإخطار CPNP؛ والأجهزة الطبية تحتاج مطابقة MDR.",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "batteries_regulation",
+     "severity": "enhanced_scrutiny",
+     "text_en": "Batteries must meet the EU Batteries Regulation (labelling, due diligence, carbon-footprint phase-ins).",
+     "text_ar": "يجب أن تستوفي البطاريات لائحة البطاريات الأوروبية (بيانات ووسم وعناية واجبة وتدرّج بصمة الكربون).",
+     "hs_prefixes": [
+      "8506",
+      "8507"
+     ],
+     "confidence": "low"
+    },
+    {
+     "id": "used_electronics_waste",
+     "severity": "restricted",
+     "text_en": "Used equipment can be classed as waste (WEEE/waste-shipment rules) unless shown to be functional and tested.",
+     "text_ar": "قد تُصنَّف المعدات المستعملة كنفايات (WEEE وقواعد شحن النفايات) ما لم يثبت أنها صالحة ومختبرة.",
+     "groups": [
+      "electrical",
+      "machinery"
+     ],
+     "condition": "used",
+     "confidence": "medium"
+    },
+    {
+     "id": "antidumping",
+     "severity": "enhanced_scrutiny",
+     "text_en": "Anti-dumping/anti-subsidy duties apply to many China-origin products (e.g. some steel, ceramics, tyres, fasteners, bikes).",
+     "text_ar": "تُطبّق رسوم مكافحة الإغراق/الدعم على منتجات صينية كثيرة (مثل بعض الفولاذ والخزف والإطارات والمسامير والدراجات).",
+     "groups": [
+      "metals",
+      "ceramics_glass",
+      "plastics_rubber",
+      "vehicles",
+      "electrical"
+     ],
+     "origins": [
+      "CN"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 1,
+     "max": 5
+    },
+    "air": {
+     "min": 1,
+     "max": 2
+    },
+    "road": {
+     "min": 1,
+     "max": 3
+    },
+    "rail": {
+     "min": 1,
+     "max": 3
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "members": [
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "DE",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE"
+   ]
+  },
+  "US": {
+   "code": "US",
+   "name_en": "United States",
+   "name_ar": "الولايات المتحدة",
+   "authority_en": "U.S. Customs and Border Protection (ACE); FDA; CPSC; FCC; USDA APHIS; EPA/DOT",
+   "authority_ar": "الجمارك وحماية الحدود الأمريكية (ACE)؛ FDA؛ CPSC؛ FCC؛ USDA APHIS؛ EPA/DOT",
+   "customs_system": "ACE",
+   "customs_value_basis": "FOB",
+   "ddp_feasible": "possible",
+   "priority": 4,
+   "covered": true,
+   "notes_en": "Customs value is transaction value excluding international freight/insurance (FOB-like), unlike most other destinations. Additional tariffs on China-origin goods and on steel/aluminium change frequently; low-value duty-free entry (de minimis) is suspended. State rules (e.g. California Prop 65) can also apply.",
+   "notes_ar": "القيمة الجمركية هي قيمة الصفقة دون الشحن والتأمين الدوليين (شبيهة بـ FOB) خلافاً لمعظم الوجهات. تتغير الرسوم الإضافية على المنتجات الصينية والفولاذ والألمنيوم كثيراً؛ وإعفاء الشحنات منخفضة القيمة معلّق. وقد تنطبق قواعد الولايات (مثل Prop 65 في كاليفورنيا).",
+   "documents": [
+    {
+     "id": "importer_of_record",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Importer of record (EIN / CBP Form 5106) and customs bond",
+     "name_ar": "المستورد المسجّل (EIN / نموذج CBP 5106) وكفالة جمركية",
+     "note_en": "A continuous or single-entry customs bond is needed; a foreign seller can be importer of record only with a US bond and agent.",
+     "note_ar": "يلزم كفالة جمركية مستمرة أو لشحنة واحدة؛ ولا يكون البائع الأجنبي مستورداً مسجّلاً إلا بكفالة ووكيل أمريكيين.",
+     "stage": "clearance"
+    },
+    {
+     "id": "isf_10_2",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Importer Security Filing (ISF 10+2)",
+     "name_ar": "الإقرار الأمني للمستورد (ISF 10+2)",
+     "note_en": "Filed by the importer/broker at least 24 hours before loading at the foreign port; late or wrong filing is penalised.",
+     "note_ar": "يقدّمه المستورد/المخلّص قبل 24 ساعة على الأقل من التحميل في الميناء الأجنبي؛ وتُفرض غرامات على التأخير أو الخطأ.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 0,
+      "max": 1
+     },
+     "program": true,
+     "modes": [
+      "sea"
+     ]
+    },
+    {
+     "id": "customs_declaration",
+     "requirement": "required",
+     "groups": "*",
+     "name_en": "Entry (CBP 3461 / entry summary 7501) via ACE",
+     "name_ar": "بيان الدخول (CBP 3461 / ملخص 7501) عبر ACE",
+     "note_en": "Filed by a licensed customs broker; duties are payable at entry.",
+     "note_ar": "يقدّمه مخلّص جمركي مرخّص؛ وتُدفع الرسوم عند الدخول."
+    },
+    {
+     "id": "certificate_of_origin",
+     "requirement": "conditional",
+     "groups": "*",
+     "note_en": "Needed for FTA claims; country-of-origin marking on goods/packaging is mandatory regardless.",
+     "note_ar": "لازمة لمطالبات اتفاقيات التجارة؛ ووسم بلد المنشأ على السلعة/العبوة إلزامي في كل الأحوال."
+    },
+    {
+     "id": "fda_prior_notice",
+     "requirement": "required",
+     "groups": [
+      "food_animal",
+      "food_plant",
+      "beverages"
+     ],
+     "name_en": "FDA Prior Notice, facility registration and FSVP",
+     "name_ar": "إخطار FDA المسبق وتسجيل المنشأة وبرنامج FSVP",
+     "note_en": "Food needs Prior Notice before arrival, a registered foreign facility and a Foreign Supplier Verification Program; meat/poultry go through USDA FSIS.",
+     "note_ar": "يحتاج الغذاء إخطاراً مسبقاً قبل الوصول ومنشأة أجنبية مسجلة وبرنامج التحقق من المورد الأجنبي؛ واللحوم والدواجن عبر USDA FSIS.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 0,
+      "max": 2
+     },
+     "program": true
+    },
+    {
+     "id": "fda_product",
+     "requirement": "required",
+     "groups": [
+      "pharma",
+      "cosmetics",
+      "medical_optical"
+     ],
+     "name_en": "FDA registration/listing or device clearance",
+     "name_ar": "تسجيل/إدراج FDA أو تصريح الجهاز",
+     "note_en": "Drugs, cosmetics facilities and medical devices need FDA registration/listing; many devices need 510(k) or approval.",
+     "note_ar": "تحتاج الأدوية ومنشآت التجميل والأجهزة الطبية تسجيلاً/إدراجاً لدى FDA؛ وكثير من الأجهزة يحتاج 510(k) أو موافقة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 5,
+      "max": 90
+     },
+     "program": true,
+     "confidence": "medium"
+    },
+    {
+     "id": "fcc_authorization",
+     "requirement": "required",
+     "groups": [
+      "electrical"
+     ],
+     "name_en": "FCC authorization (SDoC or certification / FCC ID)",
+     "name_ar": "ترخيص FCC (SDoC أو اعتماد / FCC ID)",
+     "note_en": "Devices with radio transmitters or digital circuits need FCC equipment authorization and labelling.",
+     "note_ar": "الأجهزة ذات المرسلات اللاسلكية أو الدوائر الرقمية تحتاج ترخيص معدات FCC ووسماً.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 7,
+      "max": 45
+     },
+     "program": true,
+     "confidence": "medium"
+    },
+    {
+     "id": "cpsc_certificate",
+     "requirement": "required",
+     "groups": [
+      "toys",
+      "furniture",
+      "leather_textiles",
+      "footwear"
+     ],
+     "name_en": "CPSC Children's/General Product Certificate with accredited-lab testing",
+     "name_ar": "شهادة CPSC للمنتج (أطفال/عام) مع اختبار مختبر معتمد",
+     "note_en": "Children's products need third-party testing by a CPSC-accepted lab and a certificate; general consumer products need a self-issued certificate when a rule applies.",
+     "note_ar": "منتجات الأطفال تحتاج اختباراً من مختبر مقبول لدى CPSC وشهادة؛ والمنتجات الاستهلاكية العامة تحتاج شهادة ذاتية عند وجود قاعدة منطبقة.",
+     "stage": "pre_shipment",
+     "lead_days": {
+      "min": 7,
+      "max": 30
+     },
+     "program": true,
+     "confidence": "medium"
+    },
+    {
+     "id": "epa_dot_vehicles",
+     "requirement": "required",
+     "groups": [
+      "vehicles"
+     ],
+     "name_en": "EPA 3520-1 and DOT HS-7 forms (vehicles/engines)",
+     "name_ar": "نماذج EPA 3520-1 وDOT HS-7 (المركبات والمحركات)",
+     "note_en": "Vehicles and engines must be EPA/DOT-compliant or imported under an exemption.",
+     "note_ar": "يجب أن تكون المركبات والمحركات مطابقة لـ EPA/DOT أو تُستورد بموجب إعفاء.",
+     "stage": "clearance",
+     "confidence": "medium"
+    },
+    {
+     "id": "aphis_lacey",
+     "requirement": "required",
+     "groups": [
+      "plants_wood",
+      "live_animals"
+     ],
+     "name_en": "USDA APHIS permit and Lacey Act declaration",
+     "name_ar": "تصريح USDA APHIS وإقرار قانون Lacey",
+     "note_en": "Plants and wood products need APHIS clearance and a Lacey Act plant declaration (species, origin, value).",
+     "note_ar": "تحتاج النباتات والمنتجات الخشبية تخليص APHIS وإقرار قانون Lacey (النوع والمنشأ والقيمة).",
+     "stage": "pre_shipment",
+     "confidence": "medium"
+    },
+    {
+     "id": "tsca_certification",
+     "requirement": "required",
+     "groups": [
+      "chemicals",
+      "agro_chemicals"
+     ],
+     "name_en": "TSCA import certification",
+     "name_ar": "شهادة استيراد TSCA",
+     "note_en": "Chemical substances need a positive or negative TSCA certification at entry.",
+     "note_ar": "تحتاج المواد الكيميائية شهادة TSCA إيجابية أو سلبية عند الدخول.",
+     "stage": "clearance",
+     "confidence": "medium"
+    }
+   ],
+   "restrictions": [
+    {
+     "id": "narcotics_weapons",
+     "severity": "prohibited",
+     "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+     "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+    },
+    {
+     "id": "counterfeit",
+     "severity": "prohibited",
+     "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+     "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+    },
+    {
+     "id": "sanctions",
+     "severity": "prohibited",
+     "text_en": "Goods from comprehensively sanctioned countries/entities (OFAC) are prohibited.",
+     "text_ar": "البضائع من دول/كيانات خاضعة لعقوبات شاملة (OFAC) ممنوعة.",
+     "confidence": "medium"
+    },
+    {
+     "id": "uflpa",
+     "severity": "enhanced_scrutiny",
+     "text_en": "UFLPA forced-labour presumption: shipments with Xinjiang-linked inputs (cotton, polysilicon/solar, PVC, aluminium, tomatoes) are often detained.",
+     "text_ar": "افتراض العمل القسري وفق UFLPA: تُحتجز غالباً الشحنات ذات المدخلات المرتبطة بشينجيانغ (قطن وبولي سيليكون/طاقة شمسية وPVC وألمنيوم وطماطم).",
+     "groups": [
+      "leather_textiles",
+      "electrical",
+      "metals",
+      "plastics_rubber",
+      "food_plant"
+     ],
+     "origins": [
+      "CN"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "extra_tariffs",
+     "severity": "enhanced_scrutiny",
+     "text_en": "Additional tariffs (Section 301/232 and other measures) can apply to China-origin goods and to steel/aluminium; rates change often.",
+     "text_ar": "قد تُطبّق رسوم إضافية (المادة 301/232 وإجراءات أخرى) على السلع الصينية والفولاذ والألمنيوم؛ وتتغير النسب كثيراً.",
+     "origins": [
+      "CN"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "food_import_limits",
+     "severity": "restricted",
+     "text_en": "Meat/poultry/dairy and many plant products face USDA/FDA eligibility limits by country and facility.",
+     "text_ar": "اللحوم والدواجن والألبان ومنتجات نباتية كثيرة تخضع لقيود أهلية USDA/FDA حسب الدولة والمنشأة.",
+     "groups": [
+      "food_animal",
+      "food_plant"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "cites_wildlife",
+     "severity": "restricted",
+     "text_en": "Wildlife products (CITES, ivory, some skins/feathers) need permits or are banned.",
+     "text_ar": "منتجات الحياة البرية (CITES والعاج وبعض الجلود والريش) تحتاج تصاريح أو ممنوعة.",
+     "groups": [
+      "leather_textiles",
+      "live_animals",
+      "plants_wood"
+     ],
+     "confidence": "medium"
+    },
+    {
+     "id": "arms",
+     "severity": "licence_required",
+     "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+     "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+     "groups": [
+      "arms"
+     ]
+    }
+   ],
+   "clearance_days": {
+    "sea": {
+     "min": 2,
+     "max": 7
+    },
+    "air": {
+     "min": 1,
+     "max": 3
+    },
+    "road": {
+     "min": 1,
+     "max": 3
+    },
+    "rail": {
+     "min": 1,
+     "max": 3
+    }
+   },
+   "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+   "as_of": "2026-10",
+   "confidence": "medium"
+  }
+ },
+ "default_country": {
+  "code": "ZZ",
+  "name_en": "Other destination (generic checklist)",
+  "name_ar": "وجهة أخرى (قائمة عامة)",
+  "authority_en": "Destination customs authority",
+  "authority_ar": "جمارك بلد الوجهة",
+  "customs_system": "n/a",
+  "customs_value_basis": "CIF",
+  "ddp_feasible": "rarely",
+  "priority": 9,
+  "covered": false,
+  "notes_en": "No country-specific data yet: this is the generic baseline (invoice, packing list, transport document, origin certificate). Ask a local customs broker for conformity, health and licence rules.",
+  "notes_ar": "لا توجد بيانات خاصة بهذا البلد بعد: هذه القائمة العامة الأساسية (فاتورة، قائمة تعبئة، بوليصة شحن، شهادة منشأ). اسأل مخلّصاً محلياً عن المطابقة والصحة والتراخيص.",
+  "documents": [
+   {
+    "id": "certificate_of_origin",
+    "requirement": "conditional",
+    "groups": "*"
+   },
+   {
+    "id": "customs_declaration",
+    "requirement": "required",
+    "groups": "*"
+   },
+   {
+    "id": "importer_registration",
+    "requirement": "required",
+    "groups": "*"
+   }
+  ],
+  "restrictions": [
+   {
+    "id": "narcotics_weapons",
+    "severity": "prohibited",
+    "text_en": "Narcotics, psychotropic substances, explosives and unlicensed weapons/ammunition are prohibited.",
+    "text_ar": "المخدرات والمؤثرات العقلية والمتفجرات والأسلحة والذخائر غير المرخّصة ممنوعة."
+   },
+   {
+    "id": "counterfeit",
+    "severity": "prohibited",
+    "text_en": "Counterfeit and IP-infringing goods are prohibited and may be seized.",
+    "text_ar": "البضائع المقلّدة والمخالفة للملكية الفكرية ممنوعة وقد تُصادر."
+   },
+   {
+    "id": "arms",
+    "severity": "licence_required",
+    "text_en": "Arms, ammunition and military/dual-use items need a security-agency licence.",
+    "text_ar": "الأسلحة والذخائر والمواد العسكرية/مزدوجة الاستخدام تحتاج ترخيصاً أمنياً.",
+    "groups": [
+     "arms"
+    ]
+   }
+  ],
+  "clearance_days": {
+   "sea": {
+    "min": 3,
+    "max": 14
+   },
+   "air": {
+    "min": 1,
+    "max": 5
+   },
+   "road": {
+    "min": 2,
+    "max": 10
+   },
+   "rail": {
+    "min": 2,
+    "max": 10
+   }
+  },
+  "source": "Compiled by the project team from public regulator/customs guidance; not an official source",
+  "as_of": "2026-10",
+  "confidence": "low"
+ }
+}

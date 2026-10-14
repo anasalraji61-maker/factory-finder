@@ -15,6 +15,8 @@ class StorageKeys {
   static const destination = 'destination';
   static const serverUrl = 'server_url';
   static const refreshToken = 'refresh_token';
+  static const themeMode = 'theme_mode';
+  static const digitStyle = 'digit_style';
 }
 
 /// Settings read once before `runApp`.
@@ -26,6 +28,8 @@ class PersistedSettings {
     this.destination,
     this.hasDestination = false,
     this.serverUrl,
+    this.themeMode,
+    this.digitStyle,
   });
 
   final bool onboardingDone;
@@ -37,6 +41,8 @@ class PersistedSettings {
   final Location? destination;
   final bool hasDestination;
   final String? serverUrl;
+  final ThemeMode? themeMode;
+  final DigitStyle? digitStyle;
 
   static Future<PersistedSettings> load(KeyValueStore store) async {
     Future<String?> safe(String k) async {
@@ -69,7 +75,31 @@ class PersistedSettings {
       destination: destination,
       hasDestination: hasDest,
       serverUrl: await safe(StorageKeys.serverUrl),
+      themeMode: _parseTheme(await safe(StorageKeys.themeMode)),
+      digitStyle: _parseDigits(await safe(StorageKeys.digitStyle)),
     );
+  }
+
+  static ThemeMode? _parseTheme(String? v) {
+    switch (v) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+    }
+    return null;
+  }
+
+  static DigitStyle? _parseDigits(String? v) {
+    switch (v) {
+      case 'western':
+        return DigitStyle.western;
+      case 'arabic':
+        return DigitStyle.arabicIndic;
+    }
+    return null;
   }
 
   /// Provider overrides that seed initial state from these settings.
@@ -83,6 +113,9 @@ class PersistedSettings {
           destinationProvider.overrideWith((ref) => destination),
         if (serverUrl != null && serverUrl!.isNotEmpty)
           serverUrlProvider.overrideWith((ref) => serverUrl!),
+        if (themeMode != null) themeModeProvider.overrideWith((ref) => themeMode!),
+        if (digitStyle != null)
+          digitStyleProvider.overrideWith((ref) => digitStyle!),
       ];
 }
 
@@ -109,5 +142,11 @@ final settingsPersistenceProvider = Provider<void>((ref) {
   });
   ref.listen<String>(serverUrlProvider, (_, v) {
     write(StorageKeys.serverUrl, v);
+  });
+  ref.listen<ThemeMode>(themeModeProvider, (_, v) {
+    write(StorageKeys.themeMode, v.name);
+  });
+  ref.listen<DigitStyle>(digitStyleProvider, (_, v) {
+    write(StorageKeys.digitStyle, v == DigitStyle.arabicIndic ? 'arabic' : 'western');
   });
 });

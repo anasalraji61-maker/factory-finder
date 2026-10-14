@@ -12,7 +12,7 @@ Runs entirely in **mock mode** by default: no backend is needed.
 | Requests & Offers | `/requests`, `/requests/new`, `/requests/:id` | my/open requests, create form, offers, accept -> deal summary (commission) |
 | Messages | `/messages` | placeholder |
 | Logistics | `/logistics`, `/logistics/calculator?listing_id=`, `/logistics/results` | landed-cost calculator + comparison results |
-| Profile | `/profile` | language, display currency, default destination, theme, sign in/out, server URL |
+| Profile | `/profile`, `/settings` | profile: sign in/out, server URL, shortcuts; settings: language, theme (light/dark/system), display currency, default destination, digit style |
 | Auth | `/login`, `/register` | gateway auth (tokens in memory, Bearer + one refresh on 401) |
 
 ## Run

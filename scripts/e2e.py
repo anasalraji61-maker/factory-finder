@@ -25,7 +25,7 @@ SERVICES = {  # name: (port, module)
     "messaging": (8106, "ff_messaging.main:app"), "tracking": (8107, "ff_tracking.main:app"),
     "notifications": (8108, "ff_notifications.main:app"), "assistant": (8109, "ff_assistant.main:app"),
     "demand": (8110, "ff_demand.main:app"), "payments": (8111, "ff_payments.main:app"),
-    "media": (8112, "ff_media.main:app"),
+    "media": (8112, "ff_media.main:app"), "feed": (8113, "ff_feed.main:app"),
 }  # fmt: skip
 ADMIN_TOKEN = os.environ.get("FF_E2E_ADMIN_TOKEN", "e2e-admin-token")  # local run: also configured on the spawned services
 # FF_E2E_BASE_URL=http://localhost:8000 -> run against an already running stack (e.g. docker compose);
@@ -82,6 +82,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_PAYMENTS_WEBHOOK_SECRET_MOCK": WEBHOOK_SECRET,
         "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
         "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
+        "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN,
     }  # fmt: skip
     base_env.pop("FF_INTERNAL_TOKEN", None)
     base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
@@ -537,6 +538,42 @@ def scenario() -> None:
         assert c.get(path).status_code == 404
 
     step("media: upload (magic-byte check, public GET, owner-only delete) via gateway", media)
+
+    def feed():
+        me = ok(c.get("/v1/me", headers=h("supplier")))
+        fsid = me.get("supplier_id")
+        r = c.post("/v1/feed/posts", headers=h("supplier"), json={"body": f"E2E feed post {sfx}: new stock of planters", "tags": ["E2E"]})
+        if r.status_code in (404, 502, 503, 504) and r.json().get("error", {}).get("code") != "not_found":
+            return skip("feed via gateway", f"feed not reachable ({r.status_code})")
+        if r.status_code == 403 or not fsid:
+            return skip("feed via gateway", "no verified supplier claim in this run")
+        post = ok(r, 201)
+        assert post["supplier_id"] == fsid and post["tags"] == ["e2e"], str(post)[:200]
+        assert c.post("/v1/feed/posts", headers=h("buyer"), json={"body": "x"}).status_code == 403, "buyer can post"
+        assert c.post("/v1/feed/posts", headers=h("supplier"), json={"body": "call +964 770 123 4567"}).status_code == 422
+        assert c.post("/v1/feed/posts", headers=h("supplier"), json={"body": "x", "media": ["https://evil.example/a.png"]}).status_code == 422
+        assert c.get("/v1/feed/home").status_code == 401
+        pid = post["id"]
+        assert any(i["id"] == pid for i in items(ok(c.get("/v1/feed/trending"))))  # public
+        assert ok(c.get("/v1/feed/home", headers=h("buyer")))["source"] == "trending"  # follows nobody yet
+        assert ok(c.post(f"/v1/feed/suppliers/{fsid}/follow", headers=h("buyer")))["following"] is True
+        assert ok(c.post(f"/v1/feed/suppliers/{fsid}/follow", headers=h("buyer")))["follower_count"] == 1  # idempotent
+        home = ok(c.get("/v1/feed/home", headers=h("buyer")))
+        assert home["source"] == "following" and home["items"][0]["id"] == pid, str(home)[:300]
+        assert ok(c.put(f"/v1/feed/posts/{pid}/like", headers=h("buyer")))["like_count"] == 1
+        assert ok(c.put(f"/v1/feed/posts/{pid}/like", headers=h("buyer")))["like_count"] == 1
+        cm = ok(c.post(f"/v1/feed/posts/{pid}/comments", headers=h("buyer"), json={"body": "Interested, price per 100?"}), 201)
+        assert ok(c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")))["comment_count"] == 1
+        assert items(ok(c.get(f"/v1/feed/posts/{pid}/comments", headers=h("supplier"))))[0]["id"] == cm["id"]
+        assert c.post(f"/v1/feed/posts/{pid}/report", headers=h("supplier"), json={"reason": "spam"}).status_code == 422  # own post
+        assert c.post(f"/v1/feed/posts/{pid}/report", headers=h("buyer"), json={"reason": "spam"}).status_code == 202
+        assert c.delete(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 403
+        assert c.get("/v1/admin/feed/posts", headers=admin_h).status_code == 404, "feed admin must not be routed by the gateway"
+        ok(c.delete(f"/v1/feed/suppliers/{fsid}/follow", headers=h("buyer")))
+        ok(c.delete(f"/v1/feed/posts/{pid}", headers=h("supplier")), 204)
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 404
+
+    step("feed: supplier post -> follow -> home -> like/comment/report -> delete (via gateway)", feed)
 
 
 

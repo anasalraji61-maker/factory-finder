@@ -92,6 +92,37 @@ paths:
         "200": {description: item, content: {application/json: {schema: {$ref: "#/components/schemas/HsDetailResponse"}}}}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/compliance/countries:
+    get:
+      summary: Destinations covered by the import-compliance advisor (indicative)
+      responses:
+        "200": {description: coverage list, content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceCountryList"}}}}
+  /v1/compliance/countries/{code}:
+    get:
+      summary: Full compliance profile of a destination (EU members resolve to the EU profile; unknown countries to a generic low-confidence profile)
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string, pattern: "^[A-Z]{2}$"}}
+      responses:
+        "200": {description: profile, content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceProfile"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/compliance/incoterms:
+    get:
+      summary: Who pays which landed-cost leg under each incoterm (same table the quote engine uses)
+      parameters:
+        - {name: incoterm, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}}
+      responses:
+        "200": {description: incoterm matrix, content: {application/json: {schema: {$ref: "#/components/schemas/IncotermList"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/compliance/checklist:
+    post:
+      summary: Import-compliance checklist for a destination (documents, restriction flags, incoterm split, clearance timeline). Indicative only.
+      description: Deterministic, bilingual (ar+en), no network. Always carries source, as_of, confidence and the "verify with a licensed customs broker" label.
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceRequest"}}}
+      responses:
+        "200": {description: checklist, content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceChecklist"}}}}
+        "422": {$ref: "#/components/responses/Error"}
 components:
   responses:
     Error: {description: error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
@@ -119,6 +150,223 @@ components:
         - $ref: "#/components/schemas/HsItem"
         - type: object
           properties: {destination_country: {type: string}, disclaimer: {type: string}}
+    DaysRange:
+      type: object
+      required: [min, max]
+      properties: {min: {type: integer, minimum: 0}, max: {type: integer, minimum: 0}}
+    IndicativeMeta:
+      type: object
+      required: [indicative, source, as_of, confidence, label_en, label_ar, disclaimer_en, disclaimer_ar]
+      properties:
+        indicative: {type: boolean, const: true}
+        source: {type: string}
+        as_of: {type: string, pattern: "^[0-9]{4}-[0-9]{2}$"}
+        confidence: {type: string, enum: [low, medium, high]}
+        label_en: {type: string}
+        label_ar: {type: string}
+        disclaimer_en: {type: string}
+        disclaimer_ar: {type: string}
+    ComplianceRequest:
+      type: object
+      required: [destination_country]
+      properties:
+        destination_country: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}
+        hs_code: {type: string, description: "2-10 digits, dots allowed; wins over category"}
+        category: {type: string, description: "e.g. electronics, machinery, food, textiles, production_line"}
+        origin_country: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}
+        incoterm: {$ref: "../schemas/common.schema.json#/$defs/Incoterm", default: EXW}
+        mode: {$ref: "../schemas/common.schema.json#/$defs/TransportMode", default: sea_fcl_40}
+        condition: {type: string, enum: [new, used], default: new}
+        dangerous_goods: {type: boolean, default: false}
+    ComplianceDocument:
+      type: object
+      required: [id, requirement, stage, name_en, name_ar, note_en, note_ar, program, lead_days, confidence]
+      properties:
+        id: {type: string}
+        requirement: {type: string, enum: [required, conditional, recommended]}
+        stage: {type: string, enum: [pre_shipment, shipping, clearance]}
+        name_en: {type: string}
+        name_ar: {type: string}
+        note_en: {type: string}
+        note_ar: {type: string}
+        program: {type: boolean, description: "true for a conformity / advance-information program (not a plain commercial document)"}
+        lead_days: {oneOf: [{$ref: "#/components/schemas/DaysRange"}, {type: "null"}]}
+        confidence: {type: string, enum: [low, medium, high]}
+    ComplianceRestriction:
+      type: object
+      required: [id, severity, scope, text_en, text_ar, confidence]
+      properties:
+        id: {type: string}
+        severity: {type: string, enum: [prohibited, licence_required, restricted, enhanced_scrutiny]}
+        scope: {type: string, enum: [general, product, origin, condition]}
+        text_en: {type: string}
+        text_ar: {type: string}
+        confidence: {type: string, enum: [low, medium, high]}
+    IncotermLeg:
+      type: object
+      required: [stage, label_en, label_ar, payer, in_landed_cost]
+      properties:
+        stage: {type: string, enum: [origin_inland, origin_handling, main_leg, insurance, destination_handling, duties, taxes, clearance, destination_inland]}
+        label_en: {type: string}
+        label_ar: {type: string}
+        payer: {type: string, enum: [buyer, seller]}
+        in_landed_cost: {type: boolean, description: "true when the buyer pays it, i.e. it is added on top of the supplier price in the landed-cost quote"}
+    IncotermInfo:
+      type: object
+      required: [incoterm, text_en, text_ar, sea_only, legs, customs_value_adds]
+      properties:
+        incoterm: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}
+        text_en: {type: string}
+        text_ar: {type: string}
+        sea_only: {type: boolean}
+        legs: {type: array, items: {$ref: "#/components/schemas/IncotermLeg"}}
+        customs_value_adds: {type: array, items: {type: string}, description: "buyer-paid stages added to the goods price to form the customs value"}
+    IncotermList:
+      type: object
+      required: [items, total, note_en, note_ar]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/IncotermInfo"}}
+        total: {type: integer}
+        note_en: {type: string}
+        note_ar: {type: string}
+    IncotermSuggestionWarning:
+      type: object
+      required: [code, en, ar]
+      properties: {code: {type: string}, en: {type: string}, ar: {type: string}}
+    IncotermSuggestion:
+      type: object
+      required: [recommended, alternatives, avoid, rationale_en, rationale_ar, warnings, supplied_matches_recommendation]
+      properties:
+        recommended: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}
+        alternatives: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}}
+        avoid: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}}
+        rationale_en: {type: string}
+        rationale_ar: {type: string}
+        warnings: {type: array, items: {$ref: "#/components/schemas/IncotermSuggestionWarning"}}
+        supplied_matches_recommendation: {type: boolean}
+    ChecklistIncoterm:
+      allOf:
+        - $ref: "#/components/schemas/IncotermInfo"
+        - type: object
+          required: [selected, customs_value_basis, suggestion]
+          properties:
+            selected: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}
+            customs_value_basis: {type: string, enum: [CIF, FOB]}
+            suggestion: {$ref: "#/components/schemas/IncotermSuggestion"}
+    ComplianceTimeline:
+      type: object
+      required: [pre_shipment_days, clearance_days, total_days, basis_en, basis_ar]
+      properties:
+        pre_shipment_days: {$ref: "#/components/schemas/DaysRange"}
+        clearance_days: {$ref: "#/components/schemas/DaysRange"}
+        total_days: {$ref: "#/components/schemas/DaysRange"}
+        basis_en: {type: string}
+        basis_ar: {type: string}
+    ComplianceProduct:
+      type: object
+      required: [hs_code, chapter, group, resolved_from, group_name_en, group_name_ar, condition]
+      properties:
+        hs_code: {type: [string, "null"]}
+        chapter: {type: [string, "null"]}
+        group: {type: string}
+        resolved_from: {type: string, enum: [hs_code, category, default]}
+        group_name_en: {type: string}
+        group_name_ar: {type: string}
+        condition: {type: string, enum: [new, used]}
+    ComplianceChecklist:
+      type: object
+      required: [destination_country, profile_id, profile_name_en, profile_name_ar, covered, mode, product, documents, restrictions, incoterm, timeline, authority_en, authority_ar, notes_en, notes_ar, indicative, assumptions]
+      properties:
+        destination_country: {type: string}
+        profile_id: {type: string, description: "EU for member states, ZZ for the generic fallback"}
+        profile_name_en: {type: string}
+        profile_name_ar: {type: string}
+        covered: {type: boolean}
+        origin_country: {type: [string, "null"]}
+        mode: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}
+        product: {$ref: "#/components/schemas/ComplianceProduct"}
+        documents: {type: array, items: {$ref: "#/components/schemas/ComplianceDocument"}}
+        restrictions: {type: array, items: {$ref: "#/components/schemas/ComplianceRestriction"}}
+        incoterm: {$ref: "#/components/schemas/ChecklistIncoterm"}
+        timeline: {$ref: "#/components/schemas/ComplianceTimeline"}
+        authority_en: {type: string}
+        authority_ar: {type: string}
+        notes_en: {type: string}
+        notes_ar: {type: string}
+        indicative: {$ref: "#/components/schemas/IndicativeMeta"}
+        assumptions: {type: array, items: {type: string}}
+    ComplianceCountrySummary:
+      type: object
+      required: [code, name_en, name_ar, covered, members, confidence, as_of, customs_system]
+      properties:
+        code: {type: string}
+        name_en: {type: string}
+        name_ar: {type: string}
+        covered: {type: boolean}
+        members: {type: array, items: {type: string}}
+        confidence: {type: string, enum: [low, medium, high]}
+        as_of: {type: string}
+        customs_system: {type: string}
+    ComplianceCountryList:
+      type: object
+      required: [items, total, as_of, label_en, label_ar]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/ComplianceCountrySummary"}}
+        total: {type: integer}
+        as_of: {type: string}
+        label_en: {type: string}
+        label_ar: {type: string}
+    ComplianceProfile:
+      type: object
+      required: [code, name_en, name_ar, authority_en, authority_ar, customs_system, customs_value_basis, ddp_feasible, covered, notes_en, notes_ar, documents, restrictions, clearance_days, source, as_of, confidence, requested_country, profile_id, indicative]
+      description: Raw curated entry. documents/restrictions carry applicability filters (groups, hs_prefixes, origins, modes, condition).
+      properties:
+        code: {type: string}
+        requested_country: {type: string}
+        profile_id: {type: string}
+        name_en: {type: string}
+        name_ar: {type: string}
+        authority_en: {type: string}
+        authority_ar: {type: string}
+        customs_system: {type: string}
+        customs_value_basis: {type: string, enum: [CIF, FOB]}
+        ddp_feasible: {type: string, enum: [rarely, possible]}
+        covered: {type: boolean}
+        members: {type: array, items: {type: string}}
+        notes_en: {type: string}
+        notes_ar: {type: string}
+        documents: {type: array, items: {type: object}}
+        restrictions: {type: array, items: {type: object}}
+        clearance_days:
+          type: object
+          required: [sea, air, road, rail]
+          properties:
+            sea: {$ref: "#/components/schemas/DaysRange"}
+            air: {$ref: "#/components/schemas/DaysRange"}
+            road: {$ref: "#/components/schemas/DaysRange"}
+            rail: {$ref: "#/components/schemas/DaysRange"}
+        source: {type: string}
+        as_of: {type: string}
+        confidence: {type: string, enum: [low, medium, high]}
+        indicative: {$ref: "#/components/schemas/IndicativeMeta"}
+    ComplianceHint:
+      type: object
+      description: Additive, optional summary on landed-cost quotes (recommended mode, quote incoterm). Indicative; full detail via POST /v1/compliance/checklist.
+      required: [destination_country, covered, product_group, required_programs, restriction_flags, highest_severity, clearance_days, pre_shipment_days, confidence, as_of, label_en, label_ar, details]
+      properties:
+        destination_country: {type: string}
+        covered: {type: boolean}
+        product_group: {type: string}
+        required_programs: {type: array, items: {type: string}}
+        restriction_flags: {type: integer}
+        highest_severity: {type: [string, "null"]}
+        clearance_days: {$ref: "#/components/schemas/DaysRange"}
+        pre_shipment_days: {$ref: "#/components/schemas/DaysRange"}
+        confidence: {type: string, enum: [low, medium, high]}
+        as_of: {type: string}
+        label_en: {type: string}
+        label_ar: {type: string}
+        details: {type: string}
     Health:
       type: object
       properties: {status: {type: string}, service: {type: string}, version: {type: string}}
@@ -155,6 +403,7 @@ components:
         - type: object
           properties:
             warnings: {type: array, items: {type: string}, description: quote-level (e.g. sanctions on origin/destination)}
+            compliance_hint: {$ref: "#/components/schemas/ComplianceHint"}
     FxRates:
       type: object
       properties:

@@ -53,3 +53,14 @@ class ConvertRequest(BaseModel):
     amount: Decimal
     from_currency: str = Field(alias="from", pattern=r"^[A-Z]{3}$")
     to_currency: str = Field(alias="to", pattern=r"^[A-Z]{3}$")
+
+
+class ComplianceRequest(BaseModel):
+    destination_country: str = Field(pattern=r"^[A-Z]{2}$")
+    hs_code: str | None = Field(default=None, pattern=r"^[0-9. -]{2,16}$")
+    category: str | None = Field(default=None, max_length=60)
+    origin_country: str | None = Field(default=None, pattern=r"^[A-Z]{2}$")
+    incoterm: Incoterm = "EXW"
+    mode: Mode = "sea_fcl_40"
+    condition: Literal["new", "used"] = "new"
+    dangerous_goods: bool = False

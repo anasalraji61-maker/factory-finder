@@ -169,7 +169,7 @@ class WatchlistScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const LoadingList(),
         error: (e, _) => ErrorState(
-          message: describeError(e),
+          error: e,
           onRetry: () => ref.invalidate(watchlistProvider),
         ),
         data: (list) {

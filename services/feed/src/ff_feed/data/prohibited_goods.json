@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "note": "Banned-goods keywords for automatic listing screening. Matching is whole-word on normalized text (Arabic: diacritics/alef/ya unified, optional definite-article/conjunction prefix). Extend freely; categories are shown to owners, keywords never are.",
+  "categories": {
+    "weapons": {
+      "en": ["firearm", "handgun", "pistol", "revolver", "rifle", "assault rifle", "machine gun", "ammunition", "grenade", "landmine", "taser", "switchblade"],
+      "ar": ["سلاح ناري", "اسلحه", "اسلحة", "مسدس", "بندقيه", "بندقية", "رشاش", "ذخيره حيه", "ذخيرة حية", "رصاص حي", "قنبله", "قنبلة"]
+    },
+    "explosives": {
+      "en": ["explosive", "detonator", "dynamite", "tnt", "c4 explosive", "gunpowder"],
+      "ar": ["متفجرات", "متفجره", "صاعق تفجير", "ديناميت", "بارود"]
+    },
+    "drugs": {
+      "en": ["cocaine", "heroin", "methamphetamine", "meth", "cannabis", "marijuana", "hashish", "captagon", "fentanyl", "opium", "mdma", "ecstasy pills", "lsd"],
+      "ar": ["كوكايين", "هيروين", "حشيش", "ماريجوانا", "كبتاجون", "كبتاغون", "افيون", "امفيتامين", "كريستال ميث", "مخدرات"]
+    },
+    "counterfeit": {
+      "en": ["counterfeit", "fake brand", "knockoff", "knock off", "fake passport", "fake id", "clone card"],
+      "ar": ["تقليد ماركه", "تقليد ماركة", "نسخه طبق الاصل مقلده", "مقلد", "مزور", "جواز مزور", "هويه مزوره", "هوية مزورة"]
+    },
+    "human_trafficking_organs": {
+      "en": ["human organ", "kidney for sale", "human trafficking", "human remains"],
+      "ar": ["اعضاء بشريه", "اعضاء بشرية", "بيع كلية", "اتجار بالبشر"]
+    },
+    "wildlife_antiquities": {
+      "en": ["rhino horn", "pangolin", "endangered species", "stolen antiquities", "looted artifact"],
+      "ar": ["قرن وحيد القرن", "اثار مسروقه", "اثار مسروقة", "قطع اثريه مهربه"]
+    },
+    "hazardous_controlled": {
+      "en": ["radioactive material", "uranium", "mercury for sale", "chemical weapon", "nerve agent", "sarin", "ricin"],
+      "ar": ["مواد مشعه", "مواد مشعة", "يورانيوم", "سلاح كيمياوي", "سلاح كيميائي", "غاز الاعصاب"]
+    },
+    "adult_surveillance_illicit": {
+      "en": ["escort service", "sex toy", "spyware", "stalkerware", "card skimmer", "hacked accounts", "stolen data", "stolen credit"],
+      "ar": ["خدمات جنسيه", "خدمات جنسية", "برنامج تجسس", "سرقه بطاقات", "حسابات مهكره", "حسابات مهكرة", "بيانات مسروقه"]
+    }
+  }
+}

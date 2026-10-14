@@ -23,8 +23,13 @@ void setUpWidgetTests() {
 
 /// Pumps the real app with a fresh router (so tests do not share navigation
 /// state) on a large phone-like surface. Returns the router.
-Future<GoRouter> pumpApp(WidgetTester tester, {String? location}) async {
-  tester.view.physicalSize = const Size(1080, 2400);
+Future<GoRouter> pumpApp(
+  WidgetTester tester, {
+  String? location,
+  Size logicalSize = const Size(540, 1200),
+  List<Override> overrides = const [],
+}) async {
+  tester.view.physicalSize = logicalSize * 2.0;
   tester.view.devicePixelRatio = 2.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -35,6 +40,7 @@ Future<GoRouter> pumpApp(WidgetTester tester, {String? location}) async {
       overrides: [
         keyValueStoreProvider.overrideWithValue(MemoryStore()),
         secureStoreProvider.overrideWithValue(MemoryStore()),
+        ...overrides,
       ],
       child: FactoryFinderApp(router: router),
     ),

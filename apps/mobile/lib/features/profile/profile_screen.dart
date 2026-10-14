@@ -14,6 +14,39 @@ const List<String> kDisplayCurrencies = [
   'USD', 'EUR', 'CNY', 'IQD', 'TRY', 'AED', 'SAR', 'GBP',
 ];
 
+/// Login / register buttons: side by side, stacked at large text sizes.
+class _AuthButtons extends StatelessWidget {
+  const _AuthButtons({
+    required this.big,
+    required this.login,
+    required this.register,
+  });
+
+  final bool big;
+  final Widget login;
+  final Widget register;
+
+  @override
+  Widget build(BuildContext context) {
+    if (big) {
+      return Column(
+        children: [
+          SizedBox(width: double.infinity, child: login),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(width: double.infinity, child: register),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: login),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(child: register),
+      ],
+    );
+  }
+}
+
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -22,7 +55,6 @@ class ProfileScreen extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final currency = ref.watch(displayCurrencyProvider);
     final destination = ref.watch(destinationProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final me = ref.watch(authProvider);
     final serverUrl = ref.watch(serverUrlProvider);
     final role = ref.watch(userRoleProvider);
@@ -79,24 +111,18 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           if (me == null)
-            Row(
-              children: [
-                Expanded(
-                  child: PrimaryButton(
-                    label: context.tr('auth.login'),
-                    icon: Icons.login,
-                    onPressed: () => context.push('/login'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(64, 50)),
-                    onPressed: () => context.push('/register'),
-                    child: Text(context.tr('auth.register')),
-                  ),
-                ),
-              ],
+            _AuthButtons(
+              big: MediaQuery.textScalerOf(context).scale(14) / 14 > 1.3,
+              login: PrimaryButton(
+                label: context.tr('auth.login'),
+                icon: Icons.login,
+                onPressed: () => context.push('/login'),
+              ),
+              register: OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(64, 50)),
+                onPressed: () => context.push('/register'),
+                child: Text(context.tr('auth.register')),
+              ),
             )
           else
             OutlinedButton.icon(
@@ -176,12 +202,13 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 const Divider(height: 1),
-                SwitchListTile(
-                  secondary: const Icon(Icons.dark_mode_outlined),
-                  title: Text(context.tr('profile.theme')),
-                  value: themeMode == ThemeMode.dark,
-                  onChanged: (v) => ref.read(themeModeProvider.notifier).state =
-                      v ? ThemeMode.dark : ThemeMode.light,
+                ListTile(
+                  key: const ValueKey('profile-settings'),
+                  leading: const Icon(Icons.settings_outlined),
+                  title: Text(context.tr('settings.tile')),
+                  subtitle: Text(context.tr('settings.tile_sub')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/settings'),
                 ),
                 const Divider(height: 1),
                 ListTile(

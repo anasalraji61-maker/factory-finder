@@ -1,0 +1,9 @@
+{"data": {"items": [
+ {"product_id": "A1", "name": "PP Granules Virgin Grade", "pricing": {"min": "1.10", "max": "1.30", "currency": "usd"}, "seller": {"id": "S1", "name": "Examplia Plastics Co", "country": "cn", "city": "Ningbo", "verified": true}, "links": {"detail": "https://examplia.invalid/p/A1"}, "photos": ["https://img.examplia.invalid/a1.jpg", "https://evil.example.org/x.jpg", "http://img.examplia.invalid/insecure.jpg"], "min_order": "500 kg", "uom": "mt", "summary": "Virgin PP", "category": "raw_materials"},
+ {"product_id": "A2", "name": "Virgin PP Granules Grade", "pricing": {"min": "1.05", "max": "1.30", "currency": "USD"}, "seller": {"id": "S1", "name": "Examplia Plastics Co.", "country": "CN"}, "photos": ["https://img.examplia.invalid/a2.jpg", "https://img.examplia.invalid/a2b.jpg"]},
+ {"product_id": "A3", "name": "Steel Pipe", "pricing": {"min": "0", "max": "5", "currency": "USD"}, "seller": {"id": "S2", "name": "Pipes Ltd"}},
+ {"product_id": "A4", "name": "Gold Plated Widget", "pricing": {"min": "5", "max": "9999999", "currency": "USD"}, "seller": {"id": "S2", "name": "Pipes Ltd"}},
+ {"product_id": "A5", "name": "Yen Item", "pricing": {"min": "100", "max": "120", "currency": "JPY"}, "seller": {"id": "S3", "name": "Tokyo Parts"}},
+ {"product_id": "A6", "name": "RMB Item", "pricing": {"min": "80", "max": "90", "currency": "RMB"}, "seller": {"id": "S4", "name": "Shenzhen Works"}},
+ {"title_only": "no id"}
+]}}

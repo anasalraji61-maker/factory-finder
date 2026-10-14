@@ -1,4 +1,6 @@
 import 'package:factory_finder/core/i18n/core_strings.dart';
+import 'package:factory_finder/core/providers.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/widgets.dart';
 
 /// Builds `{'ar': {...}, 'en': {...}}` from `key: (arabic, english)` pairs,
@@ -51,7 +53,8 @@ extension TrX on BuildContext {
   /// String for the current locale (fallback: en, then the key).
   String tr(String key, [Map<String, String> args = const {}]) {
     final code = Localizations.localeOf(this).languageCode;
-    return AppStrings.lookup(code, key, args);
+    final text = AppStrings.lookup(code, key, args);
+    return localizeDigits(text, DigitStyleScope.of(this));
   }
 }
 

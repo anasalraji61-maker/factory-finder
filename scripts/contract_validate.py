@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate real JSON responses of every service against contracts/openapi/<svc>.yaml.
 
-Boots the 12 services as local processes (same startup as scripts/e2e.py: temp sqlite, mock providers),
+Boots every service as local processes (same startup as scripts/e2e.py: temp sqlite, mock providers),
 calls representative endpoints and validates each response body against the OpenAPI response schema
 (JSON Schema 2020-12, `$ref` resolved across `#/components/...` and `../schemas/common.schema.json`).
 
@@ -354,6 +354,42 @@ def scenario() -> None:
         c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hs, want=(404,))
         c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hb, want=(204,))
     c("media", "GET", f"/v1/media/files/{'0' * 32}.png", template="/v1/media/files/{filename}", want=(404,))
+
+    # -- feed (identity headers as the gateway would forward them; admin routes need the service admin token)
+    fsup = f"sup_feed{sfx}"
+    ad_feed = {"X-Admin-Token": e2e.ADMIN_TOKEN}
+    hfs = {"X-User-Id": supplier, "X-Supplier-Id": fsup}
+    fp = c("feed", "POST", "/v1/feed/posts", headers=hfs, json={"body": "New stock of ceramic planters", "tags": ["Planters"], "listing_ref": "lst_1"}) or {}
+    c("feed", "POST", "/v1/feed/posts", headers=hb, json={"body": "x"}, want=(403,))
+    c("feed", "POST", "/v1/feed/posts", headers=hfs, json={"body": "mail me a@b.com"}, want=(422,))
+    c("feed", "GET", "/v1/feed/trending")
+    c("feed", "GET", "/v1/feed/home", headers=hb)
+    c("feed", "GET", "/v1/feed/home", headers=hb, params={"cursor": "bad"}, want=(422,))
+    c("feed", "POST", f"/v1/feed/suppliers/{fsup}/follow", headers=hb, template="/v1/feed/suppliers/{supplier_id}/follow")
+    c("feed", "GET", "/v1/feed/following", headers=hb)
+    c("feed", "GET", f"/v1/feed/suppliers/{fsup}/posts", headers=hb, template="/v1/feed/suppliers/{supplier_id}/posts")
+    if fp.get("id"):
+        fid = fp["id"]
+        c("feed", "GET", f"/v1/feed/posts/{fid}", headers=hb, template="/v1/feed/posts/{post_id}")
+        c("feed", "PUT", f"/v1/feed/posts/{fid}/like", headers=hb, template="/v1/feed/posts/{post_id}/like")
+        c("feed", "DELETE", f"/v1/feed/posts/{fid}/like", headers=hb, template="/v1/feed/posts/{post_id}/like")
+        fc = c("feed", "POST", f"/v1/feed/posts/{fid}/comments", headers=hb, json={"body": "Interested"}, template="/v1/feed/posts/{post_id}/comments") or {}
+        c("feed", "GET", f"/v1/feed/posts/{fid}/comments", headers=hb, template="/v1/feed/posts/{post_id}/comments")
+        c("feed", "POST", f"/v1/feed/posts/{fid}/report", headers=hb, json={"reason": "spam"}, want=(202,), template="/v1/feed/posts/{post_id}/report")
+        c("feed", "GET", "/v1/admin/feed/posts", headers=ad_feed, params={"status": "all"})
+        c("feed", "POST", f"/v1/admin/feed/posts/{fid}/hide", headers=ad_feed, json={"reason": "contract check"}, template="/v1/admin/feed/posts/{post_id}/hide")
+        c("feed", "POST", f"/v1/admin/feed/posts/{fid}/restore", headers=ad_feed, template="/v1/admin/feed/posts/{post_id}/restore")
+        c("feed", "GET", "/v1/admin/feed/reports", headers=ad_feed, params={"target_id": fid})
+        if fc.get("id"):
+            cid = fc["id"]
+            c("feed", "POST", f"/v1/feed/comments/{cid}/report", headers=hs, json={"reason": "other"}, want=(202,), template="/v1/feed/comments/{comment_id}/report")
+            c("feed", "POST", f"/v1/admin/feed/comments/{cid}/hide", headers=ad_feed, json={"reason": "contract check"}, template="/v1/admin/feed/comments/{comment_id}/hide")
+            c("feed", "GET", "/v1/admin/feed/comments", headers=ad_feed, params={"status": "all"})
+            c("feed", "POST", f"/v1/admin/feed/comments/{cid}/restore", headers=ad_feed, template="/v1/admin/feed/comments/{comment_id}/restore")
+            c("feed", "DELETE", f"/v1/feed/comments/{cid}", headers=hb, want=(204,), template="/v1/feed/comments/{comment_id}")
+        c("feed", "DELETE", f"/v1/feed/posts/{fid}", headers=hfs, want=(204,), template="/v1/feed/posts/{post_id}")
+    c("feed", "GET", "/v1/feed/posts/post_nope", headers=hb, want=(404,), template="/v1/feed/posts/{post_id}")
+    c("feed", "DELETE", f"/v1/feed/suppliers/{fsup}/follow", headers=hb, template="/v1/feed/suppliers/{supplier_id}/follow")
 
     # -- gateway (own routes; admin-demand proxy is validated against the demand contract)
     gw = httpx.Client(base_url=e2e.GW, timeout=30)

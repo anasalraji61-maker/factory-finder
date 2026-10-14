@@ -179,7 +179,7 @@ class _DealsListScreenState extends ConsumerState<DealsListScreen>
       return scrollable([
         ErrorState(
           key: const Key('deals_error'),
-          message: describeError(_error!),
+          error: _error!,
           onRetry: _reload,
         ),
       ]);

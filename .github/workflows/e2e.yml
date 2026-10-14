@@ -19,7 +19,7 @@ jobs:
         run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pyyaml jsonschema referencing
       - name: Install service deps
         run: |
-          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media; do
+          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed; do
             python scripts/install_service.py services/$s --deps-only
           done
       - name: Route check (code vs contract)
@@ -28,3 +28,5 @@ jobs:
         run: python scripts/contract_validate.py
       - name: End-to-end scenario
         run: python scripts/e2e.py
+      - name: Extended end-to-end flows
+        run: python scripts/e2e_extended.py

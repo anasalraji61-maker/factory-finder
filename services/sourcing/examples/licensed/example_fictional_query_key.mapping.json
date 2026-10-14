@@ -1,0 +1,31 @@
+{
+  "_comment": "EXAMPLE ONLY - FICTIONAL PROVIDER 'Sinoparts Feed'. Shows query-string key, offset pagination, minor-unit prices and a price text with a currency symbol.",
+  "schema_version": 1,
+  "id": "sinoparts_feed",
+  "name": "EXAMPLE (fictional) Sinoparts Feed",
+  "example": true,
+  "mode": "official_api",
+  "tos_note": "EXAMPLE: replace with the partner agreement number that covers this data.",
+  "robots_note": "Partner REST API; no web pages are crawled, so robots.txt does not apply.",
+  "base_url": "https://feed.sinoparts.invalid/api",
+  "auth": { "style": "query", "key_env": "FF_SOURCING_SINOPARTS_KEY", "name": "apikey" },
+  "request": { "method": "GET", "path": "/search", "query": { "keyword": "{keywords}", "lang": "en" } },
+  "pagination": { "style": "offset", "offset_param": "start", "size_param": "rows", "page_size": 30, "max_pages": 1 },
+  "items_path": "response.docs",
+  "fields": {
+    "id": "sku",
+    "title": "title_en",
+    "price_range": "price_text",
+    "supplier_name": "vendor",
+    "country": "origin",
+    "images": "images[].url",
+    "moq": "moq_text",
+    "unit": "unit"
+  },
+  "defaults": { "currency": "CNY", "country": "CN", "unit": "piece" },
+  "currency": { "allowed": ["CNY", "USD"], "aliases": { "¥": "CNY" }, "detect_from_price_text": true },
+  "units": { "aliases": { "pc": "piece", "pcs": "piece" } },
+  "images": { "allowed_hosts": [".sinoparts.invalid"], "https_only": true, "max": 4 },
+  "limits": { "timeout_s": 6, "min_interval_s": 5, "cache_ttl_s": 900 },
+  "quality": { "min_price": "0.05", "max_price": "500000" }
+}

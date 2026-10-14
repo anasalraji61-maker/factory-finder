@@ -27,7 +27,7 @@ class SupplierScreen extends ConsumerWidget {
       body: supplier.when(
         loading: () => const SingleChildScrollView(child: LoadingList(itemCount: 4)),
         error: (e, _) => ErrorState(
-          message: '$e',
+          error: e,
           onRetry: () => ref.invalidate(supplierProvider(supplierId)),
         ),
         data: (s) => CustomScrollView(
@@ -56,7 +56,7 @@ class SupplierScreen extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         locationLabel(context, s.location),
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: AppColors.secondaryOf(context)),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
@@ -73,7 +73,7 @@ class SupplierScreen extends ConsumerWidget {
                           if (s.yearsInBusiness != null)
                             Text(
                               context.tr('listing.years', {'n': '${s.yearsInBusiness}'}),
-                              style: const TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(color: AppColors.secondaryOf(context)),
                             ),
                         ],
                       ),
@@ -126,7 +126,7 @@ class SupplierScreen extends ConsumerWidget {
                 const SliverToBoxAdapter(child: LoadingList(itemCount: 3)),
               ],
               error: (e, _) => <Widget>[
-                SliverToBoxAdapter(child: ErrorState(message: '$e')),
+                SliverToBoxAdapter(child: ErrorState(error: e)),
               ],
               data: (page) => page.items.isEmpty
                   ? <Widget>[

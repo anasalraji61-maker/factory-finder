@@ -33,7 +33,10 @@ class TrustBadge extends StatelessWidget {
     final color = trustColor(band);
     final label = context.tr('trust.${band.json}');
     final scoreText = score == null ? '' : '$score';
-    return Container(
+    return Semantics(
+      label: '$label $scoreText'.trim(),
+      excludeSemantics: true,
+      child: Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 6 : 10,
         vertical: compact ? 2 : 5,
@@ -67,6 +70,7 @@ class TrustBadge extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

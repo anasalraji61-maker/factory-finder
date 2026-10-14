@@ -35,6 +35,7 @@ The mobile app talks **only** to the gateway. Services talk to each other over H
 | tracking | 8107 | Shipments by container / B/L / AWB / vessel IMO; normalized event timeline | Postgres |
 | notifications | 8108 | Watchlists, price-drop & cheaper-supplier alerts, device push tokens | Postgres |
 | assistant | 8109 | Natural-language (Arabic/English) sourcing assistant: text → structured search → one combined answer | stateless |
+| feed | 8113 | Social side: supplier posts, follow, home/trending feed, likes, comments, reports + moderation (`/v1/feed/*`) | SQL (own tables) |
 
 ## 3. Conventions (all Python services)
 

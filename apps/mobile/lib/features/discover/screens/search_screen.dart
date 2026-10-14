@@ -168,7 +168,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: results.when(
               loading: () => const SingleChildScrollView(child: LoadingList()),
               error: (e, _) => ErrorState(
-                message: '$e',
+                error: e,
                 onRetry: () => ref.invalidate(listingsProvider(_query)),
               ),
               data: (page) {

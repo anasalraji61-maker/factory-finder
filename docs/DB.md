@@ -1,6 +1,6 @@
 # Database migrations (Alembic)
 
-Applies to the services with a database: **sourcing (native listings), rfq, messaging, tracking, notifications, demand, payments, media**
+Applies to the services with a database: **sourcing (native listings), rfq, messaging, tracking, notifications, demand, payments, media, feed**
 (`trust` is stateless; `gateway` is handled separately). Each service owns its own Alembic
 setup (`services/<svc>/alembic.ini` + `migrations/`) and its **own database**; there is no shared schema.
 

@@ -3,6 +3,7 @@ import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/router/app_router.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,7 @@ class FactoryFinderApp extends ConsumerWidget {
     ref.watch(settingsPersistenceProvider);
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final digits = ref.watch(digitStyleProvider);
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => context.tr('app.name'),
@@ -30,6 +32,10 @@ class FactoryFinderApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) => DigitStyleScope(
+        style: digits,
+        child: child ?? const SizedBox.shrink(),
+      ),
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,

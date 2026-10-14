@@ -12,6 +12,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
+        ("/v1/feed/home", "feed"), ("/v1/feed/posts/post_1/like", "feed"), ("/v1/feed/trending", "feed"), ("/v1/feedx", None), ("/v1/admin/feed/posts", None),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
         ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/suppliers/sup_1/reviews", "rfq"), ("/v1/suppliers/sup_1/review-summary", "rfq"), ("/v1/suppliers/sup_1", "sourcing"), ("/v1/suppliers/sup_1/reviews/x", "sourcing"), ("/v1/reviews/rev_1/reply", "rfq"), ("/v1/deals/deal_1/reviews", "rfq"), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
@@ -33,6 +34,7 @@ def test_resolve(path, upstream):
         ("GET", "/v1/suppliers/s1/reviews", True), ("GET", "/v1/suppliers/s1/review-summary", True), ("POST", "/v1/suppliers/s1/reviews", False),
         ("POST", "/v1/deals/d1/reviews", False), ("PUT", "/v1/reviews/r1", False), ("DELETE", "/v1/reviews/r1", False), ("GET", "/v1/reviews/r1", False),
         ("POST", "/v1/reviews/r1/reply", False), ("POST", "/v1/reviews/r1/report", False), ("GET", "/v1/media/filesx", False),
+        ("GET", "/v1/feed/trending", True), ("GET", "/v1/feed/home", False), ("POST", "/v1/feed/trending", False), ("GET", "/v1/feed/posts/p1", False), ("GET", "/v1/feed/trending/x", False),
     ],
 )  # fmt: skip
 def test_public_policy(method, path, public):
@@ -392,3 +394,23 @@ def test_review_writes_need_auth_and_get_reviewer_name(client, auth, hdr, mock_u
     assert not route.called
     client.post("/v1/deals/deal_1/reviews", json={"rating": 5}, headers={**hdr, "X-User-Name": "evil"})
     assert route.calls.last.request.headers["x-user-name"] == "Anas"
+
+
+def test_feed_forwards_verified_supplier_only_and_trending_is_public(make_client, mock_upstream):
+    c = make_client()
+    route = mock_upstream.post("http://localhost:8113/v1/feed/posts").mock(return_value=httpx.Response(201, json={"id": "post_1"}))
+    trend = mock_upstream.get("http://localhost:8113/v1/feed/trending").mock(return_value=httpx.Response(200, json={"items": []}))
+    home = mock_upstream.get("http://localhost:8113/v1/feed/home").mock(return_value=httpx.Response(200, json={"items": []}))
+    # anonymous: trending only
+    assert c.get("/v1/feed/trending").status_code == 200 and "x-user-id" not in trend.calls.last.request.headers
+    assert c.get("/v1/feed/home").status_code == 401 and not home.called
+    assert c.post("/v1/feed/posts", json={"body": "x"}).status_code == 401 and not route.called
+    r = c.post("/v1/auth/register", json={"email": "f@example.com", "password": "password123", "name": "Fay"})
+    h = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    # no verified claim -> no X-Supplier-Id, even when the client tries to spoof it
+    assert c.post("/v1/feed/posts", json={"body": "x"}, headers={**h, "X-Supplier-Id": "sup_evil"}).status_code == 201
+    up = route.calls.last.request.headers
+    assert "x-supplier-id" not in up and up["x-user-id"]
+    # authenticated trending carries identity (viewer_liked), still public without
+    c.get("/v1/feed/trending", headers=h)
+    assert trend.calls.last.request.headers["x-user-id"]

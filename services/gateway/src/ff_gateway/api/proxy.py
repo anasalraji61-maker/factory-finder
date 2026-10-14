@@ -50,10 +50,14 @@ METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
 
 def _needs_verified(method: str, upstream: str, path: str) -> bool:
-    """Sensitive writes: anything that moves money (payments) or publishes supplier listings (/v1/my)."""
+    """Sensitive writes: anything that moves money (payments) or publishes supplier listings/posts."""
     if method.upper() in ("GET", "HEAD", "OPTIONS"):
         return False
-    return upstream == "payments" or (upstream == "sourcing" and path.startswith("/v1/my"))
+    return (
+        upstream == "payments"
+        or (upstream == "sourcing" and path.startswith("/v1/my"))
+        or (upstream == "feed" and path.rstrip("/") == "/v1/feed/posts")  # publishing a supplier post
+    )
 
 
 ACTIVE_CACHE_SECONDS = 5.0
@@ -135,7 +139,7 @@ async def proxy(full_path: str, request: Request) -> Response:
     headers.update(internal_headers(request, user_id))
     if (
         user_id
-        and (upstream in ("messaging", "rfq") or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
+        and (upstream in ("messaging", "rfq", "feed") or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
     ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
             row = (

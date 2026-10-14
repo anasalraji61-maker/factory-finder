@@ -59,6 +59,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final feed = ref.watch(listingsProvider(_query));
     final trending = ref.watch(trendingProvider);
     final theme = Theme.of(context);
+    final offline = (feed.hasError && isNetworkError(feed.error!)) ||
+        (trending.hasError && isNetworkError(trending.error!));
+    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
 
     return Scaffold(
       bottomNavigationBar: const CompareTray(),
@@ -71,6 +74,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
+              if (offline)
+                SliverToBoxAdapter(
+                  child: OfflineBanner(onRetry: () {
+                    ref.invalidate(listingsProvider(_query));
+                    ref.invalidate(trendingProvider);
+                  }),
+                ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -88,7 +98,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             child: Text(
                               context.tr('discover.greeting'),
                               style: theme.textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.textSecondary),
+                                  ?.copyWith(color: AppColors.secondaryOf(context)),
                             ),
                           ),
                           const AlertsBell(),
@@ -109,6 +119,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           hintText: context.tr('discover.search_hint'),
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: IconButton(
+                            tooltip: context.tr('a11y.search_filters'),
                             icon: const Icon(Icons.tune),
                             onPressed: () => _submit(_search.text),
                           ),
@@ -155,11 +166,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 290,
+                  height: 290 * (textScale < 1 ? 1.0 : (textScale > 1.6 ? 1.6 : textScale)),
                   child: trending.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (e, _) => ErrorState(
-                      message: '$e',
+                      error: e,
                       onRetry: () => ref.invalidate(trendingProvider),
                     ),
                     data: (items) => ListView.separated(
@@ -188,7 +199,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 error: (e, _) => <Widget>[
                   SliverToBoxAdapter(
                     child: ErrorState(
-                      message: '$e',
+                      error: e,
                       onRetry: () => ref.invalidate(listingsProvider(_query)),
                     ),
                   ),

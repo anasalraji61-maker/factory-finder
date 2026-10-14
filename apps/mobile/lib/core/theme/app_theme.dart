@@ -12,7 +12,16 @@ class AppColors {
   static const Color surface = Color(0xFFFFFFFF);
   static const Color background = Color(0xFFF4F6FB);
   static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textSecondary = Color(0xFF566478); // >= 4.5:1 on light surfaces
+  /// Secondary text colour on dark surfaces (>= 7:1 on [AppTheme.darkSurface]).
+  static const Color textSecondaryDark = Color(0xFFA3AEC6);
+
+  /// Theme-aware secondary text colour. Prefer this over [textSecondary]
+  /// wherever the widget can be shown on the dark theme.
+  static Color secondaryOf(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? textSecondaryDark
+          : textSecondary;
   static const Color border = Color(0xFFE2E8F0);
 }
 
@@ -29,6 +38,9 @@ class AppRadius {
 class AppTheme {
   AppTheme._();
 
+  static const Color darkBackground = Color(0xFF0B1020);
+  static const Color darkSurface = Color(0xFF141B31);
+
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
@@ -42,16 +54,22 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0B1020) : AppColors.background;
-    final surface = isDark ? const Color(0xFF141B31) : AppColors.surface;
+    final bg = isDark ? darkBackground : AppColors.background;
+    final surface = isDark ? darkSurface : AppColors.surface;
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: brightness,
     ).copyWith(
       primary: isDark ? const Color(0xFF8EA2FF) : AppColors.primary,
+      onPrimary: isDark ? darkBackground : Colors.white,
       secondary: AppColors.accent,
-      error: AppColors.danger,
+      onSecondary: const Color(0xFF04120F),
+      error: isDark ? const Color(0xFFFF8A80) : AppColors.danger,
+      onError: isDark ? const Color(0xFF1A0505) : Colors.white,
       surface: surface,
+      onSurface: isDark ? const Color(0xFFE6E9F5) : AppColors.textPrimary,
+      onSurfaceVariant: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+      outline: isDark ? const Color(0xFF8B96B5) : const Color(0xFF7A8699),
     );
     final base = ThemeData(
       useMaterial3: true,
@@ -72,7 +90,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.primary.withOpacity(isDark ? 0.35 : 0.12),
+        indicatorColor: scheme.primary.withOpacity(isDark ? 0.30 : 0.12),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -83,7 +101,9 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF26304D) : AppColors.border,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -93,7 +113,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
+        hintStyle: TextStyle(
+          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
         ),
       ),
     );

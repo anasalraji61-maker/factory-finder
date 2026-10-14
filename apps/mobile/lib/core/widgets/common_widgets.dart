@@ -1,6 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/widgets/offline.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -11,6 +15,8 @@ class AppCard extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.padding,
+    this.semanticLabel,
+    this.semanticActions,
   });
 
   final Widget child;
@@ -18,12 +24,18 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final EdgeInsetsGeometry? padding;
 
+  /// When set, screen readers announce exactly this label for the whole card
+  /// (inner semantics are replaced). Expose inner actions through
+  /// [semanticActions].
+  final String? semanticLabel;
+  final Map<CustomSemanticsAction, VoidCallback>? semanticActions;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final radius = BorderRadius.circular(AppRadius.md);
-    return Material(
+    final card = Material(
       color: scheme.surface,
       borderRadius: radius,
       child: InkWell(
@@ -41,6 +53,16 @@ class AppCard extends StatelessWidget {
           child: child,
         ),
       ),
+    );
+    if (semanticLabel == null) return card;
+    return Semantics(
+      container: true,
+      button: onTap != null,
+      label: semanticLabel,
+      onTap: onTap,
+      customSemanticsActions: semanticActions,
+      excludeSemantics: true,
+      child: card,
     );
   }
 }
@@ -107,7 +129,7 @@ class EmptyState extends StatelessWidget {
               width: 84,
               height: 84,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.10),
+                color: theme.colorScheme.primary.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: theme.colorScheme.primary),
@@ -125,7 +147,7 @@ class EmptyState extends StatelessWidget {
                 message!,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
+                    ?.copyWith(color: AppColors.secondaryOf(context)),
               ),
             ],
             if (action != null) ...[
@@ -140,20 +162,31 @@ class EmptyState extends StatelessWidget {
 }
 
 class ErrorState extends StatelessWidget {
-  const ErrorState({super.key, required this.message, this.onRetry});
+  const ErrorState({super.key, this.message, this.error, this.onRetry})
+      : assert(message != null || error != null);
 
-  final String message;
+  /// Pre-rendered message. Ignored when [error] is a network failure.
+  final String? message;
+
+  /// Raw failure. Network errors (see [isNetworkError]) render the offline
+  /// variant; anything else shows [describeError].
+  final Object? error;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final offline = error != null && isNetworkError(error!);
+    final text = offline
+        ? context.tr('offline.message')
+        : (message ?? describeError(error!));
     return EmptyState(
-      icon: Icons.cloud_off_rounded,
-      title: context.tr('common.error'),
-      message: message,
+      icon: offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+      title: context.tr(offline ? 'offline.title' : 'common.error'),
+      message: text,
       action: onRetry == null
           ? null
           : OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: Text(context.tr('common.retry')),
@@ -311,8 +344,9 @@ class FilterChipBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return SizedBox(
-      height: 42,
+      height: 48 * math.max(1.0, math.min(scale, 2.0)),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

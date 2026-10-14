@@ -39,7 +39,7 @@ class TrackingListScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const LoadingList(),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          error: e,
           onRetry: () => ref.invalidate(shipmentsProvider),
         ),
         data: (list) {

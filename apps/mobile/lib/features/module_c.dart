@@ -5,6 +5,8 @@ import 'package:factory_finder/features/assistant/screens/assistant_screen.dart'
 import 'package:factory_finder/features/my_products/my_products_strings.dart';
 import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/product_editor_screen.dart';
+import 'package:factory_finder/features/settings/settings_screen.dart';
+import 'package:factory_finder/features/settings/settings_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Supplier "My products" (list + editor).
@@ -13,6 +15,10 @@ final FeatureModule featureModuleC = FeatureModule(
     GoRoute(
       path: '/assistant',
       builder: (context, state) => const AssistantScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
       path: '/my-products',
@@ -28,5 +34,5 @@ final FeatureModule featureModuleC = FeatureModule(
           ProductEditorScreen(listingId: state.pathParameters['id']),
     ),
   ],
-  strings: mergeStringTables([myProductsStrings, assistantStrings]),
+  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings]),
 );

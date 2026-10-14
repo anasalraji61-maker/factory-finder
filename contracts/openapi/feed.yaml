@@ -1,0 +1,488 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder feed
+  version: 0.1.0
+  description: |
+    Social side of the app: supplier/factory posts, following, a personalized home feed, trending, likes, flat comments
+    and reports. User routes live under /v1/feed and are reached through the gateway at the same paths. Moderation
+    routes (/v1/admin/feed/*) are NOT routed by the gateway; they need X-Admin-Token (FF_FEED_ADMIN_TOKEN) and answer
+    404 while that token is unset.
+
+    Identity: `X-User-Id` (gateway-derived from the bearer token) is required everywhere except GET /v1/feed/trending
+    (anonymous allowed; `viewer_liked` is then false). Posting needs the gateway-verified `X-Supplier-Id` (403
+    `supplier_required` otherwise); identity is never taken from a body. With FF_INTERNAL_TOKEN set every route except
+    /health and /ready needs `X-Internal-Token` (401 `invalid_internal_token`).
+
+    Content rules: post text 1-2000 chars, comment 1-500 chars (trimmed; control characters rejected); at most 5 media
+    URLs, each of the form `/v1/media/files/<32 hex>.<jpg|png|webp>` (relative, or absolute only under the configured
+    media base URL); at most 5 tags (1-30 letters/digits/`_`/`-`, lower-cased, de-duplicated); optional `listing_ref`
+    (opaque id, existence is not checked). Text is screened like native listings: links, e-mail addresses, phone numbers,
+    messaging-app handles and prohibited goods (Arabic + English) are rejected with 422 `content_rejected`; the reasons
+    name the kind of problem and never echo the matched text.
+
+    Pagination: keyset. `limit` 1-50 (default 20) and an opaque `cursor` from `next_cursor` (null on the last page); a
+    malformed cursor or one from another listing is 422 `invalid_cursor`. Newest-first lists are stable while new posts
+    arrive. Trending orders by engagement (likes + 2 x comments) over the last 14 days, so counts that change between
+    pages can reorder items on later pages.
+
+    Caps (defaults, per environment): 500 posts per supplier (409 `post_limit_reached`), 500 follows per user (409
+    `follow_limit_reached`), 1000 comments per post (409 `comment_limit_reached`).
+    Rate limits per user per rolling hour (429 `rate_limited` + `Retry-After`): 10 posts, 30 comments, 200 like/unlike,
+    60 follow/unfollow, 20 reports. Attempts rejected by screening count too.
+
+    Moderation: a post or comment reported by 3 distinct users (default) is hidden automatically (hidden items return
+    404 / disappear from lists). Repeated reports by one user are accepted silently and counted once. Admins hide or
+    restore items; restoring clears the report count and the stored reports for the item.
+    Follow, like and their inverses are idempotent and return the resulting state.
+servers: [{url: http://localhost:8113}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /ready:
+    get:
+      operationId: ready
+      summary: Readiness (database reachable)
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, checks]
+                properties:
+                  status: {type: string, enum: [ready]}
+                  service: {type: string, const: feed}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: unavailable}
+                  service: {type: string, const: feed}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+  /v1/feed/posts:
+    post:
+      operationId: createPost
+      summary: Publish a post as the verified supplier
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/PostCreate"}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Post"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/posts/{post_id}:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    get:
+      operationId: getPost
+      summary: One visible post (hidden posts are 404)
+      responses:
+        "200": {description: Post, content: {application/json: {schema: {$ref: "#/components/schemas/Post"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+    delete:
+      operationId: deletePost
+      summary: Delete own post (and its comments, likes and reports); only the publishing supplier
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/feed/suppliers/{supplier_id}/posts:
+    parameters: [{$ref: "#/components/parameters/SupplierId"}]
+    get:
+      operationId: listSupplierPosts
+      summary: A supplier's visible posts, newest first
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/PostPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/feed/home:
+    get:
+      operationId: homeFeed
+      summary: Personalized feed
+      description: |
+        Posts of followed suppliers, newest first (`source: following`). When the user follows nobody, or followed
+        suppliers have no visible posts, the first page is the trending feed (`source: trending`) and later pages
+        continue it. A following feed ends when exhausted.
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/FeedPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/feed/trending:
+    get:
+      operationId: trendingFeed
+      summary: Trending posts (public)
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/FeedPage"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/feed/following:
+    get:
+      operationId: listFollowing
+      summary: Suppliers the user follows, most recently followed first
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/FollowingPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/feed/suppliers/{supplier_id}/follow:
+    parameters: [{$ref: "#/components/parameters/SupplierId"}]
+    post:
+      operationId: follow
+      summary: Follow a supplier (idempotent)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/FollowState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+    delete:
+      operationId: unfollow
+      summary: Unfollow a supplier (idempotent)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/FollowState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/posts/{post_id}/like:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    put:
+      operationId: like
+      summary: Like a post (idempotent)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/LikeState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+    delete:
+      operationId: unlike
+      summary: Remove the like (idempotent)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/LikeState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/posts/{post_id}/comments:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    get:
+      operationId: listComments
+      summary: Visible comments, oldest first (flat)
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/CommentPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    post:
+      operationId: addComment
+      summary: Comment on a post
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/CommentCreate"}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Comment"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/comments/{comment_id}:
+    parameters: [{$ref: "#/components/parameters/CommentId"}]
+    delete:
+      operationId: deleteComment
+      summary: Delete a comment; its author or the supplier that owns the post
+      responses:
+        "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/feed/posts/{post_id}/report:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    post:
+      operationId: reportPost
+      summary: Report a post (own posts cannot be reported)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/ReportCreate"}}}
+      responses:
+        "202": {description: Received (identical for first and repeated reports), content: {application/json: {schema: {$ref: "#/components/schemas/Received"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/comments/{comment_id}/report:
+    parameters: [{$ref: "#/components/parameters/CommentId"}]
+    post:
+      operationId: reportComment
+      summary: Report a comment (own comments cannot be reported)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/ReportCreate"}}}
+      responses:
+        "202": {description: Received, content: {application/json: {schema: {$ref: "#/components/schemas/Received"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/posts:
+    get:
+      operationId: adminListPosts
+      summary: Posts by status (default hidden), newest first, with moderation fields
+      security: [{AdminToken: []}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [published, hidden, all], default: hidden}}
+        - {$ref: "#/components/parameters/Cursor"}
+        - {$ref: "#/components/parameters/Limit"}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/AdminPostPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/posts/{post_id}/hide:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    post:
+      operationId: adminHidePost
+      security: [{AdminToken: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/HideCreate"}}}
+      responses:
+        "200": {description: Hidden post, content: {application/json: {schema: {$ref: "#/components/schemas/AdminPost"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/posts/{post_id}/restore:
+    parameters: [{$ref: "#/components/parameters/PostId"}]
+    post:
+      operationId: adminRestorePost
+      security: [{AdminToken: []}]
+      responses:
+        "200": {description: Restored post, content: {application/json: {schema: {$ref: "#/components/schemas/AdminPost"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/comments:
+    get:
+      operationId: adminListComments
+      summary: Comments by status (default hidden), newest first
+      security: [{AdminToken: []}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [published, hidden, all], default: hidden}}
+        - {name: post_id, in: query, schema: {type: string}}
+        - {$ref: "#/components/parameters/Cursor"}
+        - {$ref: "#/components/parameters/Limit"}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/AdminCommentPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/comments/{comment_id}/hide:
+    parameters: [{$ref: "#/components/parameters/CommentId"}]
+    post:
+      operationId: adminHideComment
+      security: [{AdminToken: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/HideCreate"}}}
+      responses:
+        "200": {description: Hidden comment, content: {application/json: {schema: {$ref: "#/components/schemas/AdminComment"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/comments/{comment_id}/restore:
+    parameters: [{$ref: "#/components/parameters/CommentId"}]
+    post:
+      operationId: adminRestoreComment
+      security: [{AdminToken: []}]
+      responses:
+        "200": {description: Restored comment, content: {application/json: {schema: {$ref: "#/components/schemas/AdminComment"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/feed/reports:
+    get:
+      operationId: adminListReports
+      summary: Stored reports (details are redacted), newest first
+      security: [{AdminToken: []}]
+      parameters:
+        - {name: target_type, in: query, schema: {type: string, enum: [post, comment]}}
+        - {name: target_id, in: query, schema: {type: string}}
+        - {$ref: "#/components/parameters/Cursor"}
+        - {$ref: "#/components/parameters/Limit"}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/ReportPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+components:
+  securitySchemes:
+    AdminToken: {type: apiKey, in: header, name: X-Admin-Token}
+  parameters:
+    PostId: {name: post_id, in: path, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}}
+    CommentId: {name: comment_id, in: path, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}}
+    SupplierId: {name: supplier_id, in: path, required: true, schema: {type: string, pattern: '^sup_[A-Za-z0-9_.:\-]{1,59}$'}}
+    Cursor: {name: cursor, in: query, schema: {type: string, maxLength: 300}, description: "opaque; from next_cursor"}
+    Limit: {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 50, default: 20}}
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    PostCreate:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 2000}
+        media: {type: array, maxItems: 5, items: {type: string, maxLength: 300}, description: "/v1/media/files/<id>.<jpg|png|webp> (or absolute under the media base URL)"}
+        tags: {type: array, maxItems: 5, items: {type: string, maxLength: 40}}
+        listing_ref: {type: [string, "null"], pattern: '^[A-Za-z0-9_.:\-]{1,64}$'}
+    Post:
+      type: object
+      required: [id, supplier_id, body, media, tags, listing_ref, like_count, comment_count, viewer_liked, created_at]
+      properties:
+        id: {type: string}
+        supplier_id: {type: string}
+        body: {type: string}
+        media: {type: array, items: {type: string}}
+        tags: {type: array, items: {type: string}}
+        listing_ref: {type: [string, "null"]}
+        like_count: {type: integer, minimum: 0}
+        comment_count: {type: integer, minimum: 0}
+        viewer_liked: {type: boolean}
+        created_at: {type: string, format: date-time}
+    AdminPost:
+      allOf:
+        - $ref: "#/components/schemas/Post"
+        - type: object
+          required: [status, hidden_reason, report_count, author_user_id]
+          properties:
+            status: {type: string, enum: [published, hidden]}
+            hidden_reason: {type: [string, "null"]}
+            report_count: {type: integer, minimum: 0}
+            author_user_id: {type: string}
+    PostPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Post"}}
+        next_cursor: {type: [string, "null"]}
+    FeedPage:
+      type: object
+      required: [items, next_cursor, source]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Post"}}
+        next_cursor: {type: [string, "null"]}
+        source: {type: string, enum: [following, trending]}
+    AdminPostPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/AdminPost"}}
+        next_cursor: {type: [string, "null"]}
+    FollowState:
+      type: object
+      required: [supplier_id, following, follower_count]
+      properties:
+        supplier_id: {type: string}
+        following: {type: boolean}
+        follower_count: {type: integer, minimum: 0}
+    FollowingPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [supplier_id, followed_at]
+            properties:
+              supplier_id: {type: string}
+              followed_at: {type: string, format: date-time}
+        next_cursor: {type: [string, "null"]}
+    LikeState:
+      type: object
+      required: [post_id, liked, like_count]
+      properties:
+        post_id: {type: string}
+        liked: {type: boolean}
+        like_count: {type: integer, minimum: 0}
+    CommentCreate:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 500}
+    Comment:
+      type: object
+      required: [id, post_id, user_id, body, created_at]
+      properties:
+        id: {type: string}
+        post_id: {type: string}
+        user_id: {type: string}
+        body: {type: string}
+        created_at: {type: string, format: date-time}
+    AdminComment:
+      allOf:
+        - $ref: "#/components/schemas/Comment"
+        - type: object
+          required: [status, hidden_reason, report_count]
+          properties:
+            status: {type: string, enum: [published, hidden]}
+            hidden_reason: {type: [string, "null"]}
+            report_count: {type: integer, minimum: 0}
+    CommentPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Comment"}}
+        next_cursor: {type: [string, "null"]}
+    AdminCommentPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/AdminComment"}}
+        next_cursor: {type: [string, "null"]}
+    ReportCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, enum: [prohibited_item, counterfeit, scam_or_fraud, misleading, contact_info, offensive, spam, other]}
+        details: {type: [string, "null"], maxLength: 300, description: "stored redacted (links, e-mails and phone numbers masked)"}
+    Received:
+      type: object
+      required: [status]
+      properties:
+        status: {type: string, enum: [received]}
+    HideCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 3, maxLength: 300}
+    ReportPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, target_type, target_id, reporter_id, reason, details, created_at]
+            properties:
+              id: {type: string}
+              target_type: {type: string, enum: [post, comment]}
+              target_id: {type: string}
+              reporter_id: {type: string}
+              reason: {type: string}
+              details: {type: [string, "null"]}
+              created_at: {type: string, format: date-time}
+        next_cursor: {type: [string, "null"]}

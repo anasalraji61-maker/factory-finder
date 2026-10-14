@@ -10,7 +10,7 @@ services:
     environment:
       PORT: '8000'
       FF_GATEWAY_UPSTREAMS: '{"sourcing": "http://sourcing:8101", "logistics": "http://logistics:8102", "geo": "http://geo:8103", "trust": "http://trust:8104", "rfq": "http://rfq:8105", "messaging": "http://messaging:8106",
-        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110", "payments": "http://payments:8111", "media": "http://media:8112"}'
+        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110", "payments": "http://payments:8111", "media": "http://media:8112", "feed": "http://feed:8113"}'
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-[]}
@@ -27,6 +27,7 @@ services:
       demand: {condition: service_healthy}
       payments: {condition: service_healthy}
       media: {condition: service_healthy}
+      feed: {condition: service_healthy}
       geo: {condition: service_healthy}
     restart: unless-stopped
     healthcheck:
@@ -357,6 +358,33 @@ services:
       start_period: 20s
     expose:
     - '8112'
+  feed:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: feed
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
+    environment:
+      PORT: '8113'
+      FF_FEED_DATABASE_URL: ${FF_FEED_DATABASE_URL:-}
+      FF_FEED_DB_AUTO_CREATE: ${FF_FEED_DB_AUTO_CREATE:-}
+      FF_FEED_ADMIN_TOKEN: ${FF_FEED_ADMIN_TOKEN:-}
+      FF_FEED_MEDIA_BASE_URL: ${FF_MEDIA_PUBLIC_BASE_URL:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8113/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    expose:
+    - '8113'
   # Optional PostgreSQL (not started by default). Usage:
   #   FF_DOCKER_EXTRAS=pg docker compose --profile pg up --build postgres rfq ...
   #   FF_RFQ_DATABASE_URL=postgresql://ff:${FF_POSTGRES_PASSWORD}@postgres:5432/ff_rfq   (one database per service)

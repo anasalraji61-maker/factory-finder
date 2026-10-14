@@ -40,10 +40,22 @@ class ListingCard extends ConsumerWidget {
     final lang = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final l = listing;
+    final trustLabel = context.tr('trust.${l.supplier.trustBand.json}') +
+        (l.supplier.trustScore == null ? '' : ' ${l.supplier.trustScore}');
     return AppCard(
       padding: EdgeInsets.zero,
       onTap: () => context.push('/listing/${l.id}'),
       onLongPress: () => toggleCompare(context, ref, l),
+      semanticLabel: context.tr('a11y.listing_card', {
+        'title': l.displayTitle(lang),
+        'price': l.price.format(),
+        'trust': trustLabel,
+      }),
+      semanticActions: {
+        CustomSemanticsAction(
+          label: context.tr(inCompare ? 'compare.remove' : 'compare.add'),
+        ): () => toggleCompare(context, ref, l),
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -59,24 +71,35 @@ class ListingCard extends ConsumerWidget {
                   ),
                 ),
                 PositionedDirectional(
-                  top: 6,
-                  end: 6,
-                  child: Tooltip(
-                    message: context.tr(inCompare ? 'compare.remove' : 'compare.add'),
-                    child: Material(
-                      color: inCompare
-                          ? theme.colorScheme.primary
-                          : Colors.black.withOpacity(0.45),
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
+                  top: 0,
+                  end: 0,
+                  // 48dp tap target around a 28dp visual.
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Tooltip(
+                      message: context.tr(inCompare ? 'compare.remove' : 'compare.add'),
+                      child: InkResponse(
+                        radius: 24,
                         onTap: () => toggleCompare(context, ref, l),
-                        child: Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: Icon(
-                            inCompare ? Icons.check : Icons.compare_arrows,
-                            size: 18,
-                            color: Colors.white,
+                        child: Center(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: inCompare
+                                  ? theme.colorScheme.primary
+                                  : Colors.black.withOpacity(0.55),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: Icon(
+                                inCompare ? Icons.check : Icons.compare_arrows,
+                                size: 18,
+                                color: inCompare
+                                    ? theme.colorScheme.onPrimary
+                                    : Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -90,7 +113,7 @@ class ListingCard extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.warning,
+                        color: const Color(0xFFB45309), // white text >= 4.5:1
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
                       child: Text(
@@ -140,7 +163,7 @@ class ListingCard extends ConsumerWidget {
                         'unit': unitLabel(context, l.unit),
                       }),
                       style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: AppColors.secondaryOf(context)),
                     ),
                   ),
                 const SizedBox(height: 8),
@@ -178,14 +201,16 @@ class ListingGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Large text: one wide column so titles/prices stay readable.
+    final big = MediaQuery.textScalerOf(context).scale(14) / 14 > 1.35;
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: big ? 1 : 2,
           mainAxisSpacing: AppSpacing.md,
           crossAxisSpacing: AppSpacing.md,
-          childAspectRatio: 0.58,
+          childAspectRatio: big ? 0.8 : 0.58,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, i) => ListingCard(listing: items[i]),

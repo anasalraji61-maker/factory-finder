@@ -85,3 +85,11 @@ Enable with `FF_SOURCING_ADAPTERS=alibaba_openapi`; extra env: `ALIBABA_ACCESS_T
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 200 when the database is reachable, else 503. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Licensed REST provider (generic, config-driven)
+`adapters/licensed_rest.py` loads a JSON mapping (endpoint templates, auth header|query|bearer from an env var NAME,
+pagination page|offset|cursor, field mapping, currency/unit normalization, image host allowlist, limits, quality bounds).
+Examples (fictional providers, refused at runtime): `examples/licensed/*.mapping.json`. Validate offline:
+`python -m ff_sourcing.licensed_validate mapping.json --sample response.json`. Quality rules: `domain/quality.py`
+(dedupe by supplier+title, price sanity, currency detection). Enable: `FF_SOURCING_LICENSED_MAPPINGS` + id in
+`FF_SOURCING_ADAPTERS`; see `docs/decisions/sourcing-licensed-provider.md`. Failure falls back to mock with a warning.

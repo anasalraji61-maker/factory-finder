@@ -106,5 +106,15 @@ class _LocationEditorState extends State<_LocationEditor> {
 String locationLabel(BuildContext context, Location? l) {
   if (l == null) return '—';
   final country = context.tr('country.${l.countryCode}');
-  return (l.city == null || l.city!.isEmpty) ? country : '${l.city}, $country';
+  final raw = l.city;
+  if (raw == null || raw.isEmpty) return country;
+  return '${translateCity(context, raw)}, $country';
+}
+
+/// Translated name for a known city (`city.<Name>` string), else the raw name.
+String translateCity(BuildContext context, String city) {
+  final key = 'city.$city';
+  final lang = Localizations.localeOf(context).languageCode;
+  final translated = AppStrings.lookup(lang, key);
+  return translated == key ? city : translated;
 }

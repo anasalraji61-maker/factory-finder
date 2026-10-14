@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # FF_SOURCING_ADAPTERS: extra adapter ids to enable (e.g. "alibaba_openapi"). Empty = mock only.
     adapters: str = ""
     adapter_timeout_s: float = 3.0
+    # Licensed REST provider mappings: comma-separated JSON paths (see docs/decisions/sourcing-licensed-provider.md).
+    # Each loaded adapter is registered but ENABLED only if its id is also listed in FF_SOURCING_ADAPTERS.
+    licensed_mappings: str = ""
+    licensed_allow_example: bool = False  # tests/demos only; example mappings are refused by default
     cache_ttl_s: float = 60.0
     trust_cache_ttl_s: float = 300.0
 

@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/material.dart';
 
 class MoneyText extends StatelessWidget {
@@ -13,7 +14,8 @@ class MoneyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = money != null ? money!.format() : (range?.format() ?? '');
+    final raw = money != null ? money!.format() : (range?.format() ?? '');
+    final text = localizeNumber(raw, DigitStyleScope.of(context));
     // Numbers/currency are always laid out left-to-right, even inside RTL text.
     return Directionality(
       textDirection: TextDirection.ltr,

@@ -1,0 +1,5 @@
+{"response": {"docs": [
+ {"sku": "K-1", "title_en": "Servo Motor 750W", "price_text": "US $120.50 - 135", "vendor": "Sinoparts Direct", "origin": "CN", "images": [{"url": "https://cdn.sinoparts.invalid/k1.jpg"}], "moq_text": "2 pcs", "unit": "pc"},
+ {"sku": "K-2", "title_en": "Bearing 6204", "price_text": "¥ 8.5", "vendor": "Luoyang Bearings", "origin": "CN", "images": [], "moq_text": "100 pcs"},
+ {"sku": "K-3", "title_en": "Free Item", "price_text": "free", "vendor": "X"}
+]}}

@@ -291,7 +291,7 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                         margin: const EdgeInsetsDirectional.only(end: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.warning,
+                          color: const Color(0xFFB45309), // white text >= 4.5:1
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                         child: Text(
@@ -306,7 +306,7 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                     Text(
                       context.tr('discover.kind.${l.kind.json}'),
                       style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: AppColors.secondaryOf(context)),
                     ),
                   ],
                 ),
@@ -328,7 +328,7 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                 Text(
                   context.tr('listing.per_unit', {'unit': unit}),
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
+                      ?.copyWith(color: AppColors.secondaryOf(context)),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Wrap(
@@ -398,7 +398,7 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                                 {'n': '${l.supplier.yearsInBusiness}'},
                               ),
                               style: theme.textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.textSecondary),
+                                  ?.copyWith(color: AppColors.secondaryOf(context)),
                             ),
                         ],
                       ),
@@ -436,12 +436,16 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                               Expanded(
                                 child: Text(
                                   specs[i].key,
-                                  style: const TextStyle(color: AppColors.textSecondary),
+                                  style: TextStyle(color: AppColors.secondaryOf(context)),
                                 ),
                               ),
-                              Text(
-                                specs[i].value,
-                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              const SizedBox(width: AppSpacing.sm),
+                              Flexible(
+                                child: Text(
+                                  specs[i].value,
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ],
                           ),
@@ -475,32 +479,59 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.push(
-                          '/messages/new?supplier_id=${l.supplier.id}&listing_id=${l.id}'),
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: Text(context.tr('listing.message_supplier')),
-                    ),
+              _BottomActions(
+                big: MediaQuery.textScalerOf(context).scale(14) / 14 > 1.3,
+                first: OutlinedButton.icon(
+                  onPressed: () => context.push(
+                      '/messages/new?supplier_id=${l.supplier.id}&listing_id=${l.id}'),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  label: Text(context.tr('listing.message_supplier')),
+                ),
+                second: OutlinedButton.icon(
+                  onPressed: _toggleWatch,
+                  icon: Icon(watched ? Icons.star : Icons.notifications_none, size: 18),
+                  label: Text(
+                    context.tr(watched ? 'watch.watching' : 'listing.watch_price'),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _toggleWatch,
-                      icon: Icon(watched ? Icons.star : Icons.notifications_none, size: 18),
-                      label: Text(
-                        context.tr(watched ? 'watch.watching' : 'listing.watch_price'),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Two secondary actions: side by side, or stacked when text is scaled up.
+class _BottomActions extends StatelessWidget {
+  const _BottomActions({
+    required this.big,
+    required this.first,
+    required this.second,
+  });
+
+  final bool big;
+  final Widget first;
+  final Widget second;
+
+  @override
+  Widget build(BuildContext context) {
+    if (big) {
+      return Column(
+        children: [
+          SizedBox(width: double.infinity, child: first),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(width: double.infinity, child: second),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: second),
+      ],
     );
   }
 }

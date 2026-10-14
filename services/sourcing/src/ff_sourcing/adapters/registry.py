@@ -57,4 +57,9 @@ def build_registry(settings: Settings) -> AdapterRegistry:
         AliExpressAdapter(settings),
         Source1688Adapter(settings),
     ]
+    from .licensed_rest import load_licensed_adapters
+
+    adapters.extend(
+        load_licensed_adapters(settings.licensed_mappings, allow_example=settings.licensed_allow_example)
+    )
     return AdapterRegistry(adapters, settings.enabled_set())

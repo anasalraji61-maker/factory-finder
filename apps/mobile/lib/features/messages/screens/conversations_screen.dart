@@ -99,7 +99,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
       body: async.when(
         loading: () => const LoadingList(),
         error: (e, _) => ErrorState(
-          message: e.toString(),
+          error: e,
           onRetry: () => ref.invalidate(conversationsProvider),
         ),
         data: (list) {

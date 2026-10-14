@@ -16,6 +16,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/assistant": "assistant",
     "/v1/invoices": "payments", "/v1/ledger": "payments", "/v1/payments": "payments",
     "/v1/media": "media",
+    "/v1/feed": "feed",
 }  # fmt: skip
 
 PUBLIC_GET_PREFIXES = (
@@ -23,7 +24,7 @@ PUBLIC_GET_PREFIXES = (
     "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs",
     "/v1/media/files",  # image bytes only; upload/delete (/v1/media/images) stay authenticated
 )  # fmt: skip
-PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost")}
+PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost"), ("GET", "/v1/feed/trending")}  # trending: anonymous browsing; identity optional
 
 
 # Service-to-service endpoints that must never be reachable through the public gateway

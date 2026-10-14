@@ -46,7 +46,25 @@ demand/payments steps print `SKIP` (not a failure) when the admin route is not a
 stack's `FF_GATEWAY_ADMIN_TOKEN` to run the demand step) or the upstream is unreachable. Steps that need direct service
 ports (X-User-Id injection) are skipped in remote mode.
 
+## 5. Extended end-to-end flows and production smoke
+
+```
+python scripts/e2e_extended.py        # or: make e2e-extended  (boots 12+1 local services, ~30 s)
+FF_E2E_BASE_URL=https://stack python scripts/smoke_prod.py   # or: make smoke
+```
+`e2e_extended.py` covers what `e2e.py` does not: listing moderation (2 reports -> `pending_review` -> admin hide ->
+restore through `/v1/admin/moderation/*`), messaging media attachments, email verification (in-process gateway with the
+mock mailer, because the outbox is not reachable over HTTP), tracking outbox -> relay -> notifications alert (a row is
+inserted into the local tracking SQLite file), deals list as buyer/supplier, assistant cards and the daily quota,
+reviews on a completed deal, compliance endpoints (SKIP while none exist) and the `FF_ENV=production` fail-closed guard
+(one subprocess per service). Steps are independent; a failed setup only skips its dependants. With `FF_E2E_BASE_URL`
+the steps that need local processes, databases or env are skipped.
+
+`smoke_prod.py` is a read-only post-deploy check (GET/OPTIONS only, no accounts): gateway `/health` + version, `/ready`
+with every upstream, CORS closed for foreign origins, admin routes 401/404 without a token, protected and internal
+routes closed, error bodies without traces, https/HSTS and rate-limit header sanity (warnings only). Exit 1 on any FAIL.
+
 ## CI
 
 `.github/workflows/e2e.yml` runs route check, contract validation and the e2e scenario on every change to services,
-contracts or scripts; `backend.yml` runs the unit tests.
+contracts or scripts; `backend.yml` runs the unit tests. The e2e workflow also runs `scripts/e2e_extended.py`.
