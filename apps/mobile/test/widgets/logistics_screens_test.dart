@@ -17,8 +17,8 @@ void main() {
     expect(find.text('نتائج التسعير'), findsNothing);
 
     // Let the validation snackbar expire so it cannot cover the button.
-    await tester.pump(const Duration(seconds: 5));
-    await settle(tester, frames: 4);
+    ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first)).clearSnackBars();
+    await settle(tester, frames: 6);
     expect(find.text('أدخل القيمة والوزن بشكل صحيح'), findsNothing);
 
     // Fields in "by unit" mode: unit price, quantity, weight, volume, HS code.
