@@ -27,6 +27,7 @@ Future<void> _pumpCard(
   await tester.pumpWidget(
     MaterialApp(
       locale: Locale(lang),
+      supportedLocales: const [Locale('ar'), Locale('en')],
       home: Scaffold(
         body: SingleChildScrollView(
           child: AssistantCardView(card: card, onNavigate: routes.add),
