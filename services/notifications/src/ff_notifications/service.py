@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
@@ -53,6 +54,11 @@ class EvaluationReport:
     errors: list[dict] = field(default_factory=list)
     pushes_sent: int = 0
     alerts: list[Alert] = field(default_factory=list)
+
+
+_EMAIL_RE = re.compile(
+    r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
+)
 
 
 class NotificationService:
@@ -305,7 +311,7 @@ class NotificationService:
         if (
             email is not None
             and email != ""
-            and not ("@" in email and " " not in email and len(email) <= 254)
+            and not (len(email) <= 254 and _EMAIL_RE.fullmatch(email))
         ):
             raise Invalid("Invalid email address", code="invalid_prefs")
         prefs = Prefs(

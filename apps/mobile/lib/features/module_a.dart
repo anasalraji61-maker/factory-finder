@@ -4,6 +4,8 @@ import 'package:factory_finder/features/auth/auth_screens.dart';
 import 'package:factory_finder/features/auth/auth_strings.dart';
 import 'package:factory_finder/features/onboarding/onboarding_screen.dart';
 import 'package:factory_finder/features/onboarding/onboarding_strings.dart';
+import 'package:factory_finder/features/payments/payments_strings.dart';
+import 'package:factory_finder/features/payments/screens/invoice_screen.dart';
 import 'package:factory_finder/features/requests/requests_strings.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart';
 import 'package:factory_finder/features/requests/screens/request_detail_screen.dart';
@@ -73,6 +75,11 @@ final FeatureModule featureModuleA = FeatureModule(
       builder: (context, state) =>
           ListingDetailScreen(listingId: state.pathParameters['id']!),
     ),
+    GoRoute(
+      path: '/invoice/:id',
+      builder: (context, state) =>
+          InvoiceScreen(invoiceId: state.pathParameters['id']!),
+    ),
     GoRoute(path: '/compare', builder: (context, state) => const CompareScreen()),
     GoRoute(path: '/watchlist', builder: (context, state) => const WatchlistScreen()),
     GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
@@ -86,5 +93,5 @@ final FeatureModule featureModuleA = FeatureModule(
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: mergeStringTables([discoverStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings]),
+  strings: mergeStringTables([discoverStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings]),
 );

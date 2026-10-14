@@ -26,7 +26,7 @@ def verify(secret: str, body: bytes, header: str | None, *, now_ts: int, toleran
     candidates: list[str] = []
     for part in header.split(","):
         k, _, v = part.strip().partition("=")
-        if k == "t" and v.isdigit():
+        if k == "t" and v.isascii() and v.isdigit():
             ts = int(v)
         elif k == "v1":
             candidates.append(v)

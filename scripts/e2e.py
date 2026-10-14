@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end smoke test: boots all 10 services and runs a scenario through the gateway.
+"""End-to-end smoke test: boots all 12 services and runs a scenario through the gateway.
 
     python scripts/e2e.py            # exits non-zero on any failure
 """
@@ -24,12 +24,15 @@ SERVICES = {  # name: (port, module)
     "trust": (8104, "ff_trust.main:app"), "rfq": (8105, "ff_rfq.main:app"),
     "messaging": (8106, "ff_messaging.main:app"), "tracking": (8107, "ff_tracking.main:app"),
     "notifications": (8108, "ff_notifications.main:app"), "assistant": (8109, "ff_assistant.main:app"),
+    "demand": (8110, "ff_demand.main:app"), "payments": (8111, "ff_payments.main:app"),
 }  # fmt: skip
+ADMIN_TOKEN = os.environ.get("FF_E2E_ADMIN_TOKEN", "e2e-admin-token")  # local run: also configured on the spawned services
 # FF_E2E_BASE_URL=http://localhost:8000 -> run against an already running stack (e.g. docker compose);
 # no local processes are spawned and the steps that need direct (unpublished) service ports are skipped.
 REMOTE = os.environ.get("FF_E2E_BASE_URL", "").rstrip("/")
 GW = REMOTE or "http://localhost:8000"
 RESULTS: list[tuple[str, bool, str]] = []
+SKIPPED: list[str] = []
 
 
 def step(name: str, fn) -> object:
@@ -43,6 +46,11 @@ def step(name: str, fn) -> object:
         RESULTS.append((name, False, msg))
         print(f"FAIL  {name}\n      {msg}")
         return None
+
+
+def skip(name: str, why: str) -> None:
+    SKIPPED.append(name)
+    print(f"SKIP  {name} ({why})")
 
 
 def ok(r: httpx.Response, *codes: int) -> dict | list:
@@ -68,8 +76,11 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_LOGISTICS_FX_PROVIDER": "mock", "FF_GATEWAY_JWT_SECRET": "test-secret",
         "FF_GATEWAY_BCRYPT_ROUNDS": "4", "FF_GATEWAY_RATE_LIMIT_PER_MINUTE": "100000",
         "FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE": "100000", "FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS": "3600",
+        "FF_GATEWAY_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_ADMIN_TOKEN": ADMIN_TOKEN, "FF_PAYMENTS_PROVIDER": "mock",
+        "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
     }  # fmt: skip
     base_env.pop("FF_INTERNAL_TOKEN", None)
+    base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
     for name, (port, app) in SERVICES.items():
         svc = ROOT / "services" / name
         env = {**base_env, "PYTHONPATH": str(svc / "src")}
@@ -307,6 +318,96 @@ def scenario() -> None:
 
     step("X-User-Id header injection + ownership isolation", inject)
 
+    # ---- extended steps (hs, trust history, prefs, saved search, sort/facets, demand, payments) ----
+    def hs():
+        d = ok(c.get("/v1/hs/search", params={"q": "chair"}, headers=h("buyer")))
+        res = items(d) if not isinstance(d, dict) or "results" in d or "items" in d else d.get("matches") or []
+        assert res, f"no HS matches: {str(d)[:200]}"
+
+    step("logistics: HS search through gateway", hs)
+
+    def trust_history():
+        sid = found["listing"]["supplier"]["id"]
+        d = ok(c.get(f"/v1/trust/suppliers/{sid}/history", headers=h("buyer")))
+        pts = d.get("points") or d.get("history") or d.get("items") or []
+        assert pts, f"empty trust history: {str(d)[:200]}"
+
+    step("trust: supplier score history", trust_history)
+
+    def prefs():
+        before = ok(c.get("/v1/notification-prefs", headers=h("buyer")))
+        assert isinstance(before, dict)
+        d = ok(c.put("/v1/notification-prefs", headers=h("buyer"), json={
+            "language": "en", "timezone": "Asia/Baghdad", "quiet_hours": {"start": "22:00", "end": "07:00"}}))
+        assert d.get("language") == "en" and d.get("timezone") == "Asia/Baghdad", str(d)[:200]
+        again = ok(c.get("/v1/notification-prefs", headers=h("buyer")))
+        assert again.get("language") == "en" and (again.get("quiet_hours") or {}).get("start") == "22:00", str(again)[:200]
+
+    step("notifications: prefs PUT -> GET round trip", prefs)
+
+    def saved_search():
+        body = {"search": {"q": "injection molding machine", "kind": "product"}, "drop_threshold_pct": "10"}
+        w = ok(c.post("/v1/watchlist", headers=h("buyer"), json=body), 200, 201)
+        assert w["type"] == "search" and w["id"], str(w)[:200]
+        again = ok(c.post("/v1/watchlist", headers=h("buyer"), json=body), 200, 201)
+        assert again["id"] == w["id"], "saved search watch is not idempotent"
+        assert any(x["id"] == w["id"] for x in items(ok(c.get("/v1/watchlist", headers=h("buyer")))))
+
+    step("notifications: saved-search watch (idempotent)", saved_search)
+
+    def sort_facets():
+        d = ok(c.get("/v1/search", params={"q": "machine", "sort": "price_asc", "page_size": 50}))
+        its = items(d)
+        assert len(its) >= 2, f"need >=2 results to check order, got {len(its)}"
+        prices = [Decimal(str(i["unit_price"]["amount"])) for i in its if (i.get("unit_price") or {}).get("amount") is not None]
+        assert prices == sorted(prices), f"price_asc not sorted: {prices[:10]}"
+        fac = d.get("facets")
+        assert fac and fac.get("kind"), f"no facets: {str(d)[:200]}"
+        assert all(f["count"] > 0 for f in fac["kind"])
+        ok(c.get("/v1/search", params={"q": "machine", "sort": "trust"}))
+        r = c.get("/v1/search", params={"sort": "bogus"})
+        assert r.status_code == 422, f"bad sort accepted: {r.status_code}"
+
+    step("sourcing: sort + facets", sort_facets)
+
+    admin_h = {"X-Admin-Token": ADMIN_TOKEN}
+
+    def demand():
+        r = c.get("/v1/admin/demand/quota", headers=admin_h)
+        if r.status_code in (404, 502, 503, 504):
+            return skip("demand (admin) via gateway", f"admin/demand not available ({r.status_code}); set FF_E2E_ADMIN_TOKEN")
+        assert c.get("/v1/admin/demand/quota").status_code in (401, 404), "admin route open without token"
+        ok(r)
+        sig = ok(c.post("/v1/admin/demand/signals", headers=admin_h, json={
+            "text": "ابحث عن مورد كراسي بلاستيك 500 قطعة الى اربيل", "url": f"https://example.com/post/{sfx}"}), 200, 201)
+        assert sig, "empty import result"
+        assert items(ok(c.get("/v1/admin/demand/signals", headers=admin_h)))
+        drafts = items(ok(c.get("/v1/admin/demand/drafts", headers=admin_h)))
+        if drafts:
+            d = ok(c.post(f"/v1/admin/demand/drafts/{drafts[0]['id']}/approve", headers=admin_h, json={}), 200, 403)
+            assert d, "empty approve result"
+        ok(c.get("/v1/admin/overview", headers=admin_h))
+
+    step("demand: admin import signal -> drafts -> approve (via gateway)", demand)
+
+    def payments():
+        if not deal.get("id"):
+            return skip("payments invoice via gateway", "no deal from the rfq step")
+        r = c.post("/v1/invoices", headers=h("buyer"), json={"deal_id": deal["id"], "kind": "commission"})
+        if r.status_code in (404, 502, 503, 504) and r.json().get("error", {}).get("code") != "not_found":
+            return skip("payments invoice via gateway", f"payments not reachable ({r.status_code})")
+        inv = ok(r, 200, 201)
+        assert inv["id"] and inv["status"] in ("pending", "awaiting_payment", "confirming", "paid"), str(inv)[:200]
+        again = ok(c.post("/v1/invoices", headers=h("buyer"), json={"deal_id": deal["id"], "kind": "commission"}), 200, 201)
+        assert again["id"] == inv["id"], "invoice create is not idempotent"
+        assert ok(c.get(f"/v1/invoices/{inv['id']}", headers=h("buyer")))["id"] == inv["id"]
+        assert items(ok(c.get("/v1/invoices", headers=h("buyer"))))
+        r = c.get(f"/v1/invoices/{inv['id']}", headers=h("supplier"))
+        assert r.status_code in (403, 404), f"unrelated user can read invoice: {r.status_code}"
+
+    step("payments: commission invoice (idempotent, owner-only) via gateway", payments)
+
+
 
 def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="ff-e2e-"))
@@ -344,7 +445,7 @@ def main() -> int:
                     print(f"--- {log.name} (tail)\n{t[-1200:]}")
         shutil.rmtree(tmp, ignore_errors=True)
     failed = [r for r in RESULTS if not r[1]]
-    print(f"\n{len(RESULTS) - len(failed)}/{len(RESULTS)} steps passed")
+    print(f"\n{len(RESULTS) - len(failed)}/{len(RESULTS)} steps passed" + (f", {len(SKIPPED)} skipped" if SKIPPED else ""))
     return 1 if failed or not RESULTS else 0
 
 

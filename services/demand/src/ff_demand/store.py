@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 
 from sqlalchemy import (
@@ -15,6 +16,7 @@ from sqlalchemy import (
     func,
     insert,
     select,
+    text,
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -47,9 +49,8 @@ drafts = Table(
 class Store:
     def __init__(self, url: str):
         opts = {} if normalize_database_url(url).startswith("sqlite") else {"pool_pre_ping": True}
-        self.engine: AsyncEngine = create_async_engine(
-            normalize_database_url(url), **opts
-        )
+        self.engine: AsyncEngine = create_async_engine(normalize_database_url(url), **opts)
+        self._cap_lock = asyncio.Lock()  # serialises cap-checked approvals within this process
 
     async def create_all(self) -> None:
         async with self.engine.begin() as conn:
@@ -123,9 +124,29 @@ class Store:
         day_end: datetime | None = None,
     ) -> bool:
         """Compare-and-set on status. With ``cap``, the approval count for the day is checked in
-        the same transaction (returns False when full or the status changed)."""
+        the same transaction (returns False when full or the status changed). Cap-checked saves are
+        serialised (process lock + a PostgreSQL advisory lock across replicas) so two concurrent
+        approvals can never both pass the count check."""
+        if cap is None:
+            return await self._save_draft(doc, expected_status, approved_at, None, None, None)
+        async with self._cap_lock:
+            return await self._save_draft(
+                doc, expected_status, approved_at, cap, day_start, day_end
+            )
+
+    async def _save_draft(
+        self,
+        doc: dict,
+        expected_status: str,
+        approved_at: datetime | None,
+        cap: int | None,
+        day_start: datetime | None,
+        day_end: datetime | None,
+    ) -> bool:
         async with self.engine.begin() as c:
             if cap is not None:
+                if c.dialect.name == "postgresql":
+                    await c.execute(text("SELECT pg_advisory_xact_lock(727001)"))
                 n = (
                     await c.execute(
                         select(func.count())

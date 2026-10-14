@@ -39,3 +39,14 @@ class RateLimiter:
             return max(1, int(self._window - (now - start)) + 1)
         self._hits[key] = (start, count + 1)
         return None
+
+    def blocked(self, key: str, limit: int) -> int | None:
+        """Seconds to wait if ``key`` already used up ``limit`` hits in the current window (does not count)."""
+        entry = self._hits.get(key)
+        if entry is None:
+            return None
+        start, count = entry
+        now = self._clock.monotonic()
+        if now - start >= self._window or count < limit:
+            return None
+        return max(1, int(self._window - (now - start)) + 1)

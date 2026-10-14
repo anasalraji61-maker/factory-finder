@@ -7,6 +7,7 @@ Nothing is ever posted by this service; `published` only records that a human di
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -29,19 +30,37 @@ def _iso(dt: datetime) -> str:
     return dt.isoformat()
 
 
+_URL = re.compile(r"(?i)(https?://|www\.)\S+")
+_WS = re.compile(r"\s+")
+
+
+def _clean(value: str, limit: int = 120) -> str:
+    """Supplier-controlled listing text: strip links, control chars and line breaks."""
+    value = _URL.sub("", value)
+    value = "".join(ch for ch in value if ch.isprintable() or ch.isspace())
+    return _WS.sub(" ", value).strip()[:limit]
+
+
+def ensure_disclosure(text: str, language: str) -> str:
+    """Every reply must carry the platform disclosure, even after a human edit."""
+    note = DISCLOSURE[language]
+    return text if note in text else f"{text.rstrip()}\n{note}"
+
+
 def build_reply(language: str, candidates: list[Candidate]) -> str:
     """Honest, listing-data-only reply. No price promises: figures are indicative."""
     ar = language == "ar"
     lines = []
     for c in candidates:
-        title = c.title_ar if ar and c.title_ar else c.title
+        title = _clean(c.title_ar if ar and c.title_ar else c.title)
+        supplier = _clean(c.supplier_name, 80)
         rng = (
             f"{c.price_min:f}" if c.price_min == c.price_max else f"{c.price_min:f}-{c.price_max:f}"
         )
         if ar:
-            lines.append(f"- {title} ({c.supplier_name}): {rng} {c.currency} حسب بيانات الإعلان")
+            lines.append(f"- {title} ({supplier}): {rng} {c.currency} حسب بيانات الإعلان")
         else:
-            lines.append(f"- {title} ({c.supplier_name}): {rng} {c.currency} per the listing")
+            lines.append(f"- {title} ({supplier}): {rng} {c.currency} per the listing")
     if ar:
         head = "هلا بيك، لقينا بالمنصة خيارات تطابق طلبك:"
         tail = (
@@ -164,7 +183,7 @@ class DemandService:
         if text is not None:
             if len(text.strip()) < 5:
                 raise Invalid("Edited text is too short")
-            d["text"] = text
+            d["text"] = ensure_disclosure(text.strip(), d["language"])
         now = self.clock()
         d.update(status="approved", approved_by=actor, approved_at=_iso(now))
         d["audit"].append(

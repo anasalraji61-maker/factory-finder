@@ -1,0 +1,2 @@
+- 2026-10-14: Invoices UI lives in apps/mobile/lib/features/payments; the accepted Deal is kept in memory (acceptedDealsProvider) and the "Commission & payment" section shows on the request detail for the buyer, because rfq exposes no request->deal lookup; why: contract has GET /v1/deals/{id} only.
+- 2026-10-14: pay_amount is displayed verbatim (never rounded) since USDT carries a unique sub-cent suffix used for matching; the screen polls every 8s only while awaiting_payment/confirming.

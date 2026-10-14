@@ -144,7 +144,7 @@ def test_full_flow_with_audit_and_outcome(env):
     assert (
         a["status"] == "approved"
         and a["approved_by"] == "admin1"
-        and a["text"] == "نص معدل من المشرف"
+        and a["text"].startswith("نص معدل من المشرف")  # disclosure is re-appended after edits
     )
     p = env.act(did, "mark-published", published_url="https://x.test/c/1").json()
     assert p["status"] == "published"

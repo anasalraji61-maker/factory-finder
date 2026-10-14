@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -114,14 +114,27 @@ class PaymentsService:
     async def _expire_if_due(self, s: AsyncSession, r: InvoiceRow) -> None:
         now = self.clock()
         if r.status in (S.PENDING, S.AWAITING_PAYMENT) and r.expires_at <= now:
-            await self._move(s, r, S.EXPIRED, reason="expired")
-            await s.commit()
+            try:
+                await self._move(s, r, S.EXPIRED, reason="expired")
+                await s.commit()
+            except Conflict:  # a payment landed first: show the fresh state
+                await s.rollback()
+                await s.refresh(r)
 
     async def _move(self, s: AsyncSession, r: InvoiceRow, target: S, *, reason: str | None = None,
                     tx_ref: str | None = None, confirmations: int | None = None) -> None:
         """Apply a validated transition (and its ledger effect). Caller commits."""
         now = self.clock()
-        state.require(S(r.status), target, r.id)
+        old = r.status
+        state.require(S(old), target, r.id)
+        if r in s.new:
+            await s.flush()
+        # compare-and-set on the stored status: a concurrent writer (sweep vs webhook vs another worker)
+        # that already moved this invoice makes us fail instead of double-posting the ledger
+        res = await s.execute(update(InvoiceRow).where(InvoiceRow.id == r.id, InvoiceRow.status == old)
+                              .values(status=target.value).execution_options(synchronize_session=False))
+        if res.rowcount != 1:
+            raise Conflict("Invoice changed concurrently; retry", code="concurrent_update")
         r.status, r.updated_at = target.value, now
         if reason:
             r.status_reason = reason
@@ -279,11 +292,16 @@ class PaymentsService:
         rows = (await s.execute(select(InvoiceRow).where(
             InvoiceRow.status.in_([S.PENDING.value, S.AWAITING_PAYMENT.value]),
             InvoiceRow.expires_at <= now).limit(500))).scalars().all()
+        n = 0
         for r in rows:
-            await self._move(s, r, S.EXPIRED, reason="expired")
+            try:
+                await self._move(s, r, S.EXPIRED, reason="expired")
+                n += 1
+            except Conflict:  # someone else (e.g. a payment) moved it first
+                continue
         if rows:
             await s.commit()
-        return len(rows)
+        return n
 
     async def sweep(self) -> dict[str, int]:
         polled = updated = 0
@@ -317,7 +335,10 @@ class PaymentsService:
             return changed
         if not state.can(cur, target):
             return False
-        await self._move(s, r, target, tx_ref=obs.tx_ref, confirmations=obs.confirmations)
+        try:
+            await self._move(s, r, target, tx_ref=obs.tx_ref, confirmations=obs.confirmations)
+        except Conflict:
+            return False
         return True
 
     # ---- webhooks ------------------------------------------------------------------------
@@ -371,8 +392,11 @@ class PaymentsService:
             return "ignored"
         if not state.can(cur, target):
             return "ignored"
-        await self._move(s, r, target, reason=f"webhook:{ev.type}" if target in (S.FAILED, S.EXPIRED) else None,
-                         tx_ref=ev.tx_ref, confirmations=ev.confirmations)
+        try:
+            await self._move(s, r, target, reason=f"webhook:{ev.type}" if target in (S.FAILED, S.EXPIRED) else None,
+                             tx_ref=ev.tx_ref, confirmations=ev.confirmations)
+        except Conflict:
+            return "ignored"
         return "applied"
 
 

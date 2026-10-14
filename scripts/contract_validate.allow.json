@@ -1,0 +1,58 @@
+[
+  {
+    "spec": "sourcing",
+    "method": "GET",
+    "path": "/v1/search",
+    "location": "\\.sources\\[\\d+\\]\\.warning$",
+    "message_contains": "None is not of type",
+    "reason": "CONTRACT: optional string field is returned as null; contract types it as plain string (should be [string, null]). Service behaviour is the intended one (mobile client tolerates null)."
+  },
+  {
+    "spec": "rfq",
+    "method": "*",
+    "path": "/v1/requests",
+    "location": "^\\$(\\.items\\[\\d+\\])?$",
+    "message_contains": "Additional properties are not allowed",
+    "reason": "CONTRACT: Request = allOf[RequestCreate(additionalProperties:false), {id,owner_id,...}] can never validate a real response; the response extension fields are rejected by the first branch. Fix: drop additionalProperties:false from the composed base or use unevaluatedProperties."
+  },
+  {
+    "spec": "rfq",
+    "method": "*",
+    "path": "/v1/requests/{id}",
+    "location": "^\\$(\\.items\\[\\d+\\])?$",
+    "message_contains": "Additional properties are not allowed",
+    "reason": "CONTRACT: Request = allOf[RequestCreate(additionalProperties:false), {id,owner_id,...}] can never validate a real response; the response extension fields are rejected by the first branch. Fix: drop additionalProperties:false from the composed base or use unevaluatedProperties."
+  },
+  {
+    "spec": "rfq",
+    "method": "*",
+    "path": "/v1/requests/{id}/offers",
+    "location": "^\\$(\\.items\\[\\d+\\])?$",
+    "message_contains": "Additional properties are not allowed",
+    "reason": "CONTRACT: Offer = allOf[OfferCreate(additionalProperties:false), {...}] rejects its own response fields (same pattern as Request)."
+  },
+  {
+    "spec": "rfq",
+    "method": "*",
+    "path": "*",
+    "location": "\\.(deadline|description|notes|supplier_ref|valid_until)$",
+    "message_contains": "None is not of type",
+    "reason": "CONTRACT: optional string field is returned as null; contract types it as plain string (should be [string, null]). Service behaviour is the intended one (mobile client tolerates null)."
+  },
+  {
+    "spec": "gateway",
+    "method": "POST",
+    "path": "/v1/auth/refresh",
+    "location": "^\\$\\.user$",
+    "message_contains": "None is not of type",
+    "reason": "CONTRACT: refresh response carries user=null (only tokens are refreshed); contract declares user as object. Should be [object, null] or omitted."
+  },
+  {
+    "spec": "gateway",
+    "method": "PATCH",
+    "path": "/v1/me",
+    "location": "default_destination",
+    "message_contains": "not valid under any",
+    "reason": "CONTRACT: Location.point is returned as null for city-only destinations; contract Location.point disallows null (common.schema.json is architect-owned; make point nullable)."
+  }
+]

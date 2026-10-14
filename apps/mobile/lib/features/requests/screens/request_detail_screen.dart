@@ -4,6 +4,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/payments/widgets/deal_payment_section.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart'
@@ -22,6 +23,7 @@ class RequestDetailScreen extends ConsumerWidget {
     final reqAsync = ref.watch(rfqDetailProvider(requestId));
     final offersAsync = ref.watch(rfqOffersProvider(requestId));
     final me = ref.watch(authProvider);
+    final acceptedDeal = ref.watch(acceptedDealsProvider)[requestId];
     final isMock = ref.watch(apiClientProvider).isMock;
     final myId = me?.id ?? (isMock ? kMockUserId : null);
 
@@ -74,6 +76,10 @@ class RequestDetailScreen extends ConsumerWidget {
                   );
                 },
               ),
+              if (isMine && acceptedDeal != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                DealPaymentSection(deal: acceptedDeal),
+              ],
             ],
           );
         },
@@ -95,6 +101,9 @@ class RequestDetailScreen extends ConsumerWidget {
     try {
       final deal = await ref.read(rfqRepositoryProvider).accept(offer);
       if (!context.mounted) return;
+      ref.read(acceptedDealsProvider.notifier).update(
+            (m) => <String, Deal>{...m, requestId: deal},
+          );
       ref.invalidate(rfqDetailProvider(requestId));
       ref.invalidate(rfqOffersProvider(requestId));
       ref.invalidate(rfqListProvider);

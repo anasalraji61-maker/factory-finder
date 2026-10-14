@@ -61,8 +61,9 @@ class SnapshotStore:
 
 
 class ReportStore:
-    def __init__(self, limit: int = 5, window_seconds: int = 3600, clock: Callable[[], datetime] = _now, max_reports: int = 20000):
+    def __init__(self, limit: int = 5, window_seconds: int = 3600, clock: Callable[[], datetime] = _now, max_reports: int = 20000, max_users: int = 10000):
         self.limit, self.window, self.clock, self.max_reports = limit, window_seconds, clock, max_reports
+        self.max_users = max_users
         self._reports: dict[str, Report] = {}
         self._hits: dict[str, deque[datetime]] = defaultdict(deque)
         self._lock = threading.Lock()
@@ -71,6 +72,11 @@ class ReportStore:
         """Store a report as pending_review. Raises RateLimited when the user exceeded the window quota."""
         with self._lock:
             now = self.clock()
+            if user_id not in self._hits and len(self._hits) >= self.max_users:
+                for uid in [u for u, h in self._hits.items() if not h or (now - h[-1]).total_seconds() >= self.window]:
+                    del self._hits[uid]
+                if len(self._hits) >= self.max_users:  # still full of active users: drop the oldest tracked one
+                    del self._hits[next(iter(self._hits))]
             hits = self._hits[user_id]
             while hits and (now - hits[0]).total_seconds() >= self.window:
                 hits.popleft()

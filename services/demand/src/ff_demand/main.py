@@ -50,7 +50,7 @@ class _Body(BaseModel):
 
 class SignalIn(_Body):
     text: str = Field(min_length=3, max_length=5000)
-    url: str | None = Field(default=None, max_length=1000)
+    url: str | None = Field(default=None, max_length=1000, pattern=r"^https?://\S+$")
     source: str = Field(default="manual", max_length=40)
     language: str | None = Field(default=None, pattern="^(ar|en)$")
 
@@ -64,7 +64,7 @@ class RejectIn(_Body):
 
 
 class PublishedIn(_Body):
-    published_url: str | None = Field(default=None, max_length=1000)
+    published_url: str | None = Field(default=None, max_length=1000, pattern=r"^https?://\S+$")
 
 
 class OutcomeIn(_Body):

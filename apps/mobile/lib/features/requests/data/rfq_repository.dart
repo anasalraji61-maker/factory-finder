@@ -101,3 +101,9 @@ final rfqDetailProvider = FutureProvider.autoDispose.family<RfqRequest, String>(
 final rfqOffersProvider = FutureProvider.autoDispose.family<List<Offer>, String>(
   (ref, id) => ref.watch(rfqRepositoryProvider).offers(id),
 );
+
+/// Deals accepted in this session, by request id (the buyer's "Commission &
+/// payment" section hangs off these). Memory only.
+final acceptedDealsProvider = StateProvider<Map<String, Deal>>(
+  (ref) => const <String, Deal>{},
+);

@@ -144,6 +144,15 @@ def create_app(
                     if wait is not None:
                         e = RateLimited(wait, ulimit)
                         return _error(e.status_code, e.code, e.message, e.details, e.headers)
+            if path.startswith("/v1/admin"):  # admin-token guessing: throttle by failed attempts per IP
+                fkey = f"adminfail:{ip}"
+                if (wait := limiter.blocked(fkey, 2 * settings.auth_rate_limit_per_minute)) is not None:
+                    e = RateLimited(wait, settings.auth_rate_limit_per_minute)
+                    return _error(e.status_code, e.code, e.message, e.details, e.headers)
+                resp = await call_next(request)
+                if resp.status_code == 401:
+                    limiter.check(fkey, 2 * settings.auth_rate_limit_per_minute)
+                return resp
         return await call_next(request)
 
     @app.get("/health")

@@ -16,10 +16,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install shared deps
-        run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets
+        run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pyyaml jsonschema referencing
       - name: Install service deps
         run: |
           for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments; do
             python scripts/install_service.py services/$s --deps-only
           done
-      - run: python scripts/e2e.py
+      - name: Route check (code vs contract)
+        run: python scripts/contract_check.py
+      - name: Contract validation (response bodies vs OpenAPI schemas)
+        run: python scripts/contract_validate.py
+      - name: End-to-end scenario
+        run: python scripts/e2e.py
