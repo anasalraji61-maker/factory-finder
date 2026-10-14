@@ -1,4 +1,4 @@
-# Status — 2026-10-14 (architect)
+# Status — 2026-10-14 evening (architect)
 
 **Goal:** Phases 0–3 on mock adapters (done), now hardening before Phase 4 (real data).
 
@@ -7,6 +7,12 @@
 - Flutter app (ar/en, RTL): discover, listing, supplier, landed-cost calculator, FX, carriers, requests/offers, chat (REST + WebSocket), tracking, assistant, profile, supplier-claim. CI builds a debug APK.
 - Security review done: refresh-token rotation, supplier claims need admin approval, CORS off by default, only gateway port published in compose.
 - Data: 165 listings / 83 suppliers (mock), 66 countries, ~200 hubs, 41 duty countries, 25 carriers, extended sea graph.
+
+## Added since the first snapshot
+- 11 services now (+demand, payments); admin console (apps/admin); WebSocket chat via gateway; Alembic/Postgres support; structured logs + /ready.
+- Search: bilingual synonyms, typo tolerance, ranking, facets; HS code finder (~690 indicative codes, verify with a customs broker).
+- Mobile: onboarding, persistence, watchlist/alerts, compare, saved searches, trust v2 UI, notification prefs, 120+ tests incl. widget smoke tests.
+- Notifications delivery adapters (push/email, off by default); payments (mock + USDT skeleton, ledger, signed webhooks).
 
 ## Next (needs owner input)
 - Phase 4: official supplier API account (Alibaba or licensed provider) and a freight-rate provider; until then all data is mock.
