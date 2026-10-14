@@ -18,6 +18,7 @@ from ff_rfq.config import Settings
 from ff_rfq.db import make_engine
 from ff_rfq.domain.errors import DomainError
 from ff_rfq.obs import db_ready, install_observability, ready_response
+from ff_rfq.reviews import ReviewService
 from ff_rfq.service import RfqService
 
 
@@ -46,6 +47,7 @@ def create_app(
 
     app = FastAPI(title="Factory Finder - rfq", version=__version__, lifespan=lifespan)
     app.state.service = service
+    app.state.reviews = ReviewService(engine, service.clock)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 
     @app.middleware("http")

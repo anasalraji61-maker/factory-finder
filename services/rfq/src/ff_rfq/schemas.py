@@ -52,3 +52,34 @@ class OfferCreate(BaseModel):
     incoterm: Incoterm | None = None
     valid_until: datetime | None = None
     notes: str | None = Field(default=None, max_length=2000)
+
+
+Stars = Annotated[int, Field(ge=1, le=5, strict=True)]
+
+
+class SubRatings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    quality: Stars | None = None
+    communication: Stars | None = None
+    shipping: Stars | None = None
+
+
+class ReviewCreate(BaseModel):
+    """Used for both POST and PUT (PUT replaces the editable fields)."""
+
+    model_config = ConfigDict(extra="forbid")
+    rating: Stars
+    title: str | None = Field(default=None, max_length=80)
+    text: str | None = Field(default=None, max_length=1000)
+    sub_ratings: SubRatings | None = None
+
+
+class ReplyCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=500)
+
+
+class ReportCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    reason: str = Field(default="other", pattern="^(spam|abuse|fake|other)$")
+    note: str | None = Field(default=None, max_length=300)

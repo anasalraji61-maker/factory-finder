@@ -257,6 +257,15 @@ def scenario() -> None:
             deal_id = (acc.get("deal") or acc).get("id") or acc.get("deal_id")
         if deal_id:
             c("rfq", "GET", f"/v1/deals/{deal_id}", headers=hb)
+            # a fresh deal is pending_payment -> not reviewable yet (409); success shapes are covered by rfq tests
+            c("rfq", "POST", f"/v1/deals/{deal_id}/reviews", headers=hb, json={"rating": 5, "title": "Good"}, want=(409,))
+            c("rfq", "POST", f"/v1/deals/{deal_id}/reviews", headers=hb, json={"rating": 9}, want=(422,))
+    c("rfq", "GET", "/v1/suppliers/sup_cv_none/reviews", params={"sort": "rating", "page_size": 5})
+    c("rfq", "GET", "/v1/suppliers/sup_cv_none/review-summary")
+    c("rfq", "PUT", "/v1/reviews/rev_nope", headers=hb, json={"rating": 4}, want=(404,))
+    c("rfq", "DELETE", "/v1/reviews/rev_nope", headers=hb, want=(404,))
+    c("rfq", "POST", "/v1/reviews/rev_nope/reply", headers=hs, json={"text": "thanks"}, want=(404,))
+    c("rfq", "POST", "/v1/reviews/rev_nope/report", headers=hb, json={"reason": "spam"}, want=(404,))
     c("rfq", "GET", "/v1/requests/nope", headers=hb, want=(404,))
 
     # -- messaging

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from typing import Annotated, Any
+from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi import APIRouter, Depends, Header, Path, Query, Request
 
 from ff_rfq.domain.enums import ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Unauthenticated
-from ff_rfq.schemas import OfferCreate, RequestCreate
+from ff_rfq.reviews import ReviewService
+from ff_rfq.schemas import OfferCreate, ReplyCreate, ReportCreate, RequestCreate, ReviewCreate
 from ff_rfq.service import RfqService
 
 router = APIRouter(prefix="/v1")
@@ -29,9 +31,25 @@ def svc(request: Request) -> RfqService:
     return request.app.state.service
 
 
+def reviews_svc(request: Request) -> ReviewService:
+    return request.app.state.reviews
+
+
+def optional_user(x_user_id: Annotated[str | None, Header()] = None) -> str | None:
+    return x_user_id.strip() if x_user_id and x_user_id.strip() else None
+
+
+def display_name(x_user_name: Annotated[str | None, Header()] = None) -> str | None:
+    """Gateway-set (percent-encoded) account name; used only to derive 'First L.'."""
+    return unquote(x_user_name)[:100] if x_user_name else None
+
+
 User = Annotated[str, Depends(current_user)]
 Supplier = Annotated[str | None, Depends(verified_supplier)]
 Svc = Annotated[RfqService, Depends(svc)]
+Reviews = Annotated[ReviewService, Depends(reviews_svc)]
+MaybeUser = Annotated[str | None, Depends(optional_user)]
+SupplierRef = Annotated[str, Path(min_length=1, max_length=64)]
 Page = Annotated[int, Query(ge=1)]
 Size = Annotated[int, Query(ge=1, le=100)]
 
@@ -95,3 +113,42 @@ async def withdraw_offer(offer_id: str, user: User, s: Svc) -> dict[str, Any]:
 @router.get("/deals/{deal_id}")
 async def get_deal(deal_id: str, user: User, s: Svc) -> dict[str, Any]:
     return await s.get_deal(user, deal_id)
+
+
+# ---- verified-deal reviews --------------------------------------------------------------------
+@router.post("/deals/{deal_id}/reviews", status_code=201)
+async def create_review(deal_id: str, body: ReviewCreate, user: User, name: Annotated[str | None, Depends(display_name)],
+                        r: Reviews) -> dict[str, Any]:
+    return await r.create(user, deal_id, body, name)
+
+
+@router.get("/suppliers/{supplier_ref}/reviews")
+async def list_reviews(supplier_ref: SupplierRef, viewer: MaybeUser, r: Reviews,
+                       sort: Annotated[str, Query(pattern="^(recent|rating)$")] = "recent",
+                       page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
+    return await r.list_for_supplier(supplier_ref, sort=sort, p=page, size=page_size, viewer=viewer)
+
+
+@router.get("/suppliers/{supplier_ref}/review-summary")
+async def review_summary(supplier_ref: SupplierRef, r: Reviews) -> dict[str, Any]:
+    return await r.summary(supplier_ref)
+
+
+@router.put("/reviews/{review_id}")
+async def update_review(review_id: str, body: ReviewCreate, user: User, r: Reviews) -> dict[str, Any]:
+    return await r.update(user, review_id, body)
+
+
+@router.delete("/reviews/{review_id}")
+async def delete_review(review_id: str, user: User, r: Reviews) -> dict[str, Any]:
+    return await r.delete(user, review_id)
+
+
+@router.post("/reviews/{review_id}/reply", status_code=201)
+async def reply_review(review_id: str, body: ReplyCreate, user: User, supplier: Supplier, r: Reviews) -> dict[str, Any]:
+    return await r.reply(user, supplier, review_id, body)
+
+
+@router.post("/reviews/{review_id}/report")
+async def report_review(review_id: str, body: ReportCreate, user: User, r: Reviews) -> dict[str, Any]:
+    return await r.report(user, review_id, body)

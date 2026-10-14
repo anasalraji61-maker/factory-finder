@@ -20,5 +20,15 @@ the buyer accepts one and a Deal with platform commission is created.
 Offer identity: owner = `X-User-Id`; `supplier_ref` = gateway-verified `X-Supplier-Id` (else null, `supplier_verified=false`). A `supplier_ref` in the request body is ignored; `supplier_name` is a display label only.
 
 
+## Verified-deal reviews
+Only the buyer of a deal in `paid | in_fulfilment | completed` may review it, once per deal (409 `review_already_exists`; deleting does not free the slot).
+The deal's offer must carry a gateway-verified `supplier_ref` (else 409 `supplier_unverified`).
+`POST /v1/deals/{id}/reviews`, `PUT|DELETE /v1/reviews/{id}` (author, within 24h of creation, else 409 `review_window_closed`),
+`POST /v1/reviews/{id}/reply` (only `X-Supplier-Id` == review supplier, once, <=500), `POST /v1/reviews/{id}/report` (flag only, 10/hour/user -> 429),
+public `GET /v1/suppliers/{ref}/reviews?page&page_size&sort=recent|rating` and `GET /v1/suppliers/{ref}/review-summary` (no auth; the gateway routes these two paths here).
+Rating and sub-ratings are strict integers 1-5; title <=80, text <=1000; control/bidi chars stripped; links, emails and phone numbers -> 422 `prohibited_content`.
+Reviewer is shown as "First L." from the gateway-set `X-User-Name` (never an email). Deleted reviews stop counting; every change is kept in `review_events`.
+Code: `reviews.py`, `domain/review_text.py`; tables `reviews`, `review_events`, `review_reports` (migration `0002`). Decisions: `docs/decisions/deal-reviews.md`; trust wiring request: `docs/requests/trust-reviews.md`.
+
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).

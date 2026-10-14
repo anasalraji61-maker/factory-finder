@@ -13,7 +13,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
-        ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
+        ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/suppliers/sup_1/reviews", "rfq"), ("/v1/suppliers/sup_1/review-summary", "rfq"), ("/v1/suppliers/sup_1", "sourcing"), ("/v1/suppliers/sup_1/reviews/x", "sourcing"), ("/v1/reviews/rev_1/reply", "rfq"), ("/v1/deals/deal_1/reviews", "rfq"), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
 )  # fmt: skip
 def test_resolve(path, upstream):
@@ -29,7 +29,10 @@ def test_resolve(path, upstream):
         ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False),
         ("GET", "/v1/media/files/abc.jpg", True), ("HEAD", "/v1/media/files/abc.jpg", True), ("POST", "/v1/media/images", False),
         ("DELETE", "/v1/media/images/abc", False), ("POST", "/v1/media/files/abc.jpg", False), ("DELETE", "/v1/media/files/abc.jpg", False),
-        ("GET", "/v1/media/images/abc", False), ("GET", "/v1/media/filesx", False),
+        ("GET", "/v1/media/images/abc", False),
+        ("GET", "/v1/suppliers/s1/reviews", True), ("GET", "/v1/suppliers/s1/review-summary", True), ("POST", "/v1/suppliers/s1/reviews", False),
+        ("POST", "/v1/deals/d1/reviews", False), ("PUT", "/v1/reviews/r1", False), ("DELETE", "/v1/reviews/r1", False), ("GET", "/v1/reviews/r1", False),
+        ("POST", "/v1/reviews/r1/reply", False), ("POST", "/v1/reviews/r1/report", False), ("GET", "/v1/media/filesx", False),
     ],
 )  # fmt: skip
 def test_public_policy(method, path, public):
@@ -335,3 +338,26 @@ def test_public_image_reads_have_their_own_rate_bucket(make_client, mock_upstrea
     assert media[:5] == [200] * 5 and media[5] == 429
     # the ordinary API bucket is untouched by image traffic
     assert c.get("/v1/countries").status_code == 200
+
+
+def test_supplier_reviews_public_get_goes_to_rfq(client, mock_upstream):
+    route = mock_upstream.get("http://localhost:8105/v1/suppliers/sup_1/reviews").mock(
+        return_value=httpx.Response(200, json={"items": []})
+    )
+    summ = mock_upstream.get("http://localhost:8105/v1/suppliers/sup_1/review-summary").mock(
+        return_value=httpx.Response(200, json={"count": 0})
+    )
+    assert client.get("/v1/suppliers/sup_1/reviews?page=2&sort=rating").status_code == 200
+    assert route.calls.last.request.url.params["sort"] == "rating"
+    assert "x-user-id" not in route.calls.last.request.headers
+    assert client.get("/v1/suppliers/sup_1/review-summary").status_code == 200 and summ.called
+
+
+def test_review_writes_need_auth_and_get_reviewer_name(client, auth, hdr, mock_upstream):
+    route = mock_upstream.post("http://localhost:8105/v1/deals/deal_1/reviews").mock(
+        return_value=httpx.Response(201, json={})
+    )
+    assert client.post("/v1/deals/deal_1/reviews", json={"rating": 5}).status_code == 401
+    assert not route.called
+    client.post("/v1/deals/deal_1/reviews", json={"rating": 5}, headers={**hdr, "X-User-Name": "evil"})
+    assert route.calls.last.request.headers["x-user-name"] == "Anas"

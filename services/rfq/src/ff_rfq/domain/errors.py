@@ -86,6 +86,11 @@ class UnsupportedCurrency(ValidationFailed):
     default_code = "unsupported_currency"
 
 
+class RateLimited(DomainError):
+    status_code = 429
+    default_code = "rate_limited"
+
+
 class UpstreamUnavailable(DomainError):
     """Another Factory Finder service failed or answered with something unusable."""
 

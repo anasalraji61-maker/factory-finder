@@ -1,5 +1,7 @@
 """Catch-all reverse proxy by path prefix."""
 
+from urllib.parse import quote
+
 import httpx
 from fastapi import APIRouter, Request, Response
 from sqlalchemy import select
@@ -84,13 +86,15 @@ async def proxy(full_path: str, request: Request) -> Response:
         and (upstream in ("messaging", "rfq") or (upstream == "sourcing" and path.startswith("/v1/my")))
     ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
-            claimed = await s.scalar(
-                select(User.supplier_id).where(
-                    User.id == user_id, User.supplier_claim_status == "verified"
+            row = (
+                await s.execute(
+                    select(User.supplier_id, User.supplier_claim_status, User.name).where(User.id == user_id)
                 )
-            )
-        if claimed:
-            headers["X-Supplier-Id"] = claimed
+            ).first()
+        if row and row.supplier_id and row.supplier_claim_status == "verified":
+            headers["X-Supplier-Id"] = row.supplier_id
+        if row and row.name and upstream == "rfq":  # reviewer display name (rfq shows first name + initial only)
+            headers["X-User-Name"] = quote(row.name[:100], safe="")
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")
     try:
         resp = await request.app.state.http.request(

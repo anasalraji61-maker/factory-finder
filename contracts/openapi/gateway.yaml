@@ -238,7 +238,7 @@ paths:
       logistics: [/v1/quotes, /v1/fx, /v1/carriers]
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]
-      rfq: [/v1/requests, /v1/offers, /v1/deals]
+      rfq: [/v1/requests, /v1/offers, /v1/deals, /v1/reviews, "GET /v1/suppliers/{ref}/reviews", "GET /v1/suppliers/{ref}/review-summary"]  # the two supplier paths are public and take precedence over the sourcing /v1/suppliers prefix
       messaging: [/v1/conversations]
       tracking: [/v1/shipments, /v1/validate]
       notifications: [/v1/watchlist, /v1/alerts, /v1/devices]

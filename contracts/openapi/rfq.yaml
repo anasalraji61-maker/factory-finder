@@ -168,6 +168,134 @@ paths:
       responses:
         "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/deals/{id}/reviews:
+    post:
+      summary: Buyer reviews a deal (once per deal)
+      description: |
+        Only the buyer of a deal in status paid | in_fulfilment | completed, once per deal (deleting does not free the slot).
+        The deal's supplier must be a verified supplier (offer made with a gateway-verified X-Supplier-Id), else 409 `supplier_unverified`.
+        Text rules: control / bidi / zero-width characters are stripped; links, emails and phone numbers -> 422 `prohibited_content`.
+        Errors: 404 non-party or unknown deal, 403 supplier side of the deal, 409 `deal_not_reviewable` | `review_already_exists`.
+        `X-User-Name` (set by the gateway, percent-encoded) only feeds the public reviewer label ("Ahmed K.").
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: X-User-Name, in: header, required: false, schema: {type: string}}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewInput"}}}}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Review"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/suppliers/{supplier_ref}/reviews:
+    get:
+      summary: Public reviews of a supplier (no auth; deleted reviews excluded)
+      description: Served by rfq (the gateway routes this path here although /v1/suppliers belongs to sourcing). With X-User-Id present (optional) the caller's own review carries `mine=true`.
+      parameters:
+        - {name: supplier_ref, in: path, required: true, schema: {type: string, maxLength: 64}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: sort, in: query, schema: {type: string, enum: [recent, rating], default: recent}}
+      responses:
+        "200":
+          description: One page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    properties:
+                      items: {type: array, items: {$ref: "#/components/schemas/Review"}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/suppliers/{supplier_ref}/review-summary:
+    get:
+      summary: Review aggregates of a supplier (public, no auth; input for the trust rating signal)
+      parameters: [{name: supplier_ref, in: path, required: true, schema: {type: string, maxLength: 64}}]
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewSummary"}}}}
+  /v1/reviews/{id}:
+    put:
+      summary: Buyer edits own review (within 24h of creation; prior values kept in the audit trail)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewInput"}}}}
+      responses:
+        "200": {description: Updated, content: {application/json: {schema: {$ref: "#/components/schemas/Review"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {description: "`review_window_closed`", content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
+        "422": {$ref: "#/components/responses/Error"}
+    delete:
+      summary: Buyer deletes own review (within 24h; soft delete, stops counting, audit trail kept)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status]
+                properties:
+                  id: {type: string}
+                  status: {type: string, const: deleted}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/reviews/{id}/reply:
+    post:
+      summary: The verified supplier of the deal posts one public reply (<= 500 chars)
+      description: Requires the gateway-verified X-Supplier-Id equal to the review's supplier_ref (else 403). 409 `reply_already_exists`.
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {$ref: "#/components/parameters/Id"}
+        - {name: X-Supplier-Id, in: header, required: false, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              additionalProperties: false
+              properties:
+                text: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Review"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/reviews/{id}/report:
+    post:
+      summary: Report abuse (marks flagged_for_review, never auto-hides; idempotent per user; 10 reports/hour/user -> 429)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                reason: {type: string, enum: [spam, abuse, fake, other], default: other}
+                note: {type: [string, "null"], maxLength: 300}
+      responses:
+        "200":
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, flagged_for_review, already_reported]
+                properties:
+                  id: {type: string}
+                  flagged_for_review: {type: boolean}
+                  already_reported: {type: boolean}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
 components:
   parameters:
     UserId: {name: X-User-Id, in: header, required: true, schema: {type: string}}
@@ -285,3 +413,66 @@ components:
         status: {$ref: "#/components/schemas/DealStatus"}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+    Stars: {type: integer, minimum: 1, maximum: 5}
+    ReviewInput:
+      type: object
+      required: [rating]
+      additionalProperties: false
+      description: Used by POST and PUT (PUT replaces all editable fields). Text fields are sanitised; links / emails / phones -> 422.
+      properties:
+        rating: {$ref: "#/components/schemas/Stars"}
+        title: {type: [string, "null"], maxLength: 80}
+        text: {type: [string, "null"], maxLength: 1000}
+        sub_ratings:
+          type: [object, "null"]
+          additionalProperties: false
+          properties:
+            quality: {oneOf: [{$ref: "#/components/schemas/Stars"}, {type: "null"}]}
+            communication: {oneOf: [{$ref: "#/components/schemas/Stars"}, {type: "null"}]}
+            shipping: {oneOf: [{$ref: "#/components/schemas/Stars"}, {type: "null"}]}
+    Review:
+      type: object
+      required: [id, supplier_ref, rating, sub_ratings, reviewer, verified_purchase, edited, mine, created_at]
+      properties:
+        id: {type: string, description: "rev_..."}
+        supplier_ref: {type: string}
+        rating: {$ref: "#/components/schemas/Stars"}
+        sub_ratings:
+          type: object
+          properties:
+            quality: {type: [integer, "null"]}
+            communication: {type: [integer, "null"]}
+            shipping: {type: [integer, "null"]}
+        title: {type: [string, "null"]}
+        text: {type: [string, "null"]}
+        reviewer: {type: string, description: 'First name + last initial only, e.g. "Ahmed K."; "Verified buyer" when unknown. Never an email.'}
+        verified_purchase: {type: boolean}
+        edited: {type: boolean}
+        reply:
+          type: [object, "null"]
+          properties:
+            text: {type: string}
+            created_at: {type: string, format: date-time}
+        mine: {type: boolean, description: true when X-User-Id is the author}
+        editable_until: {type: [string, "null"], format: date-time, description: "Only when mine: creation + 24h"}
+        flagged_for_review: {type: [boolean, "null"], description: "Only when mine"}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    ReviewSummary:
+      type: object
+      required: [supplier_ref, count, average, histogram, completed_deals]
+      properties:
+        supplier_ref: {type: string}
+        count: {type: integer}
+        average: {type: [string, "null"], description: 'Decimal string rounded half-up to 2 places, e.g. "4.25"; null when count = 0'}
+        histogram:
+          type: object
+          description: 'Reviews per star, keys "1".."5"'
+          additionalProperties: {type: integer}
+        sub_ratings:
+          type: object
+          properties:
+            quality: {type: [string, "null"]}
+            communication: {type: [string, "null"]}
+            shipping: {type: [string, "null"]}
+        completed_deals: {type: integer, description: Deals of this supplier in status completed}

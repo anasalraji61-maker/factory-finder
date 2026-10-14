@@ -5,7 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, TypeDecorator
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -86,6 +96,55 @@ class DealRow(Base):
     status: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class ReviewRow(Base):
+    """One buyer review per deal. ``status`` published|deleted; deleted rows stay for the audit trail."""
+
+    __tablename__ = "reviews"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    deal_id: Mapped[str] = mapped_column(ForeignKey("deals.id"), unique=True)
+    buyer_id: Mapped[str] = mapped_column(String(64), index=True)
+    supplier_ref: Mapped[str] = mapped_column(String(64), index=True)
+    reviewer_display: Mapped[str] = mapped_column(String(64))
+    rating: Mapped[int] = mapped_column(Integer)
+    quality: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    communication: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    shipping: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    title: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(10), index=True)
+    flagged_for_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    reply_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reply_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    replied_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    edited_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class ReviewEventRow(Base):
+    """Append-only audit trail (created / edited / deleted / replied / reported) with the prior values."""
+
+    __tablename__ = "review_events"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"), index=True)
+    action: Mapped[str] = mapped_column(String(12))
+    actor_id: Mapped[str] = mapped_column(String(64))
+    snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class ReviewReportRow(Base):
+    __tablename__ = "review_reports"
+    __table_args__ = (UniqueConstraint("review_id", "reporter_id", name="uq_review_reports_review_reporter"),)
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    review_id: Mapped[str] = mapped_column(ForeignKey("reviews.id"), index=True)
+    reporter_id: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(String(10))
+    note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 def make_engine(url: str) -> AsyncEngine:

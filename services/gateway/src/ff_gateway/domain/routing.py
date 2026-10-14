@@ -1,12 +1,14 @@
 """Path-prefix routing table and public/protected policy (pure)."""
 
+import re
+
 PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/search": "sourcing", "/v1/listings": "sourcing", "/v1/suppliers": "sourcing",
     "/v1/categories": "sourcing", "/v1/sources": "sourcing", "/v1/my": "sourcing",
     "/v1/quotes": "logistics", "/v1/fx": "logistics", "/v1/carriers": "logistics", "/v1/hs": "logistics",
     "/v1/countries": "geo", "/v1/cities": "geo", "/v1/hubs": "geo", "/v1/distance": "geo",
     "/v1/trust": "trust",
-    "/v1/requests": "rfq", "/v1/offers": "rfq", "/v1/deals": "rfq",
+    "/v1/requests": "rfq", "/v1/offers": "rfq", "/v1/deals": "rfq", "/v1/reviews": "rfq",
     "/v1/conversations": "messaging",
     "/v1/shipments": "tracking", "/v1/validate": "tracking",
     "/v1/watchlist": "notifications", "/v1/alerts": "notifications", "/v1/devices": "notifications",
@@ -34,11 +36,17 @@ def is_internal_only(method: str, path: str) -> bool:
     return (method.upper(), path) in INTERNAL_ONLY
 
 
+# Supplier review reads live in rfq although /v1/suppliers belongs to sourcing (public GETs, see PUBLIC_GET_PREFIXES).
+RFQ_SUPPLIER_PATH = re.compile(r"^/v1/suppliers/[^/]+/(reviews|review-summary)$")
+
+
 def _under(path: str, prefix: str) -> bool:
     return path == prefix or path.startswith(prefix + "/")
 
 
 def resolve_upstream(path: str) -> str | None:
+    if RFQ_SUPPLIER_PATH.match(path.rstrip("/") or "/"):
+        return "rfq"
     for prefix, name in PREFIX_TO_UPSTREAM.items():
         if _under(path, prefix):
             return name
@@ -47,6 +55,8 @@ def resolve_upstream(path: str) -> str | None:
 
 def matched_prefix(path: str) -> str | None:
     """Routing-table prefix for a path (low-cardinality label for logs)."""
+    if RFQ_SUPPLIER_PATH.match(path.rstrip("/") or "/"):
+        return "/v1/suppliers/{ref}/reviews"
     return next((p for p in PREFIX_TO_UPSTREAM if _under(path, p)), None)
 
 

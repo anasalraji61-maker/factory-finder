@@ -252,6 +252,17 @@ def scenario() -> None:
 
     step("rfq: request -> offer -> accept -> deal+commission (+suggestions)", rfq)
 
+    def reviews():
+        # public through the gateway (no token); a pending_payment deal is not reviewable yet (409)
+        s = ok(c.get("/v1/suppliers/sup_e2e_none/review-summary"))
+        assert s["count"] == 0 and s["average"] is None, s
+        assert items(ok(c.get("/v1/suppliers/sup_e2e_none/reviews?sort=rating"))) == []
+        r = c.post(f"/v1/deals/{deal['id']}/reviews", headers=h("buyer"), json={"rating": 5})
+        assert r.status_code == 409, r.text
+        assert c.post(f"/v1/deals/{deal['id']}/reviews", json={"rating": 5}).status_code == 401
+
+    step("rfq: reviews public reads + write guards via gateway", reviews)
+
     conv: dict = {}
 
     def msg():
