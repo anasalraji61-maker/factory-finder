@@ -67,12 +67,13 @@ void main() {
     expect((body['channels'] as Map)['price_drop'], ['email', 'in_app', 'push']);
     expect(body['quiet_hours'], {'start': '22:00', 'end': '07:00'});
     expect(body.containsKey('clear_quiet_hours'), isFalse);
-    expect(body['email'], 'buyer@example.com');
+    expect(body.containsKey('digest_email'), isFalse);
+    expect(base.toUpdateJson(digestEmail: 'n@e.co')['digest_email'], 'n@e.co');
 
-    final cleared = base.copyWith(clearQuiet: true, email: '').toUpdateJson();
+    final cleared = base.copyWith(clearQuiet: true).toUpdateJson();
     expect(cleared['clear_quiet_hours'], isTrue);
     expect(cleared.containsKey('quiet_hours'), isFalse);
-    expect(cleared.containsKey('email'), isFalse);
+    expect(cleared.containsKey('digest_email'), isFalse);
   });
 
   test('time and email helpers', () {

@@ -1,0 +1,68 @@
+import 'dart:typed_data';
+
+import 'package:factory_finder/features/my_products/media/media_logic.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+class PickedImage {
+  const PickedImage({required this.bytes, required this.filename, required this.mime});
+
+  final Uint8List bytes;
+  final String filename;
+  final String mime;
+}
+
+/// Hides the image_picker plugin so tests never touch it.
+/// Both methods return null when the user cancels.
+abstract class ImagePickService {
+  Future<PickedImage?> pickFromGallery();
+  Future<PickedImage?> pickFromCamera();
+}
+
+class PluginImagePickService implements ImagePickService {
+  PluginImagePickService([ImagePicker? picker]) : _picker = picker ?? ImagePicker();
+
+  final ImagePicker _picker;
+
+  Future<PickedImage?> _pick(ImageSource source) async {
+    final file = await _picker.pickImage(source: source);
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    final name = file.name.isEmpty ? 'photo.jpg' : file.name;
+    return PickedImage(
+      bytes: bytes,
+      filename: name,
+      mime: inferImageMime(name, file.mimeType),
+    );
+  }
+
+  @override
+  Future<PickedImage?> pickFromGallery() => _pick(ImageSource.gallery);
+
+  @override
+  Future<PickedImage?> pickFromCamera() => _pick(ImageSource.camera);
+}
+
+/// Test fake: returns [next] (or null) without any plugin.
+class FakeImagePickService implements ImagePickService {
+  FakeImagePickService({this.next});
+
+  PickedImage? next;
+  int galleryCalls = 0;
+  int cameraCalls = 0;
+
+  @override
+  Future<PickedImage?> pickFromGallery() async {
+    galleryCalls++;
+    return next;
+  }
+
+  @override
+  Future<PickedImage?> pickFromCamera() async {
+    cameraCalls++;
+    return next;
+  }
+}
+
+final imagePickServiceProvider =
+    Provider<ImagePickService>((ref) => PluginImagePickService());

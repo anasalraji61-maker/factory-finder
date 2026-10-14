@@ -107,6 +107,42 @@ class ApiClient {
 
   Future<dynamic> delete(String path) => _request('DELETE', path);
 
+  /// Multipart POST. [build] is called again on a 401 retry because a Dio
+  /// [FormData] can only be sent once.
+  Future<dynamic> postMultipart(
+    String path,
+    FormData Function() build, {
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    var retried = false;
+    while (true) {
+      try {
+        final token = tokens.accessToken;
+        final response = await _dio.request<dynamic>(
+          path,
+          data: build(),
+          onSendProgress: onSendProgress,
+          options: Options(
+            method: 'POST',
+            headers: <String, dynamic>{
+              if (token != null) 'Authorization': 'Bearer $token',
+            },
+          ),
+        );
+        return response.data;
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 401 &&
+            !retried &&
+            tokens.refreshToken != null &&
+            await _refreshOnce()) {
+          retried = true;
+          continue;
+        }
+        throw mapDioError(e);
+      }
+    }
+  }
+
   Future<dynamic> _request(
     String method,
     String path, {
@@ -200,12 +236,27 @@ ApiException mapDioError(DioException e) {
       message = d is String ? d : d.toString();
     }
   }
-  return ApiException(status: status, code: code, message: message);
+  int? retryAfter;
+  final ra = e.response?.headers.value('retry-after');
+  if (ra != null) retryAfter = int.tryParse(ra.trim());
+  return ApiException(
+    status: status,
+    code: code,
+    message: message,
+    retryAfterSeconds: retryAfter,
+  );
 }
 
 class ApiException implements Exception {
-  ApiException({this.status, required this.code, required this.message});
+  ApiException({
+    this.status,
+    required this.code,
+    required this.message,
+    this.retryAfterSeconds,
+  });
 
+  /// Parsed `Retry-After` header (seconds), when the server sent one.
+  final int? retryAfterSeconds;
   final int? status;
   final String code;
   final String message;

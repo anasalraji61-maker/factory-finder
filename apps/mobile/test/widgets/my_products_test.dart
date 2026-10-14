@@ -99,6 +99,8 @@ void main() {
     await settle(tester, frames: 2);
 
     // An invalid image URL is rejected, a valid one is added.
+    await tester.tap(find.byKey(const ValueKey('myp-image-url-toggle')));
+    await settle(tester, frames: 2);
     await tester.enterText(find.byKey(const ValueKey('myp-image-input')), 'not a url');
     await tester.tap(find.byKey(const ValueKey('myp-image-add')));
     await settle(tester, frames: 2);
@@ -107,7 +109,7 @@ void main() {
         find.byKey(const ValueKey('myp-image-input')), 'https://example.com/a.jpg');
     await tester.tap(find.byKey(const ValueKey('myp-image-add')));
     await settle(tester, frames: 2);
-    expect(find.text('https://example.com/a.jpg'), findsOneWidget);
+    expect(find.byKey(const ValueKey('myp-image-tile-0')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('myp-save')));
     await settle(tester, frames: 12);

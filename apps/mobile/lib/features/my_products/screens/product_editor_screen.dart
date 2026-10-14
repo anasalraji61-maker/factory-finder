@@ -4,6 +4,10 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/logistics/screens/hs_picker.dart';
+import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/features/my_products/media/image_pick_service.dart';
+import 'package:factory_finder/features/my_products/media/media_logic.dart';
+import 'package:factory_finder/features/my_products/media/media_repository.dart';
 import 'package:factory_finder/features/my_products/my_products_logic.dart';
 import 'package:factory_finder/features/my_products/my_products_models.dart';
 import 'package:factory_finder/features/my_products/my_products_repository.dart';
@@ -47,6 +51,9 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
   Location _origin = const Location(countryCode: 'IQ');
   Map<String, String> _errors = <String, String>{};
   String? _imageInputError;
+  bool _showUrlInput = false;
+  final List<_Upload> _uploads = <_Upload>[];
+  int _uploadSeq = 0;
 
   OwnedListing? _existing;
   bool _loading = false;
@@ -155,6 +162,10 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
 
   /// Validates the form; shows errors and a snackbar when invalid.
   bool _validate() {
+    if (_uploads.isNotEmpty) {
+      showMyProductsSnack(context, context.tr('myp.media.wait_uploads'));
+      return false;
+    }
     final errors = validateProductDraft(_collect());
     setState(() => _errors = errors);
     if (errors.isNotEmpty) {
@@ -264,6 +275,143 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
       _errors = Map<String, String>.of(_errors)..remove('images');
     });
   }
+
+  Future<void> _pickAndUpload(bool camera) async {
+    if (_images.length + _uploads.length >= kMaxProductImages) {
+      showMyProductsSnack(context, context.tr('myp.err.image_limit'));
+      return;
+    }
+    final picker = ref.read(imagePickServiceProvider);
+    PickedImage? picked;
+    try {
+      picked = camera ? await picker.pickFromCamera() : await picker.pickFromGallery();
+    } catch (_) {
+      if (mounted) showMyProductsSnack(context, context.tr('myp.media.err.generic'));
+      return;
+    }
+    if (picked == null || !mounted) return;
+    final problem = checkImageFile(bytes: picked.bytes.length, mime: picked.mime);
+    if (problem != null) {
+      showMyProductsSnack(context, context.tr(problem));
+      return;
+    }
+    final slot = _Upload(++_uploadSeq);
+    setState(() => _uploads.add(slot));
+    try {
+      final up = await ref.read(mediaRepositoryProvider).uploadImage(
+        picked,
+        onProgress: (p) {
+          if (mounted && _uploads.contains(slot)) setState(() => slot.progress = p);
+        },
+      );
+      if (!mounted) return;
+      final base = ref.read(apiClientProvider).baseUrl;
+      setState(() {
+        _uploads.remove(slot);
+        if (_images.length < kMaxProductImages) {
+          _images = <String>[..._images, resolveMediaUrl(base, up.url)];
+          _errors = Map<String, String>.of(_errors)..remove('images');
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _uploads.remove(slot));
+      showMyProductsSnack(context, context.tr(mediaErrorKey(e)));
+    }
+  }
+
+  Widget _imageTile(BuildContext context, int i) {
+    final base = ref.read(apiClientProvider).baseUrl;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final n = _images.length;
+    Widget arrow(String keyId, IconData icon, int delta, String tip) => IconButton(
+          key: ValueKey('myp-image-$keyId-$i'),
+          tooltip: tip,
+          iconSize: 18,
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+          icon: Icon(icon),
+          onPressed: (i + delta < 0 || i + delta >= n)
+              ? null
+              : () => setState(() => _images = moveItem(_images, i, delta)),
+        );
+    return SizedBox(
+      key: ValueKey('myp-image-tile-$i'),
+      width: 96,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              AppNetworkImage(
+                url: mediaThumbUrl(base, _images[i]),
+                width: 96,
+                height: 96,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              if (i == 0)
+                PositionedDirectional(
+                  start: 4,
+                  bottom: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      context.tr('myp.media.cover'),
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              arrow('earlier', rtl ? Icons.chevron_right : Icons.chevron_left, -1,
+                  context.tr('myp.media.earlier')),
+              IconButton(
+                key: ValueKey('myp-image-remove-$i'),
+                tooltip: context.tr('myp.media.remove'),
+                iconSize: 18,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() {
+                  _images = <String>[..._images]..removeAt(i);
+                }),
+              ),
+              arrow('later', rtl ? Icons.chevron_left : Icons.chevron_right, 1,
+                  context.tr('myp.media.later')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _uploadTile(_Upload u) => Container(
+        key: ValueKey('myp-image-uploading-${u.id}'),
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: AppColors.border.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            value: (u.progress > 0 && u.progress < 1) ? u.progress : null,
+          ),
+        ),
+      );
 
   Future<void> _pickOrigin() async {
     final picked = await showLocationEditor(context, initial: _origin);
@@ -613,34 +761,30 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
         _section('myp.section.images'),
         const SizedBox(height: AppSpacing.sm),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextField(
-                key: const ValueKey('myp-image-input'),
-                controller: _imageInput,
-                keyboardType: TextInputType.url,
-                textDirection: TextDirection.ltr,
-                autocorrect: false,
-                onChanged: (_) {
-                  if (_imageInputError != null) setState(() => _imageInputError = null);
-                },
-                onSubmitted: (_) => _addImage(),
-                decoration: InputDecoration(
-                  labelText: context.tr('myp.f.image_url'),
-                  errorText: _imageInputError == null ? null : context.tr(_imageInputError!),
-                  errorMaxLines: 3,
+              child: OutlinedButton.icon(
+                key: const ValueKey('myp-image-gallery'),
+                onPressed: () => _pickAndUpload(false),
+                icon: const Icon(Icons.photo_library_outlined, size: 20),
+                label: Text(
+                  context.tr('myp.media.gallery'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: OutlinedButton(
-                key: const ValueKey('myp-image-add'),
-                style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
-                onPressed: _addImage,
-                child: Text(context.tr('myp.f.add_image')),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const ValueKey('myp-image-camera'),
+                onPressed: () => _pickAndUpload(true),
+                icon: const Icon(Icons.photo_camera_outlined, size: 20),
+                label: Text(
+                  context.tr('myp.media.camera'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ],
@@ -653,37 +797,56 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
           }),
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
-        for (var i = 0; i < _images.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Row(
-              children: [
-                AppNetworkImage(
-                  url: _images[i],
-                  width: 44,
-                  height: 44,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Text(
-                      _images[i],
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            for (var i = 0; i < _images.length; i++) _imageTile(context, i),
+            for (final u in _uploads) _uploadTile(u),
+          ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(
+            key: const ValueKey('myp-image-url-toggle'),
+            onPressed: () => setState(() => _showUrlInput = !_showUrlInput),
+            child: Text(context.tr('myp.media.by_url')),
+          ),
+        ),
+        if (_showUrlInput)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const ValueKey('myp-image-input'),
+                  controller: _imageInput,
+                  keyboardType: TextInputType.url,
+                  textDirection: TextDirection.ltr,
+                  autocorrect: false,
+                  onChanged: (_) {
+                    if (_imageInputError != null) setState(() => _imageInputError = null);
+                  },
+                  onSubmitted: (_) => _addImage(),
+                  decoration: InputDecoration(
+                    labelText: context.tr('myp.f.image_url'),
+                    errorText: _imageInputError == null ? null : context.tr(_imageInputError!),
+                    errorMaxLines: 3,
                   ),
                 ),
-                IconButton(
-                  key: ValueKey('myp-image-remove-$i'),
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => setState(() {
-                    _images = <String>[..._images]..removeAt(i);
-                  }),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: OutlinedButton(
+                  key: const ValueKey('myp-image-add'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
+                  onPressed: _addImage,
+                  child: Text(context.tr('myp.f.add_image')),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         _errorText(_err('images')),
         const SizedBox(height: AppSpacing.xl),
@@ -744,4 +907,11 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
       ],
     );
   }
+}
+
+/// An image upload in flight (shown as a spinner tile).
+class _Upload {
+  _Upload(this.id);
+  final int id;
+  double progress = 0;
 }

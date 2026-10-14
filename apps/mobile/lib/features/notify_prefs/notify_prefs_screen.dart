@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
@@ -5,6 +7,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_models.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotifyPrefsScreen extends ConsumerStatefulWidget {
@@ -25,6 +28,14 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
   bool _saved = false;
   String? _emailErrorKey;
 
+  final TextEditingController _code = TextEditingController();
+  String _baseline = '';
+  String? _codeErrorKey;
+  bool _verifying = false;
+  bool _resending = false;
+  DateTime? _lastSent;
+  Timer? _tick;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +44,8 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
 
   @override
   void dispose() {
+    _tick?.cancel();
+    _code.dispose();
     _email.dispose();
     super.dispose();
   }
@@ -48,6 +61,7 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
       setState(() {
         _draft = p;
         _email.text = p.email ?? '';
+        _baseline = p.email ?? '';
         _loading = false;
       });
     } catch (e) {
@@ -94,27 +108,208 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
       _saved = false;
     });
     try {
+      final toSend = digestEmailToSend(input: _email.text, baseline: _baseline);
       final saved = await ref
           .read(notifyPrefsRepositoryProvider)
-          .save(d.copyWith(email: _email.text.trim()));
+          .save(d, digestEmail: toSend);
       if (!mounted) return;
       setState(() {
         _draft = saved;
         _email.text = saved.email ?? '';
+        _baseline = saved.email ?? '';
         _saving = false;
         _saved = true;
+        _codeErrorKey = null;
       });
+      if (toSend != null && toSend.isNotEmpty && saved.digestEmailPending != null) {
+        _startCooldown();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
         if (e is ApiException && e.isUnauthorized) {
           _saveErrorKey = 'notifyprefs.login_required';
+        } else if (e is ApiException && e.status == 429) {
+          _saveErrorKey = digestEmailErrorKey(e);
         } else {
           _saveErrorKey = 'notifyprefs.save_failed';
           _saveErrorText = describeError(e);
         }
       });
+    }
+  }
+
+  void _snack(String text) {
+    final m = ScaffoldMessenger.of(context);
+    m.clearSnackBars();
+    m.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  void _startCooldown() {
+    _lastSent = DateTime.now();
+    _tick?.cancel();
+    _tick = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      if (resendCooldownRemaining(_lastSent, DateTime.now()) == 0) t.cancel();
+      setState(() {});
+    });
+  }
+
+  Future<void> _verify() async {
+    if (_verifying) return;
+    if (!isValidVerificationCode(_code.text)) {
+      setState(() => _codeErrorKey = 'notifyprefs.err_code_format');
+      return;
+    }
+    setState(() {
+      _verifying = true;
+      _codeErrorKey = null;
+    });
+    try {
+      final p = await ref.read(notifyPrefsRepositoryProvider).verifyEmail(_code.text);
+      if (!mounted) return;
+      _tick?.cancel();
+      setState(() {
+        _draft = _draft?.copyWith(
+          email: p.email,
+          digestEmailVerified: p.digestEmailVerified,
+          clearPending: true,
+        );
+        _email.text = p.email ?? '';
+        _baseline = p.email ?? '';
+        _code.clear();
+        _verifying = false;
+        _lastSent = null;
+      });
+      _snack(context.tr('notifyprefs.verified_ok'));
+    } catch (e) {
+      if (!mounted) return;
+      final key = digestEmailErrorKey(e);
+      setState(() {
+        _verifying = false;
+        _codeErrorKey = key;
+      });
+      _snack(context.tr(key));
+    }
+  }
+
+  Future<void> _resend() async {
+    if (_resending || resendCooldownRemaining(_lastSent, DateTime.now()) > 0) return;
+    setState(() => _resending = true);
+    try {
+      await ref.read(notifyPrefsRepositoryProvider).resendCode();
+      if (!mounted) return;
+      setState(() {
+        _resending = false;
+        _codeErrorKey = null;
+      });
+      _startCooldown();
+      _snack(context.tr('notifyprefs.code_sent'));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _resending = false);
+      _snack(context.tr(digestEmailErrorKey(e)));
+    }
+  }
+
+  Widget _digestStatus(BuildContext context, NotifyPrefs d) {
+    switch (digestEmailState(d)) {
+      case DigestEmailState.none:
+        return const SizedBox.shrink();
+      case DigestEmailState.verified:
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: Row(
+            key: const Key('np_verified_badge'),
+            children: [
+              const Icon(Icons.verified_outlined, size: 18, color: AppColors.success),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  context.tr('notifyprefs.verified'),
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      case DigestEmailState.pending:
+        final left = resendCooldownRemaining(_lastSent, DateTime.now());
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: Column(
+            key: const Key('np_pending'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('notifyprefs.pending_title'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                context.tr('notifyprefs.pending_msg', {'email': d.digestEmailPending ?? ''}),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('np_code'),
+                      controller: _code,
+                      keyboardType: TextInputType.number,
+                      textDirection: TextDirection.ltr,
+                      maxLength: 6,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      onChanged: (_) {
+                        if (_codeErrorKey != null) setState(() => _codeErrorKey = null);
+                      },
+                      decoration: InputDecoration(
+                        labelText: context.tr('notifyprefs.code'),
+                        counterText: '',
+                        errorText:
+                            _codeErrorKey == null ? null : context.tr(_codeErrorKey!),
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: OutlinedButton(
+                      key: const Key('np_verify'),
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(72, 48)),
+                      onPressed: _verifying ? null : _verify,
+                      child: Text(context.tr('notifyprefs.verify')),
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  key: const Key('np_resend'),
+                  onPressed: (_resending || left > 0) ? null : _resend,
+                  child: Text(
+                    left > 0
+                        ? context.tr('notifyprefs.resend_in', {'s': '$left'})
+                        : context.tr('notifyprefs.resend'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
     }
   }
 
@@ -329,6 +524,7 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
                       : context.tr(_emailErrorKey!),
                 ),
               ),
+              _digestStatus(context, d),
             ],
           ),
         ),
