@@ -96,7 +96,9 @@ class Settings(BaseSettings):
     snapshot_max_per_supplier: int = 500
     snapshot_max_total: int = 200000
     snapshot_retention_days: int = 730
-    verification_media_prefixes: list[str] = ["/v1/media/files/"]
+    # Verification documents must be PRIVATE media refs (/v1/media/private/<id>.<ext>); public /v1/media/files/ refs are
+    # rejected. Format check only: trust never calls media (the owner/admin read through signed URLs, see docs/decisions/media-private.md).
+    verification_media_prefixes: list[str] = ["/v1/media/private/"]
     verification_media_hosts: list[str] = []  # absolute media URLs need a host listed here; empty = relative paths only
     verification_allow_http: bool = False
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")

@@ -16,7 +16,7 @@ TOKEN = "adm-secret"
 SUP = {"X-Supplier-Id": "sup_a"}
 ADM = {"X-Admin-Token": TOKEN}
 NUM = "91310000MA1K3XYZ9876"
-F1, F2 = "/v1/media/files/abcdef123456.jpg", "/v1/media/files/fedcba654321.pdf"
+F1, F2 = "/v1/media/private/abcdef123456.jpg", "/v1/media/private/fedcba654321.pdf"
 BASE = dict(years_in_business=5, verified=True, transactions_count=100, rating_avg=4.0, reviews_count=50)
 
 
@@ -106,8 +106,8 @@ def test_pending_queue_and_filters(client):
 
 # ---------------- validation ----------------
 @pytest.mark.parametrize("bad", [
-    {"consent": False}, {"doc_type": "passport"}, {"issuing_country": "CHN"}, {"files": []}, {"files": ["https://evil.example/v1/media/files/abcdef123456.jpg"]},
-    {"files": ["/etc/passwd"]}, {"files": ["/v1/media/files/../x.jpg"]}, {"files": ["/v1/media/files/abcdef123456.jpg?x=1"]}, {"files": ["//evil.example/v1/media/files/abcdef123456.jpg"]},
+    {"consent": False}, {"doc_type": "passport"}, {"issuing_country": "CHN"}, {"files": []}, {"files": ["https://evil.example/v1/media/private/abcdef123456.jpg"]},
+    {"files": ["/etc/passwd"]}, {"files": ["/v1/media/private/../x.jpg"]}, {"files": ["/v1/media/private/abcdef123456.jpg?x=1"]}, {"files": ["//evil.example/v1/media/private/abcdef123456.jpg"]},
     {"number": None}, {"number": "ab"}, {"expires_on": "2020-01-01"}, {"extra": 1}, {"files": [F1] * 11},
 ])  # fmt: skip
 def test_rejects_bad_input(client, bad):
@@ -126,10 +126,10 @@ def test_photos_take_no_number_and_dedupe_files(client):
 
 def test_absolute_media_url_needs_allowed_host():
     c = TestClient(create_app(Settings(verification_media_hosts=["media.ff.example"])))
-    ok = "https://media.ff.example/v1/media/files/abcdef123456.jpg"
+    ok = "https://media.ff.example/v1/media/private/abcdef123456.jpg"
     assert submit(c, files=[ok]).status_code == 201
-    assert submit(c, files=["http://media.ff.example/v1/media/files/abcdef123456.jpg"], number="OTHER-12345").status_code == 422
-    assert submit(c, files=["https://other.example/v1/media/files/abcdef123456.jpg"], number="OTHER-12345").status_code == 422
+    assert submit(c, files=["http://media.ff.example/v1/media/private/abcdef123456.jpg"], number="OTHER-12345").status_code == 422
+    assert submit(c, files=["https://other.example/v1/media/private/abcdef123456.jpg"], number="OTHER-12345").status_code == 422
 
 
 # ---------------- PII ----------------
@@ -366,3 +366,11 @@ def _dump_db(app):
         return out
 
     return asyncio.run(go())
+
+
+def test_public_media_refs_rejected_for_verification(client):
+    c = client
+    for ref in ("/v1/media/files/abcdef123456.jpg", "/v1/media/files/" + "a" * 32 + ".png"):
+        r = submit(c, files=[ref])
+        assert r.status_code == 422 and r.json()["error"]["code"] == "file_url_not_allowed"
+    assert submit(c, files=["/v1/media/private/" + "a" * 32 + ".png"]).status_code in (200, 201)

@@ -84,6 +84,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
         "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
         "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN, "FF_FREIGHT_ADMIN_TOKEN": ADMIN_TOKEN,
+        "FF_MEDIA_ADMIN_TOKEN": ADMIN_TOKEN,
     }  # fmt: skip
     base_env.pop("FF_INTERNAL_TOKEN", None)
     base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
@@ -537,6 +538,23 @@ def scenario() -> None:
         assert r.status_code == 404, f"other user's delete -> {r.status_code}"
         ok(c.delete(f"/v1/media/images/{img['id']}", headers=h("supplier")), 204)
         assert c.get(path).status_code == 404
+        # private (verification) documents: never on the public route; owner / signed URL / admin only
+        r = c.post("/v1/media/images", files={"file": ("d.png", png + b"", "image/png")}, data={"kind": "verification"}, headers=h("supplier"))
+        doc = ok(r, 201)
+        assert doc["visibility"] == "private" and doc["url"] == f"/v1/media/private/{doc['id']}.png", str(doc)[:200]
+        assert c.get(f"/v1/media/files/{doc['id']}.png").status_code == 404, "private file served by the public route"
+        assert c.get(doc["url"]).status_code == 404 and c.get(doc["url"], headers=h("buyer")).status_code == 404
+        own = c.get(doc["url"], headers=h("supplier"))
+        assert own.status_code == 200 and own.headers.get("cache-control") == "private, no-store", own.headers
+        assert c.post(f"/v1/media/files/{doc['id']}/sign", headers=h("buyer")).status_code == 404
+        sg = ok(c.post(f"/v1/media/files/{doc['id']}/sign", headers=h("supplier")))
+        su = "/" + sg["url"].split("/", 3)[3] if sg["url"].startswith("http") else sg["url"]
+        assert c.get(su).status_code == 200, "signed url"
+        assert c.get(su[:-2] + "00").status_code == 404, "tampered signature accepted"
+        assert c.get(f"/v1/admin/media/files/{doc['id']}").status_code == 401
+        adm = c.get(f"/v1/admin/media/files/{doc['id']}", headers={"X-Admin-Token": ADMIN_TOKEN})
+        assert adm.status_code == 200 and adm.content[:8] == b"\x89PNG\r\n\x1a\n", adm.status_code
+        ok(c.delete(f"/v1/media/images/{doc['id']}", headers=h("supplier")), 204)
 
     step("media: upload (magic-byte check, public GET, owner-only delete) via gateway", media)
 

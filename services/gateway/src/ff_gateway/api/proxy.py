@@ -47,6 +47,7 @@ FORWARD_RESPONSE_HEADERS = {
     "content-disposition",
     "cross-origin-resource-policy",
     "retry-after",
+    "referrer-policy",  # private media: no-referrer must reach the client
     "x-quota-remaining",  # assistant per-day quota
 }
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]

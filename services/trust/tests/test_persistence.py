@@ -18,7 +18,7 @@ KEY = "k" * 32
 SUP = {"X-Supplier-Id": "sup_a"}
 ADM = {"X-Admin-Token": TOKEN}
 USER = {"X-User-Id": "u1"}
-F1 = "/v1/media/files/abcdef123456.jpg"
+F1 = "/v1/media/private/abcdef123456.jpg"
 DOC = {"doc_type": "business_license", "issuing_country": "cn", "files": [F1], "number": "91310000MA1K3XYZ9876", "consent": True}
 
 

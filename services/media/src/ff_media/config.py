@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     s3_access_key_id: SecretStr | None = None
     s3_secret_access_key: SecretStr | None = None
 
+    # Private files (visibility=private / kind=verification): short-lived HMAC-signed URLs. REQUIRED when
+    # FF_ENV=production; otherwise a random per-process key is used (links die on restart, fine for dev).
+    signing_key: SecretStr | None = None
+    signed_url_ttl_seconds: int = 300
+    # Service admin token (X-Admin-Token) for GET /v1/media/admin/files/{id}; the gateway injects it. 404 when unset.
+    admin_token: SecretStr | None = None
+
     max_upload_bytes: int = 5 * 1024 * 1024
     max_dimension: int = 8000  # per side, pixels (decompression-bomb guard)
     max_pixels: int = 40_000_000

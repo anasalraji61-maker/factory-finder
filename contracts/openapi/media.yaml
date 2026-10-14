@@ -14,6 +14,18 @@ info:
     Ids are random 128-bit hex; an image is deduplicated per owner by the SHA-256 of the re-encoded bytes.
     Quotas per user (defaults): 200 stored files, 30 upload requests per rolling hour (429). Another user's image is 404 on DELETE.
     Deleted images may stay in downstream caches for the immutable cache lifetime.
+
+    PRIVATE files (additive): upload with `visibility=private`, or `kind=verification` (always private; `visibility=public`
+    with it is 422). Private bytes are NEVER served by the public `/v1/media/files/*` (404, indistinguishable from a missing
+    file). They are readable only by (1) the owner (`X-User-Id`, i.e. an authenticated gateway request) at
+    `/v1/media/private/{id}.{ext}`, (2) anyone holding a short-lived (default 5 min, `FF_MEDIA_SIGNING_KEY`) HMAC-signed URL
+    for that file, bound to file id + owner + expiry, obtained by the owner from `POST /v1/media/files/{id}/sign`, and (3) an
+    admin through the gateway passthrough `GET /v1/admin/media/files/{id}` (media: `GET /v1/media/admin/files/{id}`, service
+    admin token). Responses carry `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`;
+    there is no listing. The `url` of a private file is the relative reference `/v1/media/private/{id}.{ext}` (no query): that is
+    what other services (trust verification documents) store; it is not fetchable without owner identity or a signature.
+    Mobile clients: send `kind=verification` for supplier verification documents, put `url` into the trust `files[]`, and call
+    `POST /v1/media/files/{id}/sign` to preview the document (open the returned URL within 5 minutes; it is not cacheable).
 servers: [{url: http://localhost:8112}]
 paths:
   /health:
@@ -48,7 +60,7 @@ paths:
       operationId: uploadImage
       summary: Upload an image (multipart/form-data)
       description: |
-        Fields: `file` (required, exactly one) and `kind` (optional: listing | avatar | attachment, default listing).
+        Fields: `file` (required, exactly one), `kind` (optional: listing | avatar | attachment | verification, default listing) and `visibility` (optional: public | private, default public; verification is always private).
         Uploading the same pixels again as the same user returns the existing image with 200 instead of 201.
         Error codes: missing_user 401, file_too_large 413, unsupported_media_type 415, invalid_image 422,
         image_dimensions_exceeded 422, validation_error 422, quota_files_exceeded 429, quota_uploads_exceeded 429 (Retry-After).
@@ -62,6 +74,7 @@ paths:
               properties:
                 file: {type: string, format: binary}
                 kind: {$ref: "#/components/schemas/MediaKind"}
+                visibility: {$ref: "#/components/schemas/MediaVisibility"}
       responses:
         "200": {description: Same image already stored for this user, content: {application/json: {schema: {$ref: "#/components/schemas/MediaImage"}}}}
         "201": {description: Stored, content: {application/json: {schema: {$ref: "#/components/schemas/MediaImage"}}}}
@@ -79,6 +92,51 @@ paths:
         - {name: id, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}$'}}
       responses:
         "204": {description: Deleted}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/media/files/{id}/sign:
+    post:
+      operationId: signPrivateFile
+      summary: Owner only - short-lived signed URL for a private file (404 for anyone else, and for public files)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}$'}}
+      responses:
+        "200": {description: Signed URL, headers: {Cache-Control: {schema: {type: string}, description: "private, no-store"}}, content: {application/json: {schema: {$ref: "#/components/schemas/SignedUrl"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/media/private/{filename}:
+    get:
+      operationId: getPrivateFile
+      summary: Private file bytes (owner via X-User-Id, or a valid signed URL; otherwise 404)
+      parameters:
+        - {name: filename, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}\.(jpg|png|webp)$'}}
+        - {name: u, in: query, required: false, schema: {type: string}, description: user the link was issued to}
+        - {name: exp, in: query, required: false, schema: {type: integer}, description: expiry (unix seconds)}
+        - {name: sig, in: query, required: false, schema: {type: string}, description: "hex HMAC-SHA256 over file id, user and expiry"}
+      responses:
+        "200":
+          description: Image bytes
+          headers:
+            Cache-Control: {schema: {type: string}, description: "private, no-store"}
+            X-Content-Type-Options: {schema: {type: string, const: nosniff}}
+          content:
+            image/jpeg: {schema: {type: string, format: binary}}
+            image/png: {schema: {type: string, format: binary}}
+            image/webp: {schema: {type: string, format: binary}}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/media/admin/files/{name}:
+    get:
+      operationId: adminGetFile
+      summary: Admin read of any file (service admin token; 404 when unset, 401 wrong). Reached via gateway GET /v1/admin/media/files/{name}
+      parameters:
+        - {name: name, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}(\.(jpg|png|webp))?$'}}
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/jpeg: {schema: {type: string, format: binary}}
+            image/png: {schema: {type: string, format: binary}}
+            image/webp: {schema: {type: string, format: binary}}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
   /v1/media/files/{filename}:
@@ -113,7 +171,15 @@ components:
       description: Error
       content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
   schemas:
-    MediaKind: {type: string, enum: [listing, avatar, attachment], default: listing}
+    MediaKind: {type: string, enum: [listing, avatar, attachment, verification], default: listing}
+    MediaVisibility: {type: string, enum: [public, private], default: public}
+    SignedUrl:
+      type: object
+      required: [url, expires_at, ttl_seconds]
+      properties:
+        url: {type: string, description: "<base>/v1/media/private/<id>.<ext>?u=<owner>&exp=<unix>&sig=<hex>"}
+        expires_at: {type: string, format: date-time}
+        ttl_seconds: {type: integer}
     MediaImage:
       type: object
       required: [id, url, width, height, bytes, content_type, sha256]
@@ -126,5 +192,6 @@ components:
         content_type: {type: string, enum: [image/jpeg, image/png, image/webp]}
         sha256: {type: string, pattern: '^[a-f0-9]{64}$', description: SHA-256 of the stored bytes}
         kind: {$ref: "#/components/schemas/MediaKind"}
+        visibility: {$ref: "#/components/schemas/MediaVisibility"}
         widths: {type: array, items: {type: integer, enum: [200, 400, 800]}, description: "variants that exist (those narrower than the original)"}
         created_at: {type: string, format: date-time}

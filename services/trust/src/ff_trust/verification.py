@@ -85,7 +85,7 @@ def mask_number(norm: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class MediaRules:
-    path_prefixes: tuple[str, ...] = ("/v1/media/files/",)
+    path_prefixes: tuple[str, ...] = ("/v1/media/private/",)
     allowed_hosts: tuple[str, ...] = ()
     allow_http: bool = False
     max_files: int = 10

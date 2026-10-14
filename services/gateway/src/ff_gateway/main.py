@@ -20,6 +20,7 @@ from ff_gateway import SERVICE_NAME, __version__
 from ff_gateway.api import (
     admin,
     admin_demand,
+    admin_media,
     admin_moderation,
     admin_payments,
     admin_services,
@@ -149,7 +150,7 @@ def create_app(
         path = request.url.path
         if path != "/health" and request.method != "OPTIONS":
             auth_route = path.startswith("/v1/auth")
-            media_read = request.method == "GET" and path.startswith("/v1/media/files/")
+            media_read = request.method == "GET" and path.startswith(("/v1/media/files/", "/v1/media/private/"))
             limit = (
                 settings.auth_rate_limit_per_minute
                 if auth_route
@@ -229,6 +230,7 @@ def create_app(
     app.include_router(admin_demand.router)
     app.include_router(admin_moderation.router)
     app.include_router(admin_payments.router)
+    app.include_router(admin_media.router)
     app.include_router(admin_services.router)
     if settings.serve_admin:
         admin_dir = (

@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/compliance/* + POST /v1/compliance/checklist, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml)."}
+info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/compliance/* + POST /v1/compliance/checklist, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml). GET /v1/media/private/{id}.{ext} is reachable without a token but media only serves it to the owner (optional bearer) or with a valid short-lived signature; POST /v1/media/files/{id}/sign needs a bearer token."}
 servers: [{url: http://localhost:8000}]
 security: [{bearer: []}]
 paths:
@@ -257,6 +257,15 @@ paths:
       parameters: [{name: id, in: path, required: true, schema: {type: string, pattern: "^[A-Za-z0-9_-]{1,64}$"}}]
       responses:
         "200": {description: Upstream payments response (requeued OutboxEvent)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/media/files/{name}:
+    get:
+      operationId: adminMediaFileGet
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_MEDIA_ADMIN_TOKEN is unset, 401 wrong). Reads a private (or any) media file from media GET /v1/media/admin/files/{name}; the gateway injects media's X-Admin-Token and X-Internal-Token (X-User-Id=admin); client identity/admin headers and query strings are never forwarded (any query is 404). Response: image bytes with Cache-Control private, no-store and nosniff. No listing. Used by the admin console to view verification documents."
+      parameters: [{name: name, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}(\\.(jpg|png|webp))?$'}}]
+      responses:
+        "200": {description: Image bytes (image/jpeg, image/png or image/webp)}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/{path}:

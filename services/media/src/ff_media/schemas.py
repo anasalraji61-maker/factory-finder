@@ -5,8 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-Kind = Literal["listing", "avatar", "attachment"]
-KINDS = ("listing", "avatar", "attachment")
+Kind = Literal["listing", "avatar", "attachment", "verification"]
+KINDS = ("listing", "avatar", "attachment", "verification")
+VISIBILITIES = ("public", "private")
 
 
 class MediaImage(BaseModel):
@@ -18,5 +19,12 @@ class MediaImage(BaseModel):
     content_type: str
     sha256: str
     kind: Kind
+    visibility: Literal["public", "private"] = "public"
     widths: list[int]
     created_at: datetime
+
+
+class SignedUrl(BaseModel):
+    url: str
+    expires_at: datetime
+    ttl_seconds: int

@@ -9,11 +9,14 @@ ID_RE = re.compile(r"[a-f0-9]{32}")  # always used with fullmatch (``$`` would a
 EXTS = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
 WIDTHS = (200, 400, 800)
 FILENAME_RE = re.compile(r"([a-f0-9]{32})\.(jpg|png|webp)")
-KEY_RE = re.compile(r"[a-f0-9]{32}(_w(200|400|800))?\.(jpg|png|webp)")
+KEY_RE = re.compile(r"(p-)?[a-f0-9]{32}(_w(200|400|800))?\.(jpg|png|webp)")
 
 
-def make_key(media_id: str, ext: str, width: int | None = None) -> str:
+def make_key(media_id: str, ext: str, width: int | None = None, private: bool = False) -> str:
+    """Private files live under a distinct ``p-`` key so the public route can never address them."""
     key = f"{media_id}.{ext}" if width is None else f"{media_id}_w{width}.{ext}"
+    if private:
+        key = "p-" + key
     if not KEY_RE.fullmatch(key):
         raise ValueError("invalid storage key")
     return key

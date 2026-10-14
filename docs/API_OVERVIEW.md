@@ -476,6 +476,9 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 | POST | `/v1/media/images` | Upload an image (multipart/form-data) |
 | DELETE | `/v1/media/images/{id}` | Delete an image (owner only; 404 for anyone else, never 403) |
 | GET | `/v1/media/files/{filename}` | Image bytes (PUBLIC, no auth) |
+| POST | `/v1/media/files/{id}/sign` | Owner only: 5-minute signed URL for a private file |
+| GET | `/v1/media/private/{id}.{ext}` | Private bytes: owner (bearer) or valid `?u=&exp=&sig=`; else 404; `private, no-store` |
+| GET | `/v1/admin/media/files/{id}` | Admin (X-Admin-Token) read of a private file |
 
 **probes (direct to service port, not via gateway)**
 

@@ -25,6 +25,7 @@ PUBLIC_GET_PREFIXES = (
     "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories",
     "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs", "/v1/compliance",
     "/v1/media/files",  # image bytes only; upload/delete (/v1/media/images) stay authenticated
+    "/v1/media/private",  # private files: media itself requires the owner's X-User-Id (optional bearer here) or a valid signed URL
 )  # fmt: skip
 PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost"), ("POST", "/v1/compliance/checklist"), ("GET", "/v1/feed/trending")}  # trending: anonymous browsing; identity optional
 
@@ -45,6 +46,8 @@ def is_trust_verification_write_path(path: str) -> bool:
 
 def is_internal_only(method: str, path: str) -> bool:
     path = path.rstrip("/") or "/"
+    if _under(path, "/v1/media/admin"):  # media's admin read is reachable only via /v1/admin/media/* (gateway-held token)
+        return True
     return (method.upper(), path) in INTERNAL_ONLY
 
 

@@ -1,6 +1,6 @@
 """Streaming multipart/form-data reader with a hard size cap (never buffers more than the limit).
 
-Only the ``file`` (exactly one) and ``kind`` parts are read; the client filename and part content-type are ignored.
+Only the ``file`` (exactly one) and ``kind`` and ``visibility`` parts are read; the client filename and part content-type are ignored.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ MAX_KIND_BYTES = 64
 class Upload:
     data: bytes
     kind: str | None
+    visibility: str | None = None
 
 
 async def read_upload(request: Request, max_file_bytes: int) -> Upload:
@@ -62,8 +63,8 @@ async def read_upload(request: Request, max_file_bytes: int) -> Upload:
         name = state["name"]
         if name == "file":
             files.append(bytearray())
-        elif name == "kind":
-            fields["kind"] = bytearray()
+        elif name in ("kind", "visibility"):
+            fields[name] = bytearray()
         else:
             state["ignore"] = True
 
@@ -76,9 +77,9 @@ async def read_upload(request: Request, max_file_bytes: int) -> Upload:
                 raise too_large()
             buf += data[start:end]
         else:
-            buf = fields["kind"]
+            buf = fields[state["name"]]
             if len(buf) + (end - start) > MAX_KIND_BYTES:
-                raise BadRequest("`kind` is too long")
+                raise BadRequest(f"`{state['name']}` is too long")
             buf += data[start:end]
 
     parser = MultipartParser(
@@ -103,4 +104,5 @@ async def read_upload(request: Request, max_file_bytes: int) -> Upload:
     if len(files) != 1:
         raise BadRequest("Exactly one `file` field is required", {"files": len(files)})
     kind = fields["kind"].decode("utf-8", "replace").strip() if "kind" in fields else None
-    return Upload(bytes(files[0]), kind or None)
+    vis = fields["visibility"].decode("utf-8", "replace").strip() if "visibility" in fields else None
+    return Upload(bytes(files[0]), kind or None, vis or None)

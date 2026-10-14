@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 
 from fastapi import APIRouter, Request, Response
 
-from ff_media.errors import BadRequest, MissingUser, NotFound
+from ff_media.errors import AdminRequired, BadRequest, MissingUser, NotFound
 from ff_media.obs import sanitize_id
-from ff_media.schemas import KINDS, MediaImage
+from ff_media.schemas import KINDS, VISIBILITIES, MediaImage, SignedUrl
 from ff_media.service import MediaService
 from ff_media.storage.base import EXTS, FILENAME_RE, ID_RE, WIDTHS, make_key
 from ff_media.upload import read_upload
@@ -34,8 +35,14 @@ async def upload_image(request: Request, response: Response) -> MediaImage:
     await svc.charge_hourly(owner)
     up = await read_upload(request, svc.settings.max_upload_bytes)
     if up.kind is not None and up.kind not in KINDS:
-        raise BadRequest("`kind` must be listing, avatar or attachment", {"allowed": list(KINDS)})
-    image, created = await svc.store(owner, up.kind or "listing", up.data)
+        raise BadRequest("`kind` must be listing, avatar, attachment or verification", {"allowed": list(KINDS)})
+    kind = up.kind or "listing"
+    if up.visibility is not None and up.visibility not in VISIBILITIES:
+        raise BadRequest("`visibility` must be public or private", {"allowed": list(VISIBILITIES)})
+    if kind == "verification" and up.visibility == "public":
+        raise BadRequest("kind=verification files are always private")
+    visibility = "private" if kind == "verification" else (up.visibility or "public")
+    image, created = await svc.store(owner, kind, up.data, visibility)
     if not created:
         response.status_code = 200
     return image
@@ -74,3 +81,54 @@ async def get_file(filename: str, request: Request, w: int | None = None) -> Res
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     return Response(data, media_type=EXTS[ext], headers=headers)
+
+
+PRIVATE_HEADERS = {
+    "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'", "Cross-Origin-Resource-Policy": "same-site",
+    "Referrer-Policy": "no-referrer", "Pragma": "no-cache",
+}  # fmt: skip
+
+
+def _private_response(row, data: bytes) -> Response:
+    headers = {**PRIVATE_HEADERS, "Content-Disposition": f'inline; filename="{row.id}.{row.ext}"'}
+    return Response(data, media_type=EXTS[row.ext], headers=headers)
+
+
+@router.post("/v1/media/files/{media_id}/sign", response_model=SignedUrl)
+async def sign_private(media_id: str, request: Request) -> Response:
+    """Owner only: a 5-minute signed URL for one of their private files (404 for anyone else)."""
+    owner = _user(request)
+    if not ID_RE.fullmatch(media_id):
+        raise NotFound("File not found")
+    signed = await _svc(request).sign_url(owner, media_id)
+    return Response(signed.model_dump_json(), media_type="application/json", headers={"Cache-Control": "private, no-store"})
+
+
+@router.get("/v1/media/private/{filename}")
+async def get_private(
+    filename: str, request: Request, u: str | None = None, exp: str | None = None, sig: str | None = None,
+) -> Response:  # fmt: skip
+    m = FILENAME_RE.fullmatch(filename)
+    if not m:
+        raise NotFound("File not found")
+    viewer = sanitize_id(request.headers.get("x-user-id"))
+    row, data = await _svc(request).read_private(m.group(1), m.group(2), viewer, u, exp, sig)
+    return _private_response(row, data)
+
+
+@router.get("/v1/media/admin/files/{name}")
+async def admin_get(name: str, request: Request) -> Response:
+    """Admin read (gateway passthrough injects the service admin token). 404 when no admin token is configured."""
+    svc = _svc(request)
+    token = svc.settings.admin_token.get_secret_value() if svc.settings.admin_token else ""
+    if not token:
+        raise NotFound("Not Found")
+    given = request.headers.get("x-admin-token", "")
+    if not hmac.compare_digest(given.encode(), token.encode()):
+        raise AdminRequired("Valid X-Admin-Token required")
+    media_id = name.split(".", 1)[0]
+    if not ID_RE.fullmatch(media_id) or (name != media_id and not FILENAME_RE.fullmatch(name)):
+        raise NotFound("File not found")
+    row, data = await svc.read_admin(media_id)
+    return _private_response(row, data)

@@ -24,7 +24,7 @@ state machine incl. terminal states, HMAC fingerprints, number never stored/retu
 (buyer/forwarder/winner views, 404 for non-parties, no `buyer_id` to losers); feed authz (owner-only delete, supplier-only post).
 
 ## Open (design / needs product decision)
-1. MEDIUM - **Verification documents are publicly readable.** Files are uploaded through media, whose `GET /v1/media/files/*` is public
+1. MEDIUM - FIXED 2026-10-15 (see docs/decisions/media-private.md; remaining: no uploader-to-document ownership link in trust; old public copies must be re-uploaded). **Verification documents are publicly readable.** Files are uploaded through media, whose `GET /v1/media/files/*` is public
    (unguessable id only). Business licences / bank references need a private bucket class or signed, short-lived, admin-only URLs.
    Owner: media + trust. Also a supplier can reference any other media file id (no ownership link between uploader and document).
 2. MEDIUM - **Freight ratings can be farmed**: award -> close -> rate has no proof of shipment/payment; a forwarder with a sock-puppet buyer

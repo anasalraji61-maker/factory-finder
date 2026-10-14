@@ -34,6 +34,11 @@ def _require_production_token(token: str | None) -> None:
         raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
 
 
+def _require_production_signing_key(settings: Settings) -> None:
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not settings.signing_key:
+        raise RuntimeError("FF_ENV=production requires FF_MEDIA_SIGNING_KEY (refusing to start)")
+
+
 def create_app(
     settings: Settings | None = None,
     storage: StorageBackend | None = None,
@@ -41,6 +46,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
+    _require_production_signing_key(settings)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
     storage = storage or build_storage(settings)
     engine = make_engine(settings.database_url)

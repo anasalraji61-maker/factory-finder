@@ -30,10 +30,11 @@ class Base(DeclarativeBase):
 
 class MediaFileRow(Base):
     __tablename__ = "media_files"
-    __table_args__ = (UniqueConstraint("owner_id", "sha256", name="uq_media_files_owner_sha256"),)
+    __table_args__ = (UniqueConstraint("owner_id", "sha256", "visibility", name="uq_media_files_owner_sha256_vis"),)
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
     owner_id: Mapped[str] = mapped_column(String(64), index=True)
     kind: Mapped[str] = mapped_column(String(16))
+    visibility: Mapped[str] = mapped_column(String(8), default="public", server_default="public")  # public | private
     content_type: Mapped[str] = mapped_column(String(32))
     ext: Mapped[str] = mapped_column(String(4))
     width: Mapped[int] = mapped_column(Integer)

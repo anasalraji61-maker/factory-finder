@@ -10,6 +10,10 @@ def test_production_requires_internal_token(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="FF_INTERNAL_TOKEN"):
         create_app(Settings(_env_file=None))
     monkeypatch.setenv("FF_INTERNAL_TOKEN", "t")
+    monkeypatch.delenv("FF_MEDIA_SIGNING_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="FF_MEDIA_SIGNING_KEY"):
+        create_app(Settings(_env_file=None))
+    monkeypatch.setenv("FF_MEDIA_SIGNING_KEY", "k" * 32)
     create_app(Settings(_env_file=None))
 
 

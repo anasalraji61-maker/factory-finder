@@ -355,6 +355,14 @@ def scenario() -> None:
         c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hs, want=(404,))
         c("media", "DELETE", f"/v1/media/images/{up['id']}", headers=hb, want=(204,))
     c("media", "GET", f"/v1/media/files/{'0' * 32}.png", template="/v1/media/files/{filename}", want=(404,))
+    pv = c("media", "POST", "/v1/media/images", headers=hb, files={"file": ("a.png", png, "image/png")}, data={"kind": "verification"}) or {}
+    if pv.get("id"):
+        c("media", "POST", f"/v1/media/files/{pv['id']}/sign", headers=hb, template="/v1/media/files/{id}/sign", want=(200,))
+        c("media", "POST", f"/v1/media/files/{pv['id']}/sign", headers=hs, template="/v1/media/files/{id}/sign", want=(404,))
+        c("media", "GET", f"/v1/media/private/{pv['id']}.png", headers=hb, template="/v1/media/private/{filename}", want=(200,))
+        c("media", "GET", f"/v1/media/private/{pv['id']}.png", template="/v1/media/private/{filename}", want=(404,))
+        c("media", "GET", f"/v1/media/files/{pv['id']}.png", template="/v1/media/files/{filename}", want=(404,))
+        c("media", "DELETE", f"/v1/media/images/{pv['id']}", headers=hb, want=(204,))
 
     # -- feed (identity headers as the gateway would forward them; admin routes need the service admin token)
     fsup = f"sup_feed{sfx}"

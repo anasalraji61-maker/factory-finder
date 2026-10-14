@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     # Service admin token the gateway injects towards sourcing /v1/admin/moderation/* (never taken from the client).
     sourcing_admin_token: str | None = Field(default=None, validation_alias="FF_SOURCING_ADMIN_TOKEN")
     # Service admin token the gateway injects towards payments /v1/payments/outbox* (never taken from the client).
+    # Service admin token the gateway injects towards media's private-file admin read (never taken from the client).
+    media_admin_token: str | None = Field(default=None, validation_alias="FF_MEDIA_ADMIN_TOKEN")
     payments_admin_token: str | None = Field(default=None, validation_alias="FF_PAYMENTS_ADMIN_TOKEN")
     # Service admin tokens the gateway injects towards trust / freight / feed admin routes (never taken from the client).
     trust_admin_token: str | None = Field(default=None, validation_alias="FF_TRUST_ADMIN_TOKEN")

@@ -14,6 +14,10 @@ class MissingUser(MediaError):
     status_code, code = 401, "missing_user"
 
 
+class AdminRequired(MediaError):
+    status_code, code = 401, "admin_required"
+
+
 class NotFound(MediaError):
     status_code, code = 404, "not_found"
 
