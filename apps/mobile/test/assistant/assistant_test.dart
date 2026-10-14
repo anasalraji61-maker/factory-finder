@@ -7,6 +7,7 @@ import 'package:factory_finder/features/assistant/assistant_repository.dart';
 import 'package:factory_finder/features/assistant/assistant_strings.dart';
 import 'package:factory_finder/features/assistant/widgets/assistant_card_view.dart';
 import 'package:factory_finder/features/tracking/screens/tracking_detail_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -28,6 +29,7 @@ Future<void> _pumpCard(
     MaterialApp(
       locale: Locale(lang),
       supportedLocales: const [Locale('ar'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
         body: SingleChildScrollView(
           child: AssistantCardView(card: card, onNavigate: routes.add),
