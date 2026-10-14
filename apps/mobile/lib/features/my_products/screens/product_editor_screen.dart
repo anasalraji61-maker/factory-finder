@@ -368,7 +368,10 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
                 ),
             ],
           ),
-          Row(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               arrow('earlier', rtl ? Icons.chevron_right : Icons.chevron_left, -1,
@@ -388,6 +391,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
               arrow('later', rtl ? Icons.chevron_left : Icons.chevron_right, 1,
                   context.tr('myp.media.later')),
             ],
+          ),
           ),
         ],
       ),
