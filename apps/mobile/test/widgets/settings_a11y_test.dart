@@ -31,9 +31,11 @@ Widget _bare(Widget home, {Locale locale = const Locale('ar')}) => MaterialApp(
 
 Future<void> _tapKey(WidgetTester tester, Object key) async {
   final all = find.byKey(ValueKey<String>('$key'));
-  for (var i = 0; i < 20 && all.evaluate().isEmpty; i++) {
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
-    await tester.pump(const Duration(milliseconds: 100));
+  for (final dy in <double>[-250, 250]) {
+    for (var i = 0; i < 20 && all.evaluate().isEmpty; i++) {
+      await tester.drag(find.byType(Scrollable).first, Offset(0, dy));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
   final f = all.first;
   await tester.ensureVisible(f);
