@@ -1,0 +1,10 @@
+{
+ "error": {
+  "code": "quota_exceeded",
+  "message": "Daily quota exceeded",
+  "details": {
+   "limit": 200,
+   "retry_after_seconds": 5400
+  }
+ }
+}

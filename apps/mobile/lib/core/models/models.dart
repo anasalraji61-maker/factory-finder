@@ -387,6 +387,92 @@ class CostLine {
       };
 }
 
+/// Low/base/high of a landed-cost total under one stress scenario.
+class MoneyBand {
+  const MoneyBand({
+    required this.low,
+    required this.base,
+    required this.high,
+    this.shockPct,
+    this.goodsCurrency,
+  });
+
+  final Money low;
+  final Money base;
+  final Money high;
+  final String? shockPct;
+  final String? goodsCurrency;
+
+  factory MoneyBand.fromJson(Map<String, dynamic> j) => MoneyBand(
+        low: Money.fromJson(_mapOrNull(j['low']) ?? const {}),
+        base: Money.fromJson(_mapOrNull(j['base']) ?? const {}),
+        high: Money.fromJson(_mapOrNull(j['high']) ?? const {}),
+        shockPct: j['shock_pct']?.toString(),
+        goodsCurrency: j['goods_currency']?.toString(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'low': low.toJson(),
+        'base': base.toJson(),
+        'high': high.toJson(),
+        if (shockPct != null) 'shock_pct': shockPct,
+        if (goodsCurrency != null) 'goods_currency': goodsCurrency,
+      };
+}
+
+/// Optional "what if" stress ranges of an option (not forecasts).
+class CostSensitivity {
+  const CostSensitivity({
+    required this.currency,
+    this.freight,
+    this.fx,
+    this.combined,
+    this.estimate = true,
+    this.note,
+  });
+
+  final String currency;
+  final MoneyBand? freight;
+  final MoneyBand? fx;
+  final MoneyBand? combined;
+  final bool estimate;
+  final String? note;
+
+  bool get isEmpty => freight == null && fx == null && combined == null;
+
+  static MoneyBand? _band(Object? v) {
+    if (v is! Map) return null;
+    return MoneyBand.fromJson(Map<String, dynamic>.from(v));
+  }
+
+  /// Returns null when [v] is not an object (a malformed block never breaks the quote).
+  static CostSensitivity? tryParse(Object? v) {
+    if (v is! Map) return null;
+    final j = Map<String, dynamic>.from(v);
+    try {
+      return CostSensitivity(
+        currency: (j['currency'] as String?) ?? 'USD',
+        freight: _band(j['freight']),
+        fx: _band(j['fx']),
+        combined: _band(j['combined']),
+        estimate: (j['estimate'] as bool?) ?? true,
+        note: j['note']?.toString(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+        'currency': currency,
+        if (freight != null) 'freight': freight!.toJson(),
+        if (fx != null) 'fx': fx!.toJson(),
+        if (combined != null) 'combined': combined!.toJson(),
+        'estimate': estimate,
+        if (note != null) 'note': note,
+      };
+}
+
 class LandedCostOption {
   const LandedCostOption({
     required this.mode,
@@ -399,6 +485,7 @@ class LandedCostOption {
     this.co2Kg,
     this.recommended = false,
     this.warnings = const [],
+    this.sensitivity,
   });
 
   final TransportMode mode;
@@ -411,6 +498,9 @@ class LandedCostOption {
   final double? co2Kg;
   final bool recommended;
   final List<String> warnings;
+
+  /// Optional stress ranges ("what if"); null on older servers.
+  final CostSensitivity? sensitivity;
 
   factory LandedCostOption.fromJson(Map<String, dynamic> j) => LandedCostOption(
         mode: transportModeFromJson((j['mode'] as String?) ?? ''),
@@ -427,6 +517,7 @@ class LandedCostOption {
         warnings: ((j['warnings'] as List?) ?? const [])
             .map((e) => e.toString())
             .toList(),
+        sensitivity: CostSensitivity.tryParse(j['sensitivity']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -440,6 +531,7 @@ class LandedCostOption {
         if (co2Kg != null) 'co2_kg': co2Kg,
         'recommended': recommended,
         'warnings': warnings,
+        if (sensitivity != null) 'sensitivity': sensitivity!.toJson(),
       };
 }
 
@@ -452,6 +544,7 @@ class LandedCostQuote {
     this.origin,
     this.destination,
     this.assumptions = const [],
+    this.warnings = const [],
   });
 
   final String id;
@@ -461,6 +554,9 @@ class LandedCostQuote {
   final Location? origin;
   final Location? destination;
   final List<String> assumptions;
+
+  /// Quote-level warnings (e.g. de minimis hint); empty on older servers.
+  final List<String> warnings;
 
   factory LandedCostQuote.fromJson(Map<String, dynamic> j) => LandedCostQuote(
         id: j['id'].toString(),
@@ -479,6 +575,9 @@ class LandedCostQuote {
         assumptions: ((j['assumptions'] as List?) ?? const [])
             .map((e) => e.toString())
             .toList(),
+        warnings: ((j['warnings'] as List?) ?? const [])
+            .map((e) => e.toString())
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -488,6 +587,7 @@ class LandedCostQuote {
         if (destination != null) 'destination': destination!.toJson(),
         'options': options.map((e) => e.toJson()).toList(),
         'assumptions': assumptions,
+        if (warnings.isNotEmpty) 'warnings': warnings,
         'created_at': createdAt.toUtc().toIso8601String(),
       };
 }

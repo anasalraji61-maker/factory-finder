@@ -3,6 +3,7 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
+import 'package:factory_finder/features/logistics/screens/sensitivity_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -85,6 +86,7 @@ class _QuoteView extends StatelessWidget {
             ],
           ),
         ),
+        for (final w in quote.warnings) WarningBanner(text: w),
         const SizedBox(height: AppSpacing.md),
         if (quote.options.isEmpty)
           EmptyState(
@@ -236,6 +238,7 @@ class OptionCard extends StatelessWidget {
               children: [for (final l in o.lines) _LineRow(line: l)],
             ),
           ),
+          SensitivitySection(sensitivity: o.sensitivity),
         ],
       ),
     );

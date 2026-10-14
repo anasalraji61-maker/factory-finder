@@ -455,6 +455,16 @@ class MockQuoteGenerator {
         routeSummary: route,
         co2Kg: double.parse((tonKm * coef).toStringAsFixed(1)),
         warnings: warnings,
+        sensitivity: _sensitivity(
+          cur: cur,
+          base: (minSum + maxSum) / 2,
+          freight: lines
+              .where((l) => l.stage == 'main_leg')
+              .fold<double>(0, (a, l) => a + l.amount.value),
+          goods: _convert(goodsUsd, cur),
+          goodsCurrency: r.goodsCurrency,
+          ar: lang == 'ar',
+        ),
       ));
     }
 
@@ -482,10 +492,16 @@ class MockQuoteGenerator {
         co2Kg: o.co2Kg,
         recommended: true,
         warnings: o.warnings,
+        sensitivity: o.sensitivity,
       );
     }
 
     final created = now ?? DateTime.now();
+    final quoteWarnings = <String>[
+      if (goodsUsd > 0 && goodsUsd < 150)
+        t('Low-value parcel: a de minimis duty exemption may apply in some countries; this estimate still includes duties.',
+            'شحنة منخفضة القيمة: قد ينطبق إعفاء جمركي للحد الأدنى في بعض الدول؛ هذا التقدير ما زال يشمل الرسوم.'),
+    ];
     return LandedCostQuote(
       id: 'q_${created.millisecondsSinceEpoch}',
       currency: cur,
@@ -493,6 +509,7 @@ class MockQuoteGenerator {
       createdAt: created,
       origin: r.origin,
       destination: r.destination,
+      warnings: quoteWarnings,
       assumptions: [
         t('Mock rate table — not a binding quote. All logistics lines are estimates (range −8% / +12%).',
             'جدول أسعار تجريبي — ليس عرض سعر ملزماً. جميع بنود الشحن تقديرية (نطاق −8% / +12%).'),
@@ -505,6 +522,41 @@ class MockQuoteGenerator {
         t('FX: 1 USD = ${fx.toStringAsFixed(4)} $cur (mock rate).',
             'سعر الصرف: 1 USD = ${fx.toStringAsFixed(4)} $cur (سعر تجريبي).'),
       ],
+    );
+  }
+
+  static Money _m(double v, String cur) =>
+      Money(amount: (v < 0 ? 0 : v).toStringAsFixed(2), currency: cur);
+
+  static MoneyBand _band(String cur, double base, double down, double up,
+          {String? shock, String? goodsCurrency}) =>
+      MoneyBand(
+        low: _m(base - down, cur),
+        base: _m(base, cur),
+        high: _m(base + up, cur),
+        shockPct: shock,
+        goodsCurrency: goodsCurrency,
+      );
+
+  /// Mock "what if" ranges: freight +/-25% of the main leg, goods FX +/-5%.
+  static CostSensitivity _sensitivity({
+    required String cur,
+    required double base,
+    required double freight,
+    required double goods,
+    required String goodsCurrency,
+    required bool ar,
+  }) {
+    final f = freight * 0.25;
+    final x = goods * 0.05;
+    return CostSensitivity(
+      currency: cur,
+      freight: _band(cur, base, f, f, shock: '25'),
+      fx: _band(cur, base, x, x, shock: '5', goodsCurrency: goodsCurrency),
+      combined: _band(cur, base, f + x, f + x),
+      note: ar
+          ? 'نطاقات اختبار إجهاد تجريبية وليست توقعات.'
+          : 'Mock stress ranges, not forecasts.',
     );
   }
 

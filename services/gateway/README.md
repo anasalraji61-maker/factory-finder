@@ -15,6 +15,9 @@ Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 
 `PATCH /v1/me {supplier_id}` records a **pending** claim (`supplier_claim_status`: none|pending|verified); pending/verified ids are unique (409). The gateway forwards `X-Supplier-Id` (HTTP and WS) to messaging only when status is `verified`. Admins (header `X-Admin-Token` == `FF_GATEWAY_ADMIN_TOKEN`, constant-time compare; 404 if unset, 401 if wrong) use `GET /v1/admin/supplier-claims?status=pending|verified`, `POST /v1/admin/supplier-claims/{user_id}/approve|reject`. Reject and `supplier_id: null` release the id and reset status to none. Startup adds the column on existing sqlite DBs; pre-existing claims become pending.
 
+## Admin payments outbox passthrough
+`GET /v1/admin/payments/outbox` (`status` pending|delivered|dead, `limit` -> payments `page_size`, `cursor`, `page`, `page_size`; any other query param -> 422) and `POST /v1/admin/payments/outbox/{id}/requeue` (id `[A-Za-z0-9_-]{1,64}`, no body). Needs `X-Admin-Token` (= `FF_GATEWAY_ADMIN_TOKEN`; 404 unset, 401 wrong) and the gateway-side `FF_PAYMENTS_ADMIN_TOKEN` (404 when unset), which the gateway injects with the internal token and `X-User-Id: admin`; client identity headers and bodies are never forwarded. Upstream status codes (404 unknown, 409 `not_dead`) pass through.
+
 ## Admin demand proxy and console
 
 With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pending_supplier_claims`, `pending_drafts` (null if demand is down), `users`) and an allow-listed proxy `/v1/admin/demand/{signals, signals/poll, signals/{id}, drafts, drafts/{id}, drafts/{id}/approve|reject|mark-published|outcome, quota}` -> demand `/v1/...`. Upstream always gets `X-User-Id: admin` and `X-Internal-Token`; client identity headers (incl. X-Admin-Token, Authorization) are never forwarded. Upstream `demand` defaults to `http://localhost:8110` (add it to `FF_GATEWAY_UPSTREAMS` in docker-compose).

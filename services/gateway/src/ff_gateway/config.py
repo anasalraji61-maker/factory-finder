@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")
     # Service admin token the gateway injects towards sourcing /v1/admin/moderation/* (never taken from the client).
     sourcing_admin_token: str | None = Field(default=None, validation_alias="FF_SOURCING_ADMIN_TOKEN")
+    # Service admin token the gateway injects towards payments /v1/payments/outbox* (never taken from the client).
+    payments_admin_token: str | None = Field(default=None, validation_alias="FF_PAYMENTS_ADMIN_TOKEN")
     upstream_timeout_seconds: float = 15.0
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300

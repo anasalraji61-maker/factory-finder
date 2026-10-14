@@ -1,0 +1,113 @@
+{
+ "intent": "shipment_status",
+ "parsed_query": {
+  "intent": "shipment_status"
+ },
+ "answer_text": "Your shipment is on its way.",
+ "listings": [],
+ "cards": [
+  {
+   "type": "shipment_status",
+   "title": "Shipment MSKU1234567",
+   "title_ar": "الشحنة MSKU1234567",
+   "severity": "warning",
+   "rows": [
+    {
+     "key": "status",
+     "label": "Status",
+     "label_ar": "الحالة",
+     "value": "In transit",
+     "value_ar": "في الطريق"
+    },
+    {
+     "key": "eta",
+     "label": "ETA",
+     "label_ar": "موعد الوصول",
+     "value": "2026-10-26"
+    }
+   ],
+   "refs": {
+    "shipment_id": "shp_1a2b",
+    "reference": "MSKU1234567"
+   },
+   "footnote": "Data may be stale.",
+   "footnote_ar": "البيانات قد تكون قديمة."
+  },
+  {
+   "type": "listing_comparison",
+   "title": "Listing comparison",
+   "title_ar": "مقارنة العروض",
+   "severity": "info",
+   "columns": [
+    {
+     "id": "lst_1",
+     "title": "Earbuds",
+     "title_ar": "سماعات"
+    },
+    {
+     "id": "lst_2",
+     "title": "Watch",
+     "title_ar": null
+    }
+   ],
+   "rows": [
+    {
+     "key": "price",
+     "label": "Price",
+     "label_ar": "السعر",
+     "values": [
+      "USD 5",
+      "USD 12"
+     ],
+     "highlight": 0
+    }
+   ],
+   "refs": {
+    "listing_a": "lst_1",
+    "listing_b": "../evil"
+   }
+  },
+  {
+   "type": "hologram",
+   "title": "Future card",
+   "title_ar": "بطاقة مستقبلية",
+   "rows": [
+    {
+     "key": "x",
+     "label": "X",
+     "label_ar": "س",
+     "value": "1"
+    }
+   ],
+   "refs": {}
+  },
+  {
+   "type": "notice",
+   "title": "Sign in required",
+   "title_ar": "يلزم تسجيل الدخول",
+   "severity": "info",
+   "rows": [],
+   "refs": {
+    "code": "auth_required_shipment"
+   }
+  },
+  "not-a-card",
+  {
+   "type": "deal_status",
+   "title": "Deal",
+   "rows": [
+    {
+     "key": "s",
+     "label": "Status"
+    },
+    7
+   ],
+   "refs": {
+    "deal_id": "deal_9"
+   }
+  }
+ ],
+ "warnings": [
+  "untrusted_text_filtered"
+ ]
+}

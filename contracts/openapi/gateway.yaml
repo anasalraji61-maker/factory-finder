@@ -232,6 +232,30 @@ paths:
         "200": {description: Upstream demand response (status and body passed through)}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/payments/outbox:
+    get:
+      operationId: adminPaymentsOutboxList
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_PAYMENTS_ADMIN_TOKEN is unset, 401 wrong). Proxied to payments GET /v1/payments/outbox; gateway injects payments' X-Admin-Token and X-Internal-Token (X-User-Id=admin); client identity headers never forwarded. Only status/limit/cursor (plus upstream page/page_size) are accepted, others 422; limit maps to page_size (max 100)."
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, delivered, dead]}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+      responses:
+        "200": {description: Upstream payments response (see payments.yaml listOutbox)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/payments/outbox/{id}/requeue:
+    post:
+      operationId: adminPaymentsOutboxRequeue
+      description: "Admin only, same guards as the list route. Proxied to payments POST /v1/payments/outbox/{id}/requeue (no body, no query). Upstream 404/409 pass through."
+      parameters: [{name: id, in: path, required: true, schema: {type: string, pattern: "^[A-Za-z0-9_-]{1,64}$"}}]
+      responses:
+        "200": {description: Upstream payments response (requeued OutboxEvent)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/{path}:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the sourcing path, may contain slashes (see sourcing.yaml /v1/admin/moderation/*)"}]
     get: &adminModeration

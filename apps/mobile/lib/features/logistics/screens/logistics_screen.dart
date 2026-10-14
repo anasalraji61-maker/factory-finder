@@ -17,6 +17,7 @@ class LogisticsScreen extends ConsumerWidget {
       (Icons.currency_exchange, 'logistics.tool.fx', '/logistics/fx'),
       (Icons.directions_boat_outlined, 'logistics.tool.carriers', '/logistics/carriers'),
       (Icons.track_changes, 'logistics.tool.tracking', '/logistics/tracking'),
+      (Icons.smart_toy_outlined, 'logistics.tool.assistant', '/assistant'),
     ];
 
     return Scaffold(

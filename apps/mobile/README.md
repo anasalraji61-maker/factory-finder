@@ -70,3 +70,7 @@ flutter test
 - `lib/features/messages/`: conversations list (unread badge, listing/request chip), chat (RTL bubbles, date separators, system messages, optimistic send with tap-to-retry, 4 s polling as the realtime fallback), new conversation (`/messages/new?supplier_id=&listing_id=`, opens `/chat/<id>`). Live repository uses `/v1/conversations*`; mock has 8 Arabic conversations.
 - `lib/features/tracking/`: `/logistics/tracking` (list with progress + status chips, add-shipment sheet with client-side ISO 6346 container, AWB mod-7, IMO and B/L checks) and `/logistics/tracking/:id` (route progress header, vertical timeline, refresh). Live repository uses `/v1/shipments*`; mock has 5 shipments in different stages.
 - Tests: `test/messages/`, `test/tracking/`.
+
+## Assistant cards and cost sensitivity
+- `/assistant` (Logistics tools list): chat with `POST /v1/assistant/query`; renders `cards[]` (shipment_status, deal_status, listing_comparison, hs_code, notice; unknown types shown generically), maps 429 to an ar/en message. Mock mode returns sample cards.
+- Calculator results show quote-level `warnings` and a collapsible "what if" section from the optional per-option `sensitivity` bands.

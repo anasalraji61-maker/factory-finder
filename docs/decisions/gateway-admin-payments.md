@@ -1,0 +1,3 @@
+2026-10-14 | Gateway adds allow-listed `GET /v1/admin/payments/outbox` and `POST /v1/admin/payments/outbox/{id}/requeue` | answers the admin console request (admin-moderation.md #3); same guard as moderation/demand (X-Admin-Token, 404 unset, 401 wrong).
+2026-10-14 | Gateway setting `payments_admin_token` reads env `FF_PAYMENTS_ADMIN_TOKEN` (same name as payments' own) | one value to configure per deployment; route answers 404 when unset.
+2026-10-14 | Query allow-list status/limit/cursor plus upstream page/page_size; `limit` is mapped to `page_size` (cap 100) | payments paginates by page/page_size, so limit would otherwise be ignored; cursor is passed through (ignored upstream today).

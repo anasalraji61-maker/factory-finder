@@ -1,0 +1,113 @@
+{
+ "id": "qte_sens01",
+ "currency": "USD",
+ "origin": {
+  "country_code": "CN",
+  "city": "Shenzhen"
+ },
+ "destination": {
+  "country_code": "IQ",
+  "city": "Baghdad"
+ },
+ "options": [
+  {
+   "mode": "sea_lcl",
+   "origin_hub": "CNSZX",
+   "destination_hub": "IQBSR",
+   "route_summary": "Shenzhen -> Basra",
+   "lines": [
+    {
+     "stage": "goods",
+     "description": "Goods price from supplier",
+     "amount": {
+      "amount": "120.00",
+      "currency": "USD"
+     },
+     "estimate": false
+    },
+    {
+     "stage": "duties",
+     "description": "Duty 5% (range 0-10%); as of 2026-09-01, confidence medium [range 0-10%]",
+     "amount": {
+      "amount": "6.00",
+      "currency": "USD"
+     },
+     "source": "duty table v2",
+     "estimate": true
+    }
+   ],
+   "total": {
+    "min": {
+     "amount": "160.00",
+     "currency": "USD"
+    },
+    "max": {
+     "amount": "210.00",
+     "currency": "USD"
+    }
+   },
+   "transit_days": {
+    "min": 30,
+    "max": 45
+   },
+   "recommended": true,
+   "sensitivity": {
+    "currency": "USD",
+    "estimate": true,
+    "note": "Stress ranges, not forecasts.",
+    "freight": {
+     "low": {
+      "amount": "170.00",
+      "currency": "USD"
+     },
+     "base": {
+      "amount": "185.00",
+      "currency": "USD"
+     },
+     "high": {
+      "amount": "200.00",
+      "currency": "USD"
+     },
+     "shock_pct": "20"
+    },
+    "fx": {
+     "low": {
+      "amount": "180.00",
+      "currency": "USD"
+     },
+     "base": {
+      "amount": "185.00",
+      "currency": "USD"
+     },
+     "high": {
+      "amount": "190.00",
+      "currency": "USD"
+     },
+     "shock_pct": "3.5",
+     "goods_currency": "CNY"
+    },
+    "combined": {
+     "low": {
+      "amount": "165.00",
+      "currency": "USD"
+     },
+     "base": {
+      "amount": "185.00",
+      "currency": "USD"
+     },
+     "high": {
+      "amount": "205.00",
+      "currency": "USD"
+     }
+    }
+   }
+  }
+ ],
+ "assumptions": [
+  "Approx. rate table"
+ ],
+ "warnings": [
+  "De minimis: parcels under the threshold may be duty-free in the destination."
+ ],
+ "created_at": "2026-10-14T08:00:00Z"
+}

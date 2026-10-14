@@ -19,4 +19,5 @@ Opt-in, fail closed. Default behaviour (variable unset or any other value) is un
 - rfq, payments, notifications, sourcing, tracking, messaging, media: refuse to start (`RuntimeError` in `create_app`) if `FF_INTERNAL_TOKEN` is unset/empty.
 - gateway: refuses to start if `FF_GATEWAY_JWT_SECRET` or `FF_GATEWAY_ADMIN_TOKEN` is missing.
 - Implemented per service as a tiny duplicated helper (`_require_production_token`), no cross-service imports. Tests: `tests/test_production_guard.py` in each service.
+- Gateway `/v1/admin/payments/outbox*` needs `FF_PAYMENTS_ADMIN_TOKEN` set on the gateway too (same value as the payments service's); unset = those routes answer 404.
 - Gateway also re-checks `is_active` on every proxied request (cached 5 s), so disabling a user takes effect within ~5 s instead of at access-token expiry.
