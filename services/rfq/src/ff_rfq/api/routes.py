@@ -9,7 +9,7 @@ from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Header, Path, Query, Request
 
 from ff_rfq.deals import DealService
-from ff_rfq.domain.enums import ListingKind, OfferStatus, RequestStatus
+from ff_rfq.domain.enums import DealStatus, ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Unauthenticated
 from ff_rfq.reviews import ReviewService
 from ff_rfq.schemas import (
@@ -129,6 +129,17 @@ async def reject_offer(offer_id: str, user: User, s: Svc) -> dict[str, Any]:
 @router.post("/offers/{offer_id}/withdraw")
 async def withdraw_offer(offer_id: str, user: User, s: Svc) -> dict[str, Any]:
     return await s.withdraw_offer(user, offer_id)
+
+
+@router.get("/deals")
+async def list_deals(user: User, d: Deals, role: Annotated[str, Query(pattern="^(buyer|supplier|any)$")] = "any",
+                     status: DealStatus | None = None, page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
+    return await d.list_for_user(user, role, status.value if status else None, page, page_size)
+
+
+@router.get("/requests/{request_id}/deal")
+async def request_deal(request_id: str, user: User, d: Deals) -> dict[str, Any]:
+    return await d.for_request(user, request_id)
 
 
 @router.get("/deals/{deal_id}")

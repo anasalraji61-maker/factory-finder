@@ -10,6 +10,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -58,6 +59,8 @@ class RequestRow(Base):
     status: Mapped[str] = mapped_column(String(16), index=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    __table_args__ = (Index("ix_requests_owner_created", "owner_id", "created_at"),
+                      Index("ix_requests_status_created", "status", "created_at"))
 
 
 class OfferRow(Base):
@@ -81,6 +84,8 @@ class OfferRow(Base):
 
 class DealRow(Base):
     __tablename__ = "deals"
+    __table_args__ = (Index("ix_deals_buyer_created", "buyer_id", "created_at"),
+                      Index("ix_deals_supplier_created", "supplier_user_id", "created_at"))
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     request_id: Mapped[str] = mapped_column(String(40), unique=True)
     offer_id: Mapped[str] = mapped_column(String(40), unique=True)

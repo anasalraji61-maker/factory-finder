@@ -161,6 +161,34 @@ paths:
         "200": {description: Withdrawn, content: {application/json: {schema: {$ref: "#/components/schemas/Offer"}}}}
         "403": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
+  /v1/deals:
+    get:
+      summary: The caller's own deals, newest first (buyer = X-User-Id is buyer; supplier = X-User-Id is the offer owner). Never includes other parties' deals.
+      parameters:
+        - {$ref: "#/components/parameters/UserId"}
+        - {name: role, in: query, schema: {type: string, enum: [buyer, supplier, any], default: any}}
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/DealStatus"}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page (ordered created_at desc, id desc)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../schemas/common.schema.json#/$defs/Page
+                  - type: object
+                    properties:
+                      items: {type: array, items: {$ref: "#/components/schemas/Deal"}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/requests/{id}/deal:
+    get:
+      summary: Accepted deal of a request (request owner/buyer only; 404 for anyone else or when not awarded yet)
+      parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Deal"}}}}
+        "404": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}:
     get:
       summary: Deal (buyer or supplier only; others get 404)

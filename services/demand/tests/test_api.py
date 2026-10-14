@@ -201,3 +201,16 @@ def test_cap_zero_blocks_everything():
     with TestClient(app) as c:
         e = Env(c, app, None)
         assert e.act(e.draft(), "approve").status_code == 429
+
+
+def test_list_reads_are_capped(env):
+    import asyncio
+
+    from ff_demand import store as store_mod
+
+    for i in range(3):
+        env.signal(text=f"{AR} {i}")
+    st = env.svc.store
+    assert len(asyncio.run(st.list_signals(limit=2))) == 2
+    assert len(asyncio.run(st.list_drafts(None, limit=1))) <= 1
+    assert store_mod.MAX_LIST == 500

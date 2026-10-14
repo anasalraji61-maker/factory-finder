@@ -238,6 +238,14 @@ def test_deal_lifecycle_routes_are_proxied_to_rfq(client, mock_upstream, hdr):
         assert client.post(f"/v1/deals/deal_1/{sub}").status_code == 401
 
 
+def test_deal_lookup_routes_are_proxied_authenticated(client, mock_upstream, hdr):
+    for path in ("/v1/deals", "/v1/requests/req_1/deal"):
+        route = mock_upstream.get(f"http://localhost:8105{path}").mock(return_value=httpx.Response(200, json={"items": []}))
+        assert client.get(f"{path}?role=buyer&page=2", headers=hdr).status_code == 200 and route.called
+        assert route.calls.last.request.url.query == b"role=buyer&page=2"
+        assert client.get(path).status_code == 401
+
+
 def test_cors_default_denies_and_env_allows(make_client):
     c = make_client()
     r = c.options(

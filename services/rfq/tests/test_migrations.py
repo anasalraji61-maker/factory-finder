@@ -74,3 +74,14 @@ def test_url_normalisation_and_auto_create_flag():
     assert Settings(database_url="postgresql://u:p@h/db").auto_create_tables is False
     forced = Settings(database_url="postgresql://u:p@h/db", db_auto_create=True)
     assert forced.auto_create_tables is True
+
+
+def test_request_list_indexes_exist(tmp_path):
+    db = tmp_path / "idx.db"
+    command.upgrade(_cfg(db), "head")
+    engine = sa.create_engine(f"sqlite:///{db}")
+    try:
+        names = {i["name"] for i in sa.inspect(engine).get_indexes("requests")}
+    finally:
+        engine.dispose()
+    assert {"ix_requests_owner_created", "ix_requests_status_created"} <= names

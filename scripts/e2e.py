@@ -250,6 +250,10 @@ def scenario() -> None:
         assert d.get("commission"), f"no commission: {str(a)[:300]}"
         deal.update(id=d.get("id") or d.get("deal_id"), rid=rid)
         ok(c.get(f"/v1/deals/{deal['id']}", headers=h("buyer")))
+        assert deal["id"] in [x["id"] for x in items(ok(c.get("/v1/deals?role=buyer", headers=h("buyer"))))], "deal list"
+        assert ok(c.get(f"/v1/requests/{rid}/deal", headers=h("buyer")))["id"] == deal["id"]
+        assert c.get(f"/v1/requests/{rid}/deal", headers=h("supplier")).status_code == 404
+        assert c.get("/v1/deals").status_code == 401
         ok(c.get(f"/v1/requests/{rid}/suggestions", headers=h("buyer")))
 
     step("rfq: request -> offer -> accept -> deal+commission (+suggestions)", rfq)

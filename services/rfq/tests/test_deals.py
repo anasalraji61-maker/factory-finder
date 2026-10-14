@@ -214,3 +214,64 @@ def test_stale_paid_after_refund_of_same_invoice_is_ignored(client):
     late = cb(client, d, "commission")  # reordered/replayed old 'paid' for the refunded invoice
     assert late.json()["outcome"] == "ignored" and late.json()["deal_status"] == "pending_payment"
     assert late.json()["payment"]["commission"] == "refunded"
+
+
+# ---- deal lookup: GET /v1/deals, GET /v1/requests/{id}/deal ------------------------------------
+def test_list_deals_authorization_matrix_and_pagination(client, clock):
+    d1 = make_deal(client)
+    clock.advance(minutes=1)
+    d2 = make_deal(client)
+    clock.advance(minutes=1)
+    other = {"X-User-Id": "buyer2"}  # another buyer's deal must stay invisible to BUYER
+    r = client.post("/v1/requests", json={"kind": "product", "title": "LED panel lights", "quantity": "1000",
+                                          "unit": "piece", "destination": {"country_code": "IQ", "city": "Basra"}},
+                    headers=other).json()
+    off2 = new_offer(client, r["id"], SUP_B, "7.00")
+    d3 = client.post(f"/v1/offers/{off2['id']}/accept", headers=other).json()
+
+    def ids(role, headers, **q):
+        resp = client.get("/v1/deals", params={"role": role, **q}, headers=headers)
+        assert resp.status_code == 200, resp.text
+        return [x["id"] for x in resp.json()["items"]], resp.json()
+
+    assert ids("buyer", BUYER)[0] == [d2["id"], d1["id"]]  # newest first
+    assert ids("any", BUYER)[0] == [d2["id"], d1["id"]]
+    assert ids("supplier", BUYER)[0] == []  # a buyer is not a supplier
+    assert ids("supplier", SUP_A)[0] == [d2["id"], d1["id"]]
+    assert ids("buyer", SUP_A)[0] == []
+    assert ids("any", SUP_B)[0] == [d3["id"]]
+    assert ids("any", {"X-User-Id": "stranger"})[0] == []
+    assert ids("buyer", other)[0] == [d3["id"]]
+    item = client.get("/v1/deals", headers=BUYER).json()["items"][0]  # same JSON as GET /v1/deals/{id}
+    assert item == client.get(f"/v1/deals/{item['id']}", headers=BUYER).json()
+    assert ids("buyer", BUYER, status="paid")[0] == []
+    assert len(ids("buyer", BUYER, status="pending_payment")[0]) == 2
+    p1, b1 = ids("any", BUYER, page_size=1, page=1)
+    p2, b2 = ids("any", BUYER, page_size=1, page=2)
+    assert p1 + p2 == [d2["id"], d1["id"]] and b1["total"] == 2 and b2["page"] == 2
+    assert ids("any", BUYER, page_size=1, page=3)[0] == []
+
+
+def test_list_deals_same_timestamp_is_stable_and_validation(client):
+    made = [make_deal(client)["id"] for _ in range(3)]  # frozen clock: identical created_at
+    seen = []
+    for pg in (1, 2, 3):
+        seen += [x["id"] for x in client.get("/v1/deals", params={"page": pg, "page_size": 1}, headers=BUYER).json()["items"]]
+    assert seen == sorted(made, reverse=True)
+    assert client.get("/v1/deals", params={"role": "admin"}, headers=BUYER).status_code == 422
+    assert client.get("/v1/deals", params={"status": "nope"}, headers=BUYER).status_code == 422
+    assert client.get("/v1/deals", params={"page_size": 101}, headers=BUYER).status_code == 422
+    assert client.get("/v1/deals").status_code == 401
+
+
+def test_request_deal_buyer_only(client):
+    req = new_request(client)
+    assert client.get(f"/v1/requests/{req['id']}/deal", headers=BUYER).status_code == 404  # not awarded yet
+    off = new_offer(client, req["id"], SUP_A_V, "10.00")
+    deal = client.post(f"/v1/offers/{off['id']}/accept", headers=BUYER).json()
+    r = client.get(f"/v1/requests/{req['id']}/deal", headers=BUYER)
+    assert r.status_code == 200 and r.json() == deal
+    for h in (SUP_A, SUP_A_V, SUP_B, {"X-User-Id": "stranger"}):
+        assert client.get(f"/v1/requests/{req['id']}/deal", headers=h).status_code == 404
+    assert client.get("/v1/requests/req_missing/deal", headers=BUYER).status_code == 404
+    assert client.get(f"/v1/requests/{req['id']}/deal").status_code == 401

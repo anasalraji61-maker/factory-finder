@@ -35,3 +35,6 @@ Code: `reviews.py`, `domain/review_text.py`; tables `reviews`, `review_events`, 
 
 ## Deal lifecycle
 `POST /v1/deals/{id}/fulfilment/start|delivered|confirm-receipt`, `GET /v1/deals/{id}/events`, internal `POST /v1/internal/deals/{id}/payment-status` (payments callback, token-guarded, not routed by the gateway). Env: `FF_RFQ_REQUIRE_BOTH_INVOICES`. See `docs/decisions/deal-payment-hook.md`.
+
+## Deal lookup
+`GET /v1/deals?role=buyer|supplier|any&status=&page=&page_size=` lists only the caller's deals (buyer = `X-User-Id` is the buyer, supplier = `X-User-Id` is the offer owner, i.e. the same rule as `GET /v1/deals/{id}`), newest first (`created_at desc, id desc`, stable pages), same Deal JSON. `GET /v1/requests/{id}/deal` returns the accepted deal to the request owner only (404 otherwise / not awarded). Indexes: migration `0004`. Decision: `docs/decisions/rfq-deals-list.md`.

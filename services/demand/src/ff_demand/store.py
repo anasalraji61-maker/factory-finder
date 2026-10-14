@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from ff_demand.dburl import normalize_database_url
 
 metadata = MetaData()
+MAX_LIST = 500  # hard cap for list reads (newest first); unbounded scans are a DoS/latency risk
 
 signals = Table(
     "signals",
@@ -69,9 +70,10 @@ class Store:
             row = (await c.execute(select(signals.c.doc).where(signals.c.id == sid))).first()
         return row[0] if row else None
 
-    async def list_signals(self) -> list[dict]:
+    async def list_signals(self, limit: int = MAX_LIST) -> list[dict]:
         async with self.engine.connect() as c:
-            rows = await c.execute(select(signals.c.doc).order_by(signals.c.created_at.desc()))
+            q = select(signals.c.doc).order_by(signals.c.created_at.desc()).limit(limit)
+            rows = await c.execute(q)
             return [r[0] for r in rows]
 
     async def add_signal(self, doc: dict, key: str, created_at: datetime) -> None:
@@ -106,8 +108,8 @@ class Store:
             row = (await c.execute(select(drafts.c.doc).where(drafts.c.signal_id == sid))).first()
         return row[0] if row else None
 
-    async def list_drafts(self, status: str | None) -> list[dict]:
-        q = select(drafts.c.doc).order_by(drafts.c.created_at.desc())
+    async def list_drafts(self, status: str | None, limit: int = MAX_LIST) -> list[dict]:
+        q = select(drafts.c.doc).order_by(drafts.c.created_at.desc()).limit(limit)
         if status:
             q = q.where(drafts.c.status == status)
         async with self.engine.connect() as c:

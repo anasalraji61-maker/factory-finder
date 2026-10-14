@@ -13,11 +13,11 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from ff_rfq.db import DealEventRow, DealRow, OfferRow
+from ff_rfq.db import DealEventRow, DealRow, OfferRow, RequestRow
 from ff_rfq.domain.enums import DealStatus as D
 from ff_rfq.domain.errors import Forbidden, InvalidTransition, NotFound, ValidationFailed
 from ff_rfq.domain.state import deal_transition
@@ -188,3 +188,24 @@ class DealService:
                                     .order_by(DealEventRow.seq))).scalars().all()
             return {"items": [event_dict(e, deal) for e in rows], "total": len(rows)}
 
+
+    # ---- lookups ---------------------------------------------------------------------------
+    async def list_for_user(self, user: str, role: str, status: str | None, p: int, size: int) -> dict[str, Any]:
+        """The caller's own deals, newest first (id as tie-break keeps pages stable). Never other parties' deals."""
+        mine = {"buyer": DealRow.buyer_id == user, "supplier": DealRow.supplier_user_id == user,
+                "any": or_(DealRow.buyer_id == user, DealRow.supplier_user_id == user)}[role]
+        cond = [mine] + ([DealRow.status == status] if status else [])
+        async with self._sessions() as s, s.begin():
+            total = (await s.execute(select(func.count()).select_from(DealRow).where(*cond))).scalar_one()
+            rows = (await s.execute(select(DealRow).where(*cond).order_by(DealRow.created_at.desc(), DealRow.id.desc())
+                                    .offset((p - 1) * size).limit(size))).scalars().all()
+            return {"items": [deal_dict(d) for d in rows], "total": total, "page": p, "page_size": size}
+
+    async def for_request(self, user: str, request_id: str) -> dict[str, Any]:
+        """Accepted deal of a request; buyer (request owner) only, 404 for everyone else / no deal yet."""
+        async with self._sessions() as s, s.begin():
+            d = (await s.execute(select(DealRow).join(RequestRow, RequestRow.id == DealRow.request_id).where(
+                DealRow.request_id == request_id, RequestRow.owner_id == user, DealRow.buyer_id == user))).scalar_one_or_none()
+            if d is None:
+                raise NotFound("Deal not found")
+            return deal_dict(d)

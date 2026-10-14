@@ -1,0 +1,3 @@
+2026-10-14 | `GET /v1/deals` matches deals by user id only (buyer_id / supplier_user_id), exactly like `GET /v1/deals/{id}`; a verified `X-Supplier-Id` is not used to widen visibility, so every listed deal is also fetchable and no deal is exposed to a different account of the same supplier. | Avoids a second auth rule and leakage.
+2026-10-14 | Order `created_at desc, id desc`, offset pagination (consistent with other lists); composite indexes (buyer_id|supplier_user_id, created_at) in migration 0004. | Stable pages with identical timestamps.
+2026-10-14 | `GET /v1/requests/{id}/deal` is buyer-only and returns 404 for suppliers/strangers/unawarded requests. | No existence leak; suppliers use the list or `GET /v1/deals/{id}`.
