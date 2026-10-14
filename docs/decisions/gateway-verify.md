@@ -1,0 +1,3 @@
+2026-10-14 | Email verification: random token (SHA-256 at rest, 24 h, single use, bound to the address) via mail adapter (off default / mock / smtp skeleton); `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED` (default off) gates payments writes, new supplier claims and /v1/my writes with 403 email_not_verified | closes the gateway half of security-review-2026-10-b item 1 groundwork; default behaviour unchanged.
+2026-10-14 | Resend is always 202 and silently throttled per address (1/min) | no account enumeration.
+2026-10-14 | Rate-limit store is an async interface (memory default, Redis via FF_GATEWAY_REDIS_URL, lazy import, memory fallback with warning on missing lib / outage) | item 4 of security-review-2026-10-b; per-process fallback is accepted during an outage.

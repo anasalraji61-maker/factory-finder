@@ -129,4 +129,22 @@ void main() {
     expect(tester.takeException(), isNull);
     await disposeApp(tester);
   });
+
+  testWidgets('alerts inbox: shipment alert deep-links to tracking detail',
+      (tester) async {
+    final router = await pumpApp(tester, location: '/alerts');
+    await settle(tester, frames: 6);
+
+    expect(find.byKey(const Key('alert_icon_shipment_status')), findsOneWidget);
+    expect(find.byKey(const Key('alert_icon_shipment_delayed')), findsOneWidget);
+    expect(find.text('تأخّر الشحنة'), findsOneWidget);
+
+    await tester.tap(find.text('تحديث الشحنة'));
+    await settle(tester, frames: 8);
+    expect(router.routerDelegate.currentConfiguration.uri.path,
+        '/logistics/tracking/shp_001');
+
+    expect(tester.takeException(), isNull);
+    await disposeApp(tester);
+  });
 }

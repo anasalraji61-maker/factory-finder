@@ -37,3 +37,12 @@ class Settings(BaseSettings):
     refresh_job_interval_hours: float = 6.0  # a shipment is refreshed at most this often
     refresh_job_poll_seconds: float = 600.0
     refresh_job_batch_size: int = 50
+    # --- relay of tracking_outbox to notifications (off by default) ---
+    notify_relay: str = "off"  # off | on  (FF_TRACKING_NOTIFY_RELAY)
+    notify_base_url: str = ""  # notifications base URL, e.g. http://localhost:8108
+    notify_batch_size: int = 100  # <= 100 (contract max)
+    notify_max_attempts: int = 8  # then the row is marked dead
+    notify_backoff_base_seconds: float = 30.0  # doubles per attempt
+    notify_backoff_max_seconds: float = 3600.0
+    notify_poll_seconds: float = 30.0
+    notify_timeout_seconds: float = 10.0

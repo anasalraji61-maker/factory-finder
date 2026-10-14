@@ -24,7 +24,8 @@ from ff_gateway.db import create_tables, make_engine, make_sessionmaker
 from ff_gateway.domain.client_ip import client_ip
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
-from ff_gateway.domain.rate_limit import RateLimiter
+from ff_gateway.domain.mail import build_mailer
+from ff_gateway.domain.rate_limit import build_limit_store
 from ff_gateway.domain.security import TokenService
 from ff_gateway.obs import db_ready, install_observability, ready_response
 
@@ -62,6 +63,8 @@ def create_app(
     clock: Clock | None = None,
     http_client: httpx.AsyncClient | None = None,
     home_client: HomeClient | None = None,
+    redis_client: object | None = None,
+    mailer: object | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     clock = clock or SystemClock()
@@ -88,7 +91,13 @@ def create_app(
         if settings.home_client == "mock"
         else HttpHomeClient(http, settings.upstream_map())
     )
-    limiter = RateLimiter(clock, max_keys=settings.rate_limit_max_keys)
+    limiter = build_limit_store(
+        clock, settings.rate_limit_max_keys, settings.redis_url, redis_client
+    )
+    app.state.limiter = limiter
+    app.state.mailer = mailer or build_mailer(settings)
+    if settings.require_email_verified and not app.state.mailer.enabled:
+        log.warning("FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on but mail is off: nobody can verify")
     trusted_nets = settings.trusted_proxy_networks()  # fails at startup on a bad CIDR
     app.state.engine = engine
     write_methods = {"POST", "PUT", "PATCH", "DELETE"}
@@ -130,7 +139,7 @@ def create_app(
             )
             peer = request.client.host if request.client else None
             ip = client_ip(peer, request.headers.get("x-forwarded-for"), trusted_nets)
-            wait = limiter.check(
+            wait = await limiter.check(
                 f"{'auth' if auth_route else 'media' if media_read else 'api'}:{ip}", limit
             )
             if wait is not None:
@@ -145,18 +154,18 @@ def create_app(
                     except Exception:
                         uid = None
                 if uid:
-                    wait = limiter.check(f"user:{uid}", ulimit)
+                    wait = await limiter.check(f"user:{uid}", ulimit)
                     if wait is not None:
                         e = RateLimited(wait, ulimit)
                         return _error(e.status_code, e.code, e.message, e.details, e.headers)
             if path.startswith("/v1/admin"):  # admin-token guessing: throttle by failed attempts per IP
                 fkey = f"adminfail:{ip}"
-                if (wait := limiter.blocked(fkey, 2 * settings.auth_rate_limit_per_minute)) is not None:
+                if (wait := await limiter.blocked(fkey, 2 * settings.auth_rate_limit_per_minute)) is not None:
                     e = RateLimited(wait, settings.auth_rate_limit_per_minute)
                     return _error(e.status_code, e.code, e.message, e.details, e.headers)
                 resp = await call_next(request)
                 if resp.status_code == 401:
-                    limiter.check(fkey, 2 * settings.auth_rate_limit_per_minute)
+                    await limiter.check(fkey, 2 * settings.auth_rate_limit_per_minute)
                 return resp
         return await call_next(request)
 

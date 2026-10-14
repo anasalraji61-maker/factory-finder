@@ -4,7 +4,12 @@ from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ff_gateway.db import User
-from ff_gateway.domain.errors import AccountDisabled, AuthenticationRequired, InvalidToken
+from ff_gateway.domain.errors import (
+    AccountDisabled,
+    AuthenticationRequired,
+    EmailNotVerified,
+    InvalidToken,
+)
 from ff_gateway.schemas import Location, MeOut
 
 
@@ -39,8 +44,15 @@ def to_me(u: User) -> MeOut:
         id=u.id, name=u.name, email=u.email, phone=u.phone, company=u.company, role=u.role,  # type: ignore[arg-type]
         default_destination=Location(**u.default_destination) if u.default_destination else None,
         supplier_id=u.supplier_id, supplier_claim_status=u.supplier_claim_status or "none",  # type: ignore[arg-type]
+        email_verified=bool(u.email and u.email_verified),
         display_currency=u.display_currency, language=u.language, created_at=u.created_at,  # type: ignore[arg-type]
     )  # fmt: skip
+
+
+def require_verified(request: Request, user: User) -> None:
+    """Gate for sensitive actions; a no-op unless FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on."""
+    if request.app.state.settings.require_email_verified and not (user.email and user.email_verified):
+        raise EmailNotVerified()
 
 
 def internal_headers(request: Request, user_id: str | None) -> dict[str, str]:
@@ -60,5 +72,6 @@ __all__ = [
     "current_user",
     "current_user_id",
     "internal_headers",
+    "require_verified",
     "to_me",
 ]

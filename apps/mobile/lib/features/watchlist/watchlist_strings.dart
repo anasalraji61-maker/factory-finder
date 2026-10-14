@@ -34,5 +34,8 @@ const Map<String, (String, String)> _pairs = {
   'alerts.mark_all': ('تعليم الكل كمقروء', 'Mark all read'),
   'alerts.unread': ('{n} غير مقروء', '{n} unread'),
   'alerts.open': ('فتح المنتج', 'Open listing'),
+  'alerts.shipment_status': ('تحديث الشحنة', 'Shipment update'),
+  'alerts.shipment_delayed': ('تأخّر الشحنة', 'Shipment delayed'),
+  'alerts.open_tracking': ('فتح التتبع', 'Open tracking'),
   'alerts.bell': ('التنبيهات', 'Alerts'),
 };

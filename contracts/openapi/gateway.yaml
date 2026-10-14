@@ -70,6 +70,24 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
       responses:
         "204": {description: Revoked}
+  /v1/auth/verify-email:
+    post:
+      operationId: verifyEmail
+      summary: Consume an email verification token (single use, hashed at rest, TTL 24 h)
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [token], properties: {token: {type: string}}}}}}
+      responses:
+        "204": {description: Email verified}
+        "400": {$ref: "#/components/responses/Error"}
+  /v1/auth/resend-verification:
+    post:
+      operationId: resendVerification
+      summary: Re-send the verification mail (always 202; no account enumeration; throttled per address)
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [email], properties: {email: {type: string, format: email}}}}}}
+      responses:
+        "202": {description: Accepted, content: {application/json: {schema: {type: object, properties: {status: {type: string}}}}}}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/me:
     get:
       operationId: getMe
@@ -303,6 +321,7 @@ components:
         language: {type: string, enum: [ar, en]}
         supplier_id: {type: [string, "null"], description: "Catalog supplier (sup_*) this user has claimed; lets them answer chats addressed to it only once supplier_claim_status is verified"}
         supplier_claim_status: {type: string, enum: [none, pending, verified], default: none, description: "none = no claim; pending = awaiting admin review (no supplier access yet); verified = approved"}
+        email_verified: {type: boolean, default: false, description: "true once the account email was confirmed via /v1/auth/verify-email; payments writes, supplier claims and /v1/my writes answer 403 email_not_verified when it is false and FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on"}
         created_at: {type: string, format: date-time}
     SupplierClaim:
       type: object

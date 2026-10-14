@@ -59,6 +59,24 @@ class Settings(BaseSettings):
     admin_dir: str | None = None  # FF_GATEWAY_ADMIN_DIR override (default: <repo>/apps/admin)
     home_client: str = "http"  # http | mock
     bcrypt_rounds: int = 12
+    # Rate-limit store: unset -> in-memory (per process). FF_GATEWAY_REDIS_URL=redis://host:6379/0 shares counters
+    # across replicas (needs the "redis" extra; falls back to memory with a warning if unavailable).
+    redis_url: str | None = None
+    # Email verification. FF_GATEWAY_REQUIRE_EMAIL_VERIFIED=true blocks payments writes, supplier claims
+    # and supplier listing writes (/v1/my) for accounts whose email is not verified. Default off.
+    require_email_verified: bool = False
+    email_verification_ttl_seconds: int = 24 * 3600
+    resend_verification_per_minute: int = 1  # per email address, silently throttled (the per-IP auth limit gives 429)
+    # Mail adapter: off (default, nothing is sent and no tokens are issued) | mock (in-memory outbox) | smtp
+    mail_backend: str = "off"
+    mail_from: str = "no-reply@localhost"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_starttls: bool = True
+    # Optional link template put in the mail, e.g. https://app.example.com/verify?token={token}
+    verify_url_template: str | None = None
 
     def trusted_proxy_networks(self) -> list:
         from ff_gateway.domain.client_ip import parse_networks

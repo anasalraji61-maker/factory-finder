@@ -12,6 +12,8 @@ const List<String> kAlertTypes = [
   'cheaper_equivalent',
   'back_in_stock',
   'new_results',
+  'shipment_status',
+  'shipment_delayed',
 ];
 
 const String kDefaultTimezone = 'Asia/Baghdad';

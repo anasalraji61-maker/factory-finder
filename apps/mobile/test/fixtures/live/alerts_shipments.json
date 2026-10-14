@@ -1,0 +1,73 @@
+{
+  "items": [
+    {
+      "id": "alt_aa11bb22",
+      "watch_id": "shp_0123456789ab",
+      "rule": "shipment_delayed",
+      "title": "Shipment delayed",
+      "title_ar": "تأخّر الشحنة",
+      "body": "MSKU1234565 is about 36 hours late.",
+      "body_ar": "الشحنة MSKU1234565 متأخرة نحو 36 ساعة.",
+      "payload": {
+        "shipment": {
+          "shipment_id": "shp_1f2e3d4c5b6a",
+          "kind": "shipment_delayed",
+          "reference": "MSKU1234565",
+          "reference_type": "container",
+          "label": "LED lights order",
+          "status": "in_transit",
+          "previous_status": null,
+          "eta": "2026-10-20T00:00:00Z",
+          "delayed": true,
+          "delay_hours": 36
+        }
+      },
+      "read": false,
+      "created_at": "2026-10-13T11:00:00Z",
+      "read_at": null
+    },
+    {
+      "id": "alt_cc33dd44",
+      "watch_id": "shp_0123456789ab",
+      "rule": "shipment_status",
+      "title": "Shipment update",
+      "title_ar": "تحديث الشحنة",
+      "body": "MSKU1234565: in transit -> arrived.",
+      "body_ar": "MSKU1234565: في الطريق -> وصلت.",
+      "payload": {
+        "shipment": {
+          "shipment_id": "shp_1f2e3d4c5b6a",
+          "kind": "status_changed",
+          "reference": "MSKU1234565",
+          "reference_type": "container",
+          "label": null,
+          "status": "arrived",
+          "previous_status": "in_transit",
+          "eta": null,
+          "delayed": false,
+          "delay_hours": null
+        }
+      },
+      "read": true,
+      "created_at": "2026-10-12T09:00:00Z",
+      "read_at": "2026-10-12T10:00:00Z"
+    },
+    {
+      "id": "alt_ee55ff66",
+      "watch_id": "wat_future",
+      "rule": "some_future_rule",
+      "title": "Something new",
+      "title_ar": "شيء جديد",
+      "body": "Unknown rule.",
+      "body_ar": "قاعدة غير معروفة.",
+      "payload": {"shipment": "oops"},
+      "read": false,
+      "created_at": "2026-10-11T09:00:00Z",
+      "read_at": null
+    }
+  ],
+  "total": 3,
+  "page": 1,
+  "page_size": 20,
+  "unread_total": 2
+}

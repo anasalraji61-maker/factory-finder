@@ -1,10 +1,24 @@
-"""In-memory fixed-window rate limiter with bounded memory."""
+"""Rate-limit storage: a small interface, an in-memory default and an optional Redis backend."""
+
+import logging
+from typing import Any, Protocol
 
 from ff_gateway.domain.clock import Clock
 
+log = logging.getLogger("ff_gateway")
+
+
+class LimitStore(Protocol):
+    """Async fixed-window limiter. ``check`` counts a hit (None = allowed, else seconds to wait);
+    ``blocked`` only peeks."""
+
+    async def check(self, key: str, limit: int) -> int | None: ...
+
+    async def blocked(self, key: str, limit: int) -> int | None: ...
+
 
 class RateLimiter:
-    """Fixed window per key. Memory is bounded: expired keys are swept at most once per window and,
+    """In-memory store (default). Fixed window per key. Memory is bounded: expired keys are swept at most once per window and,
     if the table is still at ``max_keys``, the oldest-window keys are evicted (an evicted key just
     gets a fresh window - the limiter fails open for it rather than growing without bound)."""
 
@@ -23,7 +37,7 @@ class RateLimiter:
         while len(self._hits) >= self._max:
             del self._hits[next(iter(self._hits))]
 
-    def check(self, key: str, limit: int) -> int | None:
+    def check_sync(self, key: str, limit: int) -> int | None:
         """Count a hit. Returns None if allowed, else seconds to wait."""
         now = self._clock.monotonic()
         entry = self._hits.get(key)
@@ -40,7 +54,7 @@ class RateLimiter:
         self._hits[key] = (start, count + 1)
         return None
 
-    def blocked(self, key: str, limit: int) -> int | None:
+    def blocked_sync(self, key: str, limit: int) -> int | None:
         """Seconds to wait if ``key`` already used up ``limit`` hits in the current window (does not count)."""
         entry = self._hits.get(key)
         if entry is None:
@@ -50,3 +64,86 @@ class RateLimiter:
         if now - start >= self._window or count < limit:
             return None
         return max(1, int(self._window - (now - start)) + 1)
+
+    # LimitStore (async) face; the sync methods stay for direct use and tests
+    async def check(self, key: str, limit: int) -> int | None:
+        return self.check_sync(key, limit)
+
+    async def blocked(self, key: str, limit: int) -> int | None:
+        return self.blocked_sync(key, limit)
+
+
+class RedisRateLimiter:
+    """Shared fixed-window counters in Redis (INCR + EXPIRE); ``client`` is a ``redis.asyncio`` client
+    (or any object with async incr/expire/ttl/get). Keys are namespaced so one Redis can serve many apps."""
+
+    def __init__(self, client: Any, window_seconds: int = 60, prefix: str = "ff:gw:rl:") -> None:
+        self._r, self._window, self._prefix = client, window_seconds, prefix
+
+    async def check(self, key: str, limit: int) -> int | None:
+        k = self._prefix + key
+        n = int(await self._r.incr(k))
+        ttl = int(await self._r.ttl(k))
+        if n == 1 or ttl < 0:  # first hit, or a key left without expiry by a crash between INCR and EXPIRE
+            await self._r.expire(k, self._window)
+            ttl = self._window
+        if n > max(limit, 0):
+            return max(1, ttl + 1)
+        return None
+
+    async def blocked(self, key: str, limit: int) -> int | None:
+        k = self._prefix + key
+        raw = await self._r.get(k)
+        if raw is None or int(raw) < limit:
+            return None
+        return max(1, int(await self._r.ttl(k)) + 1)
+
+
+class FallbackLimiter:
+    """Primary store with an in-memory fallback: if the primary raises (Redis down) the request is
+    counted in memory instead (per process) and a warning is logged once per outage."""
+
+    def __init__(self, primary: LimitStore, fallback: LimitStore) -> None:
+        self._primary, self._fallback, self._degraded = primary, fallback, False
+
+    def _fail(self, e: Exception) -> None:
+        if not self._degraded:
+            log.warning("rate-limit backend unavailable (%s); using in-memory limits", type(e).__name__)
+        self._degraded = True
+
+    async def check(self, key: str, limit: int) -> int | None:
+        try:
+            r = await self._primary.check(key, limit)
+            self._degraded = False
+            return r
+        except Exception as e:
+            self._fail(e)
+            return await self._fallback.check(key, limit)
+
+    async def blocked(self, key: str, limit: int) -> int | None:
+        try:
+            return await self._primary.blocked(key, limit)
+        except Exception as e:
+            self._fail(e)
+            return await self._fallback.blocked(key, limit)
+
+
+def build_limit_store(
+    clock: Clock, max_keys: int, redis_url: str | None = None, redis_client: Any = None
+) -> LimitStore:
+    """Memory by default. With ``redis_url`` (or an injected client) use Redis, falling back to memory
+    (with a warning) if the library is missing or the server is unreachable."""
+    memory = RateLimiter(clock, max_keys=max_keys)
+    if redis_client is None and not redis_url:
+        return memory
+    if redis_client is None:
+        try:
+            from redis.asyncio import Redis  # lazy: optional dependency (extra "redis")
+
+            redis_client = Redis.from_url(
+                redis_url, socket_connect_timeout=1.0, socket_timeout=1.0, decode_responses=True
+            )
+        except Exception as e:
+            log.warning("FF_GATEWAY_REDIS_URL set but Redis is unusable (%s); using in-memory rate limits", type(e).__name__)
+            return memory
+    return FallbackLimiter(RedisRateLimiter(redis_client), memory)

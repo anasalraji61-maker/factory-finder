@@ -43,18 +43,18 @@ def test_limiter_memory_is_bounded_and_expired_keys_swept():
     clock = ManualClock()
     lim = RateLimiter(clock, max_keys=3)
     for i in range(10):
-        assert lim.check(f"k{i}", 5) is None
+        assert lim.check_sync(f"k{i}", 5) is None
         assert len(lim) <= 3
     clock.advance(61)
-    assert lim.check("fresh", 5) is None
+    assert lim.check_sync("fresh", 5) is None
     assert len(lim) == 1  # expired windows swept
 
 
 def test_limiter_still_limits_within_window():
     lim = RateLimiter(ManualClock(), max_keys=10)
-    assert [lim.check("a", 2) for _ in range(3)][:2] == [None, None]
-    assert lim.check("a", 2) is not None
-    assert lim.check("b", 2) is None
+    assert [lim.check_sync("a", 2) for _ in range(3)][:2] == [None, None]
+    assert lim.check_sync("a", 2) is not None
+    assert lim.check_sync("b", 2) is None
 
 
 def _app(client=("203.0.113.9", 5000), **kw):

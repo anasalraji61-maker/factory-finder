@@ -25,6 +25,7 @@ import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
 import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
 import 'package:factory_finder/features/watchlist/watchlist_strings.dart';
 import 'package:factory_finder/features/deals/deals_strings.dart';
+import 'package:factory_finder/features/deals/screens/deals_list_screen.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_screen.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_strings.dart';
 import 'package:factory_finder/features/trust/trust_strings.dart';
@@ -85,6 +86,7 @@ final FeatureModule featureModuleA = FeatureModule(
     ),
     GoRoute(path: '/compare', builder: (context, state) => const CompareScreen()),
     GoRoute(path: '/watchlist', builder: (context, state) => const WatchlistScreen()),
+    GoRoute(path: '/deals', builder: (context, state) => const DealsListScreen()),
     GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
     GoRoute(
       path: '/notification-prefs',

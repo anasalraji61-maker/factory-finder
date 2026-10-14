@@ -15,6 +15,8 @@ const Map<String, (String, String)> _pairs = {
   'notifyprefs.type.cheaper_equivalent': ('بديل أرخص', 'Cheaper equivalent'),
   'notifyprefs.type.back_in_stock': ('عودة التوفر', 'Back in stock'),
   'notifyprefs.type.new_results': ('نتائج جديدة', 'New results'),
+  'notifyprefs.type.shipment_status': ('تغيّر حالة الشحنة', 'Shipment status change'),
+  'notifyprefs.type.shipment_delayed': ('تأخّر الشحنة', 'Shipment delayed'),
   'notifyprefs.quiet_title': ('ساعات الهدوء', 'Quiet hours'),
   'notifyprefs.quiet_hint': ('تُؤجَّل الإشعارات الفورية خلال هذه الفترة ولا تُلغى.', 'Push notifications are deferred, not dropped, during this window.'),
   'notifyprefs.quiet_enable': ('تفعيل ساعات الهدوء', 'Enable quiet hours'),

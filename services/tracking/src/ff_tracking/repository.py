@@ -47,6 +47,11 @@ class OutboxRow(Base):
     payload: Mapped[str] = mapped_column(Text)
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
     delivered_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # relay bookkeeping (notifications push): retries with backoff, dead after max attempts / invalid
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    next_attempt_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    dead_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
 
 def make_engine(url: str) -> AsyncEngine:
@@ -126,6 +131,43 @@ class ShipmentRepository:
             rows = (await s.execute(select(OutboxRow).where(OutboxRow.delivered_at.is_(None))
                                     .order_by(OutboxRow.id).limit(limit))).scalars()
             return list(rows)
+
+    async def due_outbox(self, now, limit: int = 100) -> list[OutboxRow]:
+        """Undelivered, not dead, and past their backoff, in id order."""
+        async with self._sessions() as s:
+            rows = (await s.execute(select(OutboxRow).where(
+                OutboxRow.delivered_at.is_(None), OutboxRow.dead_at.is_(None),
+                (OutboxRow.next_attempt_at.is_(None)) | (OutboxRow.next_attempt_at <= now),
+            ).order_by(OutboxRow.id).limit(limit))).scalars()
+            return list(rows)
+
+    async def record_outbox_result(self, outbox_id: int, *, delivered_at=None, error: str | None = None,
+                                   next_attempt_at=None, dead_at=None, count_attempt: bool = True) -> None:
+        async with self._sessions() as s:
+            row = await s.get(OutboxRow, outbox_id)
+            if not row:
+                return
+            if count_attempt:
+                row.attempts = (row.attempts or 0) + 1
+            row.delivered_at = delivered_at
+            row.next_attempt_at = next_attempt_at
+            row.dead_at = dead_at
+            row.last_error = error[:200] if error else None
+            await s.commit()
+
+    async def outbox_stats(self) -> dict:
+        async with self._sessions() as s:
+            async def count(*cond):
+                return (await s.execute(select(func.count()).select_from(OutboxRow).where(*cond))).scalar_one()
+            oldest = (await s.execute(select(func.min(OutboxRow.created_at)).where(
+                OutboxRow.delivered_at.is_(None), OutboxRow.dead_at.is_(None)))).scalar_one()
+            return {
+                "pending": await count(OutboxRow.delivered_at.is_(None), OutboxRow.dead_at.is_(None)),
+                "retrying": await count(OutboxRow.delivered_at.is_(None), OutboxRow.dead_at.is_(None), OutboxRow.attempts > 0),
+                "dead": await count(OutboxRow.dead_at.is_not(None)),
+                "delivered": await count(OutboxRow.delivered_at.is_not(None)),
+                "oldest_pending_at": oldest.isoformat() if oldest else None,
+            }
 
     async def mark_outbox_delivered(self, outbox_id: int, when) -> None:
         async with self._sessions() as s:

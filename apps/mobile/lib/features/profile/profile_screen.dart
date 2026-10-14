@@ -233,6 +233,13 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.assignment_turned_in_outlined),
+                  title: Text(context.tr('deals.list.tile')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/deals'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.notifications_none),
                   title: Text(context.tr('watch.alerts_title')),
                   trailing: const Icon(Icons.chevron_right, size: 20),

@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, String, text
+from sqlalchemy import JSON, Boolean, DateTime, String, false, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -42,6 +42,7 @@ class User(Base):
     display_currency: Mapped[str] = mapped_column(String(3), default="USD")
     language: Mapped[str] = mapped_column(String(2), default="ar")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -58,6 +59,18 @@ class RefreshToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EmailVerificationToken(Base):
+    """Pending email verification; only the SHA-256 of the random token is stored."""
+
+    __tablename__ = "email_verification_tokens"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    email: Mapped[str] = mapped_column(String(320))  # address the token proves (stale after an email change)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 def make_engine(url: str) -> AsyncEngine:
@@ -83,6 +96,10 @@ def _add_missing_columns(sync_conn) -> None:
     from sqlalchemy import inspect
 
     cols = {c["name"] for c in inspect(sync_conn).get_columns("users")}
+    if "email_verified" not in cols:
+        sync_conn.execute(
+            text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE")
+        )
     if "supplier_claim_status" not in cols:
         sync_conn.execute(
             text(

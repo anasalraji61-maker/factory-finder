@@ -6,7 +6,7 @@ import httpx
 from fastapi import APIRouter, Request, Response
 from sqlalchemy import select
 
-from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers
+from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers, require_verified
 from ff_gateway.db import User
 from ff_gateway.domain.errors import (
     InvalidPath,
@@ -47,6 +47,13 @@ FORWARD_RESPONSE_HEADERS = {
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
 
+def _needs_verified(method: str, upstream: str, path: str) -> bool:
+    """Sensitive writes: anything that moves money (payments) or publishes supplier listings (/v1/my)."""
+    if method.upper() in ("GET", "HEAD", "OPTIONS"):
+        return False
+    return upstream == "payments" or (upstream == "sourcing" and path.startswith("/v1/my"))
+
+
 @router.api_route("/{full_path:path}", methods=METHODS, include_in_schema=False)
 async def proxy(full_path: str, request: Request) -> Response:
     path = "/" + full_path
@@ -75,6 +82,12 @@ async def proxy(full_path: str, request: Request) -> Response:
                 user_id = None
     else:
         user_id = current_user_id(request)
+
+    if user_id and request.app.state.settings.require_email_verified and _needs_verified(request.method, upstream, path):
+        async with request.app.state.sessionmaker() as s:
+            u = await s.get(User, user_id)
+        if u is not None:
+            require_verified(request, u)
 
     body = await request.body()
     if len(body) > request.app.state.settings.max_body_bytes:

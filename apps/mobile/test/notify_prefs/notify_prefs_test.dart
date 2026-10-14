@@ -43,6 +43,27 @@ void main() {
     expect(p.email, 'buyer@example.com');
   });
 
+  test('shipment rules: parse and round trip', () async {
+    expect(kAlertTypes, containsAll(['shipment_status', 'shipment_delayed']));
+    final p = NotifyPrefs.fromJson(_load('notification_prefs'));
+    expect(p.isOn('shipment_status', 'push'), isTrue);
+    expect(p.isOn('shipment_delayed', 'email'), isTrue);
+    final body = p.withChannel('shipment_status', 'push', false).toUpdateJson();
+    expect((body['channels'] as Map)['shipment_status'], ['in_app']);
+    expect((body['channels'] as Map)['shipment_delayed'],
+        ['email', 'in_app', 'push']);
+
+    final repo = MockNotifyPrefsRepository();
+    final m = await repo.get();
+    expect(m.isOn('shipment_delayed', 'push'), isTrue);
+    final saved = await repo.save(m.withChannel('shipment_delayed', 'email', true));
+    expect(saved.isOn('shipment_delayed', 'email'), isTrue);
+    expect((await repo.get()).isOn('shipment_delayed', 'email'), isTrue);
+    // Unknown rule keys from the server survive a parse.
+    final u = NotifyPrefs.fromJson({'channels': {'future_rule': ['push']}});
+    expect(u.isOn('future_rule', 'push'), isTrue);
+  });
+
   test('tolerant parsing and defaults', () {
     final p = NotifyPrefs.fromJson({
       'channels': {'x': ['push', 'sms'], 'y': 'bad'},

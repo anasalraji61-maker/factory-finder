@@ -5,6 +5,24 @@ info:
 servers:
   - url: http://localhost:8107
 paths:
+  /v1/internal/outbox-status:
+    get:
+      operationId: outboxStatus
+      summary: Notification outbox / relay counters (internal; X-Internal-Token when FF_INTERNAL_TOKEN is set; no X-User-Id)
+      responses:
+        "200":
+          description: Counters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  relay: {type: string, enum: [on, off]}
+                  pending: {type: integer, description: "undelivered and not dead"}
+                  retrying: {type: integer}
+                  dead: {type: integer, description: "invalid or max attempts reached; kept for inspection"}
+                  delivered: {type: integer}
+                  oldest_pending_at: {type: [string, "null"], format: date-time}
   /health:
     get:
       summary: Liveness

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from ff_gateway.api.deps import current_user, internal_headers, to_me
+from ff_gateway.api.auth import send_verification
+from ff_gateway.api.deps import current_user, internal_headers, require_verified, to_me
 from ff_gateway.db import User
 from ff_gateway.domain.errors import AccountExists, SupplierClaimed, ValidationFailed
 from ff_gateway.schemas import MeOut, MePatch
@@ -20,6 +21,8 @@ async def get_me(user: User = Depends(current_user)) -> MeOut:
 @router.patch("/v1/me", response_model=MeOut)
 async def patch_me(body: MePatch, request: Request, user: User = Depends(current_user)) -> MeOut:
     data = body.model_dump(exclude_unset=True)
+    if data.get("supplier_id") and data["supplier_id"] != user.supplier_id:
+        require_verified(request, user)  # new supplier claim
     if "name" in data and data["name"] is None:
         raise ValidationFailed.for_field("name", "name cannot be null")
     for required in ("role", "display_currency", "language"):
@@ -50,6 +53,9 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
                 db_user.supplier_claim_status = "none"
             elif sid != db_user.supplier_id:  # new claim: never trusted until an admin approves it
                 db_user.supplier_claim_status = "pending"
+        email_changed = "email" in data and data["email"] != db_user.email
+        if email_changed:
+            db_user.email_verified = False
         for k, v in data.items():
             setattr(
                 db_user,
@@ -65,6 +71,8 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             if sid:
                 raise SupplierClaimed() from e
             raise AccountExists() from e
+        if email_changed and db_user.email:
+            await send_verification(request, db_user)
         return to_me(db_user)
 
 

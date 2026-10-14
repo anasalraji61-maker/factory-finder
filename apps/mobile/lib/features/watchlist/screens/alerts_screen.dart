@@ -60,6 +60,7 @@ class AlertsScreen extends ConsumerWidget {
 
   Future<void> _open(BuildContext context, WidgetRef ref, PriceAlert a) async {
     final listingId = a.listingId;
+    final trackingRoute = a.trackingRoute;
     final router = GoRouter.of(context);
     if (!a.read) {
       try {
@@ -69,7 +70,11 @@ class AlertsScreen extends ConsumerWidget {
       }
       _refreshAll(ref);
     }
-    if (listingId != null) router.push('/listing/$listingId');
+    if (trackingRoute != null) {
+      router.push(trackingRoute);
+    } else if (listingId != null) {
+      router.push('/listing/$listingId');
+    }
   }
 
   @override
@@ -145,6 +150,21 @@ class AlertsScreen extends ConsumerWidget {
   }
 }
 
+/// Distinct icon per rule; unknown rules fall back to a generic bell.
+IconData alertIcon(String rule) {
+  switch (rule) {
+    case 'price_drop':
+    case 'below_target':
+      return Icons.trending_down;
+    case kRuleShipmentStatus:
+      return Icons.local_shipping_outlined;
+    case kRuleShipmentDelayed:
+      return Icons.schedule;
+    default:
+      return Icons.notifications_active_outlined;
+  }
+}
+
 class _AlertTile extends StatelessWidget {
   const _AlertTile({required this.alert, required this.onTap});
   final PriceAlert alert;
@@ -161,10 +181,13 @@ class _AlertTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            a.rule == 'price_drop' || a.rule == 'below_target'
-                ? Icons.trending_down
-                : Icons.notifications_active_outlined,
-            color: a.read ? AppColors.textSecondary : theme.colorScheme.primary,
+            alertIcon(a.rule),
+            key: Key('alert_icon_${a.rule}'),
+            color: a.read
+                ? AppColors.textSecondary
+                : (a.rule == kRuleShipmentDelayed
+                    ? AppColors.danger
+                    : theme.colorScheme.primary),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -172,7 +195,11 @@ class _AlertTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  a.displayTitle(lang),
+                  a.displayTitle(lang).isNotEmpty
+                      ? a.displayTitle(lang)
+                      : (a.isShipment ? context.tr('alerts.${a.rule}') : ''),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: a.read ? FontWeight.w500 : FontWeight.w800,
                   ),
@@ -180,6 +207,8 @@ class _AlertTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   a.displayBody(lang),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.textSecondary, height: 1.4),
                 ),

@@ -85,9 +85,25 @@ class MeOut(BaseModel):
     default_destination: Location | None = None
     supplier_id: str | None = None
     supplier_claim_status: Literal["none", "pending", "verified"] = "none"
+    email_verified: bool = False
     display_currency: str
     language: Language
     created_at: datetime
+
+
+class VerifyEmailIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    token: str = Field(min_length=10, max_length=200)
+
+
+class ResendVerificationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return v.lower()
 
 
 class TokensOut(BaseModel):

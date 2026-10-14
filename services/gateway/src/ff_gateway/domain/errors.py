@@ -102,6 +102,18 @@ class SupplierClaimed(GatewayError):
     default_message = "This supplier is already claimed by another account"
 
 
+class EmailNotVerified(GatewayError):
+    status_code = 403
+    code = "email_not_verified"
+    default_message = "Verify your email address to use this feature"
+
+
+class InvalidVerificationToken(GatewayError):
+    status_code = 400
+    code = "invalid_verification_token"
+    default_message = "The verification token is invalid or has expired"
+
+
 class RateLimited(GatewayError):
     status_code = 429
     code = "rate_limited"

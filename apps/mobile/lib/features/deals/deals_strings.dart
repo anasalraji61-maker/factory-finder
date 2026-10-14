@@ -3,6 +3,10 @@ import 'package:factory_finder/core/i18n/tr.dart';
 final Map<String, Map<String, String>> dealsStrings = bilingual(_pairs);
 
 const Map<String, (String, String)> _pairs = {
+  'deals.list.title': ('صفقاتي', 'My deals'),
+  'deals.list.tile': ('صفقاتي', 'My deals'),
+  'deals.list.empty_title': ('لا توجد صفقات بعد', 'No deals yet'),
+  'deals.list.empty_msg': ('الصفقات التي تقبلها من العروض تظهر هنا (خلال هذه الجلسة).', 'Deals you accept from offers appear here (this session).'),
   'deals.section.title': ('حالة الصفقة', 'Deal progress'),
   'deals.status.pending_payment': ('بانتظار الدفع', 'Awaiting payment'),
   'deals.status.paid': ('مدفوعة', 'Paid'),

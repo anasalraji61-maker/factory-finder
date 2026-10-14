@@ -41,3 +41,18 @@ the container owner code (SCAC table, 23 lines) / AWB prefix (57 airlines).
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Notifications relay (`relay.py`, OFF by default)
+`FF_TRACKING_NOTIFY_RELAY=on` + `FF_TRACKING_NOTIFY_BASE_URL` starts a loop that POSTs undelivered `tracking_outbox` rows (id order,
+batches <= 100) to notifications `POST /v1/internal/tracking-events` with `X-Internal-Token` (`FF_INTERNAL_TOKEN`). `created`/`duplicate`
+-> `delivered_at`; `invalid` -> dead at once (kept, `last_error`); batch failure / missing result -> `attempts+1`, exponential backoff
+(`next_attempt_at`), dead after max attempts. HTTP sits behind `NotifyClient` (`HttpNotifyClient`, `MockNotifyClient` for tests).
+Migration `0003` adds `attempts, next_attempt_at, dead_at, last_error`. Status: `GET /v1/internal/outbox-status` (counters).
+
+| Env | Default |
+|---|---|
+| `FF_TRACKING_NOTIFY_RELAY` | `off` |
+| `FF_TRACKING_NOTIFY_BASE_URL` | empty (relay stays off with a warning) |
+| `FF_TRACKING_NOTIFY_{BATCH_SIZE,MAX_ATTEMPTS}` | `100` / `8` |
+| `FF_TRACKING_NOTIFY_BACKOFF_{BASE,MAX}_SECONDS` | `30` / `3600` |
+| `FF_TRACKING_NOTIFY_{POLL,TIMEOUT}_SECONDS` | `30` / `10` |

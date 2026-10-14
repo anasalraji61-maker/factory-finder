@@ -49,6 +49,31 @@ void main() {
       expect(page.items[1].readAt, isNotNull);
     });
 
+    test('shipment alerts and unknown rules', () {
+      final page = AlertPage.fromJson(
+          Map<String, dynamic>.from(_load('alerts_shipments') as Map));
+      expect(page.items, hasLength(3));
+      final d = page.items[0];
+      expect(d.rule, kRuleShipmentDelayed);
+      expect(d.isShipment, isTrue);
+      expect(d.shipment?.shipmentId, 'shp_1f2e3d4c5b6a');
+      expect(d.shipment?.delayed, isTrue);
+      expect(d.shipment?.delayHours, 36);
+      expect(d.shipment?.label, 'LED lights order');
+      expect(d.trackingRoute, '/logistics/tracking/shp_1f2e3d4c5b6a');
+      final s = page.items[1];
+      expect(s.shipment?.previousStatus, 'in_transit');
+      expect(s.shipment?.label, isNull);
+      expect(s.listingId, isNull);
+      // Unknown rule + malformed shipment payload: no crash, no deep link.
+      final u = page.items[2];
+      expect(u.rule, 'some_future_rule');
+      expect(u.isShipment, isFalse);
+      expect(u.shipment, isNull);
+      expect(u.trackingRoute, isNull);
+      expect(u.displayTitle('ar'), 'شيء جديد');
+    });
+
     test('tolerant of missing and odd fields', () {
       final w = WatchItem.fromJson({'id': 'x'});
       expect(w.type, 'listing');
@@ -67,9 +92,12 @@ void main() {
     test('seeded state and unread count', () async {
       final repo = MockWatchlistRepository();
       expect(await repo.watchlist(), hasLength(1));
-      expect(await repo.unreadCount(), 1);
+      expect(await repo.unreadCount(), 3);
       final page = await repo.alerts(unreadOnly: true);
-      expect(page.items, hasLength(1));
+      expect(page.items, hasLength(3));
+      final ship = page.items.where((a) => a.isShipment).toList();
+      expect(ship.map((a) => a.rule), [kRuleShipmentStatus, kRuleShipmentDelayed]);
+      expect(ship.first.trackingRoute, '/logistics/tracking/shp_001');
     });
 
     test('add is idempotent per listing, remove works', () async {
@@ -91,8 +119,9 @@ void main() {
       final repo = MockWatchlistRepository();
       final r = await repo.markRead('alt_001');
       expect(r.read, isTrue);
+      expect(await repo.unreadCount(), 2);
+      expect(await repo.markAllRead(), 2);
       expect(await repo.unreadCount(), 0);
-      expect(await repo.markAllRead(), 0);
       expect(() => repo.markRead('zzz'), throwsA(isA<ApiException>()));
     });
   });

@@ -133,6 +133,50 @@ class MockWatchlistRepository implements WatchlistRepository {
       },
       createdAt: now.subtract(const Duration(hours: 2)),
     ));
+    _alerts.add(PriceAlert(
+      id: 'alt_002',
+      watchId: 'shp_a1b2c3d4e5f6',
+      rule: kRuleShipmentStatus,
+      title: 'Shipment update',
+      titleAr: 'تحديث الشحنة',
+      body: 'MSKU1234565: In transit -> Arrived at port.',
+      bodyAr: 'MSKU1234565: في الطريق -> وصلت إلى الميناء.',
+      payload: const {
+        'shipment': {
+          'shipment_id': 'shp_001',
+          'kind': 'status_changed',
+          'reference': 'MSKU1234565',
+          'reference_type': 'container',
+          'label': 'LED lights order',
+          'status': 'arrived',
+          'previous_status': 'in_transit',
+          'delayed': false,
+        },
+      },
+      createdAt: now.subtract(const Duration(hours: 5)),
+    ));
+    _alerts.add(PriceAlert(
+      id: 'alt_003',
+      watchId: 'shp_f6e5d4c3b2a1',
+      rule: kRuleShipmentDelayed,
+      title: 'Shipment delayed',
+      titleAr: 'تأخّر الشحنة',
+      body: 'TGHU7654320 is about 36 hours late.',
+      bodyAr: 'الشحنة TGHU7654320 متأخرة نحو 36 ساعة.',
+      payload: const {
+        'shipment': {
+          'shipment_id': 'shp_002',
+          'kind': 'shipment_delayed',
+          'reference': 'TGHU7654320',
+          'reference_type': 'container',
+          'status': 'in_transit',
+          'eta': '2026-10-20T00:00:00Z',
+          'delayed': true,
+          'delay_hours': 36,
+        },
+      },
+      createdAt: now.subtract(const Duration(hours: 8)),
+    ));
   }
 
   final DateTime Function() _clock;

@@ -5,7 +5,7 @@ Auth (bcrypt + JWT: access 15 min, refresh 30 days), profile (`/v1/me`), `/v1/ho
 Run: `uvicorn ff_gateway.main:app --port 8000`. Test: `../../.venv/bin/python -m pytest -q`.
 
 Env (prefix `FF_GATEWAY_`): `JWT_SECRET` (unset -> ephemeral secret + warning), `DATABASE_URL` (sqlite+aiosqlite:///./gateway.db), `UPSTREAMS` (JSON overrides, e.g. `{"trust":"http://trust:8104"}`), `RATE_LIMIT_PER_MINUTE`, `AUTH_RATE_LIMIT_PER_MINUTE`, `CORS_ORIGINS` (JSON list), `HOME_CLIENT` (http|mock), `ADMIN_TOKEN` (enables `/v1/admin/*`; unset -> 404), `UPSTREAM_TIMEOUT_SECONDS`; plus `FF_INTERNAL_TOKEN`.
-Gaps: no WebSocket proxy, stateless refresh tokens, in-memory rate limiter.
+Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 
 ## WebSocket proxy
 
@@ -26,8 +26,11 @@ With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pen
 - WebSocket auth accepts `?token=<access jwt>` (clients cannot set headers); uvicorn access logs are redacted, any proxy in front must scrub it too.
 - Verified `X-Supplier-Id` (admin-verified claims only) is forwarded to messaging and rfq; client-sent values are never forwarded.
 
+## Email verification
+`POST /v1/auth/verify-email {token}` (204; generic 400 for unknown/expired/used/stale tokens) and `POST /v1/auth/resend-verification {email}` (always 202, same body for unknown/verified/known accounts; silently throttled to `RESEND_VERIFICATION_PER_MINUTE` per address on top of the auth IP limit). Tokens are random (`token_urlsafe(32)`), stored only as SHA-256 in `email_verification_tokens`, single use, TTL `EMAIL_VERIFICATION_TTL_SECONDS` (24 h), bound to the address they were issued for (changing `email` via `PATCH /v1/me` resets `email_verified` and mails the new address). `MeOut.email_verified` is additive. Mail goes through `domain/mail.py`: `FF_GATEWAY_MAIL_BACKEND=off` (default: nothing sent, no tokens issued), `mock` (in-memory `app.state.mailer.outbox`, for tests), `smtp` (`SMTP_HOST/PORT/USER/PASSWORD/STARTTLS`, `MAIL_FROM`, optional `VERIFY_URL_TEMPLATE` with `{token}`). `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED=true` (default false) makes payments writes, new supplier claims (`PATCH /v1/me supplier_id`) and `/v1/my/*` writes answer 403 `email_not_verified`; phone-only accounts stay unverified, so enable it only with mail on.
+
 ## Ops (logging / readiness / rate limits)
 - `GET /ready`: 503 if the database is down; otherwise 200 with `checks` and `upstreams` as `{name: up|down boolean}` only (no URLs; probed via each upstream `/health`, cached 5 s). `status` is `degraded` when any upstream is down.
 - Logs: one JSON line per HTTP request (`FF_LOG_FORMAT=text` for dev); `X-Request-Id` is accepted (sanitised) or generated, returned, and forwarded to upstreams. Path is the route template (proxied routes log as `/v1/<prefix>/*`); query strings, tokens and Authorization are never logged. `user_id` comes only from the verified JWT, never from client headers.
 - Client IP: `FF_GATEWAY_TRUSTED_PROXIES` (comma-separated CIDRs/IPs, default empty). `X-Forwarded-For` is used only when the direct peer is in that list (right-most non-proxy hop); otherwise the peer. Invalid CIDRs fail startup.
-- Limits: `RATE_LIMIT_PER_MINUTE`/`AUTH_RATE_LIMIT_PER_MINUTE` per IP, plus `USER_WRITE_RATE_LIMIT_PER_MINUTE` (default 120, 0 = off) per verified user on POST/PUT/PATCH/DELETE outside `/v1/auth`. Limiter memory is capped by `RATE_LIMIT_MAX_KEYS` (default 50000; expired windows swept, oldest evicted). Still per process: use a shared store for multiple replicas.
+- Limits: `RATE_LIMIT_PER_MINUTE`/`AUTH_RATE_LIMIT_PER_MINUTE` per IP, plus `USER_WRITE_RATE_LIMIT_PER_MINUTE` (default 120, 0 = off) per verified user on POST/PUT/PATCH/DELETE outside `/v1/auth`. Limiter memory is capped by `RATE_LIMIT_MAX_KEYS` (default 50000; expired windows swept, oldest evicted). Rate-limit storage is pluggable (`domain/rate_limit.py`): in-memory by default (per process); set `FF_GATEWAY_REDIS_URL` (and install the `redis` extra) to share counters across replicas. The redis library is imported lazily; if it is missing or Redis is down the gateway logs a warning and counts in memory instead.

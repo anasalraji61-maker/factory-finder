@@ -1,0 +1,3 @@
+2026-10-14 | Shipment alerts in inbox deep-link to /logistics/tracking/:id (from payload.shipment.shipment_id); unknown rules render with a generic icon and no link | contract rule enum may grow; inbox must not break.
+2026-10-14 | Prefs screen lists shipment_status and shipment_delayed; keys not in kAlertTypes from the server are preserved but not shown | additive contract changes stay safe.
+2026-10-14 | "My deals" screen (/deals, profile tile) reads the in-memory acceptedDealsProvider only, no backend lookup | cheap; deals accepted in earlier sessions are not listed until a deals-list endpoint exists.

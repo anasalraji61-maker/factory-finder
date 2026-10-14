@@ -27,6 +27,7 @@ from ff_tracking.config import Settings
 from ff_tracking.domain.errors import DomainError, RefreshThrottled, Unauthenticated
 from ff_tracking.jobs import RefreshJob
 from ff_tracking.obs import db_ready, install_observability, ready_response
+from ff_tracking.relay import NotifyClient, build_relay
 from ff_tracking.repository import ShipmentRepository, make_engine
 from ff_tracking.service import ShipmentService
 
@@ -55,6 +56,7 @@ def create_app(
     settings: Settings | None = None,
     provider: TrackingProvider | None = None,
     clock: Callable[[], datetime] | None = None,
+    notify_client: NotifyClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     provider = provider or build_provider(settings)
@@ -70,13 +72,18 @@ def create_app(
             job = RefreshJob(repo, app.state.service, clock, settings.refresh_job_interval_hours,
                              settings.refresh_job_batch_size)
             task = asyncio.create_task(job.run_forever(settings.refresh_job_poll_seconds))
+        relay_task = None
+        if app.state.relay:
+            relay_task = asyncio.create_task(app.state.relay.run_forever(settings.notify_poll_seconds))
         yield
-        if task:
-            task.cancel()
+        for t in (task, relay_task):
+            if t:
+                t.cancel()
         await repo.engine.dispose()
 
     app = FastAPI(title="Factory Finder - tracking", version=__version__, lifespan=lifespan)
     app.state.service = ShipmentService(repo, provider, clock, settings.refresh_min_interval_seconds)
+    app.state.relay = build_relay(settings, repo, clock, notify_client)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 
     @app.middleware("http")
@@ -106,6 +113,11 @@ def create_app(
     @app.get("/ready")
     async def ready():
         return ready_response("tracking", {"database": await db_ready(repo.engine)})
+
+    @app.get("/v1/internal/outbox-status")
+    async def outbox_status() -> dict:
+        """Relay/outbox counters (internal; guarded by X-Internal-Token when set)."""
+        return {"relay": "on" if app.state.relay else "off", **await repo.outbox_stats()}
 
     app.include_router(router)
     install_observability(app, "tracking")

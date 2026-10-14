@@ -108,6 +108,61 @@ List<WatchItem> parseWatchList(dynamic data) {
   ];
 }
 
+const String kRuleShipmentStatus = 'shipment_status';
+const String kRuleShipmentDelayed = 'shipment_delayed';
+
+/// `payload.shipment` of shipment alerts (all fields optional / tolerant).
+class AlertShipment {
+  const AlertShipment({
+    required this.shipmentId,
+    this.kind,
+    this.reference,
+    this.referenceType,
+    this.label,
+    this.status,
+    this.previousStatus,
+    this.eta,
+    this.delayed = false,
+    this.delayHours,
+  });
+
+  final String shipmentId;
+  final String? kind;
+  final String? reference;
+  final String? referenceType;
+  final String? label;
+  final String? status;
+  final String? previousStatus;
+  final String? eta;
+  final bool delayed;
+  final int? delayHours;
+
+  /// Null when there is no usable shipment id.
+  static AlertShipment? tryParse(Object? raw) {
+    if (raw is! Map) return null;
+    final id = raw['shipment_id']?.toString() ?? '';
+    if (id.isEmpty) return null;
+    String? s(Object? v) {
+      final t = v?.toString() ?? '';
+      return t.isEmpty ? null : t;
+    }
+
+    final dh = raw['delay_hours'];
+    return AlertShipment(
+      shipmentId: id,
+      kind: s(raw['kind']),
+      reference: s(raw['reference']),
+      referenceType: s(raw['reference_type']),
+      label: s(raw['label']),
+      status: s(raw['status']),
+      previousStatus: s(raw['previous_status']),
+      eta: s(raw['eta']),
+      delayed: raw['delayed'] == true,
+      delayHours: dh is num ? dh.toInt() : int.tryParse(dh?.toString() ?? ''),
+    );
+  }
+}
+
 /// One inbox alert from `GET /v1/alerts`.
 class PriceAlert {
   const PriceAlert({
@@ -144,6 +199,18 @@ class PriceAlert {
     final ids = payload['listing_ids'];
     if (ids is List && ids.isNotEmpty) return ids.first.toString();
     return null;
+  }
+
+  bool get isShipment => rule == kRuleShipmentStatus || rule == kRuleShipmentDelayed;
+
+  /// Parsed `payload.shipment`, or null (not a shipment alert / malformed).
+  AlertShipment? get shipment => AlertShipment.tryParse(payload['shipment']);
+
+  /// Tracking detail route for shipment alerts, else null.
+  String? get trackingRoute {
+    final sh = shipment;
+    if (sh == null) return null;
+    return '/logistics/tracking/${Uri.encodeComponent(sh.shipmentId)}';
   }
 
   PriceAlert copyWith({bool? read, DateTime? readAt}) => PriceAlert(

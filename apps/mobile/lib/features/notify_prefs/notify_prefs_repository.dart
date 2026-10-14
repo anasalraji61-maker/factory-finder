@@ -50,6 +50,8 @@ class MockNotifyPrefsRepository implements NotifyPrefsRepository {
       'cheaper_equivalent': {'in_app'},
       'back_in_stock': {'in_app', 'push'},
       'new_results': {'in_app'},
+      'shipment_status': {'in_app', 'push'},
+      'shipment_delayed': {'in_app', 'push'},
     },
     quietStart: '22:00',
     quietEnd: '07:00',
