@@ -26,7 +26,9 @@ class SignedUrlCache {
     final hit = _ok[id];
     if (hit != null && _now().isBefore(hit.$2)) return Future<String?>.value(hit.$1);
     _ok.remove(id);
-    return _inflight[id] ??= _fetch(id).whenComplete(() => _inflight.remove(id));
+    return _inflight[id] ??= _fetch(id).whenComplete(() {
+      _inflight.remove(id);
+    });
   }
 
   Future<String?> _fetch(String id) async {
