@@ -36,13 +36,20 @@ class RefreshClaims:
 
 
 class TokenService:
-    def __init__(self, secret: str, clock: Clock, access_ttl: int, refresh_ttl: int, algorithm: str = "HS256"):
+    def __init__(
+        self, secret: str, clock: Clock, access_ttl: int, refresh_ttl: int, algorithm: str = "HS256"
+    ):
         self._secret, self._clock, self._alg = secret, clock, algorithm
         self.access_ttl, self.refresh_ttl = access_ttl, refresh_ttl
 
     def _encode(self, user_id: str, typ: str, ttl: int) -> str:
         now = self._clock.now()
-        claims = {"sub": user_id, "typ": typ, "iat": int(now.timestamp()), "exp": int((now + timedelta(seconds=ttl)).timestamp())}
+        claims = {
+            "sub": user_id,
+            "typ": typ,
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(seconds=ttl)).timestamp()),
+        }
         return jwt.encode(claims, self._secret, algorithm=self._alg)
 
     def access(self, user_id: str) -> str:
@@ -53,8 +60,17 @@ class TokenService:
         now = self._clock.now()
         jti, fam = uuid.uuid4().hex, family or uuid.uuid4().hex
         exp = int((now + timedelta(seconds=self.refresh_ttl)).timestamp())
-        claims = {"sub": user_id, "typ": "refresh", "iat": int(now.timestamp()), "exp": exp, "jti": jti, "fam": fam}
-        return jwt.encode(claims, self._secret, algorithm=self._alg), RefreshClaims(user_id, jti, fam, exp)
+        claims = {
+            "sub": user_id,
+            "typ": "refresh",
+            "iat": int(now.timestamp()),
+            "exp": exp,
+            "jti": jti,
+            "fam": fam,
+        }
+        return jwt.encode(claims, self._secret, algorithm=self._alg), RefreshClaims(
+            user_id, jti, fam, exp
+        )
 
     def decode_refresh(self, token: str, check_exp: bool = True) -> RefreshClaims:
         try:
@@ -74,7 +90,10 @@ class TokenService:
         """Return the user id or raise TokenExpired / InvalidToken. Expiry uses our clock."""
         try:
             claims: dict[str, Any] = jwt.decode(
-                token, self._secret, algorithms=[self._alg], options={"verify_exp": False, "require": ["sub", "exp", "typ"]}
+                token,
+                self._secret,
+                algorithms=[self._alg],
+                options={"verify_exp": False, "require": ["sub", "exp", "typ"]},
             )
         except jwt.PyJWTError as e:
             raise InvalidToken() from e

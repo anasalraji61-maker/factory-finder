@@ -45,7 +45,10 @@ def mock_upstream():
 
 @pytest.fixture
 def auth(client):
-    r = client.post("/v1/auth/register", json={"email": "a@example.com", "password": "password123", "name": "Anas"})
+    r = client.post(
+        "/v1/auth/register",
+        json={"email": "a@example.com", "password": "password123", "name": "Anas"},
+    )
     assert r.status_code == 201
     return r.json()
 

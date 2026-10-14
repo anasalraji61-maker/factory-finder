@@ -48,7 +48,9 @@ async def list_claims(request: Request, status: Literal["pending", "verified"] =
     async with request.app.state.sessionmaker() as s:
         rows = (
             await s.scalars(
-                select(User).where(User.supplier_claim_status == status, User.supplier_id.is_not(None)).order_by(User.created_at)
+                select(User)
+                .where(User.supplier_claim_status == status, User.supplier_id.is_not(None))
+                .order_by(User.created_at)
             )
         ).all()
     return {"items": [_claim(u) for u in rows]}

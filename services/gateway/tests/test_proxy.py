@@ -32,7 +32,9 @@ def test_public_policy(method, path, public):
 
 
 def test_public_route_proxied_without_token(client, mock_upstream):
-    route = mock_upstream.get("http://localhost:8101/v1/search").mock(return_value=httpx.Response(200, json={"items": []}))
+    route = mock_upstream.get("http://localhost:8101/v1/search").mock(
+        return_value=httpx.Response(200, json={"items": []})
+    )
     r = client.get("/v1/search?q=pump&q=valve&page=2")
     assert r.status_code == 200 and r.json() == {"items": []}
     req = route.calls.last.request
@@ -41,7 +43,9 @@ def test_public_route_proxied_without_token(client, mock_upstream):
 
 
 def test_protected_requires_token(client, mock_upstream):
-    route = mock_upstream.get("http://localhost:8104/v1/trust/suppliers/sup_1").mock(return_value=httpx.Response(200, json={}))
+    route = mock_upstream.get("http://localhost:8104/v1/trust/suppliers/sup_1").mock(
+        return_value=httpx.Response(200, json={})
+    )
     r = client.get("/v1/trust/suppliers/sup_1")
     assert r.status_code == 401 and not route.called
     assert client.post("/v1/search", json={}).status_code == 401  # only GET search is public
@@ -49,8 +53,12 @@ def test_protected_requires_token(client, mock_upstream):
 
 def test_header_injection_and_spoof_protection(make_client, mock_upstream, auth):
     c = make_client(internal_token="int-secret")
-    tok = c.post("/v1/auth/register", json={"email": "z@example.com", "password": "password123", "name": "Z"}).json()
-    route = mock_upstream.post("http://localhost:8105/v1/requests").mock(return_value=httpx.Response(201, json={"id": "req_1"}, headers={"X-Secret": "no"}))
+    tok = c.post(
+        "/v1/auth/register", json={"email": "z@example.com", "password": "password123", "name": "Z"}
+    ).json()
+    route = mock_upstream.post("http://localhost:8105/v1/requests").mock(
+        return_value=httpx.Response(201, json={"id": "req_1"}, headers={"X-Secret": "no"})
+    )
     r = c.post(
         "/v1/requests", json={"title": "t"},
         headers={"Authorization": f"Bearer {tok['access_token']}", "X-User-Id": "usr_evil", "X-Internal-Token": "evil", "X-Request-Id": "rid-123"},
@@ -67,14 +75,18 @@ def test_header_injection_and_spoof_protection(make_client, mock_upstream, auth)
 
 def test_upstream_status_passthrough(client, hdr, mock_upstream):
     mock_upstream.get("http://localhost:8105/v1/requests/req_9").mock(
-        return_value=httpx.Response(404, json={"error": {"code": "not_found", "message": "x", "details": {}}})
+        return_value=httpx.Response(
+            404, json={"error": {"code": "not_found", "message": "x", "details": {}}}
+        )
     )
     r = client.get("/v1/requests/req_9", headers=hdr)
     assert r.status_code == 404 and r.json()["error"]["code"] == "not_found"
 
 
 def test_upstream_down_502(client, hdr, mock_upstream):
-    mock_upstream.get("http://localhost:8105/v1/requests").mock(side_effect=httpx.ConnectError("refused"))
+    mock_upstream.get("http://localhost:8105/v1/requests").mock(
+        side_effect=httpx.ConnectError("refused")
+    )
     r = client.get("/v1/requests", headers=hdr)
     assert r.status_code == 502
     err = r.json()["error"]
@@ -82,15 +94,26 @@ def test_upstream_down_502(client, hdr, mock_upstream):
 
 
 def test_upstream_timeout_504(client, hdr, mock_upstream):
-    mock_upstream.get("http://localhost:8106/v1/conversations").mock(side_effect=httpx.ReadTimeout("slow"))
+    mock_upstream.get("http://localhost:8106/v1/conversations").mock(
+        side_effect=httpx.ReadTimeout("slow")
+    )
     assert client.get("/v1/conversations", headers=hdr).status_code == 504
 
 
 def test_custom_upstream_map(make_client, mock_upstream):
     c = make_client(upstreams={"trust": "http://trust.internal:9000"})
-    tok = c.post("/v1/auth/register", json={"email": "q@example.com", "password": "password123", "name": "Q"}).json()
-    route = mock_upstream.get("http://trust.internal:9000/v1/trust/evaluate").mock(return_value=httpx.Response(200, json={"ok": 1}))
-    assert c.get("/v1/trust/evaluate", headers={"Authorization": f"Bearer {tok['access_token']}"}).status_code == 200
+    tok = c.post(
+        "/v1/auth/register", json={"email": "q@example.com", "password": "password123", "name": "Q"}
+    ).json()
+    route = mock_upstream.get("http://trust.internal:9000/v1/trust/evaluate").mock(
+        return_value=httpx.Response(200, json={"ok": 1})
+    )
+    assert (
+        c.get(
+            "/v1/trust/evaluate", headers={"Authorization": f"Bearer {tok['access_token']}"}
+        ).status_code
+        == 200
+    )
     assert route.called
 
 
@@ -101,7 +124,9 @@ def test_unknown_route_404_standard_body(client):
 
 def test_request_id_cors_and_rate_limit(make_client, mock_upstream):
     c = make_client(rate_limit_per_minute=3)
-    mock_upstream.get("http://localhost:8103/v1/countries").mock(return_value=httpx.Response(200, json=[]))
+    mock_upstream.get("http://localhost:8103/v1/countries").mock(
+        return_value=httpx.Response(200, json=[])
+    )
     r = c.get("/health", headers={"Origin": "http://app.example"})
     assert r.headers["x-request-id"] and "access-control-allow-origin" not in r.headers
     codes = [c.get("/v1/countries").status_code for _ in range(5)]
@@ -126,12 +151,27 @@ def test_home_http_client_partial_failure(make_client, mock_upstream):
     from ff_gateway.config import Settings
     from ff_gateway.main import create_app
 
-    app = create_app(Settings(jwt_secret="s" * 40, database_url="sqlite+aiosqlite://", bcrypt_rounds=4, home_client="http"), http_client=hx.AsyncClient())
-    mock_upstream.get("http://localhost:8101/v1/categories").mock(return_value=hx.Response(200, json=[{"id": "c"}]))
-    mock_upstream.get("http://localhost:8101/v1/search").mock(return_value=hx.Response(200, json={"items": [{"id": "lst_1"}]}))
+    app = create_app(
+        Settings(
+            jwt_secret="s" * 40,
+            database_url="sqlite+aiosqlite://",
+            bcrypt_rounds=4,
+            home_client="http",
+        ),
+        http_client=hx.AsyncClient(),
+    )
+    mock_upstream.get("http://localhost:8101/v1/categories").mock(
+        return_value=hx.Response(200, json=[{"id": "c"}])
+    )
+    mock_upstream.get("http://localhost:8101/v1/search").mock(
+        return_value=hx.Response(200, json={"items": [{"id": "lst_1"}]})
+    )
     mock_upstream.get("http://localhost:8102/v1/fx/rates").mock(side_effect=hx.ConnectError("down"))
     with TestClient(app) as c:
-        tok = c.post("/v1/auth/register", json={"email": "h@example.com", "password": "password123", "name": "H"}).json()
+        tok = c.post(
+            "/v1/auth/register",
+            json={"email": "h@example.com", "password": "password123", "name": "H"},
+        ).json()
         r = c.get("/v1/home", headers={"Authorization": f"Bearer {tok['access_token']}"})
     body = r.json()
     assert r.status_code == 200 and body["trending"] == [{"id": "lst_1"}] and body["fx"] is None
@@ -139,7 +179,9 @@ def test_home_http_client_partial_failure(make_client, mock_upstream):
 
 
 def test_supplier_header_only_from_verified_claim(client, hdr, mock_upstream):
-    route = mock_upstream.get("http://localhost:8106/v1/conversations").mock(return_value=httpx.Response(200, json={}))
+    route = mock_upstream.get("http://localhost:8106/v1/conversations").mock(
+        return_value=httpx.Response(200, json={})
+    )
     client.get("/v1/conversations", headers={**hdr, "X-Supplier-Id": "sup_evil"})
     assert "x-supplier-id" not in route.calls.last.request.headers
     client.patch("/v1/me", headers=hdr, json={"supplier_id": "sup_cn_018"})
@@ -147,20 +189,30 @@ def test_supplier_header_only_from_verified_claim(client, hdr, mock_upstream):
     assert "x-supplier-id" not in route.calls.last.request.headers  # pending claim is not trusted
     uid = client.get("/v1/me", headers=hdr).json()["id"]
     client.app.state.settings.admin_token = "adm"
-    assert client.post(f"/v1/admin/supplier-claims/{uid}/approve", headers={"X-Admin-Token": "adm"}).status_code == 200
+    assert (
+        client.post(
+            f"/v1/admin/supplier-claims/{uid}/approve", headers={"X-Admin-Token": "adm"}
+        ).status_code
+        == 200
+    )
     client.get("/v1/conversations", headers={**hdr, "X-Supplier-Id": "sup_evil"})
     assert route.calls.last.request.headers["x-supplier-id"] == "sup_cn_018"
 
 
 def test_internal_only_route_not_exposed(client, mock_upstream, hdr):
-    route = mock_upstream.post("http://localhost:8108/v1/alerts/evaluate").mock(return_value=httpx.Response(200, json={}))
+    route = mock_upstream.post("http://localhost:8108/v1/alerts/evaluate").mock(
+        return_value=httpx.Response(200, json={})
+    )
     r = client.post("/v1/alerts/evaluate", headers=hdr, json={})
     assert r.status_code == 404 and not route.called
 
 
 def test_cors_default_denies_and_env_allows(make_client):
     c = make_client()
-    r = c.options("/v1/countries", headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "GET"})
+    r = c.options(
+        "/v1/countries",
+        headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "GET"},
+    )
     assert "access-control-allow-origin" not in r.headers
     c2 = make_client(cors_origins=["http://localhost:3000"])
     ok = c2.get("/health", headers={"Origin": "http://localhost:3000"})
@@ -170,6 +222,8 @@ def test_cors_default_denies_and_env_allows(make_client):
 
 
 def test_rfq_gets_verified_supplier_header_only(client, auth, hdr, mock_upstream):
-    route = mock_upstream.post("http://localhost:8105/v1/requests/req_1/offers").mock(return_value=httpx.Response(201, json={}))
+    route = mock_upstream.post("http://localhost:8105/v1/requests/req_1/offers").mock(
+        return_value=httpx.Response(201, json={})
+    )
     client.post("/v1/requests/req_1/offers", json={}, headers={**hdr, "X-Supplier-Id": "sup_spoof"})
     assert "x-supplier-id" not in route.calls.last.request.headers

@@ -13,6 +13,9 @@ import 'package:factory_finder/features/discover/screens/search_screen.dart';
 import 'package:factory_finder/features/discover/screens/supplier_screen.dart';
 import 'package:factory_finder/features/supplier_claim/supplier_claim_screen.dart';
 import 'package:factory_finder/features/supplier_claim/supplier_claim_strings.dart';
+import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
+import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
+import 'package:factory_finder/features/watchlist/watchlist_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Discover tab, listing detail, supplier page, Requests & Offers, auth screens.
@@ -62,11 +65,13 @@ final FeatureModule featureModuleA = FeatureModule(
       builder: (context, state) =>
           ListingDetailScreen(listingId: state.pathParameters['id']!),
     ),
+    GoRoute(path: '/watchlist', builder: (context, state) => const WatchlistScreen()),
+    GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
     GoRoute(
       path: '/supplier/:id',
       builder: (context, state) =>
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: mergeStringTables([discoverStrings, requestsStrings, authStrings, supplierClaimStrings]),
+  strings: mergeStringTables([discoverStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings]),
 );

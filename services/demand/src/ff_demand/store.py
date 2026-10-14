@@ -19,6 +19,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from ff_demand.dburl import normalize_database_url
+
 metadata = MetaData()
 
 signals = Table(
@@ -44,7 +46,10 @@ drafts = Table(
 
 class Store:
     def __init__(self, url: str):
-        self.engine: AsyncEngine = create_async_engine(url)
+        opts = {} if normalize_database_url(url).startswith("sqlite") else {"pool_pre_ping": True}
+        self.engine: AsyncEngine = create_async_engine(
+            normalize_database_url(url), **opts
+        )
 
     async def create_all(self) -> None:
         async with self.engine.begin() as conn:

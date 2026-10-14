@@ -22,7 +22,9 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: "usr_" + uuid.uuid4().hex)
+    id: Mapped[str] = mapped_column(
+        String(40), primary_key=True, default=lambda: "usr_" + uuid.uuid4().hex
+    )
     email: Mapped[str | None] = mapped_column(String(320), unique=True, index=True, nullable=True)
     phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(100))
@@ -30,13 +32,19 @@ class User(Base):
     company: Mapped[str | None] = mapped_column(String(200), nullable=True)
     role: Mapped[str] = mapped_column(String(10), default="buyer")
     default_destination: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    supplier_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
+    supplier_id: Mapped[str | None] = mapped_column(
+        String(64), unique=True, index=True, nullable=True
+    )
     # none | pending | verified; only verified claims are forwarded to messaging as X-Supplier-Id
-    supplier_claim_status: Mapped[str] = mapped_column(String(10), default="none", server_default="none")
+    supplier_claim_status: Mapped[str] = mapped_column(
+        String(10), default="none", server_default="none"
+    )
     display_currency: Mapped[str] = mapped_column(String(3), default="USD")
     language: Mapped[str] = mapped_column(String(2), default="ar")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
 
 class RefreshToken(Base):
@@ -54,7 +62,9 @@ class RefreshToken(Base):
 
 def make_engine(url: str) -> AsyncEngine:
     if ":memory:" in url or url.endswith("sqlite+aiosqlite://"):
-        return create_async_engine(url, poolclass=StaticPool, connect_args={"check_same_thread": False})
+        return create_async_engine(
+            url, poolclass=StaticPool, connect_args={"check_same_thread": False}
+        )
     return create_async_engine(url)
 
 
@@ -74,6 +84,12 @@ def _add_missing_columns(sync_conn) -> None:
 
     cols = {c["name"] for c in inspect(sync_conn).get_columns("users")}
     if "supplier_claim_status" not in cols:
-        sync_conn.execute(text("ALTER TABLE users ADD COLUMN supplier_claim_status VARCHAR(10) NOT NULL DEFAULT 'none'"))
+        sync_conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN supplier_claim_status VARCHAR(10) NOT NULL DEFAULT 'none'"
+            )
+        )
         # claims made before verification existed are unverified: park them as pending for admin review
-        sync_conn.execute(text("UPDATE users SET supplier_claim_status = 'pending' WHERE supplier_id IS NOT NULL"))
+        sync_conn.execute(
+            text("UPDATE users SET supplier_claim_status = 'pending' WHERE supplier_id IS NOT NULL")
+        )

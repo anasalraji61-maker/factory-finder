@@ -18,11 +18,14 @@ DEFAULT_UPSTREAMS: dict[str, str] = {
     "tracking": "http://localhost:8107",
     "notifications": "http://localhost:8108",
     "assistant": "http://localhost:8109",
+    "demand": "http://localhost:8110",
 }
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="FF_GATEWAY_", env_file=".env", extra="ignore", populate_by_name=True)
+    model_config = SettingsConfigDict(
+        env_prefix="FF_GATEWAY_", env_file=".env", extra="ignore", populate_by_name=True
+    )
 
     jwt_secret: str | None = None
     jwt_algorithm: str = "HS256"
@@ -36,8 +39,14 @@ class Settings(BaseSettings):
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300
     auth_rate_limit_per_minute: int = 30
-    cors_origins: list[str] = Field(default_factory=list)  # empty = no cross-origin access (native app needs none)
+    cors_origins: list[str] = Field(
+        default_factory=list
+    )  # empty = no cross-origin access (native app needs none)
     admin_token: str | None = None  # FF_GATEWAY_ADMIN_TOKEN; unset -> /v1/admin/* answers 404
+    serve_admin: bool = (
+        False  # FF_GATEWAY_SERVE_ADMIN: serve apps/admin at /admin (same-origin, no CORS needed)
+    )
+    admin_dir: str | None = None  # FF_GATEWAY_ADMIN_DIR override (default: <repo>/apps/admin)
     home_client: str = "http"  # http | mock
     bcrypt_rounds: int = 12
 
@@ -47,7 +56,9 @@ class Settings(BaseSettings):
             return self.jwt_secret
         generated = secrets.token_urlsafe(48)
         object.__setattr__(self, "jwt_secret", generated)
-        log.warning("FF_GATEWAY_JWT_SECRET is not set: generated an ephemeral dev secret; tokens are invalid after restart")
+        log.warning(
+            "FF_GATEWAY_JWT_SECRET is not set: generated an ephemeral dev secret; tokens are invalid after restart"
+        )
         return generated
 
     def upstream_map(self) -> dict[str, str]:

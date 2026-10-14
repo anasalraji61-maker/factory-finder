@@ -16,8 +16,22 @@ from ff_gateway.domain.routing import is_internal_only, is_public, resolve_upstr
 
 router = APIRouter()
 
-FORWARD_REQUEST_HEADERS = {"accept", "accept-language", "content-type", "user-agent", "if-none-match", "if-modified-since"}
-FORWARD_RESPONSE_HEADERS = {"content-type", "cache-control", "etag", "last-modified", "content-language", "location"}
+FORWARD_REQUEST_HEADERS = {
+    "accept",
+    "accept-language",
+    "content-type",
+    "user-agent",
+    "if-none-match",
+    "if-modified-since",
+}
+FORWARD_RESPONSE_HEADERS = {
+    "content-type",
+    "cache-control",
+    "etag",
+    "last-modified",
+    "content-language",
+    "location",
+}
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
 
@@ -54,16 +68,25 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
-    if upstream in ("messaging", "rfq") and user_id:  # verified claim from our DB, never from the client
+    if (
+        upstream in ("messaging", "rfq") and user_id
+    ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
-            claimed = await s.scalar(select(User.supplier_id).where(User.id == user_id, User.supplier_claim_status == "verified")
+            claimed = await s.scalar(
+                select(User.supplier_id).where(
+                    User.id == user_id, User.supplier_claim_status == "verified"
+                )
             )
         if claimed:
             headers["X-Supplier-Id"] = claimed
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")
     try:
         resp = await request.app.state.http.request(
-            request.method, base + path, params=request.query_params.multi_items(), content=body or None, headers=headers
+            request.method,
+            base + path,
+            params=request.query_params.multi_items(),
+            content=body or None,
+            headers=headers,
         )
     except httpx.TimeoutException as e:
         raise UpstreamTimeout(upstream) from e

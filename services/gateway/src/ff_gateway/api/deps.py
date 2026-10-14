@@ -52,4 +52,11 @@ def internal_headers(request: Request, user_id: str | None) -> dict[str, str]:
     return h
 
 
-__all__ = ["AsyncSession", "bearer_token", "current_user", "current_user_id", "internal_headers", "to_me"]
+__all__ = [
+    "AsyncSession",
+    "bearer_token",
+    "current_user",
+    "current_user_id",
+    "internal_headers",
+    "to_me",
+]

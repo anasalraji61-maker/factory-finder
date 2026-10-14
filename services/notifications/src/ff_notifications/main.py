@@ -51,7 +51,8 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        await store.create_all()
+        if settings.auto_create_tables:
+            await store.create_all()
         task = asyncio.create_task(service.run_scheduler()) if settings.scheduler_enabled else None
         yield
         if task:

@@ -11,7 +11,7 @@ from ff_assistant import __version__
 from ff_assistant.api.routes import router
 from ff_assistant.clients import Clients, build_http_clients, build_mock_clients
 from ff_assistant.config import Settings, get_settings
-from ff_assistant.llm import LlmRefiner, build_llm
+from ff_assistant.llm import LlmClient, build_llm
 from ff_assistant.service import Assistant
 
 
@@ -19,14 +19,14 @@ def _error(status: int, code: str, message: str, details: dict | None = None) ->
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message, "details": details or {}}})
 
 
-def create_app(settings: Settings | None = None, clients: Clients | None = None, llm: LlmRefiner | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, clients: Clients | None = None, llm: LlmClient | None = None) -> FastAPI:
     s = settings or get_settings()
     c = clients or (build_mock_clients() if s.clients == "mock" else build_http_clients(s))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         yield
-        for client in (c.sourcing, c.logistics, c.trust, c.tracking):
+        for client in (c.sourcing, c.logistics, c.trust, c.tracking, app.state.assistant.llm):
             close = getattr(client, "aclose", None)
             if close:
                 await close()

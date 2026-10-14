@@ -22,7 +22,6 @@ class ProfileScreen extends ConsumerWidget {
     final currency = ref.watch(displayCurrencyProvider);
     final destination = ref.watch(destinationProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final theme = Theme.of(context);
     final me = ref.watch(authProvider);
     final serverUrl = ref.watch(serverUrlProvider);
 
@@ -214,14 +213,15 @@ class ProfileScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.bookmark_border),
                   title: Text(context.tr('profile.watchlist')),
-                  trailing: Text(
-                    context.tr('common.coming_soon'),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.textSecondary),
-                  ),
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.tr('common.coming_soon'))),
-                  ),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/watchlist'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.notifications_none),
+                  title: Text(context.tr('watch.alerts_title')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/alerts'),
                 ),
                 const Divider(height: 1),
                 ListTile(

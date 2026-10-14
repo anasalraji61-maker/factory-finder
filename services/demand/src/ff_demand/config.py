@@ -3,6 +3,8 @@
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ff_demand.dburl import resolve_auto_create
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -10,6 +12,13 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "sqlite+aiosqlite:///./demand.db"
+    # Create tables at startup (dev). None = auto: true for SQLite, false for PostgreSQL
+    # (production schemas come from Alembic migrations: ``alembic upgrade head``).
+    db_auto_create: bool | None = None
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)
     internal_token: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("FF_INTERNAL_TOKEN", "FF_DEMAND_INTERNAL_TOKEN"),

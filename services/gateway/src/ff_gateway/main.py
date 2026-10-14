@@ -4,16 +4,18 @@ import logging
 import re
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway import SERVICE_NAME, __version__
-from ff_gateway.api import admin, auth, me, proxy, ws
+from ff_gateway.api import admin, admin_demand, auth, me, proxy, ws
 from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
@@ -31,15 +33,23 @@ class _RedactToken(logging.Filter):
     _re = re.compile(r"([?&]token=)[^&\s\"']+")
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.args = tuple(self._re.sub(r"\1[redacted]", a) if isinstance(a, str) else a for a in record.args or ())
+        record.args = tuple(
+            self._re.sub(r"\1[redacted]", a) if isinstance(a, str) else a for a in record.args or ()
+        )
         return True
 
 
 logging.getLogger("uvicorn.access").addFilter(_RedactToken())
 
 
-def _error(status: int, code: str, message: str, details: dict | None = None, headers: dict | None = None) -> JSONResponse:
-    return JSONResponse({"error": {"code": code, "message": message, "details": details or {}}}, status_code=status, headers=headers)
+def _error(
+    status: int, code: str, message: str, details: dict | None = None, headers: dict | None = None
+) -> JSONResponse:
+    return JSONResponse(
+        {"error": {"code": code, "message": message, "details": details or {}}},
+        status_code=status,
+        headers=headers,
+    )
 
 
 def create_app(
@@ -70,7 +80,9 @@ def create_app(
         settings.resolved_secret(), clock, settings.access_ttl_seconds, settings.refresh_ttl_seconds, settings.jwt_algorithm
     )  # fmt: skip
     app.state.home_client = home_client or (
-        MockHomeClient() if settings.home_client == "mock" else HttpHomeClient(http, settings.upstream_map())
+        MockHomeClient()
+        if settings.home_client == "mock"
+        else HttpHomeClient(http, settings.upstream_map())
     )
     limiter = RateLimiter(clock)
 
@@ -101,7 +113,11 @@ def create_app(
         path = request.url.path
         if path != "/health" and request.method != "OPTIONS":
             auth_route = path.startswith("/v1/auth")
-            limit = settings.auth_rate_limit_per_minute if auth_route else settings.rate_limit_per_minute
+            limit = (
+                settings.auth_rate_limit_per_minute
+                if auth_route
+                else settings.rate_limit_per_minute
+            )
             ip = request.client.host if request.client else "unknown"
             wait = limiter.check(f"{'auth' if auth_route else 'api'}:{ip}", limit)
             if wait is not None:
@@ -124,6 +140,17 @@ def create_app(
     app.include_router(auth.router)
     app.include_router(me.router)
     app.include_router(admin.router)
+    app.include_router(admin_demand.router)
+    if settings.serve_admin:
+        admin_dir = (
+            Path(settings.admin_dir)
+            if settings.admin_dir
+            else Path(__file__).resolve().parents[4] / "apps" / "admin"
+        )
+        if (admin_dir / "index.html").is_file():
+            app.mount("/admin", StaticFiles(directory=admin_dir, html=True), name="admin")
+        else:
+            log.warning("FF_GATEWAY_SERVE_ADMIN is set but %s/index.html was not found", admin_dir)
     app.include_router(ws.router)
     app.include_router(proxy.router)  # catch-all, must be last
     app.add_middleware(

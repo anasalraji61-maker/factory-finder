@@ -40,7 +40,8 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        await repo.create_tables()
+        if settings.auto_create_tables:
+            await repo.create_tables()
         yield
         await repo.engine.dispose()
 

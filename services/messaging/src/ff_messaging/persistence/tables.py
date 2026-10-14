@@ -103,7 +103,7 @@ conversation_participants = Table(
     Column("last_read_message_id", String(ID_LENGTH), nullable=True),
     Column("last_read_at", UTCDateTime(), nullable=True),
     Column("unread_count", Integer, nullable=False, default=0),
-    Index(None, "user_id", "activity_at", "conversation_id"),
+    Index("ix_participants_user_activity", "user_id", "activity_at", "conversation_id"),
 )
 
 messages = Table(

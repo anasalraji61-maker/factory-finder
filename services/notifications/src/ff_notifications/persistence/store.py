@@ -22,6 +22,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from ff_notifications.dburl import normalize_database_url
 from ff_notifications.domain.models import Alert, Device, RuleKind, Watch
 from ff_notifications.domain.policy import AlertHistory
 from ff_notifications.persistence import serde
@@ -63,13 +64,7 @@ devices = Table(
 
 
 def normalize_url(url: str) -> str:
-    if url.startswith("postgres://"):
-        url = "postgresql://" + url.removeprefix("postgres://")
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
-    if url.startswith("sqlite://"):
-        return "sqlite+aiosqlite://" + url.removeprefix("sqlite://")
-    return url
+    return normalize_database_url(url)
 
 
 def watch_identity(watch: Watch) -> str:
@@ -82,7 +77,9 @@ def watch_identity(watch: Watch) -> str:
 
 class Store:
     def __init__(self, url: str) -> None:
-        self.engine: AsyncEngine = create_async_engine(normalize_url(url))
+        url = normalize_url(url)
+        opts = {} if url.startswith("sqlite") else {"pool_pre_ping": True}
+        self.engine: AsyncEngine = create_async_engine(url, **opts)
         self._lock = asyncio.Lock()  # one writer at a time (SQLite); harmless elsewhere
 
     async def create_all(self) -> None:

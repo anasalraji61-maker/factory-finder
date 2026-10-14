@@ -37,17 +37,27 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             holder = await s.scalar(select(User).where(User.supplier_id == sid))
             if holder is not None and holder.id != db_user.id:
                 raise SupplierClaimed()
-        if ("email" in data and data["email"] is None and not (db_user.phone or data.get("phone"))) or (
+        if (
+            "email" in data and data["email"] is None and not (db_user.phone or data.get("phone"))
+        ) or (
             "phone" in data and data["phone"] is None and not (db_user.email or data.get("email"))
         ):
-            raise ValidationFailed.for_field("email", "an account needs at least one of email or phone")
+            raise ValidationFailed.for_field(
+                "email", "an account needs at least one of email or phone"
+            )
         if "supplier_id" in data:
             if sid is None:  # release
                 db_user.supplier_claim_status = "none"
             elif sid != db_user.supplier_id:  # new claim: never trusted until an admin approves it
                 db_user.supplier_claim_status = "pending"
         for k, v in data.items():
-            setattr(db_user, k, body.default_destination.model_dump(exclude_none=True) if k == "default_destination" and v is not None else v)
+            setattr(
+                db_user,
+                k,
+                body.default_destination.model_dump(exclude_none=True)
+                if k == "default_destination" and v is not None
+                else v,
+            )
         try:
             await s.commit()
         except IntegrityError as e:

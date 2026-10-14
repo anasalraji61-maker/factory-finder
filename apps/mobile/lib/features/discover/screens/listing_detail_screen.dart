@@ -3,7 +3,11 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/watchlist/data/watch_models.dart';
+import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
+import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -127,12 +131,58 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
+  WatchItem? _existingWatch() {
+    final list = ref.read(watchlistProvider).maybeWhen(
+          data: (v) => v,
+          orElse: () => const <WatchItem>[],
+        );
+    for (final w in list) {
+      if (w.listingId == widget.listing.id) return w;
+    }
+    return null;
+  }
+
+  Future<void> _toggleWatch() async {
+    final l = widget.listing;
+    final repo = ref.read(watchlistRepositoryProvider);
+    final existing = _existingWatch();
+    final removedText = context.tr('watch.removed');
+    final addedText = context.tr('watch.added');
+    final loginText = context.tr('watch.login_required');
+    final failText = context.tr('watch.failed');
+    try {
+      if (existing != null) {
+        await repo.remove(existing.id);
+        ref.invalidate(watchlistProvider);
+        if (mounted) _snack(removedText);
+        return;
+      }
+      final draft = await showWatchSheet(context, currency: l.price.min.currency);
+      if (draft == null) return;
+      await repo.add(
+        l.id,
+        targetPrice: draft.targetPrice,
+        dropThresholdPct: draft.dropPct,
+        title: l.title,
+        titleAr: l.titleAr,
+        currentPrice: l.price.min,
+      );
+      ref.invalidate(watchlistProvider);
+      if (mounted) _snack(addedText);
+    } on ApiException catch (e) {
+      if (mounted) _snack(e.isUnauthorized ? loginText : failText);
+    } catch (_) {
+      if (mounted) _snack(failText);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = widget.listing;
     final lang = Localizations.localeOf(context).languageCode;
     final theme = Theme.of(context);
     final trustAsync = ref.watch(trustProvider(l.supplier.id));
+    ref.watch(watchlistProvider); // rebuild the star when the watchlist changes
     final images = l.images;
     final unit = unitLabel(context, l.unit);
     final leadText = l.leadTimeDays == null
@@ -163,8 +213,17 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
         ),
     ];
 
+    final watched = _existingWatch() != null;
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            tooltip: context.tr(watched ? 'watch.watching' : 'watch.add'),
+            icon: Icon(watched ? Icons.star : Icons.star_border),
+            onPressed: _toggleWatch,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
@@ -415,9 +474,11 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _snack(context.tr('listing.watch_added')),
-                      icon: const Icon(Icons.notifications_none, size: 18),
-                      label: Text(context.tr('listing.watch_price')),
+                      onPressed: _toggleWatch,
+                      icon: Icon(watched ? Icons.star : Icons.notifications_none, size: 18),
+                      label: Text(
+                        context.tr(watched ? 'watch.watching' : 'listing.watch_price'),
+                      ),
                     ),
                   ),
                 ],

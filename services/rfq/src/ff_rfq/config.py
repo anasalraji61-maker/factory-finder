@@ -4,13 +4,22 @@ from decimal import Decimal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ff_rfq.dburl import resolve_auto_create
+
 
 class Settings(BaseSettings):
     """Env prefix FF_RFQ_."""
 
-    model_config = SettingsConfigDict(env_prefix="FF_RFQ_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="FF_RFQ_", env_file=".env", extra="ignore", env_ignore_empty=True)
 
     database_url: str = "sqlite+aiosqlite:///./rfq.db"
+    # Create tables at startup (dev). None = auto: true for SQLite, false for PostgreSQL
+    # (production schemas come from Alembic migrations: ``alembic upgrade head``).
+    db_auto_create: bool | None = None
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)
     sourcing_url: str = "http://localhost:8101"
     sourcing_client: str = "http"  # http | mock
     commission_product: Decimal = Decimal("0.03")

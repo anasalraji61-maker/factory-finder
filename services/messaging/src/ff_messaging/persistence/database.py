@@ -9,18 +9,13 @@ from sqlalchemy import event
 from sqlalchemy.engine import Connection, make_url
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
+from ff_messaging.dburl import normalize_database_url as _normalize
 from ff_messaging.persistence.tables import metadata
 
 
 def normalize_database_url(url: str) -> str:
-    """Map sync-style URLs to their async drivers (``postgresql://`` -> ``postgresql+psycopg://``)."""
-    if url.startswith("postgres://"):
-        url = "postgresql://" + url.removeprefix("postgres://")
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
-    if url.startswith("sqlite://"):
-        return "sqlite+aiosqlite://" + url.removeprefix("sqlite://")
-    return url
+    """``postgresql://`` -> ``postgresql+asyncpg://``, ``sqlite://`` -> ``sqlite+aiosqlite://``."""
+    return _normalize(url)
 
 
 def _configure_sqlite(engine: AsyncEngine) -> None:

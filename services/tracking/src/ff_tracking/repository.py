@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
 
+from ff_tracking.dburl import is_sqlite, normalize_database_url
 from ff_tracking.domain.models import Shipment
 
 
@@ -33,9 +34,12 @@ class ShipmentRow(Base):
 
 
 def make_engine(url: str) -> AsyncEngine:
+    url = normalize_database_url(url)
     if ":memory:" in url or url.endswith("://"):
         return create_async_engine(url, poolclass=StaticPool, connect_args={"check_same_thread": False})
-    return create_async_engine(url)
+    if is_sqlite(url):
+        return create_async_engine(url)
+    return create_async_engine(url, pool_pre_ping=True)
 
 
 class ShipmentRepository:

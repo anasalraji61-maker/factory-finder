@@ -22,7 +22,7 @@ paths:
                   version: {type: string}
   /v1/assistant/query:
     post:
-      summary: Arabic/English natural-language query -> intent, structured query and one combined answer
+      summary: Arabic/English natural-language query -> intent, structured query and one combined answer (answer_text is in the language detected from the query, Arabic by default)
       requestBody:
         required: true
         content:

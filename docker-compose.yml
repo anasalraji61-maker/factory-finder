@@ -10,7 +10,7 @@ services:
     environment:
       PORT: '8000'
       FF_GATEWAY_UPSTREAMS: '{"sourcing": "http://sourcing:8101", "logistics": "http://logistics:8102", "geo": "http://geo:8103", "trust": "http://trust:8104", "rfq": "http://rfq:8105", "messaging": "http://messaging:8106",
-        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109"}'
+        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110"}'
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-[]}
@@ -113,8 +113,11 @@ services:
       dockerfile: infra/docker/Dockerfile.service
       args:
         SERVICE: rfq
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
     environment:
       PORT: '8105'
+      FF_RFQ_DATABASE_URL: ${FF_RFQ_DATABASE_URL:-}
+      FF_RFQ_DB_AUTO_CREATE: ${FF_RFQ_DB_AUTO_CREATE:-}
       FF_RFQ_SOURCING_URL: http://sourcing:8101
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
@@ -135,8 +138,11 @@ services:
       dockerfile: infra/docker/Dockerfile.service
       args:
         SERVICE: messaging
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
     environment:
       PORT: '8106'
+      FF_MESSAGING_DATABASE_URL: ${FF_MESSAGING_DATABASE_URL:-}
+      FF_MESSAGING_DB_AUTO_CREATE: ${FF_MESSAGING_DB_AUTO_CREATE:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
     healthcheck:
@@ -156,8 +162,11 @@ services:
       dockerfile: infra/docker/Dockerfile.service
       args:
         SERVICE: tracking
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
     environment:
       PORT: '8107'
+      FF_TRACKING_DATABASE_URL: ${FF_TRACKING_DATABASE_URL:-}
+      FF_TRACKING_DB_AUTO_CREATE: ${FF_TRACKING_DB_AUTO_CREATE:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
     healthcheck:
@@ -177,8 +186,11 @@ services:
       dockerfile: infra/docker/Dockerfile.service
       args:
         SERVICE: notifications
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
     environment:
       PORT: '8108'
+      FF_NOTIFICATIONS_DATABASE_URL: ${FF_NOTIFICATIONS_DATABASE_URL:-}
+      FF_NOTIFICATIONS_DB_AUTO_CREATE: ${FF_NOTIFICATIONS_DB_AUTO_CREATE:-}
       FF_NOTIFICATIONS_SOURCING_BASE_URL: http://sourcing:8101
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
@@ -224,8 +236,11 @@ services:
       dockerfile: infra/docker/Dockerfile.service
       args:
         SERVICE: demand
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
     environment:
       PORT: '8110'
+      FF_DEMAND_DATABASE_URL: ${FF_DEMAND_DATABASE_URL:-}
+      FF_DEMAND_DB_AUTO_CREATE: ${FF_DEMAND_DB_AUTO_CREATE:-}
       FF_DEMAND_SOURCING_BASE_URL: http://sourcing:8101
       FF_DEMAND_ENABLED: ${FF_DEMAND_ENABLED:-false}
       FF_DEMAND_DAILY_CAP: ${FF_DEMAND_DAILY_CAP:-20}
@@ -242,3 +257,29 @@ services:
       retries: 5
     expose:
     - '8110'
+  # Optional PostgreSQL (not started by default). Usage:
+  #   FF_DOCKER_EXTRAS=pg docker compose --profile pg up --build postgres rfq ...
+  #   FF_RFQ_DATABASE_URL=postgresql://ff:${FF_POSTGRES_PASSWORD}@postgres:5432/ff_rfq   (one database per service)
+  #   docker compose run --rm rfq alembic upgrade head     (see docs/DB.md)
+  postgres:
+    profiles:
+    - pg
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ff
+      POSTGRES_PASSWORD: ${FF_POSTGRES_PASSWORD:-}
+      POSTGRES_DB: postgres
+    volumes:
+    - pgdata:/var/lib/postgresql/data
+    expose:
+    - '5432'
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U ff
+      interval: 10s
+      timeout: 3s
+      retries: 5
+volumes:
+  pgdata: {}

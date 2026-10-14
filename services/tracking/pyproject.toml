@@ -15,8 +15,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-postgres = ["psycopg[binary]>=3.1"]
+pg = ["asyncpg>=0.29", "alembic>=1.13"]
 dev = [
+    "alembic>=1.13",
     "pytest>=8.2",
     "pytest-asyncio>=0.24",
     "respx>=0.21",

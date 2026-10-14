@@ -55,7 +55,9 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
         user = await s.get(User, user_id)
         claimed = (
             await s.scalar(
-                select(User.supplier_id).where(User.id == user_id, User.supplier_claim_status == "verified")
+                select(User.supplier_id).where(
+                    User.id == user_id, User.supplier_claim_status == "verified"
+                )
             )
             if user
             else None

@@ -1,0 +1,38 @@
+import 'package:factory_finder/core/i18n/tr.dart';
+
+final Map<String, Map<String, String>> watchlistStrings = bilingual(_pairs);
+
+const Map<String, (String, String)> _pairs = {
+  'watch.title': ('قائمة المتابعة', 'Watchlist'),
+  'watch.alerts_title': ('التنبيهات', 'Alerts'),
+  'watch.empty_title': ('لا توجد منتجات متابَعة', 'Nothing on your watchlist'),
+  'watch.empty_msg': ('اضغط على النجمة في صفحة المنتج لمتابعة سعره.', 'Tap the star on a listing to follow its price.'),
+  'watch.alerts_empty_title': ('لا توجد تنبيهات', 'No alerts yet'),
+  'watch.alerts_empty_msg': ('سنخبرك عند انخفاض سعر منتج تتابعه.', 'We will tell you when a price you follow drops.'),
+  'watch.add': ('متابعة المنتج', 'Watch listing'),
+  'watch.watching': ('تتم متابعته', 'Watching'),
+  'watch.added': ('تمت إضافة المنتج إلى قائمة المتابعة', 'Added to your watchlist'),
+  'watch.removed': ('تمت إزالة المنتج من قائمة المتابعة', 'Removed from your watchlist'),
+  'watch.remove': ('إزالة', 'Remove'),
+  'watch.login_required': ('سجّل الدخول لمتابعة الأسعار', 'Sign in to follow prices'),
+  'watch.failed': ('تعذر تنفيذ العملية', 'Could not complete the action'),
+  'watch.sheet_title': ('تنبيه انخفاض السعر', 'Price-drop alert'),
+  'watch.sheet_hint': ('الحقول اختيارية. سنخبرك عند انخفاض السعر.', 'Both fields are optional. We will notify you when the price drops.'),
+  'watch.target_price': ('السعر المستهدف ({currency})', 'Target price ({currency})'),
+  'watch.drop_pct': ('نسبة الانخفاض %', 'Drop threshold %'),
+  'watch.err.target': ('أدخل سعراً صحيحاً أكبر من صفر', 'Enter a valid price above zero'),
+  'watch.err.pct': ('أدخل نسبة بين 0 و 100', 'Enter a percentage between 0 and 100'),
+  'watch.confirm': ('ابدأ المتابعة', 'Start watching'),
+  'watch.current': ('السعر الحالي', 'Current price'),
+  'watch.target': ('الهدف', 'Target'),
+  'watch.baseline': ('عند الإضافة', 'When added'),
+  'watch.threshold': ('انخفاض {pct}%', 'Drop {pct}%'),
+  'watch.target_reached': ('تم بلوغ السعر المستهدف', 'Target reached'),
+  'watch.unavailable': ('غير متوفر حالياً', 'Currently unavailable'),
+  'watch.search_watch': ('متابعة بحث', 'Saved search'),
+  'watch.no_price': ('لا يوجد سعر بعد', 'No price yet'),
+  'alerts.mark_all': ('تعليم الكل كمقروء', 'Mark all read'),
+  'alerts.unread': ('{n} غير مقروء', '{n} unread'),
+  'alerts.open': ('فتح المنتج', 'Open listing'),
+  'alerts.bell': ('التنبيهات', 'Alerts'),
+};

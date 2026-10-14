@@ -9,7 +9,11 @@ def test_register_login_me(client):
     r = client.post("/v1/auth/register", json=REG)
     assert r.status_code == 201
     body = r.json()
-    assert body["expires_in"] == 900 and body["user"]["email"] == "a@example.com" and body["user"]["role"] == "buyer"
+    assert (
+        body["expires_in"] == 900
+        and body["user"]["email"] == "a@example.com"
+        and body["user"]["role"] == "buyer"
+    )
     assert "password" not in str(body)
     r = client.post("/v1/auth/login", json={"email": "a@example.com", "password": "password123"})
     assert r.status_code == 200
@@ -23,7 +27,12 @@ def test_register_with_phone_and_duplicates(client):
     assert r.status_code == 201 and r.json()["user"]["phone"] == "+9647701234567"
     dup = client.post("/v1/auth/register", json=body)
     assert dup.status_code == 409 and dup.json()["error"]["code"] == "account_exists"
-    assert client.post("/v1/auth/login", json={"phone": "+9647701234567", "password": "password123"}).status_code == 200
+    assert (
+        client.post(
+            "/v1/auth/login", json={"phone": "+9647701234567", "password": "password123"}
+        ).status_code
+        == 200
+    )
 
 
 def test_register_validation(client):
@@ -52,7 +61,12 @@ def test_access_token_expires_and_refresh_works(client, clock, auth):
     assert r.status_code == 401 and r.json()["error"]["code"] == "token_expired"
     r = client.post("/v1/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert r.status_code == 200
-    assert client.get("/v1/me", headers={"Authorization": f"Bearer {r.json()['access_token']}"}).status_code == 200
+    assert (
+        client.get(
+            "/v1/me", headers={"Authorization": f"Bearer {r.json()['access_token']}"}
+        ).status_code
+        == 200
+    )
     clock.advance(31 * 24 * 3600)
     r = client.post("/v1/auth/refresh", json={"refresh_token": auth["refresh_token"]})
     assert r.status_code == 401 and r.json()["error"]["code"] == "token_expired"
@@ -66,8 +80,15 @@ def test_token_type_confusion_rejected(client, auth):
 
 
 def test_garbage_and_forged_tokens(client, auth):
-    assert client.get("/v1/me", headers={"Authorization": "Bearer abc"}).json()["error"]["code"] == "invalid_token"
-    forged = jwt.encode({"sub": "x", "typ": "access", "exp": int(datetime(2099, 1, 1, tzinfo=UTC).timestamp())}, "other", algorithm="HS256")
+    assert (
+        client.get("/v1/me", headers={"Authorization": "Bearer abc"}).json()["error"]["code"]
+        == "invalid_token"
+    )
+    forged = jwt.encode(
+        {"sub": "x", "typ": "access", "exp": int(datetime(2099, 1, 1, tzinfo=UTC).timestamp())},
+        "other",
+        algorithm="HS256",
+    )
     assert client.get("/v1/me", headers={"Authorization": f"Bearer {forged}"}).status_code == 401
     r = client.get("/v1/me")
     assert r.status_code == 401 and r.json()["error"]["code"] == "authentication_required"
@@ -100,11 +121,15 @@ def test_refresh_reuse_revokes_family(client, auth):
     r2 = _refresh(client, r1["refresh_token"]).json()
     replay = _refresh(client, auth["refresh_token"])  # stolen/old token replayed
     assert replay.status_code == 401 and replay.json()["error"]["code"] == "invalid_token"
-    assert _refresh(client, r2["refresh_token"]).status_code == 401  # newest token of the family is dead too
+    assert (
+        _refresh(client, r2["refresh_token"]).status_code == 401
+    )  # newest token of the family is dead too
 
 
 def test_refresh_reuse_does_not_touch_other_sessions(client, auth):
-    other = client.post("/v1/auth/login", json={"email": "a@example.com", "password": "password123"}).json()
+    other = client.post(
+        "/v1/auth/login", json={"email": "a@example.com", "password": "password123"}
+    ).json()
     r1 = _refresh(client, auth["refresh_token"]).json()
     assert _refresh(client, auth["refresh_token"]).status_code == 401
     assert _refresh(client, r1["refresh_token"]).status_code == 401
@@ -113,19 +138,32 @@ def test_refresh_reuse_does_not_touch_other_sessions(client, auth):
 
 def test_logout_revokes_family_and_is_idempotent(client, auth):
     r1 = _refresh(client, auth["refresh_token"]).json()
-    assert client.post("/v1/auth/logout", json={"refresh_token": r1["refresh_token"]}).status_code == 204
+    assert (
+        client.post("/v1/auth/logout", json={"refresh_token": r1["refresh_token"]}).status_code
+        == 204
+    )
     assert _refresh(client, r1["refresh_token"]).status_code == 401
-    assert client.post("/v1/auth/logout", json={"refresh_token": r1["refresh_token"]}).status_code == 204
+    assert (
+        client.post("/v1/auth/logout", json={"refresh_token": r1["refresh_token"]}).status_code
+        == 204
+    )
     assert client.post("/v1/auth/logout", json={"refresh_token": "garbage"}).status_code == 204
 
 
 def test_untracked_refresh_token_rejected(client, auth):
     import jwt as _jwt
 
-    forged = _jwt.encode({"sub": "usr_x", "typ": "refresh", "exp": 9999999999, "jti": "nope", "fam": "f"},
-                         "test-secret-test-secret-test-secret", algorithm="HS256")
+    forged = _jwt.encode(
+        {"sub": "usr_x", "typ": "refresh", "exp": 9999999999, "jti": "nope", "fam": "f"},
+        "test-secret-test-secret-test-secret",
+        algorithm="HS256",
+    )
     assert _refresh(client, forged).status_code == 401
-    legacy = _jwt.encode({"sub": "usr_x", "typ": "refresh", "exp": 9999999999}, "test-secret-test-secret-test-secret", algorithm="HS256")
+    legacy = _jwt.encode(
+        {"sub": "usr_x", "typ": "refresh", "exp": 9999999999},
+        "test-secret-test-secret-test-secret",
+        algorithm="HS256",
+    )
     assert _refresh(client, legacy).status_code == 401
 
 

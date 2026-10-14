@@ -1,0 +1,41 @@
+{
+  "items": [
+    {
+      "id": "wat_1a2b3c4d",
+      "type": "listing",
+      "listing_id": "lst_0041",
+      "search": null,
+      "target_price": {"amount": "2.50", "currency": "USD"},
+      "drop_threshold_pct": "5",
+      "active": true,
+      "created_at": "2026-10-10T09:00:00Z",
+      "updated_at": "2026-10-13T09:00:00Z",
+      "title": "LED panel light 40W",
+      "title_ar": "لوحة إضاءة LED بقدرة 40 واط",
+      "baseline_price": {"amount": "3.00", "currency": "USD"},
+      "current_price": {"amount": "2.40", "currency": "USD"},
+      "available": true,
+      "result_count": null,
+      "last_checked_at": "2026-10-13T09:00:00Z"
+    },
+    {
+      "id": "wat_5e6f7a8b",
+      "type": "search",
+      "listing_id": null,
+      "search": {"q": "led panel", "origin_country": "CN"},
+      "target_price": null,
+      "drop_threshold_pct": "10",
+      "active": true,
+      "created_at": "2026-10-11T09:00:00Z",
+      "updated_at": "2026-10-11T09:00:00Z",
+      "title": null,
+      "title_ar": null,
+      "baseline_price": null,
+      "current_price": null,
+      "available": null,
+      "result_count": 12,
+      "last_checked_at": null
+    }
+  ],
+  "total": 2
+}

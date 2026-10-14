@@ -83,6 +83,107 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
+  /v1/admin/overview:
+    get:
+      operationId: adminOverview
+      description: "Admin only (X-Admin-Token; 404 unset, 401 wrong)."
+      responses:
+        "200": {description: Counts, content: {application/json: {schema: {type: object, properties: {pending_supplier_claims: {type: integer}, pending_drafts: {type: [integer, "null"], description: "null when demand is unreachable"}, users: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/signals:
+    get:
+      operationId: adminListSignals
+      description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/signals with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+    post:
+      operationId: adminImportSignal
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/signals; status and body pass through."
+      responses:
+        "200": {description: Upstream demand response}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/signals/poll:
+    post:
+      operationId: adminPollSignals
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/signals/poll with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts:
+    get:
+      operationId: adminListDrafts
+      description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/drafts (?status=) with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/quota:
+    get:
+      operationId: adminDemandQuota
+      description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/quota with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts/{id}:
+    get:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminGetDraft
+      description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/drafts/{id} with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts/{id}/approve:
+    post:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminApproveDraft
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/approve with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts/{id}/reject:
+    post:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminRejectDraft
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/reject with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts/{id}/mark-published:
+    post:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminMarkPublishedDraft
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/mark-published with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/drafts/{id}/outcome:
+    post:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminOutcomeDraft
+      description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/outcome with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/demand/signals/{id}:
+    get:
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      operationId: adminGetSignal
+      description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/signals/{id} with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
+      responses:
+        "200": {description: Upstream demand response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
   /v1/home:
     get:
       operationId: getHome

@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="FF_ASSISTANT_", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="FF_ASSISTANT_", extra="ignore", env_ignore_empty=True)
 
     # Inter-service clients: "http" talks to the real services, "mock" uses the
     # deterministic in-process mocks (handy for running the assistant standalone).
@@ -34,13 +34,17 @@ class Settings(BaseSettings):
     max_listings: int = Field(default=3, ge=1, le=10)
     search_page_size: int = Field(default=10, ge=3, le=50)
 
-    # Optional LLM refinement of low-confidence parses. Never required.
-    llm_provider: Literal["none", "mock", "anthropic"] = "mock"
+    # Optional LLM (OFF by default): FF_ASSISTANT_LLM=off|mock|anthropic.
+    # Used only for low-confidence intent extraction and optional tone rewrite; never invents figures.
+    llm: Literal["off", "mock", "anthropic"] = "off"
     llm_api_key: SecretStr | None = None
     llm_model: str = "claude-haiku-5-5"
-    llm_base_url: str = "https://api.anthropic.com"
+    llm_base_url: str = "https://api.anthropic.com"  # any Anthropic-Messages-shaped gateway
     llm_timeout_s: float = Field(default=6.0, gt=0, le=60)
+    llm_max_tokens: int = Field(default=300, ge=16, le=1000)  # hard cap on generated tokens
+    llm_max_input_chars: int = Field(default=1500, ge=100, le=4000)  # hard cap on prompt text
     llm_min_confidence: float = Field(default=0.5, ge=0, le=1)
+    llm_rewrite: bool = False  # optional tone rewrite of the final answer (numbers verified)
 
 
 def get_settings() -> Settings:

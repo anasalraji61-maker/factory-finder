@@ -12,12 +12,17 @@ def admin(make_client):
 
 
 def _user(c, email):
-    t = c.post("/v1/auth/register", json={"email": email, "password": "password123", "name": email}).json()
+    t = c.post(
+        "/v1/auth/register", json={"email": email, "password": "password123", "name": email}
+    ).json()
     return t["user"]["id"], {"Authorization": f"Bearer {t['access_token']}"}
 
 
 def test_admin_disabled_when_token_unset(client, hdr):
-    for method, path in [("get", "/v1/admin/supplier-claims"), ("post", "/v1/admin/supplier-claims/x/approve")]:
+    for method, path in [
+        ("get", "/v1/admin/supplier-claims"),
+        ("post", "/v1/admin/supplier-claims/x/approve"),
+    ]:
         r = getattr(client, method)(path, headers={"X-Admin-Token": "anything", **hdr})
         assert r.status_code == 404
 
@@ -26,8 +31,14 @@ def test_admin_auth_required(admin):
     uid, h = _user(admin, "u@example.com")
     for headers in ({}, {"X-Admin-Token": "wrong"}, h):  # missing, wrong, ordinary user bearer
         assert admin.get("/v1/admin/supplier-claims", headers=headers).status_code == 401
-        assert admin.post(f"/v1/admin/supplier-claims/{uid}/approve", headers=headers).status_code == 401
-        assert admin.post(f"/v1/admin/supplier-claims/{uid}/reject", headers=headers).status_code == 401
+        assert (
+            admin.post(f"/v1/admin/supplier-claims/{uid}/approve", headers=headers).status_code
+            == 401
+        )
+        assert (
+            admin.post(f"/v1/admin/supplier-claims/{uid}/reject", headers=headers).status_code
+            == 401
+        )
 
 
 def test_claim_flow_approve(admin):
@@ -36,7 +47,12 @@ def test_claim_flow_approve(admin):
     me = admin.patch("/v1/me", headers=h, json={"supplier_id": "sup_a"}).json()
     assert me["supplier_claim_status"] == "pending"
     # idempotent re-claim keeps pending
-    assert admin.patch("/v1/me", headers=h, json={"supplier_id": "sup_a"}).json()["supplier_claim_status"] == "pending"
+    assert (
+        admin.patch("/v1/me", headers=h, json={"supplier_id": "sup_a"}).json()[
+            "supplier_claim_status"
+        ]
+        == "pending"
+    )
     items = admin.get("/v1/admin/supplier-claims?status=pending", headers=A).json()["items"]
     assert [i["user_id"] for i in items] == [uid] and items[0]["supplier_id"] == "sup_a"
     # pending claim already blocks others (409)
@@ -46,9 +62,15 @@ def test_claim_flow_approve(admin):
     assert r.status_code == 200 and r.json()["supplier_claim_status"] == "verified"
     assert admin.get("/v1/me", headers=h).json()["supplier_claim_status"] == "verified"
     assert admin.get("/v1/admin/supplier-claims", headers=A).json()["items"] == []
-    assert len(admin.get("/v1/admin/supplier-claims?status=verified", headers=A).json()["items"]) == 1
-    assert admin.post(f"/v1/admin/supplier-claims/{uid}/approve", headers=A).status_code == 409  # not pending
-    assert admin.patch("/v1/me", headers=h2, json={"supplier_id": "sup_a"}).status_code == 409  # verified blocks too
+    assert (
+        len(admin.get("/v1/admin/supplier-claims?status=verified", headers=A).json()["items"]) == 1
+    )
+    assert (
+        admin.post(f"/v1/admin/supplier-claims/{uid}/approve", headers=A).status_code == 409
+    )  # not pending
+    assert (
+        admin.patch("/v1/me", headers=h2, json={"supplier_id": "sup_a"}).status_code == 409
+    )  # verified blocks too
     # switching to another id drops verification
     me = admin.patch("/v1/me", headers=h, json={"supplier_id": "sup_b"}).json()
     assert me["supplier_claim_status"] == "pending"
@@ -61,7 +83,11 @@ def test_reject_releases(admin):
     uid, h = _user(admin, "u@example.com")
     admin.patch("/v1/me", headers=h, json={"supplier_id": "sup_a"})
     r = admin.post(f"/v1/admin/supplier-claims/{uid}/reject", headers=A)
-    assert r.status_code == 200 and r.json()["supplier_claim_status"] == "none" and r.json()["supplier_id"] is None
+    assert (
+        r.status_code == 200
+        and r.json()["supplier_claim_status"] == "none"
+        and r.json()["supplier_id"] is None
+    )
     me = admin.get("/v1/me", headers=h).json()
     assert me["supplier_id"] is None and me["supplier_claim_status"] == "none"
     assert admin.post(f"/v1/admin/supplier-claims/{uid}/reject", headers=A).status_code == 409
@@ -83,7 +109,9 @@ def test_add_column_migration(tmp_path):
         " name VARCHAR(200), company VARCHAR(200), role VARCHAR(10), default_destination JSON, supplier_id VARCHAR(64),"
         " display_currency VARCHAR(3), language VARCHAR(2), is_active BOOLEAN, created_at DATETIME)"
     )
-    con.execute("INSERT INTO users (id, name, supplier_id) VALUES ('u1','A','sup_x'), ('u2','B',NULL)")
+    con.execute(
+        "INSERT INTO users (id, name, supplier_id) VALUES ('u1','A','sup_x'), ('u2','B',NULL)"
+    )
     con.commit()
     con.close()
 
@@ -92,7 +120,9 @@ def test_add_column_migration(tmp_path):
         await create_tables(eng)
         await create_tables(eng)  # idempotent
         async with eng.connect() as c:
-            rows = (await c.execute(text("SELECT id, supplier_claim_status FROM users ORDER BY id"))).all()
+            rows = (
+                await c.execute(text("SELECT id, supplier_claim_status FROM users ORDER BY id"))
+            ).all()
         await eng.dispose()
         return rows
 

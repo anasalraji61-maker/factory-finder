@@ -20,9 +20,7 @@ from ff_assistant.domain.models import (
 )
 from ff_assistant.domain.parser import parse
 from ff_assistant.domain.query import Intent, ParsedQuery
-from ff_assistant.llm import LlmRefiner
-
-SERVICE_AR = {"sourcing": "البحث", "logistics": "حساب الشحن", "trust": "فحص الموثوقية", "tracking": "التتبع"}
+from ff_assistant.llm import LlmClient, extract_query, rewrite_answer
 
 
 class AssistantResult(BaseModel):
@@ -36,7 +34,7 @@ class AssistantResult(BaseModel):
 
 
 class Assistant:
-    def __init__(self, clients: Clients, settings: Settings, gaz: Gazetteer | None = None, llm: LlmRefiner | None = None) -> None:
+    def __init__(self, clients: Clients, settings: Settings, gaz: Gazetteer | None = None, llm: LlmClient | None = None) -> None:
         self.c, self.s = clients, settings
         self.gaz = gaz or Gazetteer.default()
         self.llm = llm
@@ -44,28 +42,21 @@ class Assistant:
     async def handle(self, text: str, destination: Location | None = None) -> AssistantResult:
         p = parse(text, self.gaz, destination)
         if self.llm is not None and p.confidence < self.s.llm_min_confidence:
-            p = await self._refine(text, p)
+            p = await extract_query(self.llm, self.s, text, p)
         warnings: list[str] = []
         handler = {Intent.SEARCH: self._search, Intent.QUOTE: self._quote, Intent.TRUST: self._trust,
                    Intent.TRACK: self._track, Intent.HELP: self._help}[p.intent]
         res = await handler(p, warnings)
         res.warnings = warnings
-        if warnings:
-            res.answer_text += "\n" + " ".join(f"ملاحظة: خدمة {SERVICE_AR.get(w.split('_')[0], w)} غير متاحة حالياً."
-                                             for w in warnings if w.endswith("_unavailable"))
-            res.answer_text = res.answer_text.strip()
+        if self.llm is not None and self.s.llm_rewrite:
+            res.answer_text = await rewrite_answer(self.llm, self.s, res.answer_text)
+        if warnings:  # appended after any rewrite so notices are never altered
+            names = compose.SERVICE_EN if p.language == "en" else compose.SERVICE_AR
+            notes = [compose.msg(p.language, f"ملاحظة: خدمة {names.get(w.split('_')[0], w)} غير متاحة حالياً.",
+                                 f"Note: the {names.get(w.split('_')[0], w)} service is currently unavailable.")
+                     for w in warnings if w.endswith("_unavailable")]
+            res.answer_text = (res.answer_text + "\n" + " ".join(notes)).strip()
         return res
-
-    async def _refine(self, text: str, p: ParsedQuery) -> ParsedQuery:
-        try:
-            patch = await self.llm.refine(text, p)  # type: ignore[union-attr]
-        except Exception:  # noqa: BLE001 - the LLM is strictly optional
-            return p
-        if not patch:
-            return p
-        data = p.model_dump()
-        data.update({k: v for k, v in patch.items() if k in {"kind", "condition", "keywords", "query", "category"} and v})
-        return ParsedQuery.model_validate(data)
 
     async def _guard(self, service: str, coro: Any, warnings: list[str]) -> Any:
         try:
@@ -94,6 +85,7 @@ class Assistant:
         return res
 
     async def _search(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
+        L = p.language
         res = await self._search_listings(p, warnings)
         listings = res.items[: self.s.max_listings] if res else []
         quote = trust = None
@@ -102,14 +94,14 @@ class Assistant:
             trust = await self._supplier_trust(top, warnings)
             if p.destination:
                 quote = await self._quote_for(p, top, warnings)
-        text = compose.search_text(p, listings, res.total if res else 0, self.gaz) if res else \
-            "ما كدرت أجيب نتائج بحث هسه، جرّب بعد شوي."
+        text = compose.search_text(p, listings, res.total if res else 0, self.gaz, L) if res else \
+            compose.msg(L, "ما كدرت أجيب نتائج بحث هسه، جرّب بعد شوي.", "I could not fetch search results right now, please try again shortly.")
         if quote:
-            text += "\n" + compose.quote_text(quote, self.gaz)
+            text += "\n" + compose.quote_text(quote, self.gaz, L)
         elif listings and not p.destination:
-            text += "\n" + compose.need_destination()
+            text += "\n" + compose.need_destination(L)
         if trust and listings:
-            text += "\n" + compose.trust_text(trust)
+            text += "\n" + compose.trust_text(trust, L)
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text, listings=listings, quote=quote, trust=trust)
 
     async def _supplier_trust(self, listing: Listing, warnings: list[str]) -> TrustScore | None:
@@ -152,39 +144,43 @@ class Assistant:
                 "total_weight_kg": str(weight.quantize(Decimal("0.01"))), "category": lst.category}
 
     async def _quote(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
+        L = p.language
         if p.destination is None:
-            return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.need_destination())
+            return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.need_destination(L))
         res = await self._search_listings(p.model_copy(update={"budget": None}), warnings, size=3)
         top = res.items[0] if res and res.items else None
         quote = await self._quote_for(p, top, warnings) if top else None
         if quote:
-            text = compose.quote_text(quote, self.gaz)
+            text = compose.quote_text(quote, self.gaz, L)
         elif top is None and "sourcing_unavailable" not in warnings:
-            text = "ما لقيت منتج مطابق أبني عليه سعر الشحن. اذكر السعر أو اسم المنتج بشكل أوضح."
+            text = compose.msg(L, "ما لقيت منتج مطابق أبني عليه سعر الشحن. اذكر السعر أو اسم المنتج بشكل أوضح.", "I found no matching product to base the shipping cost on. Please name the product more clearly.")
         else:
-            text = "ما كدرت أحسب الكلفة الكاملة هسه."
+            text = compose.msg(L, "ما كدرت أحسب الكلفة الكاملة هسه.", "I could not calculate the full cost right now.")
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text,
                                listings=[top] if top else [], quote=quote)
 
     async def _trust(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
+        L = p.language
         if not p.supplier_id:
-            return AssistantResult(intent=p.intent, parsed_query=p, answer_text="اكتب رقم المورد (مثل sup_cn_001) حتى أفحص موثوقيته.")
+            return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.msg(L, "اكتب رقم المورد (مثل sup_cn_001) حتى أفحص موثوقيته.", "Send the supplier id (e.g. sup_cn_001) so I can check its trust score."))
         score = await self._guard("trust", self.c.trust.supplier_score(p.supplier_id), warnings)
-        text = compose.trust_text(score) if score else f"تعذّر فحص المورد {p.supplier_id} الآن."
+        text = compose.trust_text(score, L) if score else compose.msg(L, f"تعذّر فحص المورد {p.supplier_id} الآن.", f"Could not check supplier {p.supplier_id} right now.")
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text, trust=score)
 
     async def _track(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
+        L = p.language
         if not p.reference or not p.reference_type:
-            return AssistantResult(intent=p.intent, parsed_query=p, answer_text="اكتب رقم الحاوية أو بوليصة الشحن الجوي أو رقم IMO للسفينة حتى أتحقق منه.")
+            return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.msg(L, "اكتب رقم الحاوية أو بوليصة الشحن الجوي أو رقم IMO للسفينة حتى أتحقق منه.", "Send the container number, air waybill or vessel IMO number so I can validate it."))
         check = await self._guard("tracking", self.c.tracking.validate(p.reference_type, p.reference), warnings)
-        kind = {"container": "الحاوية", "awb": "بوليصة الشحن الجوي", "vessel_imo": "السفينة"}[p.reference_type]
+        kind = ({"container": "container", "awb": "air waybill", "vessel_imo": "vessel"} if L == "en" else
+                {"container": "الحاوية", "awb": "بوليصة الشحن الجوي", "vessel_imo": "السفينة"})[p.reference_type]
         if check is None:
-            text = f"استلمت رقم {kind} {p.reference} لكن خدمة التتبع غير متاحة للتحقق منه الآن."
+            text = compose.msg(L, f"استلمت رقم {kind} {p.reference} لكن خدمة التتبع غير متاحة للتحقق منه الآن.", f"I received the {kind} number {p.reference} but the tracking service is unavailable to validate it right now.")
         elif check.valid:
-            text = f"رقم {kind} {p.reference} صحيح. أضفه من تبويب الشحنات لمتابعة حالته ومواعيد الوصول."
+            text = compose.msg(L, f"رقم {kind} {p.reference} صحيح. أضفه من تبويب الشحنات لمتابعة حالته ومواعيد الوصول.", f"The {kind} number {p.reference} is valid. Add it from the Shipments tab to follow its status and ETA.")
         else:
-            text = f"رقم {kind} {p.reference} غير صحيح ({check.reason or 'فشل التحقق'}). تأكد من الرقم وأعد الكتابة."
+            text = compose.msg(L, f"رقم {kind} {p.reference} غير صحيح ({check.reason or 'فشل التحقق'}). تأكد من الرقم وأعد الكتابة.", f"The {kind} number {p.reference} is not valid ({check.reason or 'validation failed'}). Check the number and try again.")
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text)
 
     async def _help(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:
-        return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.HELP_TEXT)
+        return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.help_text(p.language))

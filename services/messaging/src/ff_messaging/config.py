@@ -7,6 +7,7 @@ from typing import Annotated, Any
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from ff_messaging.dburl import resolve_auto_create
 from ff_messaging.domain.ids import is_valid_user_id
 from ff_messaging.domain.models import AbuseAction
 
@@ -54,6 +55,13 @@ class Settings(BaseSettings):
     # --- persistence -------------------------------------------------------------------------
     database_url: str = "sqlite+aiosqlite:///./messaging.db"
     database_echo: bool = False
+    # Create tables at startup (dev). None = auto: true for SQLite, false for PostgreSQL
+    # (production schemas come from Alembic migrations: ``alembic upgrade head``).
+    db_auto_create: bool | None = None
+
+    @property
+    def auto_create_tables(self) -> bool:
+        return resolve_auto_create(self.database_url, self.db_auto_create)
 
     # --- internal auth (shared FF_INTERNAL_TOKEN wins over FF_MESSAGING_INTERNAL_TOKEN) -------
     internal_token: SecretStr | None = Field(

@@ -5,6 +5,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -79,10 +80,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        context.tr('discover.greeting'),
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.textSecondary),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              context.tr('discover.greeting'),
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ),
+                          const AlertsBell(),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
