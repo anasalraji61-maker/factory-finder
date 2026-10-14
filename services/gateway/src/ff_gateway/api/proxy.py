@@ -58,6 +58,7 @@ def _needs_verified(method: str, upstream: str, path: str) -> bool:
         upstream == "payments"
         or (upstream == "sourcing" and path.startswith("/v1/my"))
         or (upstream == "feed" and path.rstrip("/") == "/v1/feed/posts")  # publishing a supplier post
+        or (upstream == "freight" and path.rstrip("/") in ("/v1/freight/applications", "/v1/freight/requests"))
     )
 
 

@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ff_trust.domain.verification import VerificationEvidence
+
 LicenseStatus = Literal["verified", "pending", "unverified", "expired", "mismatch"]
 
 
@@ -62,3 +64,4 @@ class SupplierSignals(BaseModel):
     confirmed_reports: int | None = Field(default=None, ge=0, description="buyer reports accepted after review")
     blocked: bool | None = Field(default=None, description="platform/compliance block: hard-fail red")
     review_summary: ReviewSummary | None = Field(default=None, description="verified-purchase review aggregates (rfq)")
+    verification: VerificationEvidence | None = Field(default=None, description="approved verification documents (type + dates only)")

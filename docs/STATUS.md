@@ -22,6 +22,7 @@
 - Gateway: email verification, optional Redis rate limits, moderation routes, is_active re-check, FF_ENV=production fail-closed guard. Sourcing: listing moderation + reports. Messaging: media attachments (mobile composer too).
 - Backend: 140 responses validated (0 drift), e2e 33 steps; security reviews a/b/c in docs/fixes.
 - 14 services (+feed :8113): supplier posts, follow, home/trending feed, likes, comments, reports + admin moderation; routed at /v1/feed/* (see docs/decisions/feed.md). Contract validation 166 responses, e2e 34 steps.
+- 15 services (+freight :8114): freight-forwarder marketplace (forwarder application + admin approval, shipment quote requests, lane-matched quotes, explainable ranking, idempotent award, ratings, reports + admin moderation); routed at /v1/freight/* (see docs/decisions/freight.md). Contract validation 238 responses, e2e 35 steps.
 
 ## Next (needs owner input)
 - Phase 4: official supplier API account (Alibaba or licensed provider) and a freight-rate provider; until then all data is mock.

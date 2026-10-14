@@ -27,6 +27,8 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "deal_outcomes": 4,
     "confirmed_reports": 8,
     "platform_reviews": 6,  # bounded: verified-purchase reviews from rfq
+    "document_verification": 6,  # bounded, never negative: approved legal / identity documents
+    "facility_evidence": 4,  # bounded, never negative: approved factory photos / certificates
 }
 
 
@@ -57,6 +59,9 @@ class ScoringConfig(BaseModel):
     deal_prior_rate: float = 0.85
     deal_prior_weight: float = 8.0
     dispute_recent_weight: float = 0.6  # weight of the last-90-day dispute rate vs the lifetime rate
+    doc_decay_days: int = 90  # approved documents lose weight over the last N days before expiry
+    doc_decay_floor: float = 0.5  # weight left on the expiry day (0 afterwards)
+    doc_default_validity_days: int = 730  # documents without an expiry stay valid this long after approval
     model_version: str = "trust-v2"
 
 
@@ -74,4 +79,15 @@ class Settings(BaseSettings):
     reviews_base_url: str = "http://rfq:8105"
     reviews_timeout_seconds: float = 2.0
     reviews_cache_ttl_seconds: float = 60.0
+    admin_token: str | None = None  # FF_TRUST_ADMIN_TOKEN; unset -> verification admin endpoints answer 404
+    verification_rate_limit: int = 10  # document submissions per supplier per window
+    verification_rate_window_seconds: int = 3600
+    verification_max_docs_per_supplier: int = 30  # pending + approved
+    verification_max_docs_per_type: int = 5
+    verification_max_files: int = 10
+    verification_max_total_docs: int = 20000
+    verification_hash_key: str | None = None  # HMAC key for document-number fingerprints (random per process if unset)
+    verification_media_prefixes: list[str] = ["/v1/media/files/"]
+    verification_media_hosts: list[str] = []  # absolute media URLs need a host listed here; empty = relative paths only
+    verification_allow_http: bool = False
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")

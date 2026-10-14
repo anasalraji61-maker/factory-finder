@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote, urljoin
 
@@ -390,6 +391,100 @@ def scenario() -> None:
         c("feed", "DELETE", f"/v1/feed/posts/{fid}", headers=hfs, want=(204,), template="/v1/feed/posts/{post_id}")
     c("feed", "GET", "/v1/feed/posts/post_nope", headers=hb, want=(404,), template="/v1/feed/posts/{post_id}")
     c("feed", "DELETE", f"/v1/feed/suppliers/{fsup}/follow", headers=hb, template="/v1/feed/suppliers/{supplier_id}/follow")
+
+    # -- freight (identity as the gateway would forward it; admin routes need the service admin token)
+    ad_fr = {"X-Admin-Token": e2e.ADMIN_TOKEN}
+    hfw, hfw2, hbuy2 = {"X-User-Id": f"usr_fwd{sfx}"}, {"X-User-Id": f"usr_fwd2{sfx}"}, {"X-User-Id": f"usr_buyer2{sfx}"}
+    lanes = [{"origin_country": "CN", "destination_country": "IQ"}, {"origin_country": "*", "destination_country": "AE"}]
+    fapp = {"company_name": f"Contract Freight {sfx}", "country_code": "AE", "description": "Sea freight", "lanes": lanes,
+            "modes": ["sea", "air"], "incoterms": ["FOB", "CIF"], "certifications": ["FIATA"]}  # fmt: skip
+    a1 = c("freight", "POST", "/v1/freight/applications", headers=hfw, json=fapp) or {}
+    c("freight", "POST", "/v1/freight/applications", headers=hfw, json=fapp, want=(409,))
+    c("freight", "POST", "/v1/freight/applications", headers=hfw, json={**fapp, "modes": []}, want=(422,))
+    c("freight", "POST", "/v1/freight/applications", json=fapp, want=(401,))
+    c("freight", "GET", "/v1/freight/applications/mine", headers=hfw)
+    c("freight", "GET", "/v1/freight/me", headers=hfw)
+    c("freight", "GET", "/v1/freight/forwarders/me", headers=hfw, want=(403,))
+    a2 = c("freight", "POST", "/v1/freight/applications", headers=hfw2, json={**fapp, "company_name": f"Other Freight {sfx}"}) or {}
+    c("freight", "GET", "/v1/admin/freight/applications", headers=ad_fr, params={"status": "all"})
+    c("freight", "GET", "/v1/admin/freight/applications", want=(401,))
+    if a2.get("id"):
+        c("freight", "POST", f"/v1/admin/freight/applications/{a2['id']}/reject", headers=ad_fr, json={"reason": "incomplete documents"}, template="/v1/admin/freight/applications/{application_id}/reject")
+    fid = ""
+    if a1.get("id"):
+        ap = c("freight", "POST", f"/v1/admin/freight/applications/{a1['id']}/approve", headers=ad_fr, json={"note": "checked"}, template="/v1/admin/freight/applications/{application_id}/approve") or {}
+        c("freight", "POST", f"/v1/admin/freight/applications/{a1['id']}/approve", headers=ad_fr, template="/v1/admin/freight/applications/{application_id}/approve")
+        c("freight", "POST", f"/v1/admin/freight/applications/{a1['id']}/reject", headers=ad_fr, json={"reason": "late"}, want=(409,), template="/v1/admin/freight/applications/{application_id}/reject")
+        fid = ap.get("forwarder_id") or ""
+    if fid:
+        c("freight", "GET", "/v1/freight/forwarders/me", headers=hfw)
+        c("freight", "PATCH", "/v1/freight/forwarders/me", headers=hfw, json={"description": "Sea and air freight", "certifications": ["FIATA", "ISO 9001"]})
+        c("freight", "GET", "/v1/freight/forwarders", headers=hb, params={"origin_country": "CN", "destination_country": "IQ", "mode": "sea", "incoterm": "FOB"})
+        c("freight", "GET", f"/v1/freight/forwarders/{fid}", headers=hb, template="/v1/freight/forwarders/{forwarder_id}")
+        c("freight", "GET", f"/v1/freight/forwarders/{fid}/ratings", headers=hb, template="/v1/freight/forwarders/{forwarder_id}/ratings")
+        c("freight", "GET", "/v1/admin/freight/forwarders", headers=ad_fr)
+    c("freight", "GET", "/v1/freight/forwarders/fwd_nope", headers=hb, want=(404,), template="/v1/freight/forwarders/{forwarder_id}")
+    c("freight", "GET", "/v1/freight/forwarders", headers=hb, params={"mode": "boat"}, want=(422,))
+    ready = (datetime.now(UTC) + timedelta(days=7)).date().isoformat()
+    sreq = {"origin_country": "CN", "origin_place": "Shenzhen", "destination_country": "IQ", "destination_place": "Umm Qasr",
+            "cargo_description": f"Contract ceramic tiles {sfx}", "hs_code": "6907.21", "weight_kg": "18000", "volume_cbm": "28.5",
+            "mode": "sea", "container_type": "40HC", "container_count": 1, "incoterm": "FOB", "ready_date": ready,
+            "currency": "USD", "landed_cost_ref": "qt_contract"}  # fmt: skip
+    c("freight", "POST", "/v1/freight/requests", headers=hb, json={**sreq, "cargo_description": "mail me boss@example.com"}, want=(422,))
+    c("freight", "POST", "/v1/freight/requests", headers=hb, json={**sreq, "mode": "air"}, want=(422,))
+    rq = c("freight", "POST", "/v1/freight/requests", headers=hb, json=sreq) or {}
+    rq2 = c("freight", "POST", "/v1/freight/requests", headers=hbuy2, json=sreq) or {}
+    c("freight", "GET", "/v1/freight/requests", headers=hb, params={"status": "open"})
+    if rq.get("id") and fid:
+        rid = rq["id"]
+        tq = "/v1/freight/requests/{request_id}"
+        c("freight", "GET", f"/v1/freight/requests/{rid}", headers=hb, template=tq)
+        c("freight", "GET", f"/v1/freight/requests/{rid}", headers=hfw, template=tq)
+        c("freight", "GET", f"/v1/freight/requests/{rid}", headers=hfw2, want=(404,), template=tq)
+        c("freight", "GET", "/v1/freight/forwarders/me/inbox", headers=hfw)
+        qb = {"amount": "2450.00", "currency": "USD", "transit_days": 28, "valid_days": 14, "inclusions": ["Ocean freight"],
+              "exclusions": ["Duties"], "breakdown": [{"label": "Ocean freight", "amount": "2000.00"}, {"label": "Origin charges", "amount": "450.00"}], "terms": "Net 14 days"}  # fmt: skip
+        c("freight", "POST", f"/v1/freight/requests/{rid}/quotes", headers=hb, json=qb, want=(403,), template=tq + "/quotes")
+        c("freight", "POST", f"/v1/freight/requests/{rid}/quotes", headers=hfw, json={**qb, "currency": "EUR"}, want=(422,), template=tq + "/quotes")
+        c("freight", "POST", f"/v1/freight/requests/{rid}/quotes", headers=hfw, json={**qb, "terms": "call +964 770 123 4567"}, want=(422,), template=tq + "/quotes")
+        q = c("freight", "POST", f"/v1/freight/requests/{rid}/quotes", headers=hfw, json=qb, template=tq + "/quotes") or {}
+        c("freight", "POST", f"/v1/freight/requests/{rid}/quotes", headers=hfw, json=qb, want=(409,), template=tq + "/quotes")
+        c("freight", "GET", f"/v1/freight/requests/{rid}/quotes", headers=hb, template=tq + "/quotes")
+        for srt in ("score", "price", "transit", "rating"):
+            c("freight", "GET", f"/v1/freight/requests/{rid}/comparison", headers=hb, params={"sort": srt}, template=tq + "/comparison")
+        c("freight", "GET", f"/v1/freight/requests/{rid}/comparison", headers=hb, params={"sort": "luck"}, want=(422,), template=tq + "/comparison")
+        c("freight", "GET", "/v1/freight/forwarders/me/quotes", headers=hfw)
+        if q.get("id"):
+            qid, tqq = q["id"], "/v1/freight/quotes/{quote_id}"
+            c("freight", "GET", f"/v1/freight/quotes/{qid}", headers=hb, template=tqq)
+            c("freight", "PUT", f"/v1/freight/quotes/{qid}", headers=hfw, json={**qb, "amount": "2400.00", "breakdown": [{"label": "All-in", "amount": "2400.00"}]}, template=tqq)
+            c("freight", "POST", f"/v1/freight/quotes/{qid}/report", headers=hb, json={"reason": "misleading", "details": "check a@b.com"}, want=(202,), template=tqq + "/report")
+            c("freight", "POST", f"/v1/freight/requests/{rid}/report", headers=hfw, json={"reason": "spam"}, want=(202,), template=tq + "/report")
+            c("freight", "POST", f"/v1/freight/forwarders/{fid}/report", headers=hb, json={"reason": "other"}, want=(202,), template="/v1/freight/forwarders/{forwarder_id}/report")
+            c("freight", "POST", f"/v1/freight/quotes/{qid}/withdraw", headers=hfw, template=tqq + "/withdraw")
+            c("freight", "PUT", f"/v1/freight/quotes/{qid}", headers=hfw, json=qb, template=tqq)
+            c("freight", "POST", f"/v1/freight/quotes/{qid}/accept", headers=hfw, want=(404,), template=tqq + "/accept")
+            c("freight", "POST", f"/v1/freight/requests/{rid}/rating", headers=hb, json={"stars": 5}, want=(409,), template=tq + "/rating")
+            c("freight", "POST", f"/v1/freight/quotes/{qid}/accept", headers=hb, template=tqq + "/accept")
+            c("freight", "POST", f"/v1/freight/quotes/{qid}/accept", headers=hb, template=tqq + "/accept")
+            c("freight", "GET", f"/v1/freight/requests/{rid}/comparison", headers=hb, template=tq + "/comparison")
+            c("freight", "POST", f"/v1/freight/requests/{rid}/close", headers=hb, template=tq + "/close")
+            c("freight", "POST", f"/v1/freight/requests/{rid}/rating", headers=hb, json={"stars": 4, "comment": "Reliable"}, template=tq + "/rating")
+            c("freight", "POST", f"/v1/freight/requests/{rid}/rating", headers=hb, json={"stars": 4}, want=(409,), template=tq + "/rating")
+            c("freight", "GET", f"/v1/freight/forwarders/{fid}/ratings", headers=hb, template="/v1/freight/forwarders/{forwarder_id}/ratings")
+            c("freight", "GET", "/v1/admin/freight/quotes", headers=ad_fr, params={"request_id": rid})
+            c("freight", "POST", f"/v1/admin/freight/quotes/{qid}/hide", headers=ad_fr, json={"reason": "contract check"}, template="/v1/admin/freight/quotes/{quote_id}/hide")
+            c("freight", "POST", f"/v1/admin/freight/quotes/{qid}/restore", headers=ad_fr, template="/v1/admin/freight/quotes/{quote_id}/restore")
+            c("freight", "GET", "/v1/admin/freight/reports", headers=ad_fr, params={"target_id": qid})
+        c("freight", "POST", f"/v1/admin/freight/requests/{rid}/hide", headers=ad_fr, json={"reason": "contract check"}, template="/v1/admin/freight/requests/{request_id}/hide")
+        c("freight", "GET", "/v1/admin/freight/requests", headers=ad_fr, params={"visibility": "hidden"})
+        c("freight", "POST", f"/v1/admin/freight/requests/{rid}/restore", headers=ad_fr, template="/v1/admin/freight/requests/{request_id}/restore")
+        c("freight", "POST", f"/v1/admin/freight/forwarders/{fid}/suspend", headers=ad_fr, json={"reason": "contract check"}, template="/v1/admin/freight/forwarders/{forwarder_id}/suspend")
+        c("freight", "POST", f"/v1/admin/freight/forwarders/{fid}/reinstate", headers=ad_fr, template="/v1/admin/freight/forwarders/{forwarder_id}/reinstate")
+    if rq2.get("id"):
+        c("freight", "POST", f"/v1/freight/requests/{rq2['id']}/close", headers=hbuy2, template="/v1/freight/requests/{request_id}/close")
+    c("freight", "POST", "/v1/admin/freight/sweep", headers=ad_fr)
+    c("freight", "GET", "/v1/freight/requests/shp_nope", headers=hb, want=(404,), template="/v1/freight/requests/{request_id}")
 
     # -- gateway (own routes; admin-demand proxy is validated against the demand contract)
     gw = httpx.Client(base_url=e2e.GW, timeout=30)

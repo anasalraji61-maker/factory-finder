@@ -27,7 +27,7 @@ docker compose down -v
 - Pin base image digests and dependency versions for reproducible builds; run containers as non-root (already done: user `app`).
 
 ## Env forwarding and feed admin
-`docker-compose.yml` forwards the operator switches (`FF_ENV`, kill switches, gateway mail/admin-UI, sourcing/logistics/tracking/notifications provider vars, assistant LLM, admin tokens) with empty or code-default fallbacks; unset means unchanged behaviour. Full list and exceptions: `docs/RUNBOOK.md` (top). `/v1/admin/feed/*` (`FF_FEED_ADMIN_TOKEN`) is not routed by the gateway; moderate from the private network only.
+`docker-compose.yml` forwards the operator switches (`FF_ENV`, kill switches, gateway mail/admin-UI, sourcing/logistics/tracking/notifications provider vars, assistant LLM, admin tokens) with empty or code-default fallbacks; unset means unchanged behaviour. Full list and exceptions: `docs/RUNBOOK.md` (top). `/v1/admin/feed/*` (`FF_FEED_ADMIN_TOKEN`) is not routed by the gateway; moderate from the private network only. Same for `/v1/admin/freight/*` (`FF_FREIGHT_ADMIN_TOKEN`): forwarder application approval and freight moderation are service-local.
 
 ## Public ingress for payments webhooks
 `POST /v1/payments/webhooks/{provider}` is called by external payment providers, which cannot send a user bearer token, so the gateway

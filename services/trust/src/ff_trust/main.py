@@ -11,12 +11,14 @@ from ff_trust.adapters.mock import MockSignalsAdapter
 from ff_trust.adapters.real import AlibabaSignalsAdapter, MadeInChinaSignalsAdapter
 from ff_trust.api import errors
 from ff_trust.api.routes import router
+from ff_trust.api.verification_routes import router as verification_router
 from ff_trust.cache import TTLCache
 from ff_trust.clients.reviews import HttpReviewsClient, MockReviewsClient, ReviewsClient
 from ff_trust.config import ScoringConfig, Settings
 from ff_trust.obs import install_observability, ready_response
 from ff_trust.service import TrustService
 from ff_trust.store import ReportStore
+from ff_trust.verification import MediaRules, VerificationStore
 
 
 def _adapter(name: str) -> SignalsAdapter:
@@ -40,6 +42,12 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
         TTLCache(settings.cache_ttl_seconds, settings.cache_max_entries),
         reports=ReportStore(settings.report_rate_limit, settings.report_rate_window_seconds),
         history_months=settings.history_months, reviews=reviews or _reviews(settings),
+        verification=VerificationStore(
+            MediaRules(tuple(settings.verification_media_prefixes), tuple(h.lower() for h in settings.verification_media_hosts), settings.verification_allow_http, settings.verification_max_files),
+            rate_limit=settings.verification_rate_limit, rate_window=settings.verification_rate_window_seconds,
+            max_per_supplier=settings.verification_max_docs_per_supplier, max_per_type=settings.verification_max_docs_per_type,
+            max_total=settings.verification_max_total_docs, hash_key=settings.verification_hash_key,
+        ),
     )  # fmt: skip
     errors.install(app)
 
@@ -62,6 +70,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
         return ready_response("trust", {})
 
     app.include_router(router)
+    app.include_router(verification_router)
     install_observability(app, "trust")
     return app
 

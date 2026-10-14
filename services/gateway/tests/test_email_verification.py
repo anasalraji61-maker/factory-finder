@@ -195,3 +195,20 @@ def test_gated_write_fails_closed_for_unknown_or_disabled_user(make_client, mock
     asyncio.run(disable())
     r = c.post("/v1/invoices", json={}, headers=h)
     assert r.status_code in (401, 403) and r.json()["error"]["code"] != "email_not_verified"
+
+
+def test_freight_applications_and_requests_need_verified_email(make_client, mock_upstream):
+    c = _mk(make_client, require_email_verified=True)
+    apply_ = mock_upstream.post("http://localhost:8114/v1/freight/applications").mock(return_value=httpx.Response(201, json={}))
+    req = mock_upstream.post("http://localhost:8114/v1/freight/requests").mock(return_value=httpx.Response(201, json={}))
+    quote = mock_upstream.post("http://localhost:8114/v1/freight/requests/shp_1/quotes").mock(return_value=httpx.Response(201, json={}))
+    tok = c.post("/v1/auth/register", json=REG).json()["access_token"]
+    h = {"Authorization": f"Bearer {tok}"}
+    for path in ("/v1/freight/applications", "/v1/freight/requests"):
+        r = c.post(path, json={}, headers=h)
+        assert r.status_code == 403 and r.json()["error"]["code"] == "email_not_verified", path
+    assert not apply_.called and not req.called
+    assert c.post("/v1/freight/requests/shp_1/quotes", json={}, headers=h).status_code == 201  # forwarders are admin-vetted already
+    assert quote.called
+    assert c.post("/v1/auth/verify-email", json={"token": _token(c)}).status_code == 204
+    assert c.post("/v1/freight/applications", json={}, headers=h).status_code == 201 and apply_.called

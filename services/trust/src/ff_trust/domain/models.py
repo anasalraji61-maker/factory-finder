@@ -62,3 +62,4 @@ class Assessment:
     model_version: str
     data_gaps: tuple["DataGap", ...] = ()
     flags: tuple[str, ...] = ()
+    verification_level: str = "none"  # none | basic | documented | audited

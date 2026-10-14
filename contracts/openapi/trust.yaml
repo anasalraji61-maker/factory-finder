@@ -77,6 +77,102 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
         "429": {description: Rate limited (default 5 reports/user/hour; Retry-After header), content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+  /v1/trust/suppliers/{supplier_id}/verification:
+    get:
+      operationId: getSupplierVerification
+      summary: Public verified-business badge (level and valid document types only; no numbers, files or dates)
+      parameters: [{name: supplier_id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: Badge, content: {application/json: {schema: {$ref: "#/components/schemas/PublicVerification"}}}}
+        "404": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+  /v1/trust/verification/documents:
+    post:
+      operationId: submitVerificationDocument
+      summary: Supplier submits verification document metadata (files are media-service uploads). Needs the gateway-verified X-Supplier-Id.
+      parameters: [{name: X-Supplier-Id, in: header, required: true, schema: {type: string, maxLength: 128}}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationDocumentIn"}}}}
+      responses:
+        "201": {description: Stored as pending, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationDocument"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "409": {description: Duplicate document or per-type / per-supplier cap, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {description: Rate limited (default 10/supplier/hour; Retry-After), content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
+    get:
+      operationId: listMyVerificationDocuments
+      summary: Own documents (masked number suffix only) and the current badge level
+      parameters: [{name: X-Supplier-Id, in: header, required: true, schema: {type: string, maxLength: 128}}]
+      responses:
+        "200": {description: Documents, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationDocumentList"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/trust/verification/documents/{document_id}:
+    delete:
+      operationId: withdrawVerificationDocument
+      summary: Withdraw an own pending/approved document (other suppliers' ids answer 404)
+      parameters:
+        - {name: document_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Supplier-Id, in: header, required: true, schema: {type: string, maxLength: 128}}
+      responses:
+        "200": {description: Withdrawn, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationDocument"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/admin/trust/verification/documents:
+    get:
+      operationId: adminListVerificationDocuments
+      summary: Review queue (default status=pending). 404 when FF_TRUST_ADMIN_TOKEN is unset, 401 on a wrong X-Admin-Token.
+      parameters:
+        - {name: X-Admin-Token, in: header, required: true, schema: {type: string}}
+        - {name: status, in: query, schema: {type: string, enum: [pending, approved, rejected, withdrawn, all], default: pending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 50}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/AdminVerificationDocumentPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/trust/verification/documents/{document_id}/decision:
+    post:
+      operationId: adminDecideVerificationDocument
+      summary: Approve or reject (reason required to reject; rejecting an approved document revokes it). Audited.
+      parameters:
+        - {name: document_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Admin-Token, in: header, required: true, schema: {type: string}}
+        - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationDecisionIn"}}}}
+      responses:
+        "200": {description: Decided, content: {application/json: {schema: {$ref: "#/components/schemas/AdminVerificationDocument"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/trust/verification/documents/{document_id}/expiry:
+    put:
+      operationId: adminSetVerificationExpiry
+      summary: Set or clear the expiry of a pending/approved document. Audited.
+      parameters:
+        - {name: document_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Admin-Token, in: header, required: true, schema: {type: string}}
+        - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationExpiryIn"}}}}
+      responses:
+        "200": {description: Updated, content: {application/json: {schema: {$ref: "#/components/schemas/AdminVerificationDocument"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/trust/verification/audit:
+    get:
+      operationId: adminVerificationAudit
+      summary: Append-only reviewer/supplier action log, newest first
+      parameters:
+        - {name: X-Admin-Token, in: header, required: true, schema: {type: string}}
+        - {name: document_id, in: query, schema: {type: string}}
+        - {name: supplier_id, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}
+      responses:
+        "200": {description: Entries, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationAudit"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
 components:
   responses:
     Error: {description: Error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
@@ -93,7 +189,103 @@ components:
               type: array
               description: Missing signals, most influential first. Missing data lowers confidence, never the score.
               items: {type: object, required: [key, label, label_ar], properties: {key: {type: string}, label: {type: string}, label_ar: {type: string}}}
-            flags: {type: array, items: {type: string}, description: "e.g. sanctions_hit, blocked_flag, price_anomaly, certification_expired, certification_expiring"}
+            verification_level: {type: string, enum: [none, basic, documented, audited], default: none, description: "Verified-business badge from approved, unexpired verification documents (audited needs a third-party audit)"}
+            flags: {type: array, items: {type: string}, description: "e.g. verification_document_expired, verification_document_expiring, sanctions_hit, blocked_flag, price_anomaly, certification_expired, certification_expiring"}
+    DocType: {type: string, enum: [business_license, company_registry_reference, bank_reference, export_license, factory_photos, iso_certificate, other_certificate]}
+    VerificationDocumentIn:
+      type: object
+      additionalProperties: false
+      required: [doc_type, issuing_country, files, consent]
+      properties:
+        doc_type: {$ref: "#/components/schemas/DocType"}
+        issuing_country: {type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2}
+        files: {type: array, minItems: 1, maxItems: 10, items: {type: string, maxLength: 2048}, description: "media-service paths /v1/media/files/<id>.<ext> (absolute URLs only for configured media hosts)"}
+        number: {type: [string, "null"], minLength: 4, maxLength: 64, description: "Required for every type except factory_photos. Never stored in clear and never returned."}
+        expires_on: {type: [string, "null"], format: date}
+        consent: {type: boolean, description: Must be true}
+    VerificationDocument:
+      type: object
+      required: [id, doc_type, issuing_country, files, status, created_at]
+      properties:
+        id: {type: string}
+        doc_type: {$ref: "#/components/schemas/DocType"}
+        issuing_country: {type: string}
+        files: {type: array, items: {type: string}}
+        number_masked: {type: [string, "null"], description: "'****' plus at most the last 4 characters"}
+        expires_on: {type: [string, "null"], format: date}
+        status: {type: string, enum: [pending, approved, rejected, withdrawn]}
+        is_expired: {type: boolean}
+        reason: {type: [string, "null"]}
+        consent: {type: boolean}
+        created_at: {type: string, format: date-time}
+        reviewed_at: {type: [string, "null"], format: date-time}
+    VerificationDocumentList:
+      type: object
+      required: [items, verification_level]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/VerificationDocument"}}
+        verification_level: {type: string, enum: [none, basic, documented, audited]}
+    AdminVerificationDocument:
+      allOf:
+        - $ref: "#/components/schemas/VerificationDocument"
+        - type: object
+          required: [supplier_id]
+          properties:
+            supplier_id: {type: string}
+            reviewed_by: {type: [string, "null"]}
+            approved_on: {type: [string, "null"], format: date}
+            duplicate_elsewhere: {type: boolean, description: Another supplier holds an active document with the same number fingerprint}
+    AdminVerificationDocumentPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/AdminVerificationDocument"}}
+        total: {type: integer}
+        limit: {type: integer}
+        offset: {type: integer}
+    VerificationDecisionIn:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision: {type: string, enum: [approve, reject]}
+        reason: {type: [string, "null"], maxLength: 500, description: Required for reject / revoke}
+        expires_on: {type: [string, "null"], format: date}
+    VerificationExpiryIn:
+      type: object
+      additionalProperties: false
+      properties:
+        expires_on: {type: [string, "null"], format: date}
+        reason: {type: [string, "null"], maxLength: 500}
+    VerificationAudit:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [seq, at, actor, action, document_id, supplier_id]
+            properties:
+              seq: {type: integer}
+              at: {type: string, format: date-time}
+              actor: {type: string}
+              action: {type: string, enum: [submit, approve, reject, revoke, withdraw, set_expiry]}
+              document_id: {type: string}
+              supplier_id: {type: string}
+              from_status: {type: [string, "null"]}
+              to_status: {type: [string, "null"]}
+              reason: {type: [string, "null"]}
+              detail: {type: [string, "null"]}
+    PublicVerification:
+      type: object
+      required: [supplier_id, verification_level, label, label_ar]
+      properties:
+        supplier_id: {type: string}
+        verification_level: {type: string, enum: [none, basic, documented, audited]}
+        label: {type: string}
+        label_ar: {type: string}
+        valid_types: {type: array, items: {$ref: "#/components/schemas/DocType"}}
     TrustHistory:
       type: object
       required: [supplier_id, points]
@@ -174,3 +366,21 @@ components:
             histogram: {type: object, additionalProperties: {type: integer}}
             sub_ratings: {type: object, additionalProperties: {type: [number, "null"]}}
             completed_deals: {type: [integer, "null"], minimum: 0}
+        verification:
+          type: [object, "null"]
+          description: >-
+            Optional approved verification documents (type and dates only; no numbers or files). Adds the bounded, never-negative
+            factors `document_verification` (max +6) and `facility_evidence` (max +4) and the `verification_level` badge.
+            Filled automatically by the service for stored suppliers; inline here for ad-hoc evaluation.
+          additionalProperties: false
+          properties:
+            documents:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [doc_type, approved_on]
+                properties:
+                  doc_type: {$ref: "#/components/schemas/DocType"}
+                  approved_on: {type: string, format: date}
+                  expires_on: {type: [string, "null"], format: date}

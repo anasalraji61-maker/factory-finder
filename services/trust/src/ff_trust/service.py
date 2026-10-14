@@ -18,6 +18,7 @@ from ff_trust.domain.models import Assessment, TrustBand
 from ff_trust.domain.scoring import assess, band_for
 from ff_trust.domain.signals import SupplierSignals
 from ff_trust.store import Report, ReportStore, Snapshot, SnapshotStore
+from ff_trust.verification import VerificationStore
 
 
 def to_out(supplier_id: str, signals: SupplierSignals, cfg: ScoringConfig) -> TrustScoreOut:
@@ -30,6 +31,7 @@ def _out(supplier_id: str, a: Assessment) -> TrustScoreOut:
         factors=[TrustFactorOut(key=f.key, impact=f.impact, explanation=f.explanation, explanation_ar=f.explanation_ar) for f in a.factors],
         computed_at=datetime.now(UTC), confidence=a.confidence, model_version=a.model_version,
         data_gaps=[DataGapOut(key=g.key, label=g.label, label_ar=g.label_ar) for g in a.data_gaps], flags=list(a.flags),
+        verification_level=a.verification_level,  # type: ignore[arg-type]
     )  # fmt: skip
 
 
@@ -41,13 +43,14 @@ class TrustService:
     def __init__(
         self, adapter: SignalsAdapter, cfg: ScoringConfig, cache: TTLCache[TrustScoreOut],
         snapshots: SnapshotStore | None = None, reports: ReportStore | None = None, history_months: int = 12,
-        reviews: ReviewsClient | None = None,
+        reviews: ReviewsClient | None = None, verification: VerificationStore | None = None,
     ):  # fmt: skip
         self.adapter, self.cfg, self.cache = adapter, cfg, cache
         self.snapshots = snapshots or SnapshotStore()
         self.reports = reports or ReportStore()
         self.history_months = history_months
         self.reviews = reviews
+        self.verification = verification or VerificationStore()
 
     async def for_supplier(self, supplier_id: str) -> TrustScoreOut | None:
         hit = self.cache.get(supplier_id)
@@ -66,6 +69,9 @@ class TrustService:
         accepted = self.reports.accepted_count(supplier_id)
         if accepted:  # only reviewed (accepted) reports ever touch the score
             signals = signals.model_copy(update={"confirmed_reports": accepted})
+        evidence = self.verification.evidence_for(supplier_id)  # approved documents only; pending/rejected never count
+        if evidence is not None and signals.verification is None:
+            signals = signals.model_copy(update={"verification": evidence})
         out = to_out(supplier_id, signals, self.cfg)
         self.cache.set(supplier_id, out)
         self.snapshots.add(supplier_id, Snapshot(out.computed_at, out.score, out.band, out.confidence or 0))
@@ -98,6 +104,9 @@ class TrustService:
 
     def add_report(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
         return self.reports.add(supplier_id, user_id, rtype, text)
+
+    def invalidate(self, supplier_id: str) -> None:
+        self.cache.delete(supplier_id)
 
     def review_report(self, report_id: str, status: str) -> Report | None:
         """Moderator hook (not exposed over HTTP). Accepting re-scores the supplier."""

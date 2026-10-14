@@ -303,6 +303,7 @@ paths:
       assistant: [/v1/assistant]
       media: [/v1/media]
       feed: [/v1/feed]  # GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is not routed (service-local moderation)
+      freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is not routed (service-local approval + moderation)
     get:
       operationId: proxy
       description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504."

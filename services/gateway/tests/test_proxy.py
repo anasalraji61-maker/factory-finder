@@ -13,6 +13,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
         ("/v1/feed/home", "feed"), ("/v1/feed/posts/post_1/like", "feed"), ("/v1/feed/trending", "feed"), ("/v1/feedx", None), ("/v1/admin/feed/posts", None),
+        ("/v1/freight/requests/shp_1/quotes", "freight"), ("/v1/freight/forwarders/me", "freight"), ("/v1/freightx", None), ("/v1/admin/freight/applications", None),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
         ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/suppliers/sup_1/reviews", "rfq"), ("/v1/suppliers/sup_1/review-summary", "rfq"), ("/v1/suppliers/sup_1", "sourcing"), ("/v1/suppliers/sup_1/reviews/x", "sourcing"), ("/v1/reviews/rev_1/reply", "rfq"), ("/v1/deals/deal_1/reviews", "rfq"), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
@@ -36,6 +37,7 @@ def test_resolve(path, upstream):
         ("POST", "/v1/deals/d1/reviews", False), ("PUT", "/v1/reviews/r1", False), ("DELETE", "/v1/reviews/r1", False), ("GET", "/v1/reviews/r1", False),
         ("POST", "/v1/reviews/r1/reply", False), ("POST", "/v1/reviews/r1/report", False), ("GET", "/v1/media/filesx", False),
         ("GET", "/v1/feed/trending", True), ("GET", "/v1/feed/home", False), ("POST", "/v1/feed/trending", False), ("GET", "/v1/feed/posts/p1", False), ("GET", "/v1/feed/trending/x", False),
+        ("GET", "/v1/freight/forwarders", False), ("POST", "/v1/freight/requests", False), ("GET", "/v1/freight/requests/x", False),
     ],
 )  # fmt: skip
 def test_public_policy(method, path, public):
@@ -431,3 +433,28 @@ def test_assistant_quota_header_forwarded(client, hdr, mock_upstream):
     )
     r = client.post("/v1/assistant/query", json={"text": "hi"}, headers=hdr)
     assert r.headers.get("x-quota-remaining") == "41"
+
+
+def test_freight_identity_headers_only_from_gateway(make_client, mock_upstream):
+    """Forwarder status is resolved inside freight from the gateway-derived X-User-Id; the gateway
+    never forwards client-supplied X-Forwarder-Id / X-Supplier-Id to it and does not route admin."""
+    c = make_client()
+    route = mock_upstream.post("http://localhost:8114/v1/freight/requests/shp_1/quotes").mock(
+        return_value=httpx.Response(201, json={"id": "qte_1"})
+    )
+    listing = mock_upstream.get("http://localhost:8114/v1/freight/forwarders").mock(
+        return_value=httpx.Response(200, json={"items": [], "next_cursor": None})
+    )
+    assert c.get("/v1/freight/forwarders").status_code == 401 and not listing.called  # nothing is anonymous
+    assert c.post("/v1/freight/requests/shp_1/quotes", json={}).status_code == 401 and not route.called
+    r = c.post("/v1/auth/register", json={"email": "fw@example.com", "password": "password123", "name": "Fw"})
+    h = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    spoof = {**h, "X-Forwarder-Id": "fwd_evil", "X-Supplier-Id": "sup_evil", "X-User-Id": "usr_evil", "X-Admin-Token": "x"}
+    assert c.post("/v1/freight/requests/shp_1/quotes", json={}, headers=spoof).status_code == 201
+    up = route.calls.last.request.headers
+    assert "x-forwarder-id" not in up and "x-supplier-id" not in up and "x-admin-token" not in up
+    assert up["x-user-id"] == r.json()["user"]["id"] != "usr_evil"
+    assert c.get("/v1/freight/forwarders", headers=h).status_code == 200
+    # service-local admin routes are not reachable through the gateway, even with a token
+    assert c.get("/v1/admin/freight/applications", headers={**h, "X-Admin-Token": "adm"}).status_code == 404
+    assert c.post("/v1/admin/freight/applications/app_1/approve", headers={**h, "X-Admin-Token": "adm"}).status_code == 404

@@ -130,8 +130,8 @@ def test_per_user_limit_disabled_with_zero(mock_upstream):
 
 def _mock_health(m, down=()):
     for name, port in zip(
-        ["sourcing", "logistics", "geo", "trust", "rfq", "messaging", "tracking", "notifications", "assistant", "demand", "payments", "media", "feed"],
-        range(8101, 8114), strict=True,
+        ["sourcing", "logistics", "geo", "trust", "rfq", "messaging", "tracking", "notifications", "assistant", "demand", "payments", "media", "feed", "freight"],
+        range(8101, 8115), strict=True,
     ):  # fmt: skip
         r = m.get(f"http://localhost:{port}/health")
         r.mock(return_value=httpx.Response(503 if name in down else 200, json={}))

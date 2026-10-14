@@ -16,6 +16,7 @@ import math
 from datetime import UTC, date, datetime, timedelta
 
 from ff_trust.config import ScoringConfig
+from ff_trust.domain import verification as ver
 from ff_trust.domain.models import Assessment, DataGap, Factor, FactorKind, TrustBand
 from ff_trust.domain.signals import ReviewSummary, SupplierSignals
 
@@ -25,6 +26,7 @@ SCORABLE = (
     "has_physical_address", "contact_consistency", "price_vs_market_ratio", "country_risk",
     "business_license_status", "storefront_age_years", "repeat_buyer_rate", "response_time_hours",
     "refund_rate", "deal_outcomes", "confirmed_reports", "platform_reviews",
+    "document_verification", "facility_evidence",
 )  # fmt: skip
 
 LABELS = {
@@ -50,10 +52,13 @@ LABELS = {
     "deal_outcomes": ("On-platform deal outcomes", "نتائج الصفقات على المنصة"),
     "confirmed_reports": ("Confirmed buyer reports", "بلاغات المشترين المؤكدة"),
     "platform_reviews": ("Verified-purchase reviews", "تقييمات المشترين الموثقة"),
+    "document_verification": ("Approved legal / identity documents", "مستندات قانونية وتعريفية معتمدة"),
+    "facility_evidence": ("Approved factory photos / certificates", "صور مصنع وشهادات معتمدة"),
 }
 # confirmed_reports is a penalty-only signal: its absence is the normal state, not a data gap.
 # platform_reviews is an optional enrichment (only present when the rfq source is on): never a data gap.
-EVIDENCE = tuple(k for k in SCORABLE if k not in ("confirmed_reports", "platform_reviews"))
+# document_verification / facility_evidence are reward-only evidence (submitted by the supplier): never a data gap.
+EVIDENCE = tuple(k for k in SCORABLE if k not in ("confirmed_reports", "platform_reviews", "document_verification", "facility_evidence"))
 GAP_ONLY = {"sanctions_hit": ("Sanctions screening not run", "لم يتم فحص قوائم العقوبات")}
 _LICENSE_F = {"verified": 1.0, "pending": 0.1, "unverified": -0.3, "expired": -0.6, "mismatch": -1.0}
 
@@ -212,6 +217,7 @@ def _f_values(s: SupplierSignals, cfg: ScoringConfig, today: date) -> dict[str, 
         pf = platform_reviews_f(s.review_summary, cfg)
         if pf is not None:
             f["platform_reviews"] = pf
+    f.update(ver.factor_values(s.verification, today, cfg))
     return f
 
 
@@ -229,6 +235,8 @@ def _value_text(key: str, s: SupplierSignals, cfg: ScoringConfig, today: date) -
         rs = s.review_summary
         deals = f", deals={rs.completed_deals}" if rs.completed_deals else ""
         return f"{_summary_average(rs):.2f}/5, n={rs.count}{deals}" + (", small sample dampened" if rs.count < cfg.platform_review_full_n else "")
+    if key in ("document_verification", "facility_evidence"):
+        return ver.value_text(s.verification, key, today, cfg)
     if key == "deal_outcomes":
         return f"{s.deals_completed or 0} completed / {s.deals_cancelled or 0} cancelled"
     return str(getattr(s, key))
@@ -360,6 +368,24 @@ def assess(signals: SupplierSignals, cfg: ScoringConfig | None = None, today: da
                 f"شهادات تنتهي خلال {cfg.cert_expiring_days} يوما: {', '.join(sorted(soon))}.", FactorKind.INFO,
             ))  # fmt: skip
 
+    if signals.verification is not None:
+        expired_t, fading_t = ver.expiry_notes(signals.verification, today, cfg)
+        if expired_t:
+            flags.append("verification_document_expired")
+            factors.append(Factor(
+                "verification_document_expired", 0,
+                f"Expired verification documents are ignored: {', '.join(expired_t)}.",
+                f"مستندات التوثيق المنتهية لا تُحتسب: {', '.join(expired_t)}.", FactorKind.INFO,
+            ))  # fmt: skip
+        if fading_t:
+            flags.append("verification_document_expiring")
+            factors.append(Factor(
+                "verification_document_expiring", 0,
+                f"Verification documents near expiry count for less: {', '.join(fading_t)}.",
+                f"مستندات توثيق قاربت على الانتهاء ووزنها أقل: {', '.join(fading_t)}.", FactorKind.INFO,
+            ))  # fmt: skip
+    level = ver.level_for(signals.verification, today, cfg, signals.third_party_audit, hard_fail)
+
     used = len(fvals) + (1 if signals.sanctions_hit is not None else 0)
     insufficient = used < cfg.min_signals and not hard_fail
     if hard_fail:
@@ -379,5 +405,5 @@ def assess(signals: SupplierSignals, cfg: ScoringConfig | None = None, today: da
         confidence=confidence_for(signals, fvals, cfg), signals_used=used,
         signals_total=len(SCORABLE) + 1, insufficient_signals=insufficient,
         caps_applied=tuple(caps), model_version=cfg.model_version,
-        data_gaps=data_gaps_for(signals, fvals, cfg), flags=tuple(flags),
+        data_gaps=data_gaps_for(signals, fvals, cfg), flags=tuple(flags), verification_level=level,
     )  # fmt: skip

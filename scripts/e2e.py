@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end smoke test: boots all 12 services and runs a scenario through the gateway.
+"""End-to-end smoke test: boots all services and runs a scenario through the gateway.
 
     python scripts/e2e.py            # exits non-zero on any failure
 """
@@ -26,6 +26,7 @@ SERVICES = {  # name: (port, module)
     "notifications": (8108, "ff_notifications.main:app"), "assistant": (8109, "ff_assistant.main:app"),
     "demand": (8110, "ff_demand.main:app"), "payments": (8111, "ff_payments.main:app"),
     "media": (8112, "ff_media.main:app"), "feed": (8113, "ff_feed.main:app"),
+    "freight": (8114, "ff_freight.main:app"),
 }  # fmt: skip
 ADMIN_TOKEN = os.environ.get("FF_E2E_ADMIN_TOKEN", "e2e-admin-token")  # local run: also configured on the spawned services
 # FF_E2E_BASE_URL=http://localhost:8000 -> run against an already running stack (e.g. docker compose);
@@ -82,7 +83,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_PAYMENTS_WEBHOOK_SECRET_MOCK": WEBHOOK_SECRET,
         "FF_DEMAND_ENABLED": "true", "FF_DEMAND_USE_MOCK_SOURCING": "true",
         "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
-        "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN,
+        "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN, "FF_FREIGHT_ADMIN_TOKEN": ADMIN_TOKEN,
     }  # fmt: skip
     base_env.pop("FF_INTERNAL_TOKEN", None)
     base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
@@ -574,6 +575,52 @@ def scenario() -> None:
         assert c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 404
 
     step("feed: supplier post -> follow -> home -> like/comment/report -> delete (via gateway)", feed)
+
+    def freight():
+        body = {
+            "company_name": f"E2E Freight {sfx}", "country_code": "AE", "description": "Sea freight China to Iraq",
+            "lanes": [{"origin_country": "CN", "destination_country": "IQ"}], "modes": ["sea"],
+            "incoterms": ["FOB", "CIF"], "certifications": ["FIATA"],
+        }  # fmt: skip
+        r = c.post("/v1/freight/applications", headers=h("supplier"), json=body)
+        if r.status_code in (404, 502, 503, 504) and r.json().get("error", {}).get("code") != "validation_error":
+            return skip("freight via gateway", f"freight not reachable ({r.status_code})")
+        app = ok(r, 201)
+        assert app["status"] == "pending" and app["forwarder_id"] is None
+        assert c.post("/v1/freight/applications", headers=h("supplier"), json=body).status_code == 409  # one pending
+        assert c.get("/v1/freight/forwarders").status_code == 401
+        assert c.get("/v1/admin/freight/applications", headers={"X-Admin-Token": ADMIN_TOKEN}).status_code == 404, "freight admin must not be routed by the gateway"
+        req = {
+            "origin_country": "CN", "origin_place": "Shenzhen", "destination_country": "IQ", "destination_place": "Umm Qasr",
+            "cargo_description": f"E2E ceramic tiles {sfx}", "weight_kg": "18000", "volume_cbm": "28.5", "mode": "sea",
+            "container_type": "40HC", "incoterm": "FOB", "ready_date": time.strftime("%Y-%m-%d", time.gmtime(time.time() + 7 * 86400)),
+        }  # fmt: skip
+        assert c.post("/v1/freight/requests", headers=h("buyer"), json={**req, "cargo_description": "mail me boss@example.com"}).status_code == 422
+        rq = ok(c.post("/v1/freight/requests", headers=h("buyer"), json=req), 201)
+        quote = {"amount": "2450.00", "currency": "USD", "transit_days": 28, "inclusions": ["Ocean freight"], "terms": "Net 14 days"}
+        assert c.post(f"/v1/freight/requests/{rq['id']}/quotes", headers=h("supplier"), json=quote).status_code == 403  # not approved yet
+        if REMOTE:
+            return skip("freight approval + quoting", "admin approval needs the service port (local run only)")
+        adm = {"X-Admin-Token": ADMIN_TOKEN}
+        fid = ok(httpx.post(f"http://localhost:8114/v1/admin/freight/applications/{app['id']}/approve", headers=adm, timeout=15))["forwarder_id"]
+        assert ok(c.get("/v1/freight/forwarders/me", headers=h("supplier")))["id"] == fid
+        inbox = items(ok(c.get("/v1/freight/forwarders/me/inbox", headers=h("supplier"))))
+        assert rq["id"] in {i["id"] for i in inbox} and all(i["buyer_id"] is None for i in inbox)
+        q = ok(c.post(f"/v1/freight/requests/{rq['id']}/quotes", headers=h("supplier"), json=quote), 201)
+        assert c.post(f"/v1/freight/requests/{rq['id']}/quotes", headers=h("supplier"), json=quote).status_code == 409
+        assert c.post(f"/v1/freight/requests/{rq['id']}/quotes", headers=h("supplier"), json={**quote, "currency": "EUR"}).status_code in (409, 422)
+        cmp_ = ok(c.get(f"/v1/freight/requests/{rq['id']}/comparison", headers=h("buyer")))
+        assert [i["quote"]["id"] for i in cmp_["items"]] == [q["id"]] and cmp_["items"][0]["explanation"]
+        assert c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=h("supplier")).status_code == 404  # only the buyer awards
+        a1 = ok(c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=h("buyer")))
+        a2 = ok(c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=h("buyer")))
+        assert a1 == a2 and a1["request"]["status"] == "awarded"
+        assert ok(c.post(f"/v1/freight/requests/{rq['id']}/close", headers=h("buyer")))["outcome"] == "completed"
+        assert ok(c.post(f"/v1/freight/requests/{rq['id']}/rating", headers=h("buyer"), json={"stars": 5, "comment": "Smooth shipment"}), 201)["stars"] == 5
+        assert c.post(f"/v1/freight/requests/{rq['id']}/rating", headers=h("buyer"), json={"stars": 4}).status_code == 409
+        assert ok(c.get(f"/v1/freight/forwarders/{fid}", headers=h("buyer")))["rating"] == {"average": "5.00", "count": 1}
+
+    step("freight: apply -> admin approve -> request -> quote -> compare -> award -> complete -> rate (via gateway)", freight)
 
 
 

@@ -423,7 +423,7 @@ async def email_flow(tmp: Path | None) -> None:
 
 # --------------------------------------------------------------------------------------------- prod guard
 GUARD_TARGETS = ["ff_gateway.main", "ff_sourcing.main", "ff_rfq.main", "ff_messaging.main", "ff_tracking.main",
-                 "ff_notifications.main", "ff_payments.main", "ff_media.main"]
+                 "ff_notifications.main", "ff_payments.main", "ff_media.main", "ff_freight.main"]
 
 
 def prod_guard() -> None:

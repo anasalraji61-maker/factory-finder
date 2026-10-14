@@ -1,0 +1,1436 @@
+openapi: 3.1.0
+info: {title: Factory Finder freight, version: 0.1.0, description: 'Freight-forwarder marketplace. Forwarders (verified companies) apply, an admin approves them, and they quote on buyers'' shipment requests;
+    buyers compare quotes side by side, award one and rate the forwarder afterwards. User routes live under /v1/freight and are reached through the gateway at the same paths. Admin routes (/v1/admin/freight/*)
+    are NOT routed by the gateway; they need X-Admin-Token (FF_FREIGHT_ADMIN_TOKEN) and answer 404 while that token is unset.
+
+
+    Identity: `X-User-Id` (gateway-derived from the bearer token) is required on every route. Forwarder status is never taken from a header or body: the service resolves it from its own table of admin-approved
+    forwarders (user id -> forwarder). Apply with POST /v1/freight/applications; after an admin approval the same user acts as the forwarder (403 `forwarder_required` before that, 403 `forwarder_suspended`
+    while suspended). With FF_INTERNAL_TOKEN set every route except /health and /ready needs `X-Internal-Token` (401 `invalid_internal_token`).
+
+
+    State machine of a request: open -> awarded (buyer accepts a quote) -> closed (buyer closes = completed); open -> closed (buyer closes = cancelled); open -> expired (automatic once `expires_at` passes;
+    evaluated lazily on every request-touching call and by POST /v1/admin/freight/sweep). Accepting is idempotent for the accepted quote and 409 `already_awarded` for any other quote afterwards. A rating
+    is possible once, only after completion.
+
+
+    Money and quantities are exact decimal strings (amounts 2 decimals, weight/volume 3). All quotes of a request share the request''s currency (no FX is applied; 422 `currency_mismatch`). Estimates and
+    ranking never mix currencies.
+
+
+    Matching: a forwarder sees and may quote on a request only if one of its lanes (origin country, destination country; `*` = any) matches AND the request mode is in its modes AND the request incoterm
+    is in its incoterms. Non-matching requests answer 404.
+
+
+    Free text (cargo, places, company/profile text, quote terms/inclusions, rating comments) is screened like native listings: links, e-mail addresses, phone numbers, messaging handles and prohibited goods
+    (Arabic + English) are rejected with 422 `content_rejected`; reasons never echo the matched text.
+
+
+    Pagination: keyset. `limit` 1-50 (default 20) and an opaque `cursor` from `next_cursor` (null on the last page); a malformed cursor is 422 `invalid_cursor`.
+
+
+    Caps (defaults): 50 open requests per buyer (409 `request_limit_reached`), 50 quotes per request (409 `quote_limit_reached`), 50 lanes per forwarder, 5 applications per user (409 `application_limit_reached`),
+    one pending application (409 `application_pending`). Rate limits per user per rolling hour (429 `rate_limited` + `Retry-After`): 3 applications, 10 requests, 60 quotes, 20 ratings, 20 reports; screened
+    attempts count too.
+
+
+    Moderation: requests and quotes reported by 3 distinct eligible users (default) are hidden (404 / absent from lists); repeated reports by one user count once; forwarders are never auto-actioned (admins
+    suspend). Restoring clears the stored reports.'}
+servers:
+- {url: 'http://localhost:8114'}
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        '200': {description: ok}
+  /ready:
+    get:
+      operationId: ready
+      summary: Readiness (database reachable)
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, checks]
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+                  service: {type: string, const: freight}
+                  checks:
+                    type: object
+                    additionalProperties: {type: boolean}
+        '503':
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: unavailable}
+                  service: {type: string, const: freight}
+                  checks:
+                    type: object
+                    additionalProperties: {type: boolean}
+  /v1/freight/me:
+    get:
+      operationId: whoami
+      summary: 'Who am I: the caller''s forwarder status'
+      responses:
+        '200':
+          description: Identity
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Whoami'}
+        '401': &id001 {$ref: '#/components/responses/Error'}
+  /v1/freight/applications:
+    post:
+      operationId: applyAsForwarder
+      summary: Submit a forwarder application (claim); an admin approves it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ApplicationCreate'}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Application'}
+        '401': *id001
+        '409': *id001
+        '422': *id001
+        '429': *id001
+  /v1/freight/applications/mine:
+    get:
+      operationId: myApplications
+      summary: The caller's applications, newest first (at most the per-user cap)
+      responses:
+        '200':
+          description: Applications
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApplicationPage'}
+        '401': *id001
+  /v1/freight/forwarders:
+    get:
+      operationId: listForwarders
+      summary: Directory of active, admin-approved forwarders, newest first
+      parameters:
+      - name: origin_country
+        in: query
+        schema: {type: string, pattern: '^[A-Z]{2}$'}
+        description: lane filter (wildcard lanes match)
+      - name: destination_country
+        in: query
+        schema: {type: string, pattern: '^[A-Z]{2}$'}
+      - name: mode
+        in: query
+        schema: {$ref: '#/components/schemas/Mode'}
+      - name: incoterm
+        in: query
+        schema: {$ref: '#/components/schemas/Incoterm'}
+      - &id002 {$ref: '#/components/parameters/Cursor'}
+      - &id003 {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ForwarderPage'}
+        '401': *id001
+        '422': *id001
+  /v1/freight/forwarders/me:
+    get:
+      operationId: myForwarderProfile
+      summary: Own forwarder profile (includes status)
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Forwarder'}
+        '401': *id001
+        '403': *id001
+    patch:
+      operationId: updateForwarderProfile
+      summary: Update description, lanes, modes, incoterms, certifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProfileUpdate'}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Forwarder'}
+        '401': *id001
+        '403': *id001
+        '422': *id001
+  /v1/freight/forwarders/me/inbox:
+    get:
+      operationId: forwarderInbox
+      summary: Open requests matching the forwarder's lanes, modes and incoterms, newest first
+      parameters:
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RequestPage'}
+        '401': *id001
+        '403': *id001
+        '422': *id001
+  /v1/freight/forwarders/me/quotes:
+    get:
+      operationId: myQuotes
+      summary: The forwarder's own quotes, newest first
+      parameters:
+      - name: status
+        in: query
+        schema: {$ref: '#/components/schemas/QuoteStatus'}
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/QuotePage'}
+        '401': *id001
+        '403': *id001
+        '422': *id001
+  /v1/freight/forwarders/{forwarder_id}:
+    parameters:
+    - {$ref: '#/components/parameters/ForwarderId'}
+    get:
+      operationId: getForwarder
+      summary: 'Public profile of an active forwarder (suspended: 404 except to its owner)'
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Forwarder'}
+        '401': *id001
+        '404': *id001
+  /v1/freight/forwarders/{forwarder_id}/ratings:
+    parameters:
+    - {$ref: '#/components/parameters/ForwarderId'}
+    get:
+      operationId: forwarderRatings
+      summary: Ratings of a forwarder, newest first
+      parameters:
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RatingPage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/freight/forwarders/{forwarder_id}/report:
+    parameters:
+    - {$ref: '#/components/parameters/ForwarderId'}
+    post:
+      operationId: reportForwarder
+      summary: Report a forwarder (only buyers who received a quote from it); never auto-actioned
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      responses:
+        '202':
+          description: Received
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Received'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+        '429': *id001
+  /v1/freight/requests:
+    post:
+      operationId: createRequest
+      summary: Create a shipment quote request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RequestCreate'}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShipmentRequest'}
+        '401': *id001
+        '409': *id001
+        '422': *id001
+        '429': *id001
+    get:
+      operationId: listMyRequests
+      summary: The caller's own requests, newest first
+      parameters:
+      - name: status
+        in: query
+        schema: {$ref: '#/components/schemas/RequestStatus'}
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RequestPage'}
+        '401': *id001
+        '422': *id001
+  /v1/freight/requests/{request_id}:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    get:
+      operationId: getRequest
+      summary: 'A request: the owner, a forwarder holding a quote on it, or a matching forwarder while it is open (otherwise 404)'
+      responses:
+        '200':
+          description: Request
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShipmentRequest'}
+        '401': *id001
+        '404': *id001
+  /v1/freight/requests/{request_id}/close:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: closeRequest
+      summary: 'Owner closes the request: open -> closed (cancelled), awarded -> closed (completed). Idempotent'
+      responses:
+        '200':
+          description: Closed request
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShipmentRequest'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
+  /v1/freight/requests/{request_id}/quotes:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: submitQuote
+      summary: Submit a quote (approved, active forwarder whose lanes/mode/incoterm match; one quote per request)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/QuoteCreate'}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Quote'}
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '409': *id001
+        '422': *id001
+        '429': *id001
+    get:
+      operationId: listQuotes
+      summary: Quotes on the owner's request, newest first (withdrawn hidden unless filtered)
+      parameters:
+      - name: status
+        in: query
+        schema: {$ref: '#/components/schemas/QuoteStatus'}
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/QuotePage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/freight/requests/{request_id}/comparison:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    get:
+      operationId: compareQuotes
+      summary: Side-by-side ranking of the comparable quotes with an explainable score
+      parameters:
+      - name: sort
+        in: query
+        schema: {$ref: '#/components/schemas/Sort'}
+      responses:
+        '200':
+          description: Ranking
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Comparison'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/freight/requests/{request_id}/rating:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: rateForwarder
+      summary: Rate the awarded forwarder after completion (request closed with an award); once per request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RatingCreate'}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RatingItem'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
+        '422': *id001
+        '429': *id001
+  /v1/freight/requests/{request_id}/report:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: reportRequest
+      summary: Report a request (only parties who can see it); hidden at the report threshold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      responses:
+        '202':
+          description: Received
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Received'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+        '429': *id001
+  /v1/freight/quotes/{quote_id}:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    get:
+      operationId: getQuote
+      summary: 'A quote: its forwarder or the request owner'
+      responses:
+        '200':
+          description: Quote
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Quote'}
+        '401': *id001
+        '404': *id001
+    put:
+      operationId: reviseQuote
+      summary: Revise (or revive after withdrawal) a quote while the request is open; renews validity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/QuoteCreate'}
+      responses:
+        '200':
+          description: Revised
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Quote'}
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '409': *id001
+        '422': *id001
+  /v1/freight/quotes/{quote_id}/withdraw:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    post:
+      operationId: withdrawQuote
+      summary: Withdraw a submitted quote. Idempotent
+      responses:
+        '200':
+          description: Withdrawn
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Quote'}
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '409': *id001
+  /v1/freight/quotes/{quote_id}/accept:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    post:
+      operationId: acceptQuote
+      summary: Award the request to this quote (owner only). Idempotent for the already-accepted quote; another quote after an award is 409 already_awarded
+      responses:
+        '200':
+          description: Awarded
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AcceptResult'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
+  /v1/freight/quotes/{quote_id}/report:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    post:
+      operationId: reportQuote
+      summary: Report a quote (request owner only); hidden at the report threshold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReportCreate'}
+      responses:
+        '202':
+          description: Received
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Received'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+        '429': *id001
+  /v1/admin/freight/applications:
+    get:
+      operationId: adminListApplications
+      summary: Applications, newest first
+      security:
+      - AdminToken: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, approved, rejected, all]
+          default: pending
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminApplicationPage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/applications/{application_id}/approve:
+    parameters:
+    - {$ref: '#/components/parameters/ApplicationId'}
+    post:
+      operationId: adminApproveApplication
+      summary: 'Approve: creates the active forwarder for the applicant. Idempotent'
+      security:
+      - AdminToken: []
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminApplication'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NoteCreate'}
+  /v1/admin/freight/applications/{application_id}/reject:
+    parameters:
+    - {$ref: '#/components/parameters/ApplicationId'}
+    post:
+      operationId: adminRejectApplication
+      summary: Reject a pending application. Idempotent
+      security:
+      - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonCreate'}
+      responses:
+        '200':
+          description: Rejected
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminApplication'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
+        '422': *id001
+  /v1/admin/freight/forwarders:
+    get:
+      operationId: adminListForwarders
+      summary: Forwarders with status and owner user id
+      security:
+      - AdminToken: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [active, suspended, all]
+          default: all
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminForwarderPage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/forwarders/{forwarder_id}/suspend:
+    parameters:
+    - {$ref: '#/components/parameters/ForwarderId'}
+    post:
+      operationId: adminSuspendForwarder
+      summary: 'Suspend: no new quotes, hidden from the directory, excluded from comparisons'
+      security:
+      - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonCreate'}
+      responses:
+        '200':
+          description: Suspended
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminForwarder'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/forwarders/{forwarder_id}/reinstate:
+    parameters:
+    - {$ref: '#/components/parameters/ForwarderId'}
+    post:
+      operationId: adminReinstateForwarder
+      summary: Reinstate a suspended forwarder
+      security:
+      - AdminToken: []
+      responses:
+        '200':
+          description: Reinstated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminForwarder'}
+        '401': *id001
+        '404': *id001
+  /v1/admin/freight/requests:
+    get:
+      operationId: adminListRequests
+      summary: All requests incl. hidden
+      security:
+      - AdminToken: []
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [open, awarded, closed, expired, all]
+          default: all
+      - name: visibility
+        in: query
+        schema:
+          type: string
+          enum: [visible, hidden, all]
+          default: all
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminRequestPage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/requests/{request_id}/hide:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: adminHideRequest
+      summary: Hide a request
+      security:
+      - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonCreate'}
+      responses:
+        '200':
+          description: Hidden
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminRequest'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/requests/{request_id}/restore:
+    parameters:
+    - {$ref: '#/components/parameters/RequestId'}
+    post:
+      operationId: adminRestoreRequest
+      summary: Restore a request; clears its reports and count
+      security:
+      - AdminToken: []
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminRequest'}
+        '401': *id001
+        '404': *id001
+  /v1/admin/freight/quotes:
+    get:
+      operationId: adminListQuotes
+      summary: All quotes incl. hidden
+      security:
+      - AdminToken: []
+      parameters:
+      - name: request_id
+        in: query
+        schema: {type: string}
+      - name: visibility
+        in: query
+        schema:
+          type: string
+          enum: [visible, hidden, all]
+          default: all
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminQuotePage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/quotes/{quote_id}/hide:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    post:
+      operationId: adminHideQuote
+      summary: Hide a quote
+      security:
+      - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReasonCreate'}
+      responses:
+        '200':
+          description: Hidden
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminQuote'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/quotes/{quote_id}/restore:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    post:
+      operationId: adminRestoreQuote
+      summary: Restore a quote; clears its reports and count
+      security:
+      - AdminToken: []
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AdminQuote'}
+        '401': *id001
+        '404': *id001
+  /v1/admin/freight/reports:
+    get:
+      operationId: adminListReports
+      summary: Stored reports (details redacted), newest first
+      security:
+      - AdminToken: []
+      parameters:
+      - name: target_type
+        in: query
+        schema:
+          type: string
+          enum: [request, quote, forwarder]
+      - name: target_id
+        in: query
+        schema: {type: string}
+      - *id002
+      - *id003
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReportPage'}
+        '401': *id001
+        '404': *id001
+        '422': *id001
+  /v1/admin/freight/sweep:
+    post:
+      operationId: adminSweep
+      summary: Expire all open requests past their deadline now (also done lazily on every request-touching call)
+      security:
+      - AdminToken: []
+      responses:
+        '200':
+          description: Count
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SweepResult'}
+        '401': *id001
+        '404': *id001
+components:
+  securitySchemes:
+    AdminToken: {type: apiKey, in: header, name: X-Admin-Token}
+  parameters:
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}
+    QuoteId:
+      name: quote_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}
+    ForwarderId:
+      name: forwarder_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}
+    ApplicationId:
+      name: application_id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[A-Za-z0-9_\-]{1,40}$'}
+    Cursor:
+      name: cursor
+      in: query
+      schema: {type: string, maxLength: 300}
+      description: opaque; from next_cursor
+    Limit:
+      name: limit
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
+  schemas:
+    Mode:
+      type: string
+      enum: [sea, air, road, rail]
+    Incoterm:
+      type: string
+      enum: [EXW, FCA, FAS, FOB, CFR, CIF, CPT, CIP, DAP, DPU, DDP]
+    RequestStatus:
+      type: string
+      enum: [open, awarded, closed, expired]
+    QuoteStatus:
+      type: string
+      enum: [submitted, accepted, rejected, withdrawn]
+    Sort:
+      type: string
+      enum: [score, price, transit, rating]
+      default: score
+    Lane:
+      type: object
+      additionalProperties: false
+      required: [origin_country, destination_country]
+      properties:
+        origin_country: &id004 {type: string, pattern: '^([A-Z]{2}|\*)$', description: ISO-3166 alpha-2 or * for any country}
+        destination_country: *id004
+    Rating:
+      type: object
+      required: [average, count]
+      properties:
+        average:
+          type: [string, 'null']
+          description: mean stars, 2 decimals; null until rated
+        count: {type: integer, minimum: 0}
+    Whoami:
+      type: object
+      required: [user_id, forwarder_id, forwarder_status]
+      properties:
+        user_id: {type: string}
+        forwarder_id: &id006
+          type: [string, 'null']
+        forwarder_status:
+          type: [string, 'null']
+          enum: [active, suspended, null]
+    ApplicationCreate:
+      type: object
+      additionalProperties: false
+      required: [company_name, country_code, lanes, modes, incoterms]
+      properties:
+        company_name: {type: string, minLength: 2, maxLength: 120}
+        country_code: &id005 {type: string, pattern: '^[A-Z]{2}$'}
+        description:
+          type: [string, 'null']
+          maxLength: 1000
+        lanes:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: {$ref: '#/components/schemas/Lane'}
+        modes:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Mode'}
+        incoterms:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Incoterm'}
+        certifications:
+          type: array
+          maxItems: 10
+          items: {type: string, minLength: 2, maxLength: 40}
+          description: claimed labels, e.g. FIATA; an admin reviews them at approval
+    ProfileUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        description:
+          type: [string, 'null']
+          maxLength: 1000
+        lanes:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: {$ref: '#/components/schemas/Lane'}
+        modes:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Mode'}
+        incoterms:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Incoterm'}
+        certifications:
+          type: array
+          maxItems: 10
+          items: {type: string, maxLength: 40}
+    Application:
+      type: object
+      required: [id, company_name, country_code, lanes, modes, incoterms, certifications, status, review_note, forwarder_id, created_at, reviewed_at]
+      properties:
+        id: {type: string}
+        company_name: {type: string}
+        country_code: *id005
+        description: *id006
+        lanes:
+          type: array
+          items: {$ref: '#/components/schemas/Lane'}
+        modes:
+          type: array
+          items: {$ref: '#/components/schemas/Mode'}
+        incoterms:
+          type: array
+          items: {$ref: '#/components/schemas/Incoterm'}
+        certifications:
+          type: array
+          items: {type: string}
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        review_note: *id006
+        forwarder_id: *id006
+        created_at: &id007 {type: string, format: date-time}
+        reviewed_at: &id008
+          type: [string, 'null']
+          format: date-time
+    AdminApplication:
+      allOf:
+      - {$ref: '#/components/schemas/Application'}
+      - type: object
+        required: [user_id]
+        properties:
+          user_id: {type: string}
+    ApplicationPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Application'}
+        next_cursor:
+          type: [string, 'null']
+    AdminApplicationPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/AdminApplication'}
+        next_cursor:
+          type: [string, 'null']
+    Forwarder:
+      type: object
+      required: [id, company_name, country_code, lanes, modes, incoterms, certifications, rating, completed_jobs, verified_at, created_at]
+      properties:
+        id: {type: string}
+        company_name: {type: string}
+        country_code: *id005
+        description: *id006
+        lanes:
+          type: array
+          items: {$ref: '#/components/schemas/Lane'}
+        modes:
+          type: array
+          items: {$ref: '#/components/schemas/Mode'}
+        incoterms:
+          type: array
+          items: {$ref: '#/components/schemas/Incoterm'}
+        certifications:
+          type: array
+          items: {type: string}
+        rating: {$ref: '#/components/schemas/Rating'}
+        completed_jobs: {type: integer, minimum: 0}
+        verified_at: *id007
+        created_at: *id007
+        status:
+          type: string
+          enum: [active, suspended]
+          description: only on the owner's own profile and in admin views
+    AdminForwarder:
+      allOf:
+      - {$ref: '#/components/schemas/Forwarder'}
+      - type: object
+        required: [status, user_id, status_reason]
+        properties:
+          user_id: {type: string}
+          status_reason: *id006
+    ForwarderPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Forwarder'}
+        next_cursor:
+          type: [string, 'null']
+    AdminForwarderPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/AdminForwarder'}
+        next_cursor:
+          type: [string, 'null']
+    ForwarderSummary:
+      type: object
+      required: [id, company_name, country_code, rating, completed_jobs]
+      properties:
+        id: {type: string}
+        company_name: {type: string}
+        country_code: *id005
+        rating: {$ref: '#/components/schemas/Rating'}
+        completed_jobs: {type: integer, minimum: 0}
+    RequestCreate:
+      type: object
+      additionalProperties: false
+      required: [origin_country, origin_place, destination_country, destination_place, cargo_description, mode, incoterm, ready_date]
+      properties:
+        origin_country: *id005
+        origin_place: {type: string, minLength: 2, maxLength: 80, description: city or port}
+        destination_country: *id005
+        destination_place: {type: string, minLength: 2, maxLength: 80}
+        cargo_description: {type: string, minLength: 3, maxLength: 500}
+        hs_code:
+          type: [string, 'null']
+          description: 4-10 digits, dots allowed
+        weight_kg:
+          type: [string, number, 'null']
+          description: decimal > 0, up to 3 decimals; send as a string. weight_kg or volume_cbm is required
+        volume_cbm:
+          type: [string, number, 'null']
+        mode: {$ref: '#/components/schemas/Mode'}
+        container_type:
+          type: [string, 'null']
+          enum: [20GP, 40GP, 40HC, 45HC, 20RF, 40RF, 20OT, 40OT, 20FR, 40FR, LCL, null]
+          description: sea and rail only
+        container_count:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 500
+          description: needs container_type; defaults to 1
+        incoterm: {$ref: '#/components/schemas/Incoterm'}
+        ready_date: {type: string, format: date, description: today .. +365 days (UTC)}
+        currency: {type: string, pattern: '^[A-Z]{3}$', default: USD, description: quotes must use this currency}
+        quote_deadline_days: {type: integer, minimum: 1, maximum: 30, default: 14}
+        landed_cost_ref:
+          type: [string, 'null']
+          pattern: ^[A-Za-z0-9_.:\-]{1,64}$
+          description: opaque id of a logistics landed-cost quote; not checked
+    ShipmentRequest:
+      type: object
+      required: [id, origin_country, origin_place, destination_country, destination_place, cargo_description, hs_code, weight_kg, volume_cbm, mode, container_type, container_count, incoterm, ready_date,
+        currency, landed_cost_ref, status, outcome, quote_count, expires_at, awarded_at, awarded_quote_id, buyer_id, closed_at, created_at]
+      properties:
+        id: {type: string}
+        origin_country: *id005
+        origin_place: {type: string}
+        destination_country: *id005
+        destination_place: {type: string}
+        cargo_description: {type: string}
+        hs_code: *id006
+        weight_kg:
+          type: [string, 'null']
+        volume_cbm:
+          type: [string, 'null']
+        mode: {$ref: '#/components/schemas/Mode'}
+        container_type: *id006
+        container_count:
+          type: [integer, 'null']
+        incoterm: {$ref: '#/components/schemas/Incoterm'}
+        ready_date: {type: string, format: date}
+        currency: {type: string}
+        landed_cost_ref: *id006
+        status: {$ref: '#/components/schemas/RequestStatus'}
+        outcome:
+          type: [string, 'null']
+          enum: [completed, cancelled, null]
+          description: set when status is closed
+        quote_count: {type: integer, minimum: 0, description: submitted + accepted quotes}
+        expires_at: *id007
+        awarded_at: *id008
+        awarded_quote_id:
+          type: [string, 'null']
+          description: owner / winning forwarder / admin only
+        buyer_id:
+          type: [string, 'null']
+          description: owner / winning forwarder / admin only
+        closed_at: *id008
+        created_at: *id007
+        has_quoted: {type: boolean, description: forwarder inbox only}
+    AdminRequest:
+      allOf:
+      - {$ref: '#/components/schemas/ShipmentRequest'}
+      - type: object
+        required: [visibility, hidden_reason, report_count, awarded_forwarder_id]
+        properties:
+          visibility:
+            type: string
+            enum: [visible, hidden]
+          hidden_reason: *id006
+          report_count: {type: integer, minimum: 0}
+          awarded_forwarder_id: *id006
+    RequestPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ShipmentRequest'}
+        next_cursor:
+          type: [string, 'null']
+    AdminRequestPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/AdminRequest'}
+        next_cursor:
+          type: [string, 'null']
+    QuoteLine:
+      type: object
+      additionalProperties: false
+      required: [label, amount]
+      properties:
+        label: {type: string, minLength: 2, maxLength: 60}
+        amount: {type: string, pattern: '^\d+(\.\d{1,2})?$', description: 'exact decimal string, up to 2 decimals'}
+    QuoteCreate:
+      type: object
+      additionalProperties: false
+      required: [amount, currency, transit_days]
+      properties:
+        amount:
+          type: [string, number]
+          description: total, decimal > 0 with at most 2 decimals; send as a string
+        currency: {type: string, pattern: '^[A-Z]{3}$', description: must equal the request currency (422 currency_mismatch)}
+        transit_days: {type: integer, minimum: 1, maximum: 365}
+        valid_days: {type: integer, minimum: 1, maximum: 90, default: 14}
+        inclusions:
+          type: array
+          maxItems: 10
+          items: {type: string, minLength: 2, maxLength: 80}
+        exclusions:
+          type: array
+          maxItems: 10
+          items: {type: string, minLength: 2, maxLength: 80}
+        breakdown:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            additionalProperties: false
+            required: [label, amount]
+            properties:
+              label: {type: string, minLength: 2, maxLength: 60}
+              amount:
+                type: [string, number]
+          description: optional charge lines; when present they must add up to amount exactly (422 breakdown_mismatch)
+        terms:
+          type: [string, 'null']
+          maxLength: 1000
+    Quote:
+      type: object
+      required: [id, request_id, forwarder_id, amount, currency, transit_days, valid_until, valid, inclusions, exclusions, breakdown, terms, status, revision, created_at, updated_at]
+      properties:
+        id: {type: string}
+        request_id: {type: string}
+        forwarder_id: {type: string}
+        amount: {type: string, pattern: '^\d+(\.\d{1,2})?$', description: 'exact decimal string, up to 2 decimals'}
+        currency: {type: string}
+        transit_days: {type: integer}
+        valid_until: *id007
+        valid: {type: boolean, description: submitted and not past valid_until}
+        inclusions:
+          type: array
+          items: {type: string}
+        exclusions:
+          type: array
+          items: {type: string}
+        breakdown:
+          type: array
+          items: {$ref: '#/components/schemas/QuoteLine'}
+        terms: *id006
+        status: {$ref: '#/components/schemas/QuoteStatus'}
+        revision: {type: integer, minimum: 1}
+        created_at: *id007
+        updated_at: *id007
+        forwarder: {$ref: '#/components/schemas/ForwarderSummary'}
+    AdminQuote:
+      allOf:
+      - {$ref: '#/components/schemas/Quote'}
+      - type: object
+        required: [visibility, hidden_reason, report_count]
+        properties:
+          visibility:
+            type: string
+            enum: [visible, hidden]
+          hidden_reason: *id006
+          report_count: {type: integer, minimum: 0}
+    QuotePage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Quote'}
+        next_cursor:
+          type: [string, 'null']
+    AdminQuotePage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/AdminQuote'}
+        next_cursor:
+          type: [string, 'null']
+    AcceptResult:
+      type: object
+      required: [request, quote]
+      properties:
+        request: {$ref: '#/components/schemas/ShipmentRequest'}
+        quote: {$ref: '#/components/schemas/Quote'}
+    Comparison:
+      type: object
+      required: [request_id, request_status, currency, sort, weights, formula, items, excluded]
+      properties:
+        request_id: {type: string}
+        request_status: {$ref: '#/components/schemas/RequestStatus'}
+        currency: {type: string}
+        sort: {$ref: '#/components/schemas/Sort'}
+        weights:
+          type: object
+          required: [price, transit, rating]
+          properties:
+            price: {type: number}
+            transit: {type: number}
+            rating: {type: number}
+        formula: {type: string}
+        items:
+          type: array
+          items:
+            type: object
+            required: [rank, score, breakdown, adjusted_rating, badges, explanation, quote]
+            properties:
+              rank: {type: integer, minimum: 1}
+              score: {type: number, description: '0-100, one decimal'}
+              breakdown:
+                type: object
+                required: [price, transit, rating]
+                properties:
+                  price:
+                    type: object
+                    required: [value, weight]
+                    properties:
+                      value: {type: number, description: 0-1 component score}
+                      weight: {type: number}
+                  transit:
+                    type: object
+                    required: [value, weight]
+                    properties:
+                      value: {type: number, description: 0-1 component score}
+                      weight: {type: number}
+                  rating:
+                    type: object
+                    required: [value, weight]
+                    properties:
+                      value: {type: number, description: 0-1 component score}
+                      weight: {type: number}
+              adjusted_rating: {type: number, description: stars shrunk toward 3.0 (prior worth 2 ratings)}
+              badges:
+                type: array
+                items:
+                  type: string
+                  enum: [cheapest, fastest, top_rated]
+              explanation:
+                type: array
+                items: {type: string}
+              quote: {$ref: '#/components/schemas/Quote'}
+        excluded:
+          type: array
+          items:
+            type: object
+            required: [quote_id, reason]
+            properties:
+              quote_id: {type: string}
+              reason:
+                type: string
+                enum: [forwarder_suspended, currency_mismatch, quote_expired]
+      description: 'Only submitted (and, once awarded, accepted) visible quotes of active forwarders in the request currency, not past validity, are ranked. score = 100 x (w_price x cheapest/price + w_transit
+        x fastest/transit + w_rating x adjusted_rating/5); weights default 0.5/0.3/0.2 (FF_FREIGHT_WEIGHT_*). Ties: lower price, shorter transit, earlier submission.'
+    RatingCreate:
+      type: object
+      additionalProperties: false
+      required: [stars]
+      properties:
+        stars: {type: integer, minimum: 1, maximum: 5}
+        comment:
+          type: [string, 'null']
+          maxLength: 500
+    RatingPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/RatingItem'}
+        next_cursor:
+          type: [string, 'null']
+    RatingItem:
+      type: object
+      required: [id, request_id, forwarder_id, stars, comment, created_at]
+      properties:
+        id: {type: string}
+        request_id: {type: string}
+        forwarder_id: {type: string}
+        stars: {type: integer, minimum: 1, maximum: 5}
+        comment: *id006
+        created_at: *id007
+    ReportCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [prohibited_item, counterfeit, scam_or_fraud, misleading, contact_info, offensive, spam, other]
+        details:
+          type: [string, 'null']
+          maxLength: 300
+          description: stored redacted (links, e-mails, phone numbers masked)
+    Received:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [received]
+    ReasonCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 3, maxLength: 300}
+    NoteCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        note:
+          type: [string, 'null']
+          maxLength: 300
+    SweepResult:
+      type: object
+      required: [expired]
+      properties:
+        expired: {type: integer, minimum: 0}
+    ReportPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ReportItem'}
+        next_cursor:
+          type: [string, 'null']
+    ReportItem:
+      type: object
+      required: [id, target_type, target_id, reporter_id, reason, details, created_at]
+      properties:
+        id: {type: string}
+        target_type:
+          type: string
+          enum: [request, quote, forwarder]
+        target_id: {type: string}
+        reporter_id: {type: string}
+        reason: {type: string}
+        details: *id006
+        created_at: *id007

@@ -22,6 +22,7 @@ DEFAULT_UPSTREAMS: dict[str, str] = {
     "payments": "http://localhost:8111",
     "media": "http://localhost:8112",
     "feed": "http://localhost:8113",
+    "freight": "http://localhost:8114",
 }
 
 
