@@ -123,8 +123,8 @@ void main() {
     await tester.scrollUntilVisible(find.text('حفظ التغييرات'), 300, scrollable: list);
     await tester.tap(find.text('حفظ التغييرات'));
     await settle(tester, frames: 6);
-    final texts = find.byType(Text).evaluate().map((e) => (e.widget as Text).data ?? '').where((t) => t.isNotEmpty).join(' | ');
-    expect(find.byKey(const Key('np_saved')), findsOneWidget, reason: 'expected saved error: $texts');
+    await tester.scrollUntilVisible(find.byKey(const Key('np_saved')), 300, scrollable: list);
+    expect(find.byKey(const Key('np_saved')), findsOneWidget);
 
     expect(tester.takeException(), isNull);
     await disposeApp(tester);
