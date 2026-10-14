@@ -123,9 +123,8 @@ void main() {
     await tester.scrollUntilVisible(find.text('حفظ التغييرات'), 300, scrollable: list);
     await tester.tap(find.text('حفظ التغييرات'));
     await settle(tester, frames: 6);
-    // ignore: avoid_print
-    print('NPDEBUG: ' + find.byType(Text).evaluate().map((e) => (e.widget as Text).data ?? '').where((t) => t.isNotEmpty).join(' | '));
-    expect(find.byKey(const Key('np_saved')), findsOneWidget);
+    final texts = find.byType(Text).evaluate().map((e) => (e.widget as Text).data ?? '').where((t) => t.isNotEmpty).join(' | ');
+    expect(find.byKey(const Key('np_saved')), findsOneWidget, reason: 'expected saved error: $texts');
 
     expect(tester.takeException(), isNull);
     await disposeApp(tester);
