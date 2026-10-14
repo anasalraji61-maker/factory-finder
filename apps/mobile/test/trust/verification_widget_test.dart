@@ -129,10 +129,15 @@ void main() {
   testWidgets('lists documents with status chips, masked numbers and reasons',
       (tester) async {
     final repo = _FakeRepo();
+    final media = MockMediaRepository();
     await _pump(tester, const VerificationScreen(), overrides: [
       bypass,
       verificationRepositoryProvider.overrideWithValue(repo),
+      mediaRepositoryProvider.overrideWithValue(media),
     ]);
+    // One thumbnail per file, each signed on demand (4 docs, 5 files).
+    expect(find.byKey(const ValueKey<String>('ver-thumb-vdoc_0002-1')), findsOneWidget);
+    expect(media.signCalls, 5);
 
     Finder status(String id, String text) => find.descendant(
           of: find.byKey(ValueKey<String>('ver-status-$id')),
@@ -347,7 +352,7 @@ void main() {
     expect(body['consent'], true);
     final files = body['files'] as List;
     expect(files, hasLength(1));
-    expect((files.single as String).startsWith('/v1/media/files/'), isTrue);
+    expect((files.single as String).startsWith('/v1/media/private/'), isTrue);
     // Sheet closed, snackbar shown.
     expect(find.byKey(const ValueKey<String>('ver-form')), findsNothing);
     expect(find.text(_en('ver.submit_ok')), findsOneWidget);

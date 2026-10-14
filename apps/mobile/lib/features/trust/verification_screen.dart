@@ -7,6 +7,7 @@ import 'package:factory_finder/features/trust/verification_badge.dart';
 import 'package:factory_finder/features/trust/verification_form_sheet.dart';
 import 'package:factory_finder/features/trust/verification_models.dart';
 import 'package:factory_finder/features/trust/verification_repository.dart';
+import 'package:factory_finder/features/trust/verification_thumbnails.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -273,6 +274,22 @@ class VerificationScreen extends ConsumerWidget {
               Text(context.tr('ver.files_n', {'n': '${d.files.length}'}), style: secondary),
             ],
           ),
+          if (d.files.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              key: ValueKey<String>('ver-thumbs-${d.id}'),
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (var i = 0; i < d.files.length; i++)
+                  VerificationThumb(
+                    key: ValueKey<String>('ver-thumb-${d.id}-$i'),
+                    fileRef: d.files[i],
+                    index: i + 1,
+                  ),
+              ],
+            ),
+          ],
           if (d.status == 'rejected' && d.reason != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(

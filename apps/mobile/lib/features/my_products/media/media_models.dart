@@ -30,3 +30,20 @@ class UploadedImage {
     );
   }
 }
+
+/// Result of POST /v1/media/files/{id}/sign (short-lived private-file URL).
+class SignedUrl {
+  const SignedUrl({required this.url, required this.ttlSeconds});
+
+  final String url;
+  final int ttlSeconds;
+
+  factory SignedUrl.fromJson(Object? json) {
+    final m = json is Map ? json : const <String, dynamic>{};
+    final ttl = m['ttl_seconds'];
+    return SignedUrl(
+      url: (m['url'] ?? '').toString(),
+      ttlSeconds: ttl is num ? ttl.toInt() : 0,
+    );
+  }
+}

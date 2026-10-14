@@ -19,8 +19,9 @@ Future<bool?> showVerificationSheet(BuildContext context) =>
       builder: (_) => const VerificationFormSheet(),
     );
 
-/// Media kind used for verification images (contract MediaKind).
-const String kVerificationMediaKind = 'attachment';
+/// Media kind used for verification images (contract MediaKind): always
+/// private; `up.url` is `/v1/media/private/<id>.<ext>` and goes into files[].
+const String kVerificationMediaKind = 'verification';
 
 class VerificationFormSheet extends ConsumerStatefulWidget {
   const VerificationFormSheet({super.key});

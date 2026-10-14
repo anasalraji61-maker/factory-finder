@@ -45,6 +45,13 @@ String mediaThumbUrl(String baseUrl, String url, {int width = 200}) {
   return '$full?w=$width';
 }
 
+/// 32-hex media id inside a media reference (`/v1/media/private/<id>.jpg`,
+/// `/v1/media/files/<id>.png`, absolute or not); null when there is none.
+String? mediaIdFromRef(String ref) {
+  final m = RegExp(r'([a-f0-9]{32})\.(?:jpg|png|webp)(?:$|[?#])').firstMatch(ref);
+  return m?.group(1);
+}
+
 /// Returns a copy of [list] with the item at [index] moved by [delta]
 /// (-1 = earlier, +1 = later). Out-of-range moves return an unchanged copy.
 List<T> moveItem<T>(List<T> list, int index, int delta) {

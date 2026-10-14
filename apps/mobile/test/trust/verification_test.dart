@@ -52,7 +52,7 @@ const VerificationDraft _validDraft = VerificationDraft(
   number: ' LIC-12345 ',
   expiresOn: '2031-01-31',
   consent: true,
-  files: ['/v1/media/files/ffffffffffffffffffffffffffffffff.jpg'],
+  files: ['/v1/media/private/ffffffffffffffffffffffffffffffff.jpg'],
 );
 
 void main() {
@@ -141,7 +141,7 @@ void main() {
         String country = 'IQ',
         String number = 'ABCD',
         String expiresOn = '',
-        List<String> files = const ['/v1/media/files/a.jpg'],
+        List<String> files = const ['/v1/media/private/a.jpg'],
       }) =>
           VerificationDraft(
             docType: 'export_license',
@@ -165,7 +165,7 @@ void main() {
       expect(v(d(expiresOn: '2026-10-15')), isEmpty);
       expect(v(d(files: const []))['files'], 'ver.err.files');
       expect(
-        v(d(files: List<String>.generate(11, (i) => '/v1/media/files/$i.jpg')))['files'],
+        v(d(files: List<String>.generate(11, (i) => '/v1/media/private/$i.jpg')))['files'],
         'ver.err.files',
       );
     });
@@ -176,7 +176,7 @@ void main() {
         country: 'CN',
         number: 'IGNORED-123',
         consent: true,
-        files: ['/v1/media/files/a.jpg'],
+        files: ['/v1/media/private/a.jpg'],
       );
       expect(validateVerificationDraft(d), isEmpty);
       expect(d.toJson().containsKey('number'), isFalse);
@@ -266,7 +266,7 @@ void main() {
       expect(body['number'], 'LIC-12345');
       expect(body['expires_on'], '2031-01-31');
       expect(body['consent'], true);
-      expect(body['files'], ['/v1/media/files/ffffffffffffffffffffffffffffffff.jpg']);
+      expect(body['files'], ['/v1/media/private/ffffffffffffffffffffffffffffffff.jpg']);
 
       final w = await repo.withdraw('vdoc_0005');
       expect(w.status, 'withdrawn');
@@ -315,7 +315,7 @@ void main() {
             country: 'IQ',
             number: 'DUP-0001',
             consent: true,
-            files: ['/v1/media/files/a.jpg'],
+            files: ['/v1/media/private/a.jpg'],
           )));
       expect(verificationErrorKey(dup), 'ver.err.duplicate');
 

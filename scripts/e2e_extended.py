@@ -13,6 +13,10 @@ Flows (each is an independent step; a failing setup only skips the steps that de
   rfq deals            deals list as buyer / supplier, role filter, stranger isolation
   assistant            cards for a shipment question, daily quota 429 + Retry-After
   compliance           probes /v1/me/export, /v1/me/data etc.; SKIP when the stack has no such endpoints
+  feed                 verified supplier post -> follow / like / comment -> reports hide it -> admin hide / restore
+  freight              forwarder application -> admin approve -> request -> quotes -> comparison -> revise -> accept -> rate
+  trust verification   private upload -> submit -> admin approve (badge level) -> revoke; public route 404 for private file
+  private media        owner / signed URL / admin reads, tampered signature, foreign owner, anonymous: all 404
   reviews              completed deal -> review created, duplicate 409, public summary
   production guard     FF_ENV=production refuses to start without secrets (subprocess per service)
 
@@ -26,6 +30,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import shutil
 import sqlite3
 import struct
@@ -38,6 +43,7 @@ import warnings
 import zlib
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 
@@ -68,6 +74,8 @@ def extra_env() -> None:
         "FF_TRACKING_NOTIFY_RELAY": "on", "FF_TRACKING_NOTIFY_BASE_URL": "http://localhost:8108",
         "FF_TRACKING_NOTIFY_POLL_SECONDS": "1",
         "FF_ASSISTANT_QUOTA_PER_DAY": str(QUOTA),
+        "FF_TRUST_ADMIN_TOKEN": ADMIN_TOKEN,               # gateway admin passthrough to trust verification
+        "FF_FEED_REPORT_HIDE_THRESHOLD": "2", "FF_FREIGHT_REPORT_HIDE_THRESHOLD": "2",
     })  # fmt: skip
 
 
@@ -361,6 +369,273 @@ def scenario(tmp: Path | None) -> None:
                 assert c.get(p).status_code == 401, "export open without token"
 
     step("compliance: export / legal / consent endpoints (if present)", compliance)
+
+    # ---- 8. private media -----------------------------------------------------------------------
+    def upload_private(role: str, seed: int) -> dict:
+        img = ok(c.post("/v1/media/images", headers=h(role), data={"kind": "verification"},
+                        files={"file": ("doc.png", png_bytes(seed), "image/png")}), 201)
+        m = re.fullmatch(r"/v1/media/private/([0-9a-f]{32})\.png", img["url"])
+        assert m, f"private upload url is not the relative private path: {img['url']}"
+        assert img.get("visibility", "private") == "private", img
+        return {"id": m.group(1), "path": img["url"]}
+
+    def media_private():
+        f = upload_private("buyer", 7 + int(sfx, 16) % 100)
+        pid, path = f["id"], f["path"]
+        assert c.get(f"/v1/media/files/{pid}.png").status_code == 404, "public route serves a private file"
+        assert c.get(path).status_code == 404, "anonymous read of a private file"
+        assert c.get(path, headers=h("stranger")).status_code == 404, "foreign user read of a private file"
+        own = c.get(path, headers=h("buyer"))
+        assert own.status_code == 200 and own.content[:4] == b"\x89PNG", f"owner read -> {own.status_code}"
+        assert "no-store" in own.headers.get("cache-control", ""), own.headers.get("cache-control")
+        assert c.get(f"/v1/admin/media/files/{pid}").status_code in (401, 404), "admin media read without token"
+        assert c.get(f"/v1/admin/media/files/{pid}", headers=h("buyer")).status_code in (401, 404), "user bearer read admin media"
+        ad = c.get(f"/v1/admin/media/files/{pid}", headers=admin_h)
+        assert ad.status_code == 200 and ad.headers["content-type"].startswith("image/") and ad.content[:4] == b"\x89PNG", \
+            f"admin read -> {ad.status_code} {ad.headers.get('content-type')}"
+        assert c.get(f"/v1/admin/media/files/{'0' * 32}", headers=admin_h).status_code == 404
+        assert c.post(f"/v1/media/files/{pid}/sign", headers=h("stranger")).status_code == 404, "foreign user signed a link"
+        assert c.post(f"/v1/media/files/{pid}/sign").status_code == 401
+        sg = ok(c.post(f"/v1/media/files/{pid}/sign", headers=h("buyer")), 200, 201)
+        url = sg["url"]
+        assert sg["ttl_seconds"] > 0 and "sig=" in url
+        rel = "/" + url.split("/", 3)[3] if url.startswith("http") else url
+        good = c.get(rel)
+        assert good.status_code == 200 and good.content[:4] == b"\x89PNG", f"signed link -> {good.status_code}"
+        q = parse_qs(urlparse(rel).query)
+        base = path
+
+        def with_q(**kw):
+            d = {k: v[0] for k, v in q.items()}
+            d.update(kw)
+            return base + "?" + urlencode(d)
+
+        sig = q["sig"][0]
+        flipped = ("0" if sig[0] != "0" else "1") + sig[1:]
+        bad = {
+            "flipped signature": with_q(sig=flipped), "truncated signature": with_q(sig=sig[:-2]),
+            "empty signature": with_q(sig=""), "later expiry": with_q(exp=str(int(q["exp"][0]) + 3600)),
+            "past expiry": with_q(exp="1"), "other user": with_q(u=users["stranger"]["id"]),
+            "other file id": with_q().replace(pid, "0" * 32), "no signature": base + f"?u={q['u'][0]}&exp={q['exp'][0]}",
+        }
+        for name, bu in bad.items():
+            r = c.get(bu)
+            assert r.status_code == 404, f"{name}: tampered link answered {r.status_code}"
+        # a foreign user must not be able to use the owner's link params together with their own bearer either
+        assert c.get(with_q(sig=flipped), headers=h("stranger")).status_code == 404
+        assert good.headers.get("x-content-type-options", "").lower() == "nosniff"
+
+    step("private media: owner / signed / admin reads; tampered, foreign, anonymous -> 404", media_private)
+
+    # ---- 9. trust verification documents ----------------------------------------------------------
+    def verification_docs():
+        sid = ctx["sid"]
+        f = upload_private("supplier", 31 + int(sfx, 16) % 100)
+        ctx["vdoc_file"] = f
+        badge = lambda: ok(c.get(f"/v1/trust/suppliers/{sid}/verification"))  # noqa: E731  (public, no auth)
+        before = badge()["verification_level"]
+        assert c.get(f"/v1/trust/suppliers/{sid}/verification", headers=h("stranger")).status_code == 200
+        # supplier-only: buyers have no verified claim
+        r = c.post("/v1/trust/verification/documents", headers=h("buyer"), json={
+            "doc_type": "business_license", "issuing_country": "IQ", "files": [f["path"]], "number": f"BL-{sfx}-0", "consent": True})
+        assert r.status_code == 403, f"non-supplier submit -> {r.status_code}"
+        body = {"doc_type": "business_license", "issuing_country": "IQ", "files": [f["path"]], "number": f"BL-{sfx}-77", "consent": True}
+        r = c.post("/v1/trust/verification/documents", headers=h("supplier"), json={**body, "files": [f"/v1/media/files/{f['id']}.png"]})
+        assert r.status_code == 422, f"public media ref accepted for a verification document: {r.status_code} {r.text[:200]}"
+        assert c.post("/v1/trust/verification/documents", headers=h("supplier"), json={**body, "consent": False}).status_code == 422
+        doc = ok(c.post("/v1/trust/verification/documents", headers=h("supplier"), json=body), 200, 201)
+        assert doc["status"] == "pending" and doc["id"]
+        assert f"BL-{sfx}-77" not in json.dumps(doc), "raw document number echoed back"
+        assert badge()["verification_level"] == before, "pending document changed the public badge"
+        mine = ok(c.get("/v1/trust/verification/documents", headers=h("supplier")))
+        assert any(x["id"] == doc["id"] for x in mine["items"])
+        assert c.get("/v1/trust/verification/documents", headers=h("buyer")).status_code == 403, "buyer lists supplier documents"
+        # admin passthrough: guarded, lists the queue, never exposes numbers
+        assert c.get("/v1/admin/trust/verification/documents").status_code in (401, 404)
+        assert c.get("/v1/admin/trust/verification/documents", headers=h("buyer")).status_code in (401, 404)
+        q = ok(c.get("/v1/admin/trust/verification/documents", params={"status": "pending", "supplier_id": sid}, headers=admin_h))
+        row = next((x for x in items(q) if x["id"] == doc["id"]), None)
+        assert row, f"pending document not in admin queue: {str(q)[:300]}"
+        assert f"BL-{sfx}-77" not in json.dumps(q), "admin list exposes the document number"
+        assert f["path"] in json.dumps(row), "admin row lacks the private file reference"
+        r = c.post(f"/v1/admin/trust/verification/documents/{doc['id']}/decision", headers=admin_h, json={"decision": "reject"})
+        assert r.status_code == 422, f"reject without a reason -> {r.status_code}"
+        ok(c.post(f"/v1/admin/trust/verification/documents/{doc['id']}/decision", headers=admin_h, json={"decision": "approve"}))
+        lvl = badge()
+        assert lvl["verification_level"] in ("basic", "documented", "audited") and lvl["verification_level"] != before \
+            and "business_license" in (lvl.get("valid_types") or []), f"badge did not rise after approval: {lvl}"
+        pub = json.dumps(lvl)
+        assert f["id"] not in pub and f"BL-{sfx}" not in pub, "public badge leaks file or number"
+        aud = items(ok(c.get("/v1/admin/trust/verification/audit", params={"document_id": doc["id"]}, headers=admin_h)))
+        assert len(aud) >= 2, f"audit trail too short: {aud}"
+        assert c.get(f["path"]).status_code == 404 and c.get(f"/v1/media/files/{f['id']}.png").status_code == 404, \
+            "verification file readable without owner / signature"
+        ad = c.get(f"/v1/admin/media/files/{f['id']}", headers=admin_h)
+        assert ad.status_code == 200 and ad.content[:4] == b"\x89PNG", "admin cannot read the evidence"
+        sg = ok(c.post(f"/v1/media/files/{f['id']}/sign", headers=h("supplier")), 200, 201)
+        assert c.get("/" + sg["url"].split("/", 3)[3]).status_code == 200, "supplier preview link does not open"
+        # revoke: reason required, badge falls back
+        r = c.post(f"/v1/admin/trust/verification/documents/{doc['id']}/decision", headers=admin_h, json={"decision": "reject"})
+        assert r.status_code == 422
+        ok(c.post(f"/v1/admin/trust/verification/documents/{doc['id']}/decision", headers=admin_h,
+                  json={"decision": "reject", "reason": "e2e revoke"}))
+        assert badge()["verification_level"] == before, "revoked document still counts for the badge"
+
+    if claimed:
+        step("trust verification: private upload -> submit -> admin approve -> badge -> revoke", verification_docs)
+    else:
+        skip("trust verification docs", "supplier claim not available")
+
+    # ---- 10. feed ---------------------------------------------------------------------------------
+    def feed_flow():
+        sid = ctx["sid"]
+        post = ok(c.post("/v1/feed/posts", headers=h("supplier"), json={
+            "body": f"New spring collection of ceramic planters {sfx}", "tags": ["planters"]}), 201)
+        pid = post["id"]
+        assert post["status"] == "published" if "status" in post else True
+        assert c.post("/v1/feed/posts", headers=h("buyer"), json={"body": "I am not a supplier"}).status_code == 403, "non-supplier posted"
+        assert c.post("/v1/feed/posts", headers=h("supplier"), json={"body": "call me on +964 770 123 4567 whatsapp"}).status_code == 422, \
+            "contact info in a post accepted"
+        assert ok(c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")))["id"] == pid
+        ok(c.post(f"/v1/feed/suppliers/{sid}/follow", headers=h("buyer")), 200, 201, 204)
+        ok(c.post(f"/v1/feed/suppliers/{sid}/follow", headers=h("buyer")), 200, 201, 204)  # idempotent
+        fol = ok(c.get("/v1/feed/following", headers=h("buyer")))
+        assert sid in json.dumps(fol), "followed supplier not listed"
+        assert pid in json.dumps(ok(c.get("/v1/feed/home", headers=h("buyer")))), "post not in the follower's home feed"
+        ok(c.put(f"/v1/feed/posts/{pid}/like", headers=h("buyer")), 200, 201, 204)
+        ok(c.put(f"/v1/feed/posts/{pid}/like", headers=h("buyer")), 200, 201, 204)  # idempotent
+        ok(c.put(f"/v1/feed/posts/{pid}/like", headers=h("reporter")), 200, 201, 204)
+        assert c.put(f"/v1/feed/posts/{pid}/like").status_code == 401
+        got = ok(c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")))
+        lc = got.get("like_count", got.get("likes"))
+        assert lc == 2, f"like count {lc} after 2 distinct likes (+1 duplicate): {str(got)[:300]}"
+        cm = ok(c.post(f"/v1/feed/posts/{pid}/comments", headers=h("buyer"), json={"body": "Nice, what is the MOQ?"}), 200, 201)
+        assert any(x["id"] == cm["id"] for x in items(ok(c.get(f"/v1/feed/posts/{pid}/comments", headers=h("stranger")))))
+        assert c.post(f"/v1/feed/posts/{pid}/comments", headers=h("buyer"), json={"body": " "}).status_code == 422
+        # reports: own posts cannot be reported; hidden at the threshold (2 distinct reporters locally, default 3 elsewhere)
+        own = c.post(f"/v1/feed/posts/{pid}/report", headers=h("supplier"), json={"reason": "spam"})
+        assert own.status_code in (403, 409, 422), f"owner reported own post -> {own.status_code}"
+        for who in ("buyer", "buyer", "reporter", "stranger"):
+            r = c.post(f"/v1/feed/posts/{pid}/report", headers=h(who), json={"reason": "misleading"})
+            # once the threshold hid the post (2 locally) a further report is a plain 404, like for any hidden post
+            assert r.status_code in (200, 201, 202, 404), f"report as {who} -> {r.status_code} {r.text[:200]}"
+            if who == "buyer" and not REMOTE:
+                assert c.get(f"/v1/feed/posts/{pid}", headers=h("stranger")).status_code == 200, "one reporter hid the post"
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("stranger")).status_code == 404, "post still visible after the report threshold"
+        assert pid not in json.dumps(ok(c.get("/v1/feed/home", headers=h("buyer")))), "hidden post in a feed"
+        adm = ok(c.get("/v1/admin/feed/posts", params={"status": "hidden"}, headers=admin_h))
+        assert any(x["id"] == pid for x in items(adm)), f"auto-hidden post not in the admin list: {str(adm)[:300]}"
+        assert c.get("/v1/admin/feed/posts", headers=h("buyer")).status_code in (401, 404)
+        ok(c.post(f"/v1/admin/feed/posts/{pid}/restore", headers=admin_h))
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("stranger")).status_code == 200, "restore did not republish"
+        # admin hide (explicit) and comment hide
+        r = c.post(f"/v1/admin/feed/posts/{pid}/hide", headers=admin_h, json={"reason": "x"})
+        assert r.status_code == 422, f"hide with a 1 char reason -> {r.status_code}"
+        ok(c.post(f"/v1/admin/feed/posts/{pid}/hide", headers=admin_h, json={"reason": "e2e confirmed abuse"}))
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 404
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("supplier")).status_code in (200, 404)
+        ok(c.post(f"/v1/admin/feed/posts/{pid}/restore", headers=admin_h))
+        ok(c.post(f"/v1/admin/feed/comments/{cm['id']}/hide", headers=admin_h, json={"reason": "e2e comment hide"}))
+        assert not any(x["id"] == cm["id"] for x in items(ok(c.get(f"/v1/feed/posts/{pid}/comments", headers=h("stranger"))))), \
+            "hidden comment still listed"
+        ok(c.post(f"/v1/admin/feed/comments/{cm['id']}/restore", headers=admin_h))
+        ok(c.delete(f"/v1/feed/suppliers/{sid}/follow", headers=h("buyer")), 200, 204)
+        assert sid not in json.dumps(ok(c.get("/v1/feed/following", headers=h("buyer")))), "unfollow did not remove the supplier"
+        assert c.delete(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code in (403, 404), "non-owner deleted the post"
+        ok(c.delete(f"/v1/feed/posts/{pid}", headers=h("supplier")), 200, 204)
+        assert c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 404
+
+    def feed_flow_traced():
+        try:
+            feed_flow()
+        except AssertionError as e:  # bare asserts: say which line failed
+            raise AssertionError(f"{e} (e2e_extended.py line {e.__traceback__.tb_next.tb_lineno})") from None
+
+    if claimed:
+        step("feed: post -> follow / like / comment -> reports hide -> admin restore / hide", feed_flow_traced)
+    else:
+        skip("feed flow", "supplier claim not available (posting needs a verified supplier)")
+
+    # ---- 11. freight ------------------------------------------------------------------------------
+    def apply_forwarder(role: str, name: str) -> str:
+        register(role)()
+        a = ok(c.post("/v1/freight/applications", headers=h(role), json={
+            "company_name": f"{name} {sfx}", "country_code": "CN", "description": "e2e forwarder",
+            "lanes": [{"origin_country": "CN", "destination_country": "IQ"}], "modes": ["sea"], "incoterms": ["FOB", "CIF"]}), 200, 201)
+        assert a["status"] == "pending"
+        return a["id"]
+
+    def freight_flow():
+        app1 = apply_forwarder("fwd1", "Fast Cargo")
+        app2 = apply_forwarder("fwd2", "Slow Boat")
+        assert c.get("/v1/admin/freight/applications").status_code in (401, 404)
+        assert c.get("/v1/admin/freight/applications", headers=h("buyer")).status_code in (401, 404)
+        pend = items(ok(c.get("/v1/admin/freight/applications", params={"status": "pending"}, headers=admin_h)))
+        assert {app1, app2} <= {x["id"] for x in pend}, "applications missing from the admin queue"
+        # not yet approved: cannot quote, not in the directory
+        req = ok(c.post("/v1/freight/requests", headers=h("buyer"), json={
+            "origin_country": "CN", "origin_place": "Shenzhen", "destination_country": "IQ", "destination_place": "Umm Qasr",
+            "cargo_description": f"Ceramic planters {sfx}", "weight_kg": "4200", "volume_cbm": "18", "mode": "sea",
+            "container_type": "40HC", "container_count": 1, "incoterm": "FOB",
+            "ready_date": datetime.now(UTC).date().isoformat(), "currency": "USD",
+            "quote_deadline_days": 7}), 200, 201)
+        rid = req["id"]
+        q0 = c.post(f"/v1/freight/requests/{rid}/quotes", headers=h("fwd1"), json={"amount": "2900", "currency": "USD", "transit_days": 30})
+        assert q0.status_code in (403, 404), f"unapproved forwarder quoted: {q0.status_code}"
+        for aid in (app1, app2):
+            ok(c.post(f"/v1/admin/freight/applications/{aid}/approve", headers=admin_h, json={"note": "e2e"}))
+        me = ok(c.get("/v1/freight/me", headers=h("fwd1")))
+        assert "active" in json.dumps(me), f"forwarder not active after approval: {me}"
+        assert c.post(f"/v1/freight/requests/{rid}/quotes", headers=h("stranger"), json={
+            "amount": "1", "currency": "USD", "transit_days": 1}).status_code in (403, 404), "non-forwarder quoted"
+        inbox = ok(c.get("/v1/freight/forwarders/me/inbox", headers=h("fwd1")))
+        assert rid in json.dumps(inbox), "matching request missing from the forwarder inbox"
+        qa = ok(c.post(f"/v1/freight/requests/{rid}/quotes", headers=h("fwd1"), json={
+            "amount": "3100", "currency": "USD", "transit_days": 24, "valid_days": 10, "inclusions": ["THC"],
+            "breakdown": [{"label": "Ocean freight", "amount": "2800"}, {"label": "THC", "amount": "300"}]}), 200, 201)
+        qb = ok(c.post(f"/v1/freight/requests/{rid}/quotes", headers=h("fwd2"), json={
+            "amount": "2600", "currency": "USD", "transit_days": 38, "valid_days": 10}), 200, 201)
+        assert qa["revision"] == 1 and qb["revision"] == 1
+        assert c.get(f"/v1/freight/requests/{rid}/quotes", headers=h("fwd1")).status_code in (403, 404), "forwarder lists all quotes"
+        assert c.get(f"/v1/freight/quotes/{qb['id']}", headers=h("fwd1")).status_code in (403, 404), "forwarder reads a rival quote"
+        cmp_ = ok(c.get(f"/v1/freight/requests/{rid}/comparison", headers=h("buyer")))
+        rows = cmp_["items"]
+        assert len(rows) == 2 and [r_["rank"] for r_ in rows] == [1, 2], f"comparison: {str(cmp_)[:300]}"
+        assert all(0 <= r_["score"] <= 100 and r_["explanation"] for r_ in rows)
+        badges = {r_["quote"]["id"]: r_["badges"] for r_ in rows}
+        assert "cheapest" in badges[qb["id"]] and "fastest" in badges[qa["id"]], badges
+        assert c.get(f"/v1/freight/requests/{rid}/comparison", headers=h("stranger")).status_code in (403, 404)
+        # revise: quote A becomes the cheapest; a stale revision must not be awardable
+        rev = ok(c.put(f"/v1/freight/quotes/{qa['id']}", headers=h("fwd1"), json={
+            "amount": "2400", "currency": "USD", "transit_days": 24, "valid_days": 10}))
+        assert rev["revision"] == 2 and rev["amount"].startswith("2400"), rev
+        stale = c.post(f"/v1/freight/quotes/{qa['id']}/accept", headers=h("buyer"), json={"revision": 1})
+        assert stale.status_code == 409, f"stale revision accepted -> {stale.status_code} {stale.text[:200]}"
+        assert c.post(f"/v1/freight/quotes/{qa['id']}/accept", headers=h("stranger"), json={"revision": 2}).status_code in (403, 404)
+        top = ok(c.get(f"/v1/freight/requests/{rid}/comparison", headers=h("buyer")))["items"][0]
+        assert top["quote"]["id"] == qa["id"], "revised cheaper + faster quote is not ranked first"
+        acc = ok(c.post(f"/v1/freight/quotes/{qa['id']}/accept", headers=h("buyer"), json={"revision": 2}))
+        assert acc["request"]["status"] == "awarded" and acc["request"]["awarded_quote_id"] == qa["id"], str(acc)[:300]
+        again = c.post(f"/v1/freight/quotes/{qa['id']}/accept", headers=h("buyer"), json={"revision": 2})
+        assert again.status_code in (200, 409), f"re-accept -> {again.status_code}"
+        assert c.put(f"/v1/freight/quotes/{qb['id']}", headers=h("fwd2"), json={
+            "amount": "1000", "currency": "USD", "transit_days": 10}).status_code in (409, 422), "revised a quote after the award"
+        # rating only after completion, only by the buyer
+        early = c.post(f"/v1/freight/requests/{rid}/rating", headers=h("buyer"), json={"stars": 5})
+        assert early.status_code in (409, 422), f"rating before close -> {early.status_code}"
+        ok(c.post(f"/v1/freight/requests/{rid}/close", headers=h("buyer")))
+        assert c.post(f"/v1/freight/requests/{rid}/rating", headers=h("stranger"), json={"stars": 5}).status_code in (403, 404)
+        assert c.post(f"/v1/freight/requests/{rid}/rating", headers=h("buyer"), json={"stars": 6}).status_code == 422
+        ok(c.post(f"/v1/freight/requests/{rid}/rating", headers=h("buyer"), json={"stars": 4, "comment": "On time"}), 200, 201)
+        assert c.post(f"/v1/freight/requests/{rid}/rating", headers=h("buyer"), json={"stars": 5}).status_code == 409, "double rating"
+        fid = qa["forwarder_id"]
+        prof = ok(c.get(f"/v1/freight/forwarders/{fid}", headers=h("buyer")))
+        assert json.dumps(prof).count("4") and ok(c.get(f"/v1/freight/forwarders/{fid}/ratings", headers=h("buyer"))), prof
+        # report threshold on the request is exercised by hide: admin passthrough must reach freight
+        fw = items(ok(c.get("/v1/admin/freight/forwarders", params={"status": "active"}, headers=admin_h)))
+        assert fid in {x["id"] for x in fw}, "approved forwarder missing from the admin list"
+
+    step("freight: apply -> approve -> request -> quotes -> comparison -> revise -> accept (revision) -> rate", freight_flow)
 
 
 # --------------------------------------------------------------------------------------------- email flow

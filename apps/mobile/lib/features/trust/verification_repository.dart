@@ -57,7 +57,7 @@ class MockVerificationRepository implements VerificationRepository {
         id: 'vdoc_mock_1',
         docType: 'business_license',
         issuingCountry: 'IQ',
-        files: const ['/v1/media/files/mock0000000000000000000000000001.jpg'],
+        files: const ['/v1/media/private/00000000000000000000000000000a01.jpg'],
         numberMasked: '****5678',
         expiresOn: '2030-01-01',
         status: 'approved',
@@ -68,7 +68,7 @@ class MockVerificationRepository implements VerificationRepository {
         id: 'vdoc_mock_2',
         docType: 'bank_reference',
         issuingCountry: 'IQ',
-        files: const ['/v1/media/files/mock0000000000000000000000000002.jpg'],
+        files: const ['/v1/media/private/00000000000000000000000000000a02.jpg'],
         numberMasked: '****',
         status: 'rejected',
         reason: 'The document is not legible',
@@ -103,6 +103,13 @@ class MockVerificationRepository implements VerificationRepository {
         code: 'rate_limited',
         message: 'Too many submissions',
         retryAfterSeconds: 600,
+      );
+    }
+    if (draft.files.any((f) => !f.contains('/v1/media/private/'))) {
+      throw ApiException(
+        status: 422,
+        code: 'file_url_not_allowed',
+        message: 'Only private media references are accepted',
       );
     }
     final number = draft.number.trim().toUpperCase();

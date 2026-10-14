@@ -81,7 +81,12 @@ const Map<String, (String, String)> _pairs = {
   'ver.err.expiry_format': ('استخدم الصيغة YYYY-MM-DD', 'Use the format YYYY-MM-DD'),
   'ver.err.expiry_past': ('المستند منتهي الصلاحية بالفعل', 'The document is already expired'),
   'ver.err.files': ('أضف من صورة إلى 10 صور', 'Add between 1 and 10 images'),
-  'ver.err.file_url': ('ملف غير مقبول. ارفع الصور من التطبيق.', 'File not accepted. Upload images from the app.'),
+  'ver.err.file_url': (
+    'ملف غير مقبول. احذف الصور وارفعها من جديد من داخل التطبيق (لا تُقبل روابط الصور العامة).',
+    'File not accepted. Remove the images and upload them again from the app (public image links are not accepted).'
+  ),
+  'ver.thumb_failed': ('تعذّر عرض الصورة', 'Image unavailable'),
+  'ver.thumb_label': ('صورة المستند {n}', 'Document image {n}'),
   'ver.err.consent': ('الموافقة على المراجعة مطلوبة', 'Consent to the review is required'),
   'ver.err.supplier_required': (
     'يلزم حساب مورّد موثَّق لهذا الإجراء.',

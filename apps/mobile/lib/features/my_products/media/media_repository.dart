@@ -11,6 +11,9 @@ abstract class MediaRepository {
     String kind = 'listing',
     void Function(double progress)? onProgress,
   });
+
+  /// Owner-only short-lived URL for a private file (404 otherwise).
+  Future<SignedUrl> signFile(String id);
 }
 
 /// Builds the multipart body of POST /v1/media/images (field `file`, `kind`).
@@ -40,6 +43,11 @@ class LiveMediaRepository implements MediaRepository {
     );
     return UploadedImage.fromJson(data);
   }
+
+  @override
+  Future<SignedUrl> signFile(String id) async => SignedUrl.fromJson(
+        await _api.post('/v1/media/files/${Uri.encodeComponent(id)}/sign'),
+      );
 }
 
 class MockMediaRepository implements MediaRepository {
@@ -54,14 +62,31 @@ class MockMediaRepository implements MediaRepository {
     await mockDelay(150);
     onProgress?.call(1);
     _seq++;
-    final id = 'mock${_seq.toString().padLeft(28, '0')}';
+    final id = _seq.toRadixString(16).padLeft(32, '0');
+    // Contract: kind=verification is always private.
+    final private = kind == 'verification';
     return UploadedImage(
       id: id,
-      url: '/v1/media/files/$id.jpg',
+      url: private ? '/v1/media/private/$id.jpg' : '/v1/media/files/$id.jpg',
       width: 800,
       height: 600,
       bytes: image.bytes.length,
       contentType: image.mime,
+    );
+  }
+
+  /// Number of sign calls (tests).
+  int signCalls = 0;
+  Object? signError;
+
+  @override
+  Future<SignedUrl> signFile(String id) async {
+    signCalls++;
+    final err = signError;
+    if (err != null) throw err;
+    return SignedUrl(
+      url: '/v1/media/private/$id.jpg?u=mock&exp=4102444800&sig=mock',
+      ttlSeconds: 300,
     );
   }
 }
