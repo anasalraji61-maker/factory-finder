@@ -2,6 +2,7 @@ import 'package:factory_finder/core/registry/feature_module.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/features/assistant/assistant_strings.dart';
 import 'package:factory_finder/features/assistant/screens/assistant_screen.dart';
+import 'package:factory_finder/features/feed/feed_module.dart';
 import 'package:factory_finder/features/my_products/my_products_strings.dart';
 import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/product_editor_screen.dart';
@@ -12,6 +13,7 @@ import 'package:go_router/go_router.dart';
 /// Supplier "My products" (list + editor).
 final FeatureModule featureModuleC = FeatureModule(
   overlayRoutes: [
+    ...feedRoutes,
     GoRoute(
       path: '/assistant',
       builder: (context, state) => const AssistantScreen(),
@@ -34,5 +36,5 @@ final FeatureModule featureModuleC = FeatureModule(
           ProductEditorScreen(listingId: state.pathParameters['id']),
     ),
   ],
-  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings]),
+  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings, feedStrings]),
 );

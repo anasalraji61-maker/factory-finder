@@ -1,8 +1,8 @@
 # apps/admin
 
-Small admin console (plain HTML + vanilla JS, no build step, no CDN). Arabic-first RTL with an English toggle. Tabs: **Supplier claims** (approve/reject pending), **Demand drafts** (filter by status, see the source post, edit text then approve, reject, mark published, record outcome, daily quota), **Overview** (counts), **Moderation** (pending_review/hidden listings with hide + reason / restore, user reports with status filter), **Payments outbox** (status filter, requeue dead events).
+Small admin console (plain HTML + vanilla JS, no build step, no CDN). Arabic-first RTL with an English toggle. Tabs: **Supplier claims** (approve/reject pending), **Demand drafts** (filter by status, see the source post, edit text then approve, reject, mark published, record outcome, daily quota), **Overview** (counts), **Moderation** (pending_review/hidden listings with hide + reason / restore, user reports with status filter), **Payments outbox** (status filter, requeue dead events), **Verification** (supplier verification documents: pending queue with approve [optional expiry] / reject [reason required] / set or clear expiry, per-document and global audit log; document numbers, masked numbers and file paths are never rendered), **Freight** (forwarder applications approve/reject, forwarders suspend/reinstate, reports, expire-overdue sweep), **Feed** (reports, posts and comments hide with reason / restore).
 
-It talks only to the gateway: `/v1/admin/supplier-claims*`, `/v1/admin/demand/*`, `/v1/admin/overview`, `/v1/admin/moderation/*`, `/v1/admin/payments/outbox*` (gateway route still to be added, see docs/decisions/admin-moderation.md) with header `X-Admin-Token`.
+It talks only to the gateway: `/v1/admin/supplier-claims*`, `/v1/admin/demand/*`, `/v1/admin/overview`, `/v1/admin/moderation/*`, `/v1/admin/payments/outbox*`, `/v1/admin/trust/verification/*`, `/v1/admin/freight/*`, `/v1/admin/feed/*` (the last three need FF_TRUST_ADMIN_TOKEN / FF_FREIGHT_ADMIN_TOKEN / FF_FEED_ADMIN_TOKEN on the gateway; 404 otherwise, see docs/decisions/gateway-trust-admin.md) with header `X-Admin-Token`.
 
 ## Run
 - Same origin (recommended): start the gateway with `FF_GATEWAY_ADMIN_TOKEN=<secret> FF_GATEWAY_SERVE_ADMIN=true` and open `http://localhost:8000/admin/`. Leave the gateway URL empty at login.
@@ -14,4 +14,4 @@ It talks only to the gateway: `/v1/admin/supplier-claims*`, `/v1/admin/demand/*`
 - Serve over HTTPS outside localhost; the admin token is a shared secret.
 
 ## Tests
-`node --test apps/admin/tests/lib.test.js` (Node 18+, no dependencies, no network): path builders, reason validation, action gating, and static checks (no innerHTML/localStorage/console, CSP intact).
+`node --test apps/admin/tests/lib.test.js` (path builders, body validation, `safeDoc` number redaction) (Node 18+, no dependencies, no network): path builders, reason validation, action gating, and static checks (no innerHTML/localStorage/console, CSP intact).

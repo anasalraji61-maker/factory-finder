@@ -2,6 +2,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/freight/screens/freight_quote_button.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/screens/sensitivity_section.dart';
 import 'package:flutter/material.dart';
@@ -99,6 +100,7 @@ class _QuoteView extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: OptionCard(option: o),
             ),
+        FreightQuoteButton(quote: quote),
         const SizedBox(height: AppSpacing.sm),
         if (quote.assumptions.isNotEmpty) ...[
           Text(

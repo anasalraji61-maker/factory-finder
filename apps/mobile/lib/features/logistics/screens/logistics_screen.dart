@@ -16,6 +16,7 @@ class LogisticsScreen extends ConsumerWidget {
     final tools = <(IconData, String, String?)>[
       (Icons.currency_exchange, 'logistics.tool.fx', '/logistics/fx'),
       (Icons.directions_boat_outlined, 'logistics.tool.carriers', '/logistics/carriers'),
+      (Icons.request_quote_outlined, 'logistics.tool.freight', '/logistics/freight'),
       (Icons.track_changes, 'logistics.tool.tracking', '/logistics/tracking'),
       (Icons.smart_toy_outlined, 'logistics.tool.assistant', '/assistant'),
     ];

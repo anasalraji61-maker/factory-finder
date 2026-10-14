@@ -21,6 +21,9 @@ services:
       FF_GATEWAY_VERIFY_URL_TEMPLATE: ${FF_GATEWAY_VERIFY_URL_TEMPLATE:-}
       FF_PAYMENTS_ADMIN_TOKEN: ${FF_PAYMENTS_ADMIN_TOKEN:-}
       FF_SOURCING_ADMIN_TOKEN: ${FF_SOURCING_ADMIN_TOKEN:-}
+      FF_TRUST_ADMIN_TOKEN: ${FF_TRUST_ADMIN_TOKEN:-}
+      FF_FREIGHT_ADMIN_TOKEN: ${FF_FREIGHT_ADMIN_TOKEN:-}
+      FF_FEED_ADMIN_TOKEN: ${FF_FEED_ADMIN_TOKEN:-}
       FF_GATEWAY_UPSTREAMS: '{"sourcing": "http://sourcing:8101", "logistics": "http://logistics:8102", "geo": "http://geo:8103", "trust": "http://trust:8104", "rfq": "http://rfq:8105", "messaging": "http://messaging:8106",
         "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110", "payments": "http://payments:8111", "media": "http://media:8112", "feed": "http://feed:8113", "freight": "http://freight:8114"}'
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
@@ -152,6 +155,7 @@ services:
     environment:
       PORT: '8104'
       FF_ENV: ${FF_ENV:-}
+      FF_TRUST_ADMIN_TOKEN: ${FF_TRUST_ADMIN_TOKEN:-}
     restart: unless-stopped
     healthcheck:
       test:

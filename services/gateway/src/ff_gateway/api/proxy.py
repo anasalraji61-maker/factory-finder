@@ -13,12 +13,14 @@ from ff_gateway.domain.errors import (
     InvalidPath,
     InvalidToken,
     PayloadTooLarge,
+    SupplierClaimRequired,
     UpstreamTimeout,
     UpstreamUnavailable,
 )
 from ff_gateway.domain.routing import (
     is_internal_only,
     is_public,
+    is_trust_verification_write_path,
     matched_prefix,
     resolve_upstream,
 )
@@ -57,11 +59,13 @@ def _needs_verified(method: str, upstream: str, path: str) -> bool:
     return (
         upstream == "payments"
         or (upstream == "sourcing" and path.startswith("/v1/my"))
+        or (upstream == "trust" and is_trust_verification_write_path(path))  # supplier verification documents
         or (upstream == "feed" and path.rstrip("/") == "/v1/feed/posts")  # publishing a supplier post
         or (upstream == "freight" and path.rstrip("/") in ("/v1/freight/applications", "/v1/freight/requests"))
     )
 
 
+TRUST_VERIFICATION_MAX_BODY = 64 * 1024  # JSON metadata only; files go to media first
 ACTIVE_CACHE_SECONDS = 5.0
 ACTIVE_CACHE_MAX = 10_000
 
@@ -137,11 +141,14 @@ async def proxy(full_path: str, request: Request) -> Response:
     body = await request.body()
     if len(body) > request.app.state.settings.max_body_bytes:
         raise PayloadTooLarge()
+    trust_verification = upstream == "trust" and is_trust_verification_write_path(path)
+    if trust_verification and len(body) > TRUST_VERIFICATION_MAX_BODY:
+        raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
     if (
         user_id
-        and (upstream in ("messaging", "rfq", "feed") or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
+        and (upstream in ("messaging", "rfq", "feed") or trust_verification or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
     ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
             row = (
@@ -151,6 +158,8 @@ async def proxy(full_path: str, request: Request) -> Response:
             ).first()
         if row and row.supplier_id and row.supplier_claim_status == "verified":
             headers["X-Supplier-Id"] = row.supplier_id
+        if trust_verification and "X-Supplier-Id" not in headers:
+            raise SupplierClaimRequired()
         if row and row.name and upstream == "rfq":  # reviewer display name (rfq shows first name + initial only)
             headers["X-User-Name"] = quote(row.name[:100], safe="")
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")

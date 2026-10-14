@@ -1,0 +1,1 @@
+{"error":{"code":"rate_limited","message":"Too many requests, slow down","details":{"action":"post","limit":10,"retry_after_seconds":125}}}

@@ -3,6 +3,7 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/freight/data/freight_prefill.dart' show lastQuoteRequestProvider;
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart';
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
@@ -133,6 +134,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
           .read(logisticsRepositoryProvider)
           .calculate(request, lang: lang);
       ref.read(lastQuoteProvider.notifier).state = quote;
+      ref.read(lastQuoteRequestProvider.notifier).state = request;
       if (!mounted) return;
       context.push('/logistics/results');
     } catch (e) {

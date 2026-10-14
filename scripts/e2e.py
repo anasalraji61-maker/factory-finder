@@ -569,7 +569,9 @@ def scenario() -> None:
         assert c.post(f"/v1/feed/posts/{pid}/report", headers=h("supplier"), json={"reason": "spam"}).status_code == 422  # own post
         assert c.post(f"/v1/feed/posts/{pid}/report", headers=h("buyer"), json={"reason": "spam"}).status_code == 202
         assert c.delete(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 403
-        assert c.get("/v1/admin/feed/posts", headers=admin_h).status_code == 404, "feed admin must not be routed by the gateway"
+        assert c.get("/v1/admin/feed/posts").status_code == 401, "feed admin needs the gateway admin token"
+        assert c.get("/v1/admin/feed/posts?status=all", headers=admin_h).status_code == 200, "feed admin passthrough"
+        assert c.get("/v1/admin/feed/reports", headers=admin_h).status_code == 200
         ok(c.delete(f"/v1/feed/suppliers/{fsid}/follow", headers=h("buyer")))
         ok(c.delete(f"/v1/feed/posts/{pid}", headers=h("supplier")), 204)
         assert c.get(f"/v1/feed/posts/{pid}", headers=h("buyer")).status_code == 404
@@ -589,7 +591,8 @@ def scenario() -> None:
         assert app["status"] == "pending" and app["forwarder_id"] is None
         assert c.post("/v1/freight/applications", headers=h("supplier"), json=body).status_code == 409  # one pending
         assert c.get("/v1/freight/forwarders").status_code == 401
-        assert c.get("/v1/admin/freight/applications", headers={"X-Admin-Token": ADMIN_TOKEN}).status_code == 404, "freight admin must not be routed by the gateway"
+        assert c.get("/v1/admin/freight/applications").status_code == 401, "freight admin needs the gateway admin token"
+        assert c.get("/v1/admin/freight/applications", headers={"X-Admin-Token": ADMIN_TOKEN}).status_code == 200, "freight admin passthrough"
         req = {
             "origin_country": "CN", "origin_place": "Shenzhen", "destination_country": "IQ", "destination_place": "Umm Qasr",
             "cargo_description": f"E2E ceramic tiles {sfx}", "weight_kg": "18000", "volume_cbm": "28.5", "mode": "sea",

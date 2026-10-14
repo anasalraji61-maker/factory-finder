@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     sourcing_admin_token: str | None = Field(default=None, validation_alias="FF_SOURCING_ADMIN_TOKEN")
     # Service admin token the gateway injects towards payments /v1/payments/outbox* (never taken from the client).
     payments_admin_token: str | None = Field(default=None, validation_alias="FF_PAYMENTS_ADMIN_TOKEN")
+    # Service admin tokens the gateway injects towards trust / freight / feed admin routes (never taken from the client).
+    trust_admin_token: str | None = Field(default=None, validation_alias="FF_TRUST_ADMIN_TOKEN")
+    freight_admin_token: str | None = Field(default=None, validation_alias="FF_FREIGHT_ADMIN_TOKEN")
+    feed_admin_token: str | None = Field(default=None, validation_alias="FF_FEED_ADMIN_TOKEN")
     upstream_timeout_seconds: float = 15.0
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300

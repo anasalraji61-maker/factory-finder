@@ -22,6 +22,7 @@ from ff_gateway.api import (
     admin_demand,
     admin_moderation,
     admin_payments,
+    admin_services,
     auth,
     me,
     proxy,
@@ -228,6 +229,7 @@ def create_app(
     app.include_router(admin_demand.router)
     app.include_router(admin_moderation.router)
     app.include_router(admin_payments.router)
+    app.include_router(admin_services.router)
     if settings.serve_admin:
         admin_dir = (
             Path(settings.admin_dir)

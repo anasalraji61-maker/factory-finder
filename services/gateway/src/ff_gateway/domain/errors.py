@@ -102,6 +102,12 @@ class SupplierClaimed(GatewayError):
     default_message = "This supplier is already claimed by another account"
 
 
+class SupplierClaimRequired(GatewayError):
+    status_code = 403
+    code = "supplier_claim_required"
+    default_message = "A verified supplier claim is required"
+
+
 class EmailNotVerified(GatewayError):
     status_code = 403
     code = "email_not_verified"

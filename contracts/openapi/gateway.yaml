@@ -272,6 +272,48 @@ paths:
     put: {<<: *adminModeration, operationId: adminModerationPut}
     patch: {<<: *adminModeration, operationId: adminModerationPatch}
     delete: {<<: *adminModeration, operationId: adminModerationDelete}
+  /v1/admin/trust/verification/{path}:
+    parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the trust admin path, may contain slashes"}]
+    get: &adminTrustVerification
+      operationId: adminTrustVerificationGet
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_TRUST_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to trust /v1/admin/trust/verification/{path} (GET documents, POST documents/{id}/decision, PUT documents/{id}/expiry, GET audit; X-Reviewer=admin is added for the audit log); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
+      responses:
+        "200": {description: Upstream trust response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    post: {<<: *adminTrustVerification, operationId: adminTrustVerificationPost}
+    put: {<<: *adminTrustVerification, operationId: adminTrustVerificationPut}
+    patch: {<<: *adminTrustVerification, operationId: adminTrustVerificationPatch}
+    delete: {<<: *adminTrustVerification, operationId: adminTrustVerificationDelete}
+  /v1/admin/freight/{path}:
+    parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the freight admin path, may contain slashes"}]
+    get: &adminFreight
+      operationId: adminFreightGet
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_FREIGHT_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to freight /v1/admin/freight/{path} (applications list + approve/reject, forwarders list + suspend/reinstate, requests/quotes list + hide/restore, reports, POST sweep); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
+      responses:
+        "200": {description: Upstream freight response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    post: {<<: *adminFreight, operationId: adminFreightPost}
+    put: {<<: *adminFreight, operationId: adminFreightPut}
+    patch: {<<: *adminFreight, operationId: adminFreightPatch}
+    delete: {<<: *adminFreight, operationId: adminFreightDelete}
+  /v1/admin/feed/{path}:
+    parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the feed admin path, may contain slashes"}]
+    get: &adminFeed
+      operationId: adminFeedGet
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_FEED_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to feed /v1/admin/feed/{path} (posts/comments list + hide/restore, reports); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
+      responses:
+        "200": {description: Upstream feed response (status and body passed through)}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    post: {<<: *adminFeed, operationId: adminFeedPost}
+    put: {<<: *adminFeed, operationId: adminFeedPut}
+    patch: {<<: *adminFeed, operationId: adminFeedPatch}
+    delete: {<<: *adminFeed, operationId: adminFeedDelete}
   /v1/home:
     get:
       operationId: getHome
@@ -295,15 +337,15 @@ paths:
       sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my]
       logistics: [/v1/quotes, /v1/fx, /v1/carriers, /v1/hs, /v1/compliance]  # GET /v1/compliance/* and POST /v1/compliance/checklist are public (static indicative data; same rate-limit class as landed-cost)
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
-      trust: [/v1/trust]
+      trust: [/v1/trust]  # /v1/trust/verification/* (supplier documents) needs a verified supplier claim (403 supplier_claim_required otherwise; X-Supplier-Id forwarded from the DB, JSON body <= 64 KiB, non-GET needs a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on); GET /v1/trust/suppliers/{id}/verification (badge) is public; the rest of /v1/trust needs a bearer token
       rfq: [/v1/requests, /v1/offers, /v1/deals, /v1/reviews, "GET /v1/suppliers/{ref}/reviews", "GET /v1/suppliers/{ref}/review-summary"]  # the two supplier paths are public and take precedence over the sourcing /v1/suppliers prefix
       messaging: [/v1/conversations]
       tracking: [/v1/shipments, /v1/validate]
       notifications: [/v1/watchlist, /v1/alerts, /v1/devices]
       assistant: [/v1/assistant]
       media: [/v1/media]
-      feed: [/v1/feed]  # GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is not routed (service-local moderation)
-      freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is not routed (service-local approval + moderation)
+      feed: [/v1/feed]  # GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is an admin-only passthrough (see below)
+      freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is an admin-only passthrough (see below)
     get:
       operationId: proxy
       description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504."

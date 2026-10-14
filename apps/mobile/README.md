@@ -12,6 +12,7 @@ Runs entirely in **mock mode** by default: no backend is needed.
 | Requests & Offers | `/requests`, `/requests/new`, `/requests/:id` | my/open requests, create form, offers, accept -> deal summary (commission) |
 | Messages | `/messages` | placeholder |
 | Logistics | `/logistics`, `/logistics/calculator?listing_id=`, `/logistics/results` | landed-cost calculator + comparison results |
+| Freight quotes | `/logistics/freight`, `/logistics/freight/new`, `/logistics/freight/requests/:id`, `/logistics/freight/forwarder/apply`, `/logistics/freight/forwarder/requests/:id` | forwarder marketplace (`contracts/openapi/freight.yaml`): buyer requests + ranked quote comparison, accept / complete / rate, forwarder application, inbox, quote submit / revise / withdraw, abuse reports. Code in `lib/features/freight/` |
 | Profile | `/profile`, `/settings` | profile: sign in/out, server URL, shortcuts; settings: language, theme (light/dark/system), display currency, default destination, digit style |
 | Auth | `/login`, `/register` | gateway auth (tokens in memory, Bearer + one refresh on 401) |
 

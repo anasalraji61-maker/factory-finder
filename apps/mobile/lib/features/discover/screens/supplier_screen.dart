@@ -5,10 +5,12 @@ import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/screens/listing_detail_screen.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/feed/feed_module.dart';
 import 'package:factory_finder/features/reviews/widgets/review_widgets.dart';
 import 'package:factory_finder/features/trust/trust_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SupplierScreen extends ConsumerWidget {
   const SupplierScreen({super.key, required this.supplierId});
@@ -90,6 +92,19 @@ class SupplierScreen extends ConsumerWidget {
                           ),
                         ),
                         orElse: () => const SizedBox.shrink(),
+                      ),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          FollowButton(supplierId: supplierId),
+                          TextButton(
+                            key: const ValueKey<String>('feed-supplier-posts-link'),
+                            onPressed: () => context.push('/feed/supplier/$supplierId'),
+                            child: Text(context.tr('feed.supplier_posts')),
+                          ),
+                        ],
                       ),
                     ],
                   ),

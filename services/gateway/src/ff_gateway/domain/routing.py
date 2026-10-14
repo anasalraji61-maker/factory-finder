@@ -34,6 +34,15 @@ PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost"), ("POST", "/v1/compliance/che
 INTERNAL_ONLY = (("POST", "/v1/alerts/evaluate"), ("POST", "/v1/alerts/digest"))
 
 
+# Public verified-business badge (GET only); the rest of /v1/trust stays authenticated.
+TRUST_BADGE_PATH = re.compile(r"^/v1/trust/suppliers/[^/]+/verification$")
+
+
+def is_trust_verification_write_path(path: str) -> bool:
+    """Supplier-only verification endpoints (need a verified supplier claim)."""
+    return _under(path.rstrip("/") or "/", "/v1/trust/verification")
+
+
 def is_internal_only(method: str, path: str) -> bool:
     path = path.rstrip("/") or "/"
     return (method.upper(), path) in INTERNAL_ONLY
@@ -68,5 +77,7 @@ def is_public(method: str, path: str) -> bool:
     if path == "/health" or _under(path, "/v1/auth"):
         return True
     if (method.upper(), path) in PUBLIC_EXACT:
+        return True
+    if method.upper() in ("GET", "HEAD") and TRUST_BADGE_PATH.match(path):
         return True
     return method.upper() in ("GET", "HEAD") and any(_under(path, p) for p in PUBLIC_GET_PREFIXES)

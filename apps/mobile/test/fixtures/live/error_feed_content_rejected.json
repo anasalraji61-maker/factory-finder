@@ -1,0 +1,1 @@
+{"error":{"code":"content_rejected","message":"Content not allowed: remove contact details, links and prohibited items","details":{"reasons":["body contains a phone number"]}}}

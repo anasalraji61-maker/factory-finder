@@ -20,4 +20,5 @@ Opt-in, fail closed. Default behaviour (variable unset or any other value) is un
 - gateway: refuses to start if `FF_GATEWAY_JWT_SECRET` or `FF_GATEWAY_ADMIN_TOKEN` is missing.
 - Implemented per service as a tiny duplicated helper (`_require_production_token`), no cross-service imports. Tests: `tests/test_production_guard.py` in each service.
 - Gateway `/v1/admin/payments/outbox*` needs `FF_PAYMENTS_ADMIN_TOKEN` set on the gateway too (same value as the payments service's); unset = those routes answer 404.
+- Gateway `/v1/admin/trust/verification/*`, `/v1/admin/freight/*` and `/v1/admin/feed/*` (admin console passthroughs) need `FF_TRUST_ADMIN_TOKEN`, `FF_FREIGHT_ADMIN_TOKEN` and `FF_FEED_ADMIN_TOKEN` set on the gateway too (same values as each service's); unset = 404. All three default to empty in `docker-compose.yml` and `.env.example`.
 - Gateway also re-checks `is_active` on every proxied request (cached 5 s), so disabling a user takes effect within ~5 s instead of at access-token expiry.
