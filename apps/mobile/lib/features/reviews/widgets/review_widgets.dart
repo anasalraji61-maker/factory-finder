@@ -87,29 +87,44 @@ class ReviewSummaryView extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary),
             )
           else ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
+            Builder(builder: (context) {
+              final big = MediaQuery.textScalerOf(context).scale(14) / 14 > 1.3;
+              final summaryCol = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    avg == null ? '-' : avg.toStringAsFixed(1),
+                    key: const Key('rating_average'),
+                    style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  StarRow(value: avg ?? 0, size: 16),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    context.tr('reviews.summary.count', {'n': '${s.count}'}),
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                ],
+              );
+              if (big) {
+                // Large text: stack instead of side by side.
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      avg == null ? '-' : avg.toStringAsFixed(1),
-                      key: const Key('rating_average'),
-                      style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900),
-                    ),
-                    StarRow(value: avg ?? 0, size: 16),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      context.tr('reviews.summary.count', {'n': '${s.count}'}),
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                    ),
+                    summaryCol,
+                    const SizedBox(height: AppSpacing.md),
+                    _Histogram(histogram: s.histogram),
                   ],
-                ),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(child: _Histogram(histogram: s.histogram)),
-              ],
-            ),
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(child: summaryCol),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(child: _Histogram(histogram: s.histogram)),
+                ],
+              );
+            }),
             if (!s.subRatings.isEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Wrap(
@@ -181,7 +196,11 @@ class _Histogram extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 14,
-                  child: Text('$star', style: const TextStyle(fontSize: 12)),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text('$star', style: const TextStyle(fontSize: 12)),
+                  ),
                 ),
                 const Icon(Icons.star_rounded, size: 12, color: AppColors.warning),
                 const SizedBox(width: AppSpacing.xs),
@@ -200,11 +219,15 @@ class _Histogram extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 SizedBox(
                   width: 28,
-                  child: Text(
-                    '${histogram[star] ?? 0}',
-                    maxLines: 1,
-                    textAlign: TextAlign.end,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Text(
+                      '${histogram[star] ?? 0}',
+                      maxLines: 1,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
                   ),
                 ),
               ],

@@ -44,9 +44,12 @@ class TrustInsights extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '${context.tr(confidenceLabelKey(conf))} · ${context.tr('trust.confidence_value', {'n': '$conf'})}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                Flexible(
+                  child: Text(
+                    '${context.tr(confidenceLabelKey(conf))} · ${context.tr('trust.confidence_value', {'n': '$conf'})}',
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),
@@ -159,11 +162,17 @@ class TrustInsights extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
+            child: TextButton(
               key: const Key('trust_report_button'),
               onPressed: () => openReportSheet(context, ref, supplierId),
-              icon: const Icon(Icons.report_gmailerrorred_outlined, size: 18),
-              label: Text(context.tr('trust.report.open')),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.report_gmailerrorred_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(context.tr('trust.report.open'))),
+                ],
+              ),
             ),
           ),
         ],

@@ -78,10 +78,16 @@ class SupplierScreen extends ConsumerWidget {
                         ],
                       ),
                       trust.maybeWhen(
-                        data: (t) => TextButton.icon(
+                        data: (t) => TextButton(
                           onPressed: () => showTrustFactorsSheet(context, t),
-                          icon: const Icon(Icons.fact_check_outlined, size: 18),
-                          label: Text(context.tr('listing.trust_factors')),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.fact_check_outlined, size: 18),
+                              const SizedBox(width: 8),
+                              Flexible(child: Text(context.tr('listing.trust_factors'))),
+                            ],
+                          ),
                         ),
                         orElse: () => const SizedBox.shrink(),
                       ),
