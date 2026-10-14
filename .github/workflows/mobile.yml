@@ -45,7 +45,7 @@ jobs:
           set +e
           flutter test 2>&1 | tee test.txt
           code=${PIPESTATUS[0]}
-          msg=$(grep -vE "^\s*$" test.txt | grep -iE "fail|error|expected|actual|exception|\.dart" | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          msg=$(grep -vE "^\s*$|✅" test.txt | grep -iE "fail|error|expected|actual|exception|\.dart" | head -120 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
           if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=test::$msg"; fi
           exit $code
       - name: Build debug APK
