@@ -6,6 +6,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/search": "sourcing", "/v1/listings": "sourcing", "/v1/suppliers": "sourcing",
     "/v1/categories": "sourcing", "/v1/sources": "sourcing", "/v1/my": "sourcing",
     "/v1/quotes": "logistics", "/v1/fx": "logistics", "/v1/carriers": "logistics", "/v1/hs": "logistics",
+    "/v1/compliance": "logistics",
     "/v1/countries": "geo", "/v1/cities": "geo", "/v1/hubs": "geo", "/v1/distance": "geo",
     "/v1/trust": "trust",
     "/v1/requests": "rfq", "/v1/offers": "rfq", "/v1/deals": "rfq", "/v1/reviews": "rfq",
@@ -21,10 +22,10 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
 
 PUBLIC_GET_PREFIXES = (
     "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories",
-    "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs",
+    "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs", "/v1/compliance",
     "/v1/media/files",  # image bytes only; upload/delete (/v1/media/images) stay authenticated
 )  # fmt: skip
-PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost"), ("GET", "/v1/feed/trending")}  # trending: anonymous browsing; identity optional
+PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost"), ("POST", "/v1/compliance/checklist"), ("GET", "/v1/feed/trending")}  # trending: anonymous browsing; identity optional
 
 
 # Service-to-service endpoints that must never be reachable through the public gateway

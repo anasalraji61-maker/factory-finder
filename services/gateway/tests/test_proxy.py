@@ -7,7 +7,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
 @pytest.mark.parametrize(
     ("path", "upstream"),
     [
-        ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"), ("/v1/hs/851713", "logistics"),
+        ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"), ("/v1/hs/851713", "logistics"), ("/v1/compliance/countries", "logistics"), ("/v1/compliance/checklist", "logistics"), ("/v1/compliancex", None),
         ("/v1/countries", "geo"), ("/v1/trust/suppliers/sup_1", "trust"), ("/v1/trust/suppliers:batch", "trust"),
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
@@ -26,6 +26,7 @@ def test_resolve(path, upstream):
     [
         ("GET", "/health", True), ("POST", "/v1/auth/login", True), ("GET", "/v1/search", True),
         ("GET", "/v1/fx/rates", True), ("GET", "/v1/hs/search", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
+        ("GET", "/v1/compliance/countries", True), ("GET", "/v1/compliance/incoterms", True), ("POST", "/v1/compliance/checklist", True), ("PUT", "/v1/compliance/checklist", False), ("DELETE", "/v1/compliance/countries/CN", False),
         ("POST", "/v1/search", False), ("GET", "/v1/trust/suppliers/s", False), ("GET", "/v1/requests", False),
         ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False),
         ("GET", "/v1/media/files/abc.jpg", True), ("HEAD", "/v1/media/files/abc.jpg", True), ("POST", "/v1/media/images", False),
@@ -414,3 +415,19 @@ def test_feed_forwards_verified_supplier_only_and_trending_is_public(make_client
     # authenticated trending carries identity (viewer_liked), still public without
     c.get("/v1/feed/trending", headers=h)
     assert trend.calls.last.request.headers["x-user-id"]
+
+
+def test_compliance_public_proxy_and_header_forwarding(client, mock_upstream):
+    mock_upstream.get("http://localhost:8102/v1/compliance/countries").mock(return_value=httpx.Response(200, json=[]))
+    r = client.get("/v1/compliance/countries")
+    assert r.status_code == 200 and r.headers["x-ratelimit-limit"] == "300"
+    route = mock_upstream.post("http://localhost:8102/v1/compliance/checklist").mock(return_value=httpx.Response(200, json={"items": []}))
+    assert client.post("/v1/compliance/checklist", json={"destination": "IQ"}).status_code == 200 and route.called
+
+
+def test_assistant_quota_header_forwarded(client, hdr, mock_upstream):
+    mock_upstream.post("http://localhost:8109/v1/assistant/query").mock(
+        return_value=httpx.Response(200, json={}, headers={"X-Quota-Remaining": "41"})
+    )
+    r = client.post("/v1/assistant/query", json={"text": "hi"}, headers=hdr)
+    assert r.headers.get("x-quota-remaining") == "41"

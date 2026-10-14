@@ -45,6 +45,7 @@ FORWARD_RESPONSE_HEADERS = {
     "content-disposition",
     "cross-origin-resource-policy",
     "retry-after",
+    "x-quota-remaining",  # assistant per-day quota
 }
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 

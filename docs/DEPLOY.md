@@ -26,6 +26,9 @@ docker compose down -v
 - Real provider adapters are OFF by default and unverified against live APIs; keep kill switches (`FF_*_KILL_SWITCH`) documented for operators. Demand matching stays disabled (`FF_DEMAND_ENABLED=false`) unless a human-in-the-loop is in place.
 - Pin base image digests and dependency versions for reproducible builds; run containers as non-root (already done: user `app`).
 
+## Env forwarding and feed admin
+`docker-compose.yml` forwards the operator switches (`FF_ENV`, kill switches, gateway mail/admin-UI, sourcing/logistics/tracking/notifications provider vars, assistant LLM, admin tokens) with empty or code-default fallbacks; unset means unchanged behaviour. Full list and exceptions: `docs/RUNBOOK.md` (top). `/v1/admin/feed/*` (`FF_FEED_ADMIN_TOKEN`) is not routed by the gateway; moderate from the private network only.
+
 ## Public ingress for payments webhooks
 `POST /v1/payments/webhooks/{provider}` is called by external payment providers, which cannot send a user bearer token, so the gateway
 (which requires auth for `/v1/payments/*`) cannot serve it. Open question for the operator before enabling real providers: expose the

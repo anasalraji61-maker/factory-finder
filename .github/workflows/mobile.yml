@@ -5,6 +5,15 @@ on:
   pull_request:
     paths: ["apps/mobile/**"]
   workflow_dispatch:
+    inputs:
+      mock:
+        description: "Build with FF_MOCK=true (demo data, no server). Set false to talk to a real backend."
+        type: boolean
+        default: true
+      api_base_url:
+        description: "FF_API_BASE_URL (required when mock is false), e.g. https://api.example.com"
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -49,8 +58,16 @@ jobs:
           if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=test::$msg"; fi
           exit $code
       - name: Build debug APK
+        env:
+          INPUT_MOCK: ${{ github.event_name == 'workflow_dispatch' && inputs.mock || 'true' }}
+          INPUT_API_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.api_base_url || '' }}
         run: |
-          flutter build apk --debug --dart-define=FF_MOCK=true 2>&1 | tee build.txt
+          DEFINES="--dart-define=FF_MOCK=true"
+          if [ "$INPUT_MOCK" = "false" ]; then
+            if [ -z "$INPUT_API_BASE_URL" ]; then echo "::error title=build::api_base_url is required when mock=false"; exit 1; fi
+            DEFINES="--dart-define=FF_MOCK=false --dart-define=FF_API_BASE_URL=$INPUT_API_BASE_URL"
+          fi
+          flutter build apk --debug $DEFINES 2>&1 | tee build.txt
           code=${PIPESTATUS[0]}
           msg=$(grep -iE "error|fail|wrong|exception|what went wrong|requires|minSdk|plugin|\.gradle|\.kt|\.java" build.txt | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
           if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=build::$msg"; fi

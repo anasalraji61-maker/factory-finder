@@ -4,6 +4,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/compare_logic.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 

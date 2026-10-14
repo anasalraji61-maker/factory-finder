@@ -113,7 +113,7 @@ def main() -> int:
         r = c.get("/v1/categories")
         h = {k.lower(): v for k, v in r.headers.items()}
         if not any(k.startswith("x-ratelimit") for k in h):
-            warn("rate-limit headers", "no X-RateLimit-* on a normal response (the gateway only sends them with a 429; "
+            warn("rate-limit headers", "no X-RateLimit-* on a normal response (the gateway sends X-RateLimit-Limit on every response; "
                                        "check the proxy/WAF in front of it)")
         if BASE.startswith("https://") and "strict-transport-security" not in h:
             warn("HSTS", "no Strict-Transport-Security (set it at the TLS terminator)")

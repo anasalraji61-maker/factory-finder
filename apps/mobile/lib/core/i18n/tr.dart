@@ -1,5 +1,4 @@
 import 'package:factory_finder/core/i18n/core_strings.dart';
-import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/widgets.dart';
 

@@ -6,6 +6,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/offline.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AppCard extends StatelessWidget {

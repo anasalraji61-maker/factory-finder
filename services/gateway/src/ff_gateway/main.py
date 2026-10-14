@@ -185,7 +185,11 @@ def create_app(
                 resp = await call_next(request)
                 if resp.status_code == 401:
                     await limiter.check(fkey, 2 * settings.auth_rate_limit_per_minute)
+                resp.headers["X-RateLimit-Limit"] = str(limit)
                 return resp
+            resp = await call_next(request)
+            resp.headers["X-RateLimit-Limit"] = str(limit)  # remaining is not exposed: the store only reports blocked/allowed
+            return resp
         return await call_next(request)
 
     @app.get("/health")

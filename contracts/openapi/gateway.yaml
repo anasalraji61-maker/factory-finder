@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml)."}
+info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/compliance/* + POST /v1/compliance/checklist, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml)."}
 servers: [{url: http://localhost:8000}]
 security: [{bearer: []}]
 paths:
@@ -293,7 +293,7 @@ paths:
   /v1/{proxied_path}:
     x-proxy:
       sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my]
-      logistics: [/v1/quotes, /v1/fx, /v1/carriers]
+      logistics: [/v1/quotes, /v1/fx, /v1/carriers, /v1/hs, /v1/compliance]  # GET /v1/compliance/* and POST /v1/compliance/checklist are public (static indicative data; same rate-limit class as landed-cost)
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]
       rfq: [/v1/requests, /v1/offers, /v1/deals, /v1/reviews, "GET /v1/suppliers/{ref}/reviews", "GET /v1/suppliers/{ref}/review-summary"]  # the two supplier paths are public and take precedence over the sourcing /v1/suppliers prefix

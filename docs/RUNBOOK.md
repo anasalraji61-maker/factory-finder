@@ -2,7 +2,7 @@
 
 Audience: whoever operates the stack (docker compose). Env names below were verified against the service `config.py` files and adapters. Companion docs: `docs/DEPLOY.md`, `docs/OPS.md`, `docs/DB.md`, `docs/API_OVERVIEW.md`.
 
-Important compose caveat: `docker-compose.yml` passes only the env vars listed in its `environment:` blocks into containers (e.g. gateway: `FF_GATEWAY_JWT_SECRET`, `FF_INTERNAL_TOKEN`, `FF_GATEWAY_CORS_ORIGINS`, `FF_GATEWAY_ADMIN_TOKEN`). Many switches below (kill switches, `FF_ENV`, `FF_GATEWAY_SERVE_ADMIN`, `FF_NOTIFY_*`, `FF_TRACKING_*`, `FF_LOGISTICS_FREIGHT_*`, `FF_SOURCING_ADAPTERS`, `FF_PAYMENTS_ADMIN_TOKEN` on the gateway ...) are NOT forwarded yet: adding them to a `.env` file alone has no effect until the matching line is added to `docker-compose.yml` (or a `docker-compose.override.yml`) under that service's `environment:`. Check with `docker compose config | grep <NAME>`.
+Compose env forwarding: `docker-compose.yml` forwards the operator switches from the shell / `.env` into each container with empty (or code-default) fallbacks, so leaving them unset changes nothing: `FF_ENV` (all services), the kill switches (`FF_SOURCING_KILL_SWITCH`, `FF_LOGISTICS_KILL_SWITCH`, `FF_TRACKING_KILL_SWITCH` and the per-adapter `*_DISABLED`), `FF_GATEWAY_SERVE_ADMIN`, gateway mail (`FF_GATEWAY_MAIL_*`, `FF_GATEWAY_SMTP_*`, `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED`, `FF_GATEWAY_VERIFY_URL_TEMPLATE`), `FF_SOURCING_ADAPTERS`/`_ADMIN_TOKEN`/`_ALIBABA_*`/`_LICENSED_*`, `FF_LOGISTICS_FREIGHT_*`/`FX_PROVIDER`, `FF_TRACKING_*` provider and relay vars, `FF_NOTIFY_*`, `FF_NOTIFICATIONS_SCHEDULER_ENABLED`, `FF_ASSISTANT_LLM*`/quotas, `FF_MESSAGING_ABUSE_*`, and the admin tokens (`FF_PAYMENTS_ADMIN_TOKEN` and `FF_SOURCING_ADMIN_TOKEN` on both gateway and the service, `FF_FEED_ADMIN_TOKEN` on feed). Not forwarded: tuning knobs such as the gateway rate limits (`FF_GATEWAY_*_RATE_LIMIT_PER_MINUTE`, `FF_GATEWAY_TRUSTED_PROXIES`, `FF_GATEWAY_REDIS_URL`), `FF_GATEWAY_DATABASE_URL` and other minor settings: add them under that service's `environment:` (or in a `docker-compose.override.yml`). Check with `docker compose config | grep <NAME>`. `FF_NOTIFY_FCM_CREDENTIALS_FILE` is a path inside the container, so it also needs a volume mount (use `FF_NOTIFY_FCM_CREDENTIALS_JSON` instead). Feed moderation (`/v1/admin/feed/*`, `FF_FEED_ADMIN_TOKEN`) is service-local and is deliberately NOT routed through the gateway (the gateway answers 404); operate it from inside the private network (for example `docker compose exec feed ...`).
 
 ## 1. Quick triage
 
@@ -61,7 +61,7 @@ Per-user: disabling a user (`is_active`) takes effect on the next proxied reques
 
 ## 5. Kill switches (exact names found in code)
 
-Truthy values for the `*_KILL_SWITCH` / `*_DISABLED` flags: the code accepts `1`, `true`, `yes`, `on` (case-insensitive); use `1`. They are read at call time from the process environment, so setting them needs the env var in the container (see the compose caveat at the top) and normally a container recreate.
+Truthy values for the `*_KILL_SWITCH` / `*_DISABLED` flags: the code accepts `1`, `true`, `yes`, `on` (case-insensitive); use `1`. They are read at call time from the process environment, so set them in the shell / `.env` (compose forwards them, see the note at the top) and recreate the container (`docker compose up -d <svc>`).
 
 | Goal | Switch | Service | Behaviour |
 |---|---|---|---|
