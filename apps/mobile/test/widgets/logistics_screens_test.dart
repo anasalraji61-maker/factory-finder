@@ -16,6 +16,11 @@ void main() {
     expect(find.text('أدخل القيمة والوزن بشكل صحيح'), findsOneWidget);
     expect(find.text('نتائج التسعير'), findsNothing);
 
+    // Let the validation snackbar expire so it cannot cover the button.
+    await tester.pump(const Duration(seconds: 5));
+    await settle(tester, frames: 4);
+    expect(find.text('أدخل القيمة والوزن بشكل صحيح'), findsNothing);
+
     // Fields in "by unit" mode: unit price, quantity, weight, volume, HS code.
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '10');
@@ -24,8 +29,11 @@ void main() {
     await tester.enterText(fields.at(3), '0.5');
     await tester.pump();
 
+    await tester.ensureVisible(find.text('احسب الكلفة'));
     await tester.tap(find.text('احسب الكلفة'));
     await settle(tester, frames: 30);
+    // ignore: avoid_print
+    print('VISIBLE: ' + find.byType(Text).evaluate().map((e) => (e.widget as Text).data ?? '').where((t) => t.isNotEmpty).take(25).join(' | '));
 
     expect(find.text('نتائج التسعير'), findsOneWidget);
     expect(find.text('لا توجد تسعيرة بعد'), findsNothing);
