@@ -69,7 +69,7 @@ void main() {
     final c1 = makeContainer(prefs, MemoryStore());
     c1.read(settingsPersistenceProvider);
     c1.read(localeProvider.notifier).state = const Locale('en');
-    c1.read(displayCurrencyProvider.notifier).state = 'IQD';
+    c1.read(displayCurrencyProvider.notifier).state = 'EUR';
     c1.read(destinationProvider.notifier).state =
         const Location(countryCode: 'TR', city: 'Istanbul');
     c1.read(serverUrlProvider.notifier).state = 'https://api.example.com';
@@ -79,12 +79,12 @@ void main() {
     final s = await PersistedSettings.load(prefs);
     expect(s.onboardingDone, isTrue);
     expect(s.locale, 'en');
-    expect(s.currency, 'IQD');
+    expect(s.currency, 'EUR');
     expect(s.destination?.city, 'Istanbul');
 
     final c2 = makeContainer(prefs, MemoryStore(), extra: s.overrides());
     expect(c2.read(localeProvider).languageCode, 'en');
-    expect(c2.read(displayCurrencyProvider), 'IQD');
+    expect(c2.read(displayCurrencyProvider), 'EUR');
     expect(c2.read(destinationProvider)?.countryCode, 'TR');
     expect(c2.read(serverUrlProvider), 'https://api.example.com');
     expect(c2.read(onboardingCompletedProvider), isTrue);

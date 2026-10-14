@@ -31,6 +31,10 @@ Widget _bare(Widget home, {Locale locale = const Locale('ar')}) => MaterialApp(
 
 Future<void> _tapKey(WidgetTester tester, Object key) async {
   final f = find.byKey(ValueKey(key));
+  if (f.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(f, 200,
+        scrollable: find.byType(Scrollable).first);
+  }
   await tester.ensureVisible(f);
   await tester.tap(f);
   await settle(tester, frames: 3);
