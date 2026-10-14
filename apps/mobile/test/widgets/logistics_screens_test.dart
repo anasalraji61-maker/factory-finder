@@ -25,7 +25,7 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.text('احسب الكلفة'));
-    await settle(tester);
+    await settle(tester, frames: 30);
 
     expect(find.text('نتائج التسعير'), findsOneWidget);
     expect(find.text('لا توجد تسعيرة بعد'), findsNothing);

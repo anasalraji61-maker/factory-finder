@@ -24,9 +24,13 @@ void main() {
     expect(find.text('تمت إضافة المنتج إلى قائمة المتابعة'), findsOneWidget);
     expect(find.byTooltip('تتم متابعته'), findsOneWidget);
 
+    // Let the 'added' snackbar expire so the queued 'removed' one can show.
+    await tester.pump(const Duration(seconds: 5));
+    await settle(tester, frames: 4);
+
     // Remove: no sheet, straight to the removed snackbar.
     await tester.tap(find.byTooltip('تتم متابعته'));
-    await settle(tester, frames: 6);
+    await settle(tester, frames: 8);
     expect(find.text('تمت إزالة المنتج من قائمة المتابعة'), findsOneWidget);
     expect(find.byTooltip('متابعة المنتج'), findsOneWidget);
 
