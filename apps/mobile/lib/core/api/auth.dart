@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Signed-in user (gateway `Me`). Only the fields the app needs.
@@ -140,6 +141,20 @@ class AuthRepository {
 
   void logout() => _api.tokens.clear();
 
+  /// Restores a session from the stored refresh token: refresh, then
+  /// `/v1/me`. Returns null when the session cannot be restored.
+  Future<Me?> restoreSession() async {
+    if (_api.tokens.refreshToken == null) return null;
+    if (_api.isMock) {
+      await mockDelay(50);
+      _api.tokens.set('mock-access-token', null);
+      return Me(id: kMockUserId, name: 'user');
+    }
+    if (!await _api.refreshSession()) return null;
+    final me = await _api.get('/v1/me');
+    return Me.fromJson(Map<String, dynamic>.from(me as Map));
+  }
+
   /// Claims (or, with null, releases) a catalog supplier for [current].
   /// Throws [ApiException] code `supplier_claimed` (409) when already taken.
   Future<Me> claimSupplier(Me current, String? supplierId) async {
@@ -231,6 +246,32 @@ class AuthController extends StateNotifier<Me?> {
     final current = state;
     if (current == null) return;
     state = await _repo.claimSupplier(current, supplierId);
+  }
+
+  /// Loads the stored refresh token and restores the session. Any failure
+  /// clears the tokens and leaves the user signed out. Never throws.
+  Future<void> restore() async {
+    try {
+      final tokens = _ref.read(tokenStoreProvider);
+      if (tokens.refreshToken == null) {
+        final saved =
+            await _ref.read(secureStoreProvider).get(kRefreshTokenKey);
+        if (saved == null || saved.isEmpty) return;
+        tokens.refreshToken = saved;
+      }
+      final me = await _repo.restoreSession();
+      if (!mounted) return;
+      if (me == null) {
+        tokens.clear();
+        state = null;
+      } else {
+        state = me;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _ref.read(tokenStoreProvider).clear();
+      state = null;
+    }
   }
 
   void logout() {

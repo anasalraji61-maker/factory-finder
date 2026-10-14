@@ -9,7 +9,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str, details: dict[str, Any] | None = None):
+    def __init__(self, status: int, code: str, message: str, details: dict[str, Any] | None = None, headers: dict[str, str] | None = None):
+        self.headers = headers or {}
         self.status, self.code, self.message, self.details = status, code, message, details or {}
 
 
@@ -20,7 +21,7 @@ def _body(code: str, message: str, details: dict[str, Any] | None = None) -> dic
 def install(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _api(_: Request, e: ApiError) -> JSONResponse:
-        return JSONResponse(_body(e.code, e.message, e.details), status_code=e.status)
+        return JSONResponse(_body(e.code, e.message, e.details), status_code=e.status, headers=e.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _val(_: Request, e: RequestValidationError) -> JSONResponse:

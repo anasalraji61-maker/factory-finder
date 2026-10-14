@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/router/app_router.dart';
+import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -15,6 +16,7 @@ class FactoryFinderApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(settingsPersistenceProvider);
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(

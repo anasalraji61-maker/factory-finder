@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     @property
     def auto_create_tables(self) -> bool:
         return resolve_auto_create(self.database_url, self.db_auto_create)
+
     internal_token: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("FF_INTERNAL_TOKEN", "FF_NOTIFICATIONS_INTERNAL_TOKEN"),
@@ -37,10 +38,35 @@ class Settings(BaseSettings):
     page_size_default: int = Field(default=20, ge=1)
     page_size_max: int = Field(default=100, ge=1)
 
-    # push: "mock" or "fcm". FCM is a stub and disabled unless explicitly enabled.
-    push_provider: str = "mock"
-    fcm_enabled: bool = False
-    fcm_server_key: SecretStr | None = None
+    # delivery providers (all OFF by default): FF_NOTIFY_PUSH=off|mock|fcm,
+    # FF_NOTIFY_EMAIL=off|mock|smtp
+    notify_push: str = Field(
+        default="off", validation_alias=AliasChoices("FF_NOTIFY_PUSH", "FF_NOTIFICATIONS_PUSH")
+    )
+    notify_email: str = Field(
+        default="off", validation_alias=AliasChoices("FF_NOTIFY_EMAIL", "FF_NOTIFICATIONS_EMAIL")
+    )
+    # FCM credentials: ONLY from env (service-account JSON content or a path to the file)
+    fcm_project_id: str | None = Field(default=None, validation_alias="FF_NOTIFY_FCM_PROJECT_ID")
+    fcm_credentials_json: SecretStr | None = Field(
+        default=None, validation_alias="FF_NOTIFY_FCM_CREDENTIALS_JSON"
+    )
+    fcm_credentials_file: str | None = Field(
+        default=None, validation_alias="FF_NOTIFY_FCM_CREDENTIALS_FILE"
+    )
+    smtp_host: str | None = Field(default=None, validation_alias="FF_NOTIFY_SMTP_HOST")
+    smtp_port: int = Field(default=587, validation_alias="FF_NOTIFY_SMTP_PORT")
+    smtp_user: str | None = Field(default=None, validation_alias="FF_NOTIFY_SMTP_USER")
+    smtp_password: SecretStr | None = Field(
+        default=None, validation_alias="FF_NOTIFY_SMTP_PASSWORD"
+    )
+    smtp_from: str | None = Field(default=None, validation_alias="FF_NOTIFY_SMTP_FROM")
+
+    # delivery pipeline
+    max_devices_per_user: int = Field(default=10, ge=1)
+    delivery_max_attempts: int = Field(default=5, ge=1)
+    delivery_backoff_base_seconds: float = Field(default=30.0, ge=0)
+    delivery_backoff_max_seconds: float = Field(default=3600.0, ge=0)
 
     # scheduler (periodic evaluation of all watches); off by default and in tests
     scheduler_enabled: bool = False

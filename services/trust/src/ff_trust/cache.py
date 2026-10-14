@@ -25,3 +25,6 @@ class TTLCache(Generic[T]):
         if len(self._data) >= self.max_entries:
             self._data.pop(next(iter(self._data)))
         self._data[key] = (self._clock() + self.ttl, value)
+
+    def delete(self, key: str) -> None:
+        self._data.pop(key, None)

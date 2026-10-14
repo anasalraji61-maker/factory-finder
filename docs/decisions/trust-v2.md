@@ -1,0 +1,8 @@
+- 2026-10-14 | Model trust-v2: added 7 weighted signals (licence 5, storefront age 2, repeat buyers 3, response time 2, refunds 3, deal outcomes 4, accepted reports 8); typical values are centred near neutral so v1-style inputs keep similar scores | additive, keeps bands of curated profiles.
+- 2026-10-14 | `confidence` changed from 0-1 float to 0-100 int (was undocumented in contract, no consumers) = weighted evidence coverage x sample depth; `data_gaps` lists missing signals; missing never gives negative impact | unknown != bad.
+- 2026-10-14 | rating_avg uses Bayesian shrinkage (prior 3.8, 10 pseudo-reviews) replacing the old n/20 multiplier; deal completion shrinks to 0.85 with 8 pseudo-deals | small samples cannot swing score.
+- 2026-10-14 | Dispute factor blends lifetime and last-90-day rates (0.6 recent); caps use max(lifetime, blend) so recent improvement cannot lift an earned cap | recency decay without gaming.
+- 2026-10-14 | Certificates: dated record overrides bare name; expired ones are ignored and flagged; expiring <=60 days flagged | expiry awareness.
+- 2026-10-14 | `blocked` flag is a hard fail like sanctions (red, <=20) | clear compliance explanation.
+- 2026-10-14 | Reports: in-memory, pending_review, 5/user/hour (429 + Retry-After), X-User-Id required (401 otherwise); only moderator-accepted reports add a confirmed_reports penalty (max -8); review is a service method, no public endpoint | no auto-penalty, abuse-resistant.
+- 2026-10-14 | History = 12 deterministic monthly mock points (mock adapter only) + stored score snapshots, oldest first | no DB in this service.

@@ -10,6 +10,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/conversations": "messaging",
     "/v1/shipments": "tracking", "/v1/validate": "tracking",
     "/v1/watchlist": "notifications", "/v1/alerts": "notifications", "/v1/devices": "notifications",
+    "/v1/notification-prefs": "notifications",
     "/v1/assistant": "assistant",
 }  # fmt: skip
 
@@ -22,7 +23,7 @@ PUBLIC_EXACT = {("POST", "/v1/quotes/landed-cost")}
 
 # Service-to-service endpoints that must never be reachable through the public gateway
 # (the gateway attaches the internal token, so exposing them would bypass their guard).
-INTERNAL_ONLY = (("POST", "/v1/alerts/evaluate"),)
+INTERNAL_ONLY = (("POST", "/v1/alerts/evaluate"), ("POST", "/v1/alerts/digest"))
 
 
 def is_internal_only(method: str, path: str) -> bool:

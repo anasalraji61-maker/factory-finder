@@ -23,6 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from ff_notifications.dburl import normalize_database_url
+from ff_notifications.domain.delivery import Delivery, DeliveryStatus, Prefs
 from ff_notifications.domain.models import Alert, Device, RuleKind, Watch
 from ff_notifications.domain.policy import AlertHistory
 from ff_notifications.persistence import serde
@@ -60,6 +61,22 @@ devices = Table(
     Column("owner_id", String(64), nullable=False, index=True),
     Column("token", String(512), nullable=False, unique=True),
     Column("doc", JSON, nullable=False),
+)
+prefs = Table(
+    "notification_prefs",
+    metadata,
+    Column("owner_id", String(64), primary_key=True),
+    Column("doc", JSON, nullable=False),
+)
+deliveries = Table(
+    "deliveries",
+    metadata,
+    Column("id", String(40), primary_key=True),
+    Column("owner_id", String(64), nullable=False, index=True),
+    Column("status", String(16), nullable=False),
+    Column("next_attempt_at", String(32), nullable=False),
+    Column("doc", JSON, nullable=False),
+    Index("ix_delivery_due", "status", "next_attempt_at"),
 )
 
 
@@ -275,6 +292,7 @@ class Store:
                 platform=device.platform,
                 locale=device.locale,
                 updated_at=device.updated_at,
+                active=True,
             )
             await conn.execute(
                 update(devices)
@@ -308,6 +326,117 @@ class Store:
     async def delete_device(self, device_id: str) -> None:
         async with self._lock, self.engine.begin() as conn:
             await conn.execute(delete(devices).where(devices.c.id == device_id))
+
+    async def update_device(self, device: Device) -> None:
+        async with self._lock, self.engine.begin() as conn:
+            await conn.execute(
+                update(devices)
+                .where(devices.c.id == device.id)
+                .values(doc=serde.device_to_doc(device))
+            )
+
+    async def get_device_by_token(self, token: str) -> Device | None:
+        async with self.engine.connect() as conn:
+            row = (
+                (await conn.execute(select(devices).where(devices.c.token == token)))
+                .mappings()
+                .first()
+            )
+        return serde.device_from_row(row) if row else None
+
+    # ------------------------------------------------------------------ prefs
+
+    async def get_prefs(self, owner_id: str) -> Prefs | None:
+        async with self.engine.connect() as conn:
+            row = (
+                (await conn.execute(select(prefs).where(prefs.c.owner_id == owner_id)))
+                .mappings()
+                .first()
+            )
+        return serde.prefs_from_row(row) if row else None
+
+    async def put_prefs(self, p: Prefs) -> None:
+        doc = serde.prefs_to_doc(p)
+        async with self._lock, self.engine.begin() as conn:
+            res = await conn.execute(
+                update(prefs).where(prefs.c.owner_id == p.owner_id).values(doc=doc)
+            )
+            if res.rowcount == 0:
+                await conn.execute(insert(prefs).values(owner_id=p.owner_id, doc=doc))
+
+    async def owners_with_email_prefs(self) -> list[Prefs]:
+        async with self.engine.connect() as conn:
+            rows = (await conn.execute(select(prefs))).mappings().all()
+        return [x for x in (serde.prefs_from_row(r) for r in rows) if x.email]
+
+    # ------------------------------------------------------------------ deliveries
+
+    async def insert_delivery(self, d: Delivery) -> bool:
+        """Insert unless a delivery with this (deterministic) id exists. True if inserted."""
+        async with self._lock, self.engine.begin() as conn:
+            exists = (
+                await conn.execute(select(deliveries.c.id).where(deliveries.c.id == d.id))
+            ).first()
+            if exists:
+                return False
+            await conn.execute(
+                insert(deliveries).values(
+                    id=d.id,
+                    owner_id=d.owner_id,
+                    status=d.status.value,
+                    next_attempt_at=serde.ts(d.next_attempt_at),
+                    doc=serde.delivery_to_doc(d),
+                )
+            )
+            return True
+
+    async def get_delivery(self, delivery_id: str) -> Delivery | None:
+        async with self.engine.connect() as conn:
+            row = (
+                (await conn.execute(select(deliveries).where(deliveries.c.id == delivery_id)))
+                .mappings()
+                .first()
+            )
+        return serde.delivery_from_row(row) if row else None
+
+    async def list_deliveries(self, owner_id: str | None = None) -> list[Delivery]:
+        q = select(deliveries).order_by(deliveries.c.id)
+        if owner_id:
+            q = q.where(deliveries.c.owner_id == owner_id)
+        async with self.engine.connect() as conn:
+            rows = (await conn.execute(q)).mappings().all()
+        return [serde.delivery_from_row(r) for r in rows]
+
+    async def due_deliveries(self, now: datetime, limit: int = 100) -> list[Delivery]:
+        async with self.engine.connect() as conn:
+            rows = (
+                (
+                    await conn.execute(
+                        select(deliveries)
+                        .where(
+                            deliveries.c.status == DeliveryStatus.PENDING.value,
+                            deliveries.c.next_attempt_at <= serde.ts(now),
+                        )
+                        .order_by(deliveries.c.next_attempt_at)
+                        .limit(limit)
+                    )
+                )
+                .mappings()
+                .all()
+            )
+        return [serde.delivery_from_row(r) for r in rows]
+
+    async def save_delivery(self, d: Delivery) -> None:
+        async with self._lock, self.engine.begin() as conn:
+            await conn.execute(
+                update(deliveries)
+                .where(deliveries.c.id == d.id)
+                .values(
+                    status=d.status.value,
+                    next_attempt_at=serde.ts(d.next_attempt_at),
+                    doc=serde.delivery_to_doc(d),
+                )
+            )
 
 
 __all__ = ["Store", "watch_identity"]

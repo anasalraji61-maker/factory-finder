@@ -10,7 +10,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from ff_notifications.adapters.push import FcmPushAdapter, MockPushAdapter, PushAdapter
+from ff_notifications.adapters.email import EmailProvider, MockEmail, SmtpEmail
+from ff_notifications.adapters.push import (
+    FcmPush,
+    MockPush,
+    PushProvider,
+    ServiceAccountTokenProvider,
+)
 from ff_notifications.api.routes import router
 from ff_notifications.clients.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
 from ff_notifications.config import Settings
@@ -28,11 +34,43 @@ def _error(status: int, code: str, message: str, details: dict | None = None) ->
     )
 
 
+def build_push(settings: Settings) -> PushProvider | None:
+    mode = settings.notify_push.lower()
+    if mode == "mock":
+        return MockPush()
+    if mode == "fcm" and settings.fcm_project_id:
+        creds = settings.fcm_credentials_json
+        return FcmPush(
+            settings.fcm_project_id,
+            ServiceAccountTokenProvider(
+                creds.get_secret_value() if creds else None, settings.fcm_credentials_file
+            ),
+        )
+    return None  # off (or fcm without a project id)
+
+
+def build_email(settings: Settings) -> EmailProvider | None:
+    mode = settings.notify_email.lower()
+    if mode == "mock":
+        return MockEmail()
+    if mode == "smtp" and settings.smtp_host and settings.smtp_from:
+        pw = settings.smtp_password
+        return SmtpEmail(
+            settings.smtp_host,
+            settings.smtp_port,
+            settings.smtp_from,
+            settings.smtp_user,
+            pw.get_secret_value() if pw else None,
+        )
+    return None
+
+
 def create_app(
     settings: Settings | None = None,
     *,
     sourcing: SourcingClient | None = None,
-    push: PushAdapter | None = None,
+    push: PushProvider | None = None,
+    email: EmailProvider | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     store = Store(settings.database_url)
@@ -43,12 +81,12 @@ def create_app(
             else HttpSourcingClient(settings.sourcing_base_url, settings.sourcing_timeout_seconds)
         )
     if push is None:
-        push = (
-            FcmPushAdapter(settings.fcm_enabled)
-            if settings.push_provider == "fcm"
-            else MockPushAdapter()
-        )
-    service = NotificationService(store=store, sourcing=sourcing, push=push, settings=settings)
+        push = build_push(settings)
+    if email is None:
+        email = build_email(settings)
+    service = NotificationService(
+        store=store, sourcing=sourcing, push=push, email=email, settings=settings
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):

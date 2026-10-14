@@ -430,3 +430,4 @@ class Device:
     token: str
     created_at: datetime
     updated_at: datetime
+    active: bool = True  # False after the provider reports the token invalid

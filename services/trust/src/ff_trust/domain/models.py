@@ -33,6 +33,15 @@ class Factor:
 
 
 @dataclass(frozen=True, slots=True)
+class DataGap:
+    """A missing signal. Missing is not bad: it lowers confidence, never the score."""
+
+    key: str
+    label: str
+    label_ar: str
+
+
+@dataclass(frozen=True, slots=True)
 class Assessment:
     """Full outcome of scoring one set of signals.
 
@@ -45,9 +54,11 @@ class Assessment:
     band: TrustBand
     factors: tuple[Factor, ...]
     baseline: int
-    confidence: float
+    confidence: int  # 0-100, how much evidence backs the score
     signals_used: int
     signals_total: int
     insufficient_signals: bool
     caps_applied: tuple[str, ...]
     model_version: str
+    data_gaps: tuple["DataGap", ...] = ()
+    flags: tuple[str, ...] = ()

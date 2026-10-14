@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
+from ff_notifications.domain.delivery import Delivery, DeliveryStatus, Prefs, QuietHours
 from ff_notifications.domain.models import (
     STATE_FIELDS,
     Alert,
@@ -129,6 +130,7 @@ def device_to_doc(dv: Device) -> dict[str, Any]:
         "token": dv.token,
         "created_at": ts(dv.created_at),
         "updated_at": ts(dv.updated_at),
+        "active": dv.active,
     }
 
 
@@ -142,4 +144,62 @@ def device_from_row(row: Mapping[str, Any]) -> Device:
         token=d["token"],
         created_at=parse_ts(d["created_at"]),
         updated_at=parse_ts(d["updated_at"]),
+        active=bool(d.get("active", True)),
+    )
+
+
+def prefs_to_doc(p: Prefs) -> dict[str, Any]:
+    return {
+        "channels": {k: list(v) for k, v in p.channels.items()},
+        "quiet_hours": {"start": p.quiet_hours.start, "end": p.quiet_hours.end}
+        if p.quiet_hours
+        else None,
+        "timezone": p.timezone,
+        "language": p.language.value if p.language else None,
+        "email": p.email,
+    }
+
+
+def prefs_from_row(row: Mapping[str, Any]) -> Prefs:
+    d = row["doc"]
+    qh = d.get("quiet_hours")
+    return Prefs(
+        owner_id=row["owner_id"],
+        channels={k: tuple(v) for k, v in d["channels"].items()},
+        quiet_hours=QuietHours(qh["start"], qh["end"]) if qh else None,
+        timezone=d["timezone"],
+        language=Locale(d["language"]) if d.get("language") else None,
+        email=d.get("email"),
+        explicit=True,
+    )
+
+
+def delivery_to_doc(dl: Delivery) -> dict[str, Any]:
+    return {
+        "channel": dl.channel,
+        "kind": dl.kind,
+        "alert_ids": list(dl.alert_ids),
+        "device_id": dl.device_id,
+        "attempts": dl.attempts,
+        "last_error": dl.last_error,
+        "created_at": ts(dl.created_at),
+        "updated_at": ts(dl.updated_at) if dl.updated_at else None,
+    }
+
+
+def delivery_from_row(row: Mapping[str, Any]) -> Delivery:
+    d = row["doc"]
+    return Delivery(
+        id=row["id"],
+        owner_id=row["owner_id"],
+        channel=d["channel"],
+        kind=d["kind"],
+        alert_ids=tuple(d["alert_ids"]),
+        created_at=parse_ts(d["created_at"]),
+        next_attempt_at=parse_ts(row["next_attempt_at"]),
+        device_id=d.get("device_id"),
+        status=DeliveryStatus(row["status"]),
+        attempts=d["attempts"],
+        last_error=d.get("last_error"),
+        updated_at=parse_ts(d["updated_at"]) if d.get("updated_at") else None,
     )

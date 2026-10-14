@@ -1,10 +1,36 @@
 import 'package:factory_finder/app.dart';
+import 'package:factory_finder/core/auth_bootstrap.dart';
 import 'package:factory_finder/core/router/app_router.dart';
+import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerFeatureStrings();
-  runApp(const ProviderScope(child: FactoryFinderApp()));
+
+  KeyValueStore prefs;
+  KeyValueStore secure;
+  try {
+    prefs = await SharedPrefsStore.open();
+    secure = SecureTokenStore();
+  } catch (_) {
+    prefs = MemoryStore();
+    secure = MemoryStore();
+  }
+  final settings = await PersistedSettings.load(prefs);
+
+  final container = ProviderContainer(overrides: [
+    keyValueStoreProvider.overrideWithValue(prefs),
+    secureStoreProvider.overrideWithValue(secure),
+    ...settings.overrides(),
+  ]);
+  final router = createAppRouter(showOnboarding: !settings.onboardingDone);
+
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: FactoryFinderApp(router: router),
+  ));
+  restoreSessionOnStart(container);
 }

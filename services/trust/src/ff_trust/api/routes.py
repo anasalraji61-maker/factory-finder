@@ -1,12 +1,13 @@
 """Trust endpoints."""
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Header, Query, Request
 
 from ff_trust.adapters.base import AdapterDisabled
 from ff_trust.api.errors import ApiError
-from ff_trust.api.schemas import BatchOut, TrustScoreOut
+from ff_trust.api.schemas import BatchOut, HistoryOut, ReportIn, ReportOut, TrustScoreOut
 from ff_trust.domain.signals import SupplierSignals
-from ff_trust.service import TrustService
+from ff_trust.service import TrustService, report_out
+from ff_trust.store import RateLimited
 
 router = APIRouter(prefix="/v1/trust")
 
@@ -48,3 +49,35 @@ async def get_supplier(supplier_id: str, request: Request) -> TrustScoreOut:
 @router.post("/evaluate", response_model=TrustScoreOut)
 async def evaluate(signals: SupplierSignals, request: Request) -> TrustScoreOut:
     return _svc(request).evaluate(signals)
+
+
+@router.get("/suppliers/{supplier_id}/history", response_model=HistoryOut)
+async def history(supplier_id: str, request: Request) -> HistoryOut:
+    try:
+        r = await _svc(request).history(supplier_id)
+    except AdapterDisabled as e:
+        raise ApiError(503, "adapter_disabled", str(e)) from e
+    if r is None:
+        raise ApiError(404, "supplier_not_found", f"No trust data for {supplier_id}")
+    return r
+
+
+@router.post("/suppliers/{supplier_id}/report", response_model=ReportOut, status_code=201)
+async def report(
+    supplier_id: str, body: ReportIn, request: Request,
+    x_user_id: str | None = Header(default=None),
+) -> ReportOut:  # fmt: skip
+    """Buyer concern. Stored as pending_review; it never changes the score until a moderator accepts it."""
+    uid = (x_user_id or "").strip()
+    if not uid or len(uid) > 128:
+        raise ApiError(401, "user_required", "X-User-Id header is required")
+    svc = _svc(request)
+    try:
+        if await svc.adapter.get_signals(supplier_id) is None:
+            raise ApiError(404, "supplier_not_found", f"No trust data for {supplier_id}")
+    except AdapterDisabled as e:
+        raise ApiError(503, "adapter_disabled", str(e)) from e
+    try:
+        return report_out(svc.add_report(supplier_id, uid, body.type, body.text))
+    except RateLimited as e:
+        raise ApiError(429, "rate_limited", "Too many reports; try again later", {"retry_after_seconds": e.retry_after}, {"Retry-After": str(e.retry_after)}) from e

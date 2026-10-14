@@ -15,6 +15,7 @@ from ff_trust.cache import TTLCache
 from ff_trust.config import ScoringConfig, Settings
 from ff_trust.obs import install_observability, ready_response
 from ff_trust.service import TrustService
+from ff_trust.store import ReportStore
 
 
 def _adapter(name: str) -> SignalsAdapter:
@@ -28,6 +29,8 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
     app.state.service = TrustService(
         adapter or _adapter(settings.adapter), ScoringConfig(),
         TTLCache(settings.cache_ttl_seconds, settings.cache_max_entries),
+        reports=ReportStore(settings.report_rate_limit, settings.report_rate_window_seconds),
+        history_months=settings.history_months,
     )  # fmt: skip
     errors.install(app)
 

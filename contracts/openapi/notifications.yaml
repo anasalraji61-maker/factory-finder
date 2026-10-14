@@ -92,12 +92,31 @@ paths:
         "200": {description: Caller's devices, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/Device"}}}}}}}
     post:
       operationId: registerDevice
-      description: Upsert by token (a token moves to the latest registering user).
+      description: Upsert by token (a token moves to the latest registering user). At most 10 active devices per user (422 device_limit).
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/DeviceCreate"}}}}
       responses:
         "200": {description: Updated, content: {application/json: {schema: {$ref: "#/components/schemas/Device"}}}}
         "201": {description: Registered, content: {application/json: {schema: {$ref: "#/components/schemas/Device"}}}}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/notification-prefs:
+    get:
+      operationId: getNotificationPrefs
+      description: Caller's delivery preferences (defaults when never saved).
+      responses:
+        "200": {description: Preferences, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
+    put:
+      operationId: putNotificationPrefs
+      description: Partial update. Channels per alert type (in_app, push, email), quiet hours in the user's timezone (push is deferred, not dropped), language ar/en. Enforced at delivery time. in_app is accepted but the inbox is never suppressed.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefsUpdate"}}}}
+      responses:
+        "200": {description: Saved, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/alerts/digest:
+    post:
+      operationId: sendDigests
+      description: Internal (X-Internal-Token). Enqueues and sends the daily email digest (idempotent per user per local day).
+      responses:
+        "200": {description: Sent, content: {application/json: {schema: {type: object, properties: {sent: {type: integer}}}}}}
   /v1/devices/{id}:
     delete:
       operationId: deleteDevice
@@ -182,4 +201,21 @@ components:
       properties: {platform: {type: string, enum: [android, ios]}, token: {type: string}, locale: {type: string, enum: [ar, en], default: ar}}
     Device:
       type: object
-      properties: {id: {type: string}, platform: {type: string}, locale: {type: string}, token: {type: string}, created_at: {type: string, format: date-time}}
+      properties: {id: {type: string}, platform: {type: string}, locale: {type: string}, token: {type: string}, created_at: {type: string, format: date-time}, active: {type: boolean, description: False once the provider reported the token invalid; registering the token again reactivates it}}
+    NotificationPrefs:
+      type: object
+      properties:
+        channels: {type: object, additionalProperties: {type: array, items: {type: string, enum: [in_app, push, email]}}}
+        quiet_hours: {type: [object, "null"], properties: {start: {type: string, example: "22:00"}, end: {type: string, example: "07:00"}}}
+        timezone: {type: string, example: Asia/Baghdad}
+        language: {type: [string, "null"], enum: [ar, en, null]}
+        email: {type: [string, "null"]}
+    NotificationPrefsUpdate:
+      type: object
+      properties:
+        channels: {type: object, additionalProperties: {type: array, items: {type: string, enum: [in_app, push, email]}}}
+        quiet_hours: {type: object, required: [start, end], properties: {start: {type: string}, end: {type: string}}}
+        clear_quiet_hours: {type: boolean}
+        timezone: {type: string}
+        language: {type: string, enum: [ar, en]}
+        email: {type: string}

@@ -9,6 +9,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from ff_notifications.domain.delivery import Prefs
 from ff_notifications.domain.models import Alert, Device, Locale, Platform, SearchQuery, Watch
 from ff_notifications.domain.money import Money, MoneyError
 from ff_notifications.errors import Invalid, Unauthenticated
@@ -84,6 +85,20 @@ class DeviceCreate(_Body):
     locale: Locale = Locale.AR
 
 
+class QuietHoursIn(_Body):
+    start: str = Field(pattern=r"^\d{2}:\d{2}$")
+    end: str = Field(pattern=r"^\d{2}:\d{2}$")
+
+
+class PrefsIn(_Body):
+    channels: dict[str, list[str]] | None = None
+    quiet_hours: QuietHoursIn | None = None
+    clear_quiet_hours: bool = False
+    timezone: str | None = Field(default=None, max_length=64)
+    language: Locale | None = None
+    email: str | None = Field(default=None, max_length=254)
+
+
 class EvaluateIn(_Body):
     owner_id: str | None = None
     watch_id: str | None = None
@@ -138,6 +153,7 @@ def device_json(d: Device) -> dict[str, Any]:
         "platform": d.platform.value,
         "locale": d.locale.value,
         "token": d.token,
+        "active": d.active,
         "created_at": d.created_at.isoformat().replace("+00:00", "Z"),
     }
 
@@ -243,3 +259,43 @@ async def list_devices(user: User, s: Service) -> dict[str, Any]:
 async def delete_device(device_id: str, user: User, s: Service) -> Response:
     await s.delete_device(user, device_id)
     return Response(status_code=204)
+
+
+def prefs_json(p: Prefs) -> dict[str, Any]:
+    return {
+        "channels": {k: list(v) for k, v in p.channels.items()},
+        "quiet_hours": {"start": p.quiet_hours.start, "end": p.quiet_hours.end}
+        if p.quiet_hours
+        else None,
+        "timezone": p.timezone,
+        "language": p.language.value if p.language else None,
+        "email": p.email,
+    }
+
+
+@router.get("/notification-prefs")
+async def get_prefs(user: User, s: Service) -> dict[str, Any]:
+    return prefs_json(await s.get_prefs(user))
+
+
+@router.put("/notification-prefs")
+async def put_prefs(body: PrefsIn, user: User, s: Service) -> dict[str, Any]:
+    qh = (
+        {}
+        if body.clear_quiet_hours
+        else (body.quiet_hours.model_dump() if body.quiet_hours else None)
+    )
+    prefs = await s.put_prefs(
+        user,
+        channels=body.channels,
+        quiet_hours=qh,
+        timezone=body.timezone,
+        language=body.language,
+        email=body.email,
+    )
+    return prefs_json(prefs)
+
+
+@router.post("/alerts/digest", dependencies=[Depends(internal_only)])
+async def send_digests(s: Service) -> dict[str, int]:
+    return {"sent": await s.send_digests()}

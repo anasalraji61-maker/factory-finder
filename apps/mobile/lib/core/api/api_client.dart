@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const bool kMockMode = bool.fromEnvironment('FF_MOCK', defaultValue: true);
@@ -11,7 +12,20 @@ const String kDefaultBaseUrl = String.fromEnvironment(
 final serverUrlProvider = StateProvider<String>((ref) => kDefaultBaseUrl);
 
 /// Access/refresh tokens, held in memory only.
-final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
+final tokenStoreProvider = Provider<TokenStore>((ref) {
+  final secure = ref.watch(secureStoreProvider);
+  void persist(String? token) {
+    final f = token == null
+        ? secure.remove(kRefreshTokenKey)
+        : secure.set(kRefreshTokenKey, token);
+    f.catchError((Object _) {});
+  }
+
+  return TokenStore(onRefreshTokenChanged: persist);
+});
+
+/// Secure-store key of the refresh token.
+const String kRefreshTokenKey = 'refresh_token';
 
 final apiClientProvider = Provider<ApiClient>(
   (ref) => ApiClient(
@@ -23,6 +37,11 @@ final apiClientProvider = Provider<ApiClient>(
 
 /// In-memory token holder shared by every [ApiClient] instance.
 class TokenStore {
+  TokenStore({this.onRefreshTokenChanged});
+
+  /// Persists the refresh token (null = remove). Access token stays in memory.
+  final void Function(String? token)? onRefreshTokenChanged;
+
   String? accessToken;
   String? refreshToken;
 
@@ -33,13 +52,16 @@ class TokenStore {
 
   void set(String access, String? refresh) {
     accessToken = access;
+    final changed = refresh != null && refresh != refreshToken;
     refreshToken = refresh ?? refreshToken;
+    if (changed) onRefreshTokenChanged?.call(refreshToken);
   }
 
   void clear() {
     final had = accessToken != null || refreshToken != null;
     accessToken = null;
     refreshToken = null;
+    onRefreshTokenChanged?.call(null);
     if (had) onCleared?.call();
   }
 }

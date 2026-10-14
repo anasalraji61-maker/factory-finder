@@ -1,5 +1,6 @@
 import 'package:factory_finder/app.dart';
 import 'package:factory_finder/core/router/app_router.dart';
+import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,13 @@ Future<GoRouter> pumpApp(WidgetTester tester, {String? location}) async {
 
   final router = createAppRouter();
   await tester.pumpWidget(
-    ProviderScope(child: FactoryFinderApp(router: router)),
+    ProviderScope(
+      overrides: [
+        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        secureStoreProvider.overrideWithValue(MemoryStore()),
+      ],
+      child: FactoryFinderApp(router: router),
+    ),
   );
   await settle(tester);
   if (location != null) {

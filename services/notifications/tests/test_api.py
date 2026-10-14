@@ -237,5 +237,9 @@ async def test_fcm_stub_disabled_by_default():
 
     now = datetime.now(UTC)
     dev = Device("d", "u", Platform.ANDROID, Locale.EN, "t", now, now)
-    res = await FcmPushAdapter().send(dev, "a", "b", {})
+
+    async def tokens() -> str:
+        return "x"
+
+    res = await FcmPushAdapter("p", tokens, enabled=False).send(dev, "a", "b", {})
     assert not res.sent and res.reason == "fcm_disabled"

@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 pg = ["asyncpg>=0.29", "alembic>=1.13"]
+fcm = ["cryptography>=42"]  # signs the service-account JWT for FCM (FF_NOTIFY_PUSH=fcm)
 dev = [
     "alembic>=1.13",
     "pytest>=8.2",

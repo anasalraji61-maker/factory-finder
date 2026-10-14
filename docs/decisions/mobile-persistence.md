@@ -1,0 +1,2 @@
+2026-10-14 | Persist onboarding flag, locale, currency, destination, server URL via shared_preferences; refresh token via flutter_secure_storage (access token memory-only) behind a KeyValueStore interface, MemoryStore default in tests | survive restarts without plugins in tests
+2026-10-14 | Session restore runs after runApp (not awaited): refresh then /v1/me, any failure clears tokens | avoid blocking startup on a slow network

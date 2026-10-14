@@ -10,10 +10,12 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from ff_notifications.adapters.push import PushAdapter
+from ff_notifications.adapters.email import EmailProvider
+from ff_notifications.adapters.push import PushProvider
 from ff_notifications.clients.sourcing import SourcingClient, SourcingUnavailableError
 from ff_notifications.config import Settings
-from ff_notifications.domain import messages
+from ff_notifications.delivery import DeliveryPipeline, load_prefs
+from ff_notifications.domain.delivery import CHANNELS, Prefs, QuietHours, parse_hhmm, valid_timezone
 from ff_notifications.domain.models import (
     Alert,
     Device,
@@ -21,6 +23,7 @@ from ff_notifications.domain.models import (
     Locale,
     Observation,
     Platform,
+    RuleKind,
     SearchObservation,
     SearchQuery,
     Watch,
@@ -58,17 +61,22 @@ class NotificationService:
         *,
         store: Store,
         sourcing: SourcingClient,
-        push: PushAdapter,
+        push: PushProvider | None,
+        email: EmailProvider | None = None,
         settings: Settings,
         clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self.store = store
         self.sourcing = sourcing
         self.push = push
+        self.email = email
         self.settings = settings
         self.clock = clock
         self.cooldown = CooldownPolicy(default=timedelta(hours=settings.cooldown_hours))
         self.rule_config = RuleConfig(Decimal(settings.equivalent_min_saving_pct))
+        self.delivery = DeliveryPipeline(
+            store=store, push=push, email=email, settings=settings, clock=lambda: self.clock()
+        )
 
     # ------------------------------------------------------------ watchlist
 
@@ -189,21 +197,12 @@ class NotificationService:
         for owner, alerts in created.items():
             report.alerts += alerts
             report.alerts_created += len(alerts)
-            report.pushes_sent += await self._push_summary(owner, len(alerts), alerts[0].id)
+            # alerts are already committed: delivery problems never undo or block them
+            with contextlib.suppress(Exception):
+                await self.delivery.enqueue_alerts(owner, alerts)
+        with contextlib.suppress(Exception):
+            report.pushes_sent = await self.delivery.process_due()
         return report
-
-    async def _push_summary(self, owner_id: str, count: int, first_alert_id: str) -> int:
-        summary = messages.push_summary(count)
-        sent = 0
-        for device in await self.store.list_devices(owner_id):
-            result = await self.push.send(
-                device,
-                summary.title_for(device.locale),
-                summary.body_for(device.locale),
-                {"type": "alerts", "count": str(count), "alert_id": first_alert_id},
-            )
-            sent += int(result.sent)
-        return sent
 
     # ------------------------------------------------------------ alerts inbox
 
@@ -234,6 +233,16 @@ class NotificationService:
 
     async def register_device(self, owner_id: str, platform: Platform, token: str, locale: Locale):
         now = self.clock()
+        existing = await self.store.get_device_by_token(token)
+        if existing is None or existing.owner_id != owner_id or not existing.active:
+            active = [d for d in await self.store.list_devices(owner_id) if d.active]
+            if len(active) >= self.settings.max_devices_per_user and (
+                existing is None or existing.owner_id != owner_id
+            ):
+                raise Invalid(
+                    f"Device limit reached ({self.settings.max_devices_per_user})",
+                    code="device_limit",
+                )
         return await self.store.upsert_device(
             Device(
                 id=_id("dev"),
@@ -254,6 +263,67 @@ class NotificationService:
             raise Forbidden("Not your device")
         await self.store.delete_device(device_id)
 
+    # ------------------------------------------------------------ preferences
+
+    async def get_prefs(self, owner_id: str) -> Prefs:
+        return await load_prefs(self.store, owner_id)
+
+    async def put_prefs(
+        self,
+        owner_id: str,
+        *,
+        channels: dict[str, list[str]] | None,
+        quiet_hours: dict[str, str] | None,
+        timezone: str | None,
+        language: Locale | None,
+        email: str | None,
+    ) -> Prefs:
+        current = await self.get_prefs(owner_id)
+        merged = dict(current.channels)
+        for rule, chans in (channels or {}).items():
+            if rule not in {r.value for r in RuleKind}:
+                raise Invalid(f"Unknown alert type {rule!r}", code="invalid_prefs")
+            if not set(chans) <= set(CHANNELS):
+                raise Invalid("channels must be in_app, push or email", code="invalid_prefs")
+            merged[rule] = tuple(dict.fromkeys(chans))
+        tz = timezone or current.timezone
+        if not valid_timezone(tz):
+            raise Invalid("Unknown timezone", code="invalid_prefs")
+        qh = current.quiet_hours
+        if quiet_hours is not None:
+            if not quiet_hours:
+                qh = None
+            else:
+                try:
+                    parse_hhmm(quiet_hours["start"])
+                    parse_hhmm(quiet_hours["end"])
+                except (ValueError, KeyError) as exc:
+                    raise Invalid(
+                        "quiet_hours needs start/end as HH:MM", code="invalid_prefs"
+                    ) from exc
+                qh = QuietHours(quiet_hours["start"], quiet_hours["end"])
+        if (
+            email is not None
+            and email != ""
+            and not ("@" in email and " " not in email and len(email) <= 254)
+        ):
+            raise Invalid("Invalid email address", code="invalid_prefs")
+        prefs = Prefs(
+            owner_id=owner_id,
+            channels=merged,
+            quiet_hours=qh,
+            timezone=tz,
+            language=language or current.language,
+            email=(email or None) if email is not None else current.email,
+            explicit=True,
+        )
+        await self.store.put_prefs(prefs)
+        return prefs
+
+    async def send_digests(self) -> int:
+        await self.delivery.enqueue_digests()
+        return await self.delivery.process_due()
+
     # ------------------------------------------------------------ scheduler
 
     async def run_scheduler(self) -> None:
@@ -261,3 +331,5 @@ class NotificationService:
             await asyncio.sleep(self.settings.scheduler_interval_seconds)
             with contextlib.suppress(Exception):
                 await self.evaluate_all()
+            with contextlib.suppress(Exception):
+                await self.send_digests()
