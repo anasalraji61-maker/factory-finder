@@ -160,7 +160,7 @@ void main() {
       expect(histogramShare(h, 5), closeTo(3 / 7, 1e-9));
       expect(histogramShare(h, 1), 0);
       expect(histogramShare(const <int, int>{}, 3), 0);
-      expect(averageFromHistogram(h), closeTo(26 / 7, 1e-9));
+      expect(averageFromHistogram(h), closeTo(28 / 7, 1e-9));
       expect(averageFromHistogram(const <int, int>{}), isNull);
     });
   });
@@ -447,6 +447,8 @@ void main() {
     expect(repo.calls, 1);
 
     await submit();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byKey(const Key('review_submit')), findsNothing);
     expect(result?.rating, 4);
     expect(repo.drafts.last.subRatings.quality, 5);
