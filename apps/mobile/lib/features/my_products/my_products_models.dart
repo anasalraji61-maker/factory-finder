@@ -4,10 +4,17 @@ import 'package:factory_finder/core/models/models.dart';
 enum ListingStatus {
   draft('draft'),
   published('published'),
-  archived('archived');
+  archived('archived'),
+
+  /// Moderated: not searchable, visible to the owner only.
+  pendingReview('pending_review'),
+  hidden('hidden');
 
   const ListingStatus(this.json);
   final String json;
+
+  /// True for the two moderation states (owner can edit/delete, not publish).
+  bool get isModerated => this == pendingReview || this == hidden;
 }
 
 ListingStatus listingStatusFromJson(Object? s) {
@@ -35,6 +42,12 @@ int? _intOrNull(Object? v) {
   if (v is num) return v.toInt();
   if (v is String) return int.tryParse(v);
   return null;
+}
+
+String? _nonEmpty(Object? v) {
+  if (v is! String) return null;
+  final t = v.trim();
+  return t.isEmpty ? null : t;
 }
 
 Map<String, dynamic>? _asMap(Object? v) =>
@@ -76,6 +89,9 @@ class OwnedListing {
     this.createdAt,
     this.updatedAt,
     this.publishedAt,
+    this.moderationSource,
+    this.moderationReason,
+    this.moderatedAt,
   });
 
   final String id;
@@ -101,13 +117,30 @@ class OwnedListing {
   final DateTime? updatedAt;
   final DateTime? publishedAt;
 
+  /// `auto` | `report` | `admin` (only while moderated).
+  final String? moderationSource;
+
+  /// Why the listing is pending_review/hidden. Never holds reporter data.
+  final String? moderationReason;
+  final DateTime? moderatedAt;
+
+  bool get isModerated => status.isModerated;
+
   String displayTitle(String languageCode) {
     final ar = titleAr;
     if (languageCode == 'ar' && ar != null && ar.isNotEmpty) return ar;
     return title;
   }
 
-  OwnedListing copyWith({ListingStatus? status, DateTime? updatedAt, DateTime? publishedAt}) =>
+  OwnedListing copyWith({
+    ListingStatus? status,
+    DateTime? updatedAt,
+    DateTime? publishedAt,
+    String? moderationSource,
+    String? moderationReason,
+    DateTime? moderatedAt,
+    bool clearModeration = false,
+  }) =>
       OwnedListing(
         id: id,
         status: status ?? this.status,
@@ -131,6 +164,9 @@ class OwnedListing {
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         publishedAt: publishedAt ?? this.publishedAt,
+        moderationSource: clearModeration ? null : (moderationSource ?? this.moderationSource),
+        moderationReason: clearModeration ? null : (moderationReason ?? this.moderationReason),
+        moderatedAt: clearModeration ? null : (moderatedAt ?? this.moderatedAt),
       );
 
   factory OwnedListing.fromJson(Map<String, dynamic> j) {
@@ -172,6 +208,9 @@ class OwnedListing {
       createdAt: DateTime.tryParse((j['created_at'] ?? '').toString()),
       updatedAt: DateTime.tryParse((j['updated_at'] ?? '').toString()),
       publishedAt: DateTime.tryParse((j['published_at'] ?? '').toString()),
+      moderationSource: _nonEmpty(j['moderation_source']),
+      moderationReason: _nonEmpty(j['moderation_reason']),
+      moderatedAt: DateTime.tryParse((j['moderated_at'] ?? '').toString()),
     );
   }
 

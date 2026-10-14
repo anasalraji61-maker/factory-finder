@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
+import 'package:factory_finder/features/discover/data/listing_report.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
 import 'package:factory_finder/features/discover/data/search_facets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,6 +131,37 @@ class DiscoverRepository {
     }
     final json = await _api.get('/v1/listings/$id');
     return Listing.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// Mock-mode memory: one report per listing, 10 reports per hour.
+  final Set<String> _mockReported = <String>{};
+
+  /// POST /v1/listings/{id}/report. Resolves on 202 (repeat reports also 202).
+  /// Throws [ApiException] for 401/404/409 own_listing/422/429.
+  Future<void> reportListing(
+    String id,
+    ListingReportReason reason, {
+    String? details,
+  }) async {
+    final body = buildReportBody(reason, details);
+    if (_api.isMock) {
+      await mockDelay(250);
+      if (!mockListings.any((l) => l.id == id)) {
+        throw ApiException(status: 404, code: 'not_found', message: 'Listing $id not found');
+      }
+      if (_mockReported.contains(id)) return;
+      if (_mockReported.length >= 10) {
+        throw ApiException(
+          status: 429,
+          code: 'rate_limited',
+          message: 'Too many reports',
+          retryAfterSeconds: 3600,
+        );
+      }
+      _mockReported.add(id);
+      return;
+    }
+    await _api.post('/v1/listings/${Uri.encodeComponent(id)}/report', body: body);
   }
 
   Future<SupplierSummary> getSupplier(String id) async {

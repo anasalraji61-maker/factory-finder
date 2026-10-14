@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 
 /// Pure helpers for the chat screen (unit-tested).
@@ -40,12 +41,14 @@ ChatMessage optimisticMessage({
   required String text,
   required DateTime now,
   required int seq,
+  List<MessageAttachment> attachments = const <MessageAttachment>[],
 }) =>
     ChatMessage(
       id: 'local_$seq',
       conversationId: conversationId,
       senderId: currentUserId,
       body: text.trim(),
+      attachments: attachments,
       createdAt: now,
       status: SendStatus.sending,
     );
@@ -85,4 +88,59 @@ List<ChatMessage> mergeServer(List<ChatMessage> local, List<ChatMessage> server)
   ];
   out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
   return out;
+}
+
+/// Server preview placeholders (`[image]` ...) -> i18n keys.
+const Map<String, String> kPreviewKeys = <String, String>{
+  '[image]': 'messages.preview.image',
+  '[document]': 'messages.preview.document',
+  '[attachment]': 'messages.preview.attachment',
+};
+
+/// i18n key when [preview] is (or starts with) a server placeholder, else null.
+String? previewKeyOf(String preview) {
+  final p = preview.trimLeft();
+  for (final e in kPreviewKeys.entries) {
+    if (p.startsWith(e.key)) return e.value;
+  }
+  return null;
+}
+
+/// Text after a leading placeholder (a caption), or [preview] unchanged.
+String previewRest(String preview) {
+  final p = preview.trimLeft();
+  for (final k in kPreviewKeys.keys) {
+    if (p.startsWith(k)) return p.substring(k.length).trim();
+  }
+  return preview;
+}
+
+/// Preview text for a conversation row; [t] resolves an i18n key.
+String localizedPreview(String preview, String Function(String key) t) {
+  final key = previewKeyOf(preview);
+  if (key == null) return preview;
+  final rest = previewRest(preview);
+  return rest.isEmpty ? t(key) : '${t(key)} $rest';
+}
+
+/// Preview a conversation row would show right after sending locally.
+String localPreview(String text, List<MessageAttachment> attachments) {
+  if (text.trim().isNotEmpty || attachments.isEmpty) return text.trim();
+  if (attachments.every((a) => a.isImage)) return '[image]';
+  if (attachments.every((a) => !a.isImage)) return '[document]';
+  return '[attachment]';
+}
+
+/// i18n key for a failed send (contract 422 codes), or null for generic failures.
+String? sendErrorKey(Object error) {
+  if (error is ApiException) {
+    switch (error.code) {
+      case 'too_many_attachments':
+        return 'messages.err.too_many';
+      case 'attachment_url_not_allowed':
+      case 'invalid_attachment':
+        return 'messages.err.invalid_attachment';
+    }
+  }
+  return null;
 }

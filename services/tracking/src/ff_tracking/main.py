@@ -52,6 +52,13 @@ def build_provider(settings: Settings) -> TrackingProvider:
     return FallbackProvider(router, MockProvider()) if settings.fallback_to_mock else router
 
 
+
+def _require_production_token(token: str | None) -> None:
+    """Opt-in fail-closed guard: FF_ENV=production requires FF_INTERNAL_TOKEN (see docs/OPS.md)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not token:
+        raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
+
+
 def create_app(
     settings: Settings | None = None,
     provider: TrackingProvider | None = None,
@@ -59,6 +66,7 @@ def create_app(
     notify_client: NotifyClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
     provider = provider or build_provider(settings)
     repo = ShipmentRepository(make_engine(settings.database_url))
     clock = clock or (lambda: datetime.now(UTC))

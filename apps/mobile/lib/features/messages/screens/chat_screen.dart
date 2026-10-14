@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -9,6 +10,9 @@ import 'package:factory_finder/features/messages/data/chat_socket_provider.dart'
 import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:factory_finder/features/messages/data/messages_repository.dart';
 import 'package:factory_finder/features/messages/screens/conversations_screen.dart';
+import 'package:factory_finder/features/my_products/media/image_pick_service.dart';
+import 'package:factory_finder/features/my_products/media/media_logic.dart';
+import 'package:factory_finder/features/my_products/media/media_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,8 +24,17 @@ class ChatScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
+class _PendingUpload {
+  _PendingUpload(this.id);
+  final int id;
+  double progress = 0;
+}
+
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _input = TextEditingController();
+  final List<MessageAttachment> _attached = <MessageAttachment>[];
+  final List<_PendingUpload> _uploads = <_PendingUpload>[];
+  int _uploadSeq = 0;
   List<ChatMessage> _messages = const [];
   Conversation? _conversation;
   bool _loading = true;
@@ -100,9 +113,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _send(String text, {String? retryId}) async {
+  void _snack(String text) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _send(
+    String text, {
+    String? retryId,
+    List<MessageAttachment> attachments = const <MessageAttachment>[],
+  }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && attachments.isEmpty) return;
     final localId = retryId ?? 'local_${++_seq}';
     if (retryId == null) {
       final pending = optimisticMessage(
@@ -110,8 +133,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         text: trimmed,
         now: DateTime.now(),
         seq: _seq,
+        attachments: attachments,
       );
-      setState(() => _messages = [..._messages, pending]);
+      setState(() {
+        _messages = [..._messages, pending];
+        _attached.clear();
+      });
       _input.clear();
     } else {
       setState(() {
@@ -122,14 +149,138 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
     }
     try {
-      final sent = await _repo.send(widget.conversationId, trimmed);
+      final sent = await _repo.send(
+        widget.conversationId,
+        trimmed,
+        attachments: attachments,
+      );
       if (!mounted) return;
       setState(() => _messages = confirmSent(_messages, localId, sent));
       ref.invalidate(conversationsProvider);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _messages = markFailed(_messages, localId));
+      final key = sendErrorKey(e);
+      if (key != null) _snack(context.tr(key));
     }
+  }
+
+  void _submit() {
+    if (_uploads.isNotEmpty) {
+      _snack(context.tr('messages.attach.wait'));
+      return;
+    }
+    _send(_input.text, attachments: List<MessageAttachment>.of(_attached));
+  }
+
+  Future<void> _chooseSource() async {
+    if (_attached.length + _uploads.length >= kMaxChatAttachments) {
+      _snack(context.tr('messages.attach.limit'));
+      return;
+    }
+    final camera = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const ValueKey('chat-attach-gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(ctx.tr('messages.attach.gallery')),
+              onTap: () => Navigator.of(ctx).pop(false),
+            ),
+            ListTile(
+              key: const ValueKey('chat-attach-camera'),
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(ctx.tr('messages.attach.camera')),
+              onTap: () => Navigator.of(ctx).pop(true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (camera == null || !mounted) return;
+    await _pickAndUpload(camera);
+  }
+
+  Future<void> _pickAndUpload(bool camera) async {
+    final picker = ref.read(imagePickServiceProvider);
+    PickedImage? picked;
+    try {
+      picked = camera ? await picker.pickFromCamera() : await picker.pickFromGallery();
+    } catch (_) {
+      if (mounted) _snack(context.tr('myp.media.err.generic'));
+      return;
+    }
+    if (picked == null || !mounted) return;
+    final img = picked;
+    final problem = checkImageFile(bytes: img.bytes.length, mime: img.mime);
+    if (problem != null) {
+      _snack(context.tr(problem));
+      return;
+    }
+    if (_attached.length + _uploads.length >= kMaxChatAttachments) {
+      _snack(context.tr('messages.attach.limit'));
+      return;
+    }
+    final slot = _PendingUpload(++_uploadSeq);
+    setState(() => _uploads.add(slot));
+    try {
+      final up = await ref.read(mediaRepositoryProvider).uploadImage(
+        img,
+        kind: 'attachment',
+        onProgress: (p) {
+          if (mounted && _uploads.contains(slot)) setState(() => slot.progress = p);
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _uploads.remove(slot);
+        if (_attached.length < kMaxChatAttachments) {
+          _attached.add(MessageAttachment(
+            url: up.url,
+            size: up.bytes ?? img.bytes.length,
+            name: img.filename,
+          ));
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _uploads.remove(slot));
+      _snack(context.tr(mediaErrorKey(e)));
+    }
+  }
+
+  void _openImage(String url) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.md),
+        child: Stack(
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+              ),
+              child: InteractiveViewer(
+                child: AppNetworkImage(url: url, width: double.infinity, fit: BoxFit.contain),
+              ),
+            ),
+            PositionedDirectional(
+              top: 0,
+              end: 0,
+              child: IconButton(
+                key: const ValueKey('chat-image-close'),
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -235,11 +386,85 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemBuilder: (context, i) {
         final item = items[i];
         if (item.day != null) return _DaySeparator(day: item.day!);
+        final m = item.message!;
         return _Bubble(
-          message: item.message!,
-          onRetry: () => _send(item.message!.body, retryId: item.message!.id),
+          message: m,
+          baseUrl: ref.read(apiClientProvider).baseUrl,
+          onOpenImage: _openImage,
+          onRetry: () => _send(m.body, retryId: m.id, attachments: m.attachments),
         );
       },
+    );
+  }
+
+  Widget _attachStrip(BuildContext context) {
+    final base = ref.read(apiClientProvider).baseUrl;
+    return SizedBox(
+      key: const ValueKey('chat-attach-strip'),
+      height: 72,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        children: [
+          for (var i = 0; i < _attached.length; i++)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+              child: SizedBox(
+                key: ValueKey('chat-attach-thumb-$i'),
+                width: 64,
+                height: 64,
+                child: Stack(
+                  children: [
+                    AppNetworkImage(
+                      url: mediaThumbUrl(base, _attached[i].url),
+                      width: 64,
+                      height: 64,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    PositionedDirectional(
+                      top: 0,
+                      end: 0,
+                      child: InkWell(
+                        key: ValueKey('chat-attach-remove-$i'),
+                        onTap: () => setState(() => _attached.removeAt(i)),
+                        child: Tooltip(
+                          message: context.tr('messages.attach.remove'),
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          for (final u in _uploads)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+              child: Container(
+                key: ValueKey('chat-attach-uploading-${u.id}'),
+                width: 64,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.border.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -250,33 +475,40 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IconButton(
-                tooltip: context.tr('messages.attach'),
-                icon: const Icon(Icons.attach_file),
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.tr('messages.attach_soon'))),
-                ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _input,
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: context.tr('messages.composer_hint'),
-                    isDense: true,
+              if (_attached.isNotEmpty || _uploads.isNotEmpty) _attachStrip(context),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    key: const ValueKey('chat-attach'),
+                    tooltip: context.tr('messages.attach_images'),
+                    icon: const Icon(Icons.attach_file),
+                    onPressed: _chooseSource,
                   ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              IconButton.filled(
-                tooltip: context.tr('messages.send'),
-                icon: const Icon(Icons.send_rounded),
-                onPressed: () => _send(_input.text),
+                  Expanded(
+                    child: TextField(
+                      controller: _input,
+                      minLines: 1,
+                      maxLines: 5,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText: context.tr('messages.composer_hint'),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  IconButton.filled(
+                    key: const ValueKey('chat-send'),
+                    tooltip: context.tr('messages.send'),
+                    icon: const Icon(Icons.send_rounded),
+                    onPressed: _submit,
+                  ),
+                ],
               ),
             ],
           ),
@@ -322,8 +554,15 @@ class _DaySeparator extends StatelessWidget {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.onRetry});
+  const _Bubble({
+    required this.message,
+    required this.baseUrl,
+    required this.onOpenImage,
+    required this.onRetry,
+  });
   final ChatMessage message;
+  final String baseUrl;
+  final void Function(String url) onOpenImage;
   final VoidCallback onRetry;
 
   @override
@@ -370,7 +609,12 @@ class _Bubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(message.body, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
+              if (message.attachments.isNotEmpty) _attachments(context, fg),
+              if (message.body.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: message.attachments.isEmpty ? 0 : 6),
+                  child: Text(message.body, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
+                ),
               const SizedBox(height: 2),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -401,6 +645,59 @@ class _Bubble extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _attachments(BuildContext context, Color fg) {
+    final images = [for (final a in message.attachments) if (a.isImage) a];
+    final docs = [for (final a in message.attachments) if (!a.isImage) a];
+    final single = images.length == 1;
+    final side = single ? 180.0 : 88.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (images.isNotEmpty)
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              for (var i = 0; i < images.length; i++)
+                GestureDetector(
+                  key: ValueKey('chat-img-${message.id}-$i'),
+                  onTap: () => onOpenImage(resolveMediaUrl(baseUrl, images[i].url)),
+                  child: AppNetworkImage(
+                    url: mediaThumbUrl(baseUrl, images[i].url, width: single ? 400 : 200),
+                    width: side,
+                    height: side,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
+            ],
+          ),
+        for (final d in docs)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.insert_drive_file_outlined, size: 18, color: fg),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      d.name ?? context.tr('messages.attach.document'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: fg, decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

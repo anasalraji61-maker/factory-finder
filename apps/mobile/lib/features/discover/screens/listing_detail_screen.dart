@@ -5,6 +5,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
+import 'package:factory_finder/features/discover/widgets/report_sheet.dart';
 import 'package:factory_finder/features/watchlist/data/watch_models.dart';
 import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
 import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
@@ -178,6 +179,11 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     }
   }
 
+  Future<void> _report() async {
+    final ok = await showReportListingSheet(context, widget.listing.id);
+    if (ok && mounted) _snack(context.tr('report.done'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = widget.listing;
@@ -219,6 +225,12 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          IconButton(
+            key: const ValueKey('listing-report'),
+            tooltip: context.tr('report.action'),
+            icon: const Icon(Icons.flag_outlined),
+            onPressed: _report,
+          ),
           IconButton(
             tooltip: context.tr(watched ? 'watch.watching' : 'watch.add'),
             icon: Icon(watched ? Icons.star : Icons.star_border),

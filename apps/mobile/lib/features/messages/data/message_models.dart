@@ -25,6 +25,59 @@ DateTime _date(Object? v, [DateTime? fallback]) {
   return fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
 }
 
+/// Max attachments per message (contract `maxItems`, config-limited server side).
+const int kMaxChatAttachments = 5;
+
+enum AttachmentKind { image, document }
+
+/// `MediaAttachment` of the messaging contract: a reference to a media file.
+class MessageAttachment {
+  const MessageAttachment({
+    required this.url,
+    this.kind = AttachmentKind.image,
+    this.size,
+    this.name,
+  });
+
+  /// May be server-relative (`/v1/media/files/<id>.<ext>`).
+  final String url;
+  final AttachmentKind kind;
+  final int? size;
+  final String? name;
+
+  bool get isImage => kind == AttachmentKind.image;
+
+  /// Tolerant: returns null when there is no usable url.
+  static MessageAttachment? tryParse(Object? json) {
+    if (json is! Map) return null;
+    final url = (json['url'] ?? '').toString();
+    if (url.isEmpty) return null;
+    final size = json['size'];
+    final name = json['name'];
+    return MessageAttachment(
+      url: url,
+      kind: json['kind'] == 'document' ? AttachmentKind.document : AttachmentKind.image,
+      size: size is num ? size.toInt() : null,
+      name: name is String && name.isNotEmpty ? name : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'url': url,
+        'kind': kind.name,
+        if (size != null) 'size': size,
+        if (name != null) 'name': name,
+      };
+}
+
+List<MessageAttachment> parseAttachments(Object? raw) {
+  if (raw is! List) return const <MessageAttachment>[];
+  return [
+    for (final e in raw)
+      if (MessageAttachment.tryParse(e) case final a?) a,
+  ];
+}
+
 class ConversationContext {
   const ConversationContext({required this.type, required this.id, this.title});
 
@@ -54,6 +107,7 @@ class Conversation {
     this.avatarUrl,
     this.context,
     this.lastMessage = '',
+    this.lastAttachments = const <MessageAttachment>[],
     required this.lastAt,
     this.unread = 0,
   });
@@ -64,10 +118,18 @@ class Conversation {
   final String? avatarUrl;
   final ConversationContext? context;
   final String lastMessage;
+
+  /// Attachments of the last message (when the server/mock provides them).
+  final List<MessageAttachment> lastAttachments;
   final DateTime lastAt;
   final int unread;
 
-  Conversation copyWith({String? lastMessage, DateTime? lastAt, int? unread}) =>
+  Conversation copyWith({
+    String? lastMessage,
+    List<MessageAttachment>? lastAttachments,
+    DateTime? lastAt,
+    int? unread,
+  }) =>
       Conversation(
         id: id,
         title: title,
@@ -75,6 +137,7 @@ class Conversation {
         avatarUrl: avatarUrl,
         context: context,
         lastMessage: lastMessage ?? this.lastMessage,
+        lastAttachments: lastAttachments ?? this.lastAttachments,
         lastAt: lastAt ?? this.lastAt,
         unread: unread ?? this.unread,
       );
@@ -123,6 +186,7 @@ class Conversation {
       avatarUrl: participant is Map ? participant['avatar_url']?.toString() : null,
       context: ctx is Map ? ConversationContext.fromJson(Map<String, dynamic>.from(ctx)) : null,
       lastMessage: (lastText ?? '').toString(),
+      lastAttachments: parseAttachments(last is Map ? last['attachments'] : null),
       lastAt: updated,
       unread: (j['unread_count'] as num?)?.toInt() ?? 0,
     );
@@ -133,7 +197,12 @@ class Conversation {
         'title': title,
         'participant': {'id': participantId, 'name': title, 'avatar_url': avatarUrl},
         if (context != null) 'context': context!.toJson(),
-        'last_message': {'body': lastMessage, 'created_at': lastAt.toUtc().toIso8601String()},
+        'last_message': {
+          'body': lastMessage,
+          if (lastAttachments.isNotEmpty)
+            'attachments': [for (final a in lastAttachments) a.toJson()],
+          'created_at': lastAt.toUtc().toIso8601String(),
+        },
         'unread_count': unread,
         'updated_at': lastAt.toUtc().toIso8601String(),
       };
@@ -147,6 +216,7 @@ class ChatMessage {
     this.kind = MessageKind.text,
     this.body = '',
     this.attachmentUrl,
+    this.attachments = const <MessageAttachment>[],
     required this.createdAt,
     this.status = SendStatus.sent,
   });
@@ -157,6 +227,9 @@ class ChatMessage {
   final MessageKind kind;
   final String body;
   final String? attachmentUrl;
+
+  /// Media attachments (contract `attachments[]`).
+  final List<MessageAttachment> attachments;
   final DateTime createdAt;
   final SendStatus status;
 
@@ -171,6 +244,7 @@ class ChatMessage {
         kind: kind,
         body: body,
         attachmentUrl: attachmentUrl,
+        attachments: attachments,
         createdAt: createdAt ?? this.createdAt,
         status: status ?? this.status,
       );
@@ -188,6 +262,7 @@ class ChatMessage {
       kind: _kindFrom((j['type'] ?? j['kind'])?.toString()),
       body: (j['body'] ?? j['text'] ?? '').toString(),
       attachmentUrl: (att is Map ? att['url'] : j['attachment_url'])?.toString(),
+      attachments: parseAttachments(j['attachments']),
       createdAt: _date(j['created_at']),
     );
   }
@@ -199,6 +274,8 @@ class ChatMessage {
         'kind': kind.name,
         'body': body,
         if (attachmentUrl != null) 'attachment_url': attachmentUrl,
+        if (attachments.isNotEmpty)
+          'attachments': [for (final a in attachments) a.toJson()],
         'created_at': createdAt.toUtc().toIso8601String(),
       };
 }

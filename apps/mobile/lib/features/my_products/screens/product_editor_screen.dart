@@ -8,6 +8,7 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/my_products/media/image_pick_service.dart';
 import 'package:factory_finder/features/my_products/media/media_logic.dart';
 import 'package:factory_finder/features/my_products/media/media_repository.dart';
+import 'package:factory_finder/features/my_products/moderation_notice.dart';
 import 'package:factory_finder/features/my_products/my_products_logic.dart';
 import 'package:factory_finder/features/my_products/my_products_models.dart';
 import 'package:factory_finder/features/my_products/my_products_repository.dart';
@@ -480,6 +481,8 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
       key: const ValueKey('myp-editor'),
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        if (_existing != null && _existing!.isModerated)
+          ModerationNotice(listing: _existing!),
         _section('myp.section.basics'),
         _label('myp.kind'),
         Wrap(
@@ -882,7 +885,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
                   icon: const Icon(Icons.visibility_off_outlined),
                   label: Text(context.tr('myp.unpublish')),
                 )
-              else
+              else if (!(_existing?.isModerated ?? false))
                 OutlinedButton.icon(
                   key: const ValueKey('myp-editor-publish'),
                   onPressed: _busy ? null : _publish,

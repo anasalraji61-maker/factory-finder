@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/messages/data/chat_logic.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:factory_finder/features/messages/data/messages_repository.dart';
+import 'package:factory_finder/features/my_products/media/media_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -126,6 +128,13 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     final theme = Theme.of(context);
     final unread = c.unread > 0;
     final ctx = c.context;
+    MessageAttachment? firstImage;
+    for (final a in c.lastAttachments) {
+      if (a.isImage) {
+        firstImage = a;
+        break;
+      }
+    }
     return InkWell(
       onTap: () => context.push('/chat/${c.id}'),
       child: Padding(
@@ -166,9 +175,22 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
+                      if (firstImage != null) ...[
+                        AppNetworkImage(
+                          key: ValueKey('conv-thumb-${c.id}'),
+                          url: mediaThumbUrl(ref.read(apiClientProvider).baseUrl, firstImage.url),
+                          width: 24,
+                          height: 24,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(width: 6),
+                      ] else if (previewKeyOf(c.lastMessage) == null &&
+                          c.lastAttachments.isNotEmpty) ...[
+                        const Icon(Icons.attach_file, size: 16, color: AppColors.textSecondary),
+                      ],
                       Expanded(
                         child: Text(
-                          c.lastMessage,
+                          localizedPreview(c.lastMessage, (k) => context.tr(k)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(

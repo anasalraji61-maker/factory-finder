@@ -32,12 +32,20 @@ def build_trust(settings: Settings) -> TrustClient:
     return MockTrustClient()
 
 
+
+def _require_production_token(token: str | None) -> None:
+    """Opt-in fail-closed guard: FF_ENV=production requires FF_INTERNAL_TOKEN (see docs/OPS.md)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not token:
+        raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
+
+
 def create_app(
     settings: Settings | None = None,
     registry: AdapterRegistry | None = None,
     trust: TrustClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
     registry = registry or build_registry(settings)
     trust = trust or build_trust(settings)
     engine = make_engine(settings.database_url)

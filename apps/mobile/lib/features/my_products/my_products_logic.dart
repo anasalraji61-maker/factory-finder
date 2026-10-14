@@ -181,6 +181,9 @@ String myProductsErrorKey(Object error) {
         return 'myp.err.cap_reached';
       case 'not_published':
         return 'myp.err.not_published';
+      case 'moderated':
+      case 'listing_moderated':
+        return 'myp.err.moderated';
       case 'trust_blocked':
         return 'myp.err.trust_blocked';
       case 'trust_unavailable':
@@ -213,4 +216,6 @@ const List<ListingStatus?> kStatusFilters = <ListingStatus?>[
   ListingStatus.draft,
   ListingStatus.published,
   ListingStatus.archived,
+  ListingStatus.pendingReview,
+  ListingStatus.hidden,
 ];

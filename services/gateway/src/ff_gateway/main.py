@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway import SERVICE_NAME, __version__
-from ff_gateway.api import admin, admin_demand, auth, me, proxy, ws
+from ff_gateway.api import admin, admin_demand, admin_moderation, auth, me, proxy, ws
 from ff_gateway.api.deps import bearer_token
 from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
@@ -67,6 +68,15 @@ def create_app(
     mailer: object | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":  # opt-in fail-closed guard (docs/OPS.md)
+        missing = [
+            n for n, v in (
+                ("FF_GATEWAY_JWT_SECRET", settings.jwt_secret),
+                ("FF_GATEWAY_ADMIN_TOKEN", settings.admin_token),
+            ) if not v
+        ]  # fmt: skip
+        if missing:
+            raise RuntimeError(f"FF_ENV=production requires {', '.join(missing)} to be set (refusing to start)")
     clock = clock or SystemClock()
     engine = make_engine(settings.database_url)
     http = http_client or httpx.AsyncClient(timeout=settings.upstream_timeout_seconds)
@@ -203,6 +213,7 @@ def create_app(
     app.include_router(me.router)
     app.include_router(admin.router)
     app.include_router(admin_demand.router)
+    app.include_router(admin_moderation.router)
     if settings.serve_admin:
         admin_dir = (
             Path(settings.admin_dir)

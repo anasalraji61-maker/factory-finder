@@ -1,12 +1,17 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/features/messages/data/chat_logic.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class MessagingRepository {
   Future<List<Conversation>> conversations();
   Future<List<ChatMessage>> messages(String conversationId);
-  Future<ChatMessage> send(String conversationId, String text);
+  Future<ChatMessage> send(
+    String conversationId,
+    String text, {
+    List<MessageAttachment> attachments = const <MessageAttachment>[],
+  });
   Future<void> markRead(String conversationId);
 
   /// Returns an existing conversation for the same supplier+context or creates one.
@@ -55,11 +60,17 @@ class LiveMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<ChatMessage> send(String id, String text) async {
+  Future<ChatMessage> send(
+    String id,
+    String text, {
+    List<MessageAttachment> attachments = const <MessageAttachment>[],
+  }) async {
     final data = await _api.post('/v1/conversations/$id/messages',
         body: {
           'type': 'text',
-          'text': text,
+          if (text.trim().isNotEmpty) 'text': text,
+          if (attachments.isNotEmpty)
+            'attachments': [for (final a in attachments) a.toJson()],
           'client_message_id': 'app_${DateTime.now().microsecondsSinceEpoch}',
         });
     return ChatMessage.fromJson(Map<String, dynamic>.from(data as Map),
@@ -184,6 +195,25 @@ class MockMessagingRepository implements MessagingRepository {
           createdAt: now.subtract(Duration(minutes: l.$3)),
         ));
       }
+      if (s.id == 'cnv_004') {
+        // Fixture: the supplier's certificate photo (not the last message).
+        msgs.insert(
+          2,
+          ChatMessage(
+            id: '${s.id}_att',
+            conversationId: s.id,
+            senderId: s.supplierId,
+            attachments: const [
+              MessageAttachment(
+                url: '/v1/media/files/mockcert00000000000000000000001.jpg',
+                size: 120000,
+                name: 'iso9001.jpg',
+              ),
+            ],
+            createdAt: now.subtract(const Duration(minutes: 4295)),
+          ),
+        );
+      }
       _messages[s.id] = msgs;
       final lastText = msgs.lastWhere((m) => !m.isSystem, orElse: () => msgs.last);
       _convs[s.id] = Conversation(
@@ -223,10 +253,24 @@ class MockMessagingRepository implements MessagingRepository {
   }
 
   @override
-  Future<ChatMessage> send(String id, String text) async {
+  Future<ChatMessage> send(
+    String id,
+    String text, {
+    List<MessageAttachment> attachments = const <MessageAttachment>[],
+  }) async {
     final conv = _convs[id];
     if (conv == null) {
       throw ApiException(status: 404, code: 'not_found', message: 'conversation not found');
+    }
+    if (attachments.length > kMaxChatAttachments) {
+      throw ApiException(
+        status: 422,
+        code: 'too_many_attachments',
+        message: 'At most $kMaxChatAttachments attachments per message',
+      );
+    }
+    if (text.trim().isEmpty && attachments.isEmpty) {
+      throw ApiException(status: 422, code: 'validation_error', message: 'Empty message');
     }
     final now = _clock();
     final msg = ChatMessage(
@@ -234,11 +278,16 @@ class MockMessagingRepository implements MessagingRepository {
       conversationId: id,
       senderId: currentUserId,
       body: text.trim(),
+      attachments: attachments,
       createdAt: now,
     );
     final list = _messages.putIfAbsent(id, () => []);
     list.add(msg);
-    final last = conv.copyWith(lastMessage: msg.body, lastAt: now);
+    final last = conv.copyWith(
+      lastMessage: localPreview(msg.body, attachments),
+      lastAttachments: attachments,
+      lastAt: now,
+    );
     if (_autoReply) {
       final at = now.add(const Duration(seconds: 3));
       list.add(ChatMessage(

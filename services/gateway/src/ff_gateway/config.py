@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     # JSON in env, e.g. FF_GATEWAY_UPSTREAMS='{"trust":"http://trust:8104"}' (merged over defaults)
     upstreams: dict[str, str] = Field(default_factory=dict)
     internal_token: str | None = Field(default=None, validation_alias="FF_INTERNAL_TOKEN")
+    # Service admin token the gateway injects towards sourcing /v1/admin/moderation/* (never taken from the client).
+    sourcing_admin_token: str | None = Field(default=None, validation_alias="FF_SOURCING_ADMIN_TOKEN")
     upstream_timeout_seconds: float = 15.0
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300

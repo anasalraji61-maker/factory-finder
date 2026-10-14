@@ -119,6 +119,8 @@ void main() {
         'error_refresh_throttled': [429, 'refresh_throttled'],
         'error_invalid_deal_transition': [409, 'invalid_deal_transition'],
         'error_supplier_verification_required': [403, 'supplier_verification_required'],
+        'error_report_own_listing': [409, 'own_listing'],
+        'error_report_rate_limited': [429, 'rate_limited'],
       }.entries) {
         final ro = RequestOptions(path: '/x');
         final e = mapDioError(DioException(

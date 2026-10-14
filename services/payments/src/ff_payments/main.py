@@ -29,6 +29,13 @@ def _err(status: int, code: str, message: str, details: dict | None = None) -> J
     return JSONResponse({"error": {"code": code, "message": message, "details": details or {}}}, status_code=status)
 
 
+
+def _require_production_token(token: str | None) -> None:
+    """Opt-in fail-closed guard: FF_ENV=production requires FF_INTERNAL_TOKEN (see docs/OPS.md)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not token:
+        raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
+
+
 def create_app(
     settings: Settings | None = None,
     provider: PaymentProvider | None = None,
@@ -36,6 +43,7 @@ def create_app(
     clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
     if provider is None:
         provider = build_provider(settings)

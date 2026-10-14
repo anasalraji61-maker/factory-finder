@@ -1,5 +1,6 @@
 """FastAPI app factory. ``app = create_app()`` for uvicorn."""
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -73,8 +74,16 @@ def build_service(settings: Settings, db: Database, hub: ConversationHub) -> Mes
     return MessagingService(db=db, settings=settings, policy=policy, limiter=limiter, publisher=hub)
 
 
+
+def _require_production_token(token: str | None) -> None:
+    """Opt-in fail-closed guard: FF_ENV=production requires FF_INTERNAL_TOKEN (see docs/OPS.md)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not token:
+        raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
+    _require_production_token(settings.internal_token_value)
     db = Database(settings.database_url, echo=settings.database_echo)
     hub = ConversationHub(
         queue_size=settings.ws_queue_size, max_per_user=settings.ws_max_connections_per_user

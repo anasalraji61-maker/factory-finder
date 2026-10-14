@@ -51,7 +51,12 @@ class MockMyListingsBackend {
     final i = _indexOf(id);
     final old = items[i];
     final l = _fromDraft(id, d, old.status,
-        createdAt: old.createdAt, publishedAt: old.publishedAt);
+            createdAt: old.createdAt, publishedAt: old.publishedAt)
+        .copyWith(
+      moderationSource: old.moderationSource,
+      moderationReason: old.moderationReason,
+      moderatedAt: old.moderatedAt,
+    );
     items[i] = l;
     return l;
   }
@@ -59,6 +64,13 @@ class MockMyListingsBackend {
   OwnedListing setStatus(String id, ListingStatus status) {
     final i = _indexOf(id);
     final old = items[i];
+    if (old.isModerated && status == ListingStatus.published) {
+      throw ApiException(
+        status: 409,
+        code: 'listing_moderated',
+        message: 'Listing is under moderation',
+      );
+    }
     if (status == ListingStatus.draft && old.status != ListingStatus.published) {
       throw ApiException(
         status: 409,
@@ -78,6 +90,24 @@ class MockMyListingsBackend {
 
   void delete(String id) {
     items.removeAt(_indexOf(id));
+  }
+
+  /// Test/mock helper: puts a listing into a moderation state.
+  OwnedListing moderate(
+    String id,
+    ListingStatus status, {
+    String source = 'report',
+    String? reason,
+  }) {
+    final i = _indexOf(id);
+    final l = items[i].copyWith(
+      status: status,
+      moderationSource: source,
+      moderationReason: reason,
+      moderatedAt: DateTime.now().toUtc(),
+    );
+    items[i] = l;
+    return l;
   }
 }
 

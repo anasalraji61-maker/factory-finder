@@ -3,6 +3,7 @@ import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/my_products/moderation_notice.dart';
 import 'package:factory_finder/features/my_products/my_products_logic.dart';
 import 'package:factory_finder/features/my_products/my_products_models.dart';
 import 'package:factory_finder/features/my_products/my_products_repository.dart';
@@ -27,6 +28,10 @@ Color _statusColor(ListingStatus s) {
       return AppColors.success;
     case ListingStatus.archived:
       return AppColors.textSecondary;
+    case ListingStatus.pendingReview:
+      return AppColors.warning;
+    case ListingStatus.hidden:
+      return AppColors.danger;
   }
 }
 
@@ -432,6 +437,7 @@ class _ProductCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: AppColors.textSecondary),
           ),
+          if (l.isModerated) ModerationNotice(listing: l, compact: true),
           const SizedBox(height: AppSpacing.sm),
           if (busy)
             const Padding(
@@ -456,7 +462,7 @@ class _ProductCard extends StatelessWidget {
                     icon: const Icon(Icons.visibility_off_outlined, size: 18),
                     label: Text(context.tr('myp.unpublish')),
                   )
-                else
+                else if (!l.isModerated)
                   TextButton.icon(
                     key: ValueKey('myp-publish-${l.id}'),
                     onPressed: onPublish,

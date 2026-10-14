@@ -12,6 +12,7 @@ import 'package:factory_finder/features/requests/screens/request_detail_screen.d
 import 'package:factory_finder/features/requests/screens/requests_screen.dart';
 import 'package:factory_finder/features/discover/compare_strings.dart';
 import 'package:factory_finder/features/discover/discover_strings.dart';
+import 'package:factory_finder/features/discover/report_strings.dart';
 import 'package:factory_finder/features/discover/screens/compare_screen.dart';
 import 'package:factory_finder/features/discover/screens/discover_screen.dart';
 import 'package:factory_finder/features/discover/screens/listing_detail_screen.dart';
@@ -103,5 +104,5 @@ final FeatureModule featureModuleA = FeatureModule(
           SupplierScreen(supplierId: state.pathParameters['id']!),
     ),
   ],
-  strings: mergeStringTables([discoverStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings, dealsStrings]),
+  strings: mergeStringTables([discoverStrings, reportStrings, compareStrings, requestsStrings, authStrings, supplierClaimStrings, watchlistStrings, onboardingStrings, trustStrings, notifyPrefsStrings, paymentsStrings, reviewsStrings, dealsStrings]),
 );

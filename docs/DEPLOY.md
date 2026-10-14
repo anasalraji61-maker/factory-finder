@@ -25,3 +25,17 @@ docker compose down -v
 - Backups: `pg_dump` per database on a schedule, store off-host, test restores; back up the `pgdata` volume only as a secondary measure.
 - Real provider adapters are OFF by default and unverified against live APIs; keep kill switches (`FF_*_KILL_SWITCH`) documented for operators. Demand matching stays disabled (`FF_DEMAND_ENABLED=false`) unless a human-in-the-loop is in place.
 - Pin base image digests and dependency versions for reproducible builds; run containers as non-root (already done: user `app`).
+
+## Public ingress for payments webhooks
+`POST /v1/payments/webhooks/{provider}` is called by external payment providers, which cannot send a user bearer token, so the gateway
+(which requires auth for `/v1/payments/*`) cannot serve it. Open question for the operator before enabling real providers: expose the
+payments service webhook path only, through a dedicated public ingress that bypasses the gateway. Requirements:
+- Route ONLY `POST /v1/payments/webhooks/*` to the payments service from the reverse proxy; never expose any other payments path or port.
+- Authenticity rests on the HMAC `X-FF-Signature` (`FF_PAYMENTS_WEBHOOK_SECRET_*`, 300 s tolerance, replay protection); keep secrets set, otherwise webhooks answer 503.
+- Apply proxy-level rate limiting and a small body-size cap; optionally allow-list the provider's source IPs.
+- Webhooks skip the internal-token check by design, so do not route other traffic to payments through this ingress.
+Decision pending: no gateway change is made for this.
+
+## Moderation admin token
+Gateway-side `FF_SOURCING_ADMIN_TOKEN` (sourcing's service admin token) is injected by the gateway for `/v1/admin/moderation/*`; callers only
+present `X-Admin-Token` (= `FF_GATEWAY_ADMIN_TOKEN`). Unset = those routes answer 404.

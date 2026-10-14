@@ -56,6 +56,37 @@ def _needs_verified(method: str, upstream: str, path: str) -> bool:
     return upstream == "payments" or (upstream == "sourcing" and path.startswith("/v1/my"))
 
 
+ACTIVE_CACHE_SECONDS = 5.0
+ACTIVE_CACHE_MAX = 10_000
+
+
+async def _ensure_active(request: Request, user_id: str) -> None:
+    """Disabled/deleted users lose access on proxied routes within a few seconds (short cache, fail closed)."""
+    state = request.app.state
+    cache: dict[str, tuple[float, bool]] = state.__dict__.setdefault("_active_cache", {})
+    now = state.clock.monotonic()
+    hit = cache.get(user_id)
+    if hit is not None and hit[0] > now:
+        active = hit[1]
+    else:
+        async with state.sessionmaker() as s:
+            u = await s.get(User, user_id)
+        active = bool(u is not None and u.is_active)
+        if u is None:
+            cache.pop(user_id, None)
+            raise InvalidToken("Token refers to an unknown user")
+        if len(cache) >= ACTIVE_CACHE_MAX:
+            cache.clear()
+        cache[user_id] = (now + ACTIVE_CACHE_SECONDS, active)
+    if not active:
+        raise AccountDisabled()
+
+
+def _is_listing_report(path: str) -> bool:
+    parts = path.rstrip("/").split("/")
+    return len(parts) == 5 and parts[:3] == ["", "v1", "listings"] and parts[4] == "report"
+
+
 @router.api_route("/{full_path:path}", methods=METHODS, include_in_schema=False)
 async def proxy(full_path: str, request: Request) -> Response:
     path = "/" + full_path
@@ -94,6 +125,9 @@ async def proxy(full_path: str, request: Request) -> Response:
             raise AccountDisabled()
         require_verified(request, u)
 
+    if user_id:
+        await _ensure_active(request, user_id)
+
     body = await request.body()
     if len(body) > request.app.state.settings.max_body_bytes:
         raise PayloadTooLarge()
@@ -101,7 +135,7 @@ async def proxy(full_path: str, request: Request) -> Response:
     headers.update(internal_headers(request, user_id))
     if (
         user_id
-        and (upstream in ("messaging", "rfq") or (upstream == "sourcing" and path.startswith("/v1/my")))
+        and (upstream in ("messaging", "rfq") or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
     ):  # verified claim from our DB, never from the client
         async with request.app.state.sessionmaker() as s:
             row = (
