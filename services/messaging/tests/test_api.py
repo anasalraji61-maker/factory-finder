@@ -310,3 +310,97 @@ def test_supplier_claim_can_answer(client):
         ).status_code
         == 403
     )
+
+
+MEDIA = "/v1/media/files/0123456789abcdef0123456789abcdef.png"
+
+
+def _send(c, cid, **body):
+    return c.post(f"/v1/conversations/{cid}/messages", headers=H("buyer1"), json=body)
+
+
+def test_media_attachments_only_message_and_preview(client):
+    cid = new_conv(client)["id"]
+    r = _send(
+        client, cid, attachments=[{"url": MEDIA, "kind": "image", "size": 10, "name": "a/b.png"}]
+    )
+    assert r.status_code == 201, r.text
+    m = r.json()
+    assert m["text"] is None and m["attachment"] is None
+    assert m["attachments"] == [{"url": MEDIA, "kind": "image", "size": 10, "name": "b.png"}]
+    conv = client.get(f"/v1/conversations/{cid}", headers=H("sup1")).json()
+    assert conv["last_message"]["preview"] == "[image]"
+    msgs = client.get(f"/v1/conversations/{cid}/messages", headers=H("sup1")).json()["items"]
+    assert msgs[-1]["attachments"][0]["url"] == MEDIA
+    doc = MEDIA.replace(".png", ".pdf")
+    assert (
+        _send(
+            client, cid, type="attachment", attachments=[{"url": doc, "kind": "document"}]
+        ).status_code
+        == 201
+    )
+    assert (
+        client.get(f"/v1/conversations/{cid}", headers=H("sup1")).json()["last_message"]["preview"]
+        == "[document]"
+    )
+    r = _send(client, cid, text="see", attachments=[{"url": MEDIA, "kind": "image"}])
+    assert r.status_code == 201
+    assert (
+        client.get(f"/v1/conversations/{cid}", headers=H("sup1")).json()["last_message"]["preview"]
+        == "see"
+    )
+    plain = _send(client, cid, text="hi").json()
+    assert plain["attachments"] == []
+
+
+def test_media_attachments_validation():
+    with make_client(media_allowed_hosts="media.example.com") as c:
+        cid = new_conv(c)["id"]
+        ok = "https://media.example.com" + MEDIA
+        assert (
+            _send(c, cid, attachments=[{"url": ok + "?w=400", "kind": "image"}]).status_code == 201
+        )
+        bad = [
+            "https://evil.example.com" + MEDIA,
+            "http://media.example.com" + MEDIA,
+            "https://media.example.com/other/0123456789abcdef.png",
+            "https://media.example.com/v1/media/files/../x.png",
+            "https://media.example.com/v1/media/files/a/b.png",
+            ok + "?x=1",
+            "https://u:p@media.example.com" + MEDIA,
+            "javascript:alert(1)",
+        ]
+        for url in bad:
+            r = _send(c, cid, attachments=[{"url": url, "kind": "image"}])
+            assert r.status_code == 422, url
+            assert r.json()["error"]["code"] == "attachment_url_not_allowed", url
+        too_many = [{"url": MEDIA, "kind": "image"}] * 6
+        r = _send(c, cid, attachments=too_many)
+        assert r.status_code == 422
+        assert _send(c, cid, attachments=[{"url": MEDIA, "kind": "video"}]).status_code == 422
+        assert (
+            _send(c, cid, attachments=[{"url": MEDIA, "kind": "image", "size": 0}]).status_code
+            == 422
+        )
+        assert _send(c, cid, attachments=[{"url": MEDIA, "kind": "image"}] * 5).status_code == 201
+        assert (
+            _send(
+                c,
+                cid,
+                type="offer_ref",
+                offer_ref={"offer_id": "o1"},
+                attachments=[{"url": MEDIA, "kind": "image"}],
+            ).status_code
+            == 422
+        )
+        assert _send(c, cid, type="text").status_code == 422
+
+
+def test_media_attachments_idempotent_and_ws(client):
+    cid = new_conv(client)["id"]
+    body = {"client_message_id": "c1", "attachments": [{"url": MEDIA, "kind": "image"}]}
+    with client.websocket_connect(f"/v1/ws/conversations/{cid}?user_id=sup1") as ws:
+        assert ws.receive_json()["type"] == "ready"
+        assert _send(client, cid, **body).status_code == 201
+        assert ws.receive_json()["message"]["attachments"][0]["kind"] == "image"
+    assert _send(client, cid, **body).status_code == 200

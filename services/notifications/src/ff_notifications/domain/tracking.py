@@ -8,6 +8,7 @@ reference, delayed, delay_hours, ...). Unknown statuses fall back to generic tex
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -106,7 +107,12 @@ def build(event: TrackingEvent) -> tuple[AlertMessage, AlertPayload]:
         hours = p.get("delay_hours")
         h = (
             f"{round(float(hours))}"
-            if isinstance(hours, int | float) and not isinstance(hours, bool) and hours > 0
+            if (
+                isinstance(hours, int | float)
+                and not isinstance(hours, bool)
+                and math.isfinite(hours)
+                and 0 < hours < 1e6
+            )
             else None
         )
         body = (
@@ -139,6 +145,7 @@ def build(event: TrackingEvent) -> tuple[AlertMessage, AlertPayload]:
             shipment[k] = v
     if isinstance(p.get("delayed"), bool):
         shipment["delayed"] = p["delayed"]
-    if isinstance(p.get("delay_hours"), int | float) and not isinstance(p.get("delay_hours"), bool):
+    if (isinstance(p.get("delay_hours"), int | float) and not isinstance(p.get("delay_hours"), bool)
+            and math.isfinite(p["delay_hours"])):
         shipment["delay_hours"] = p["delay_hours"]
     return msg, AlertPayload(listing_ids=(), shipment=shipment)

@@ -128,6 +128,19 @@ class Attachment:
     name: str | None = None
 
 
+MEDIA_KINDS: tuple[str, ...] = ("image", "document")
+
+
+@dataclass(frozen=True, slots=True)
+class MediaAttachment:
+    """Reference to a file held by the media service (messaging never handles bytes)."""
+
+    url: str
+    kind: str  # "image" | "document"
+    size: int | None = None
+    name: str | None = None
+
+
 @dataclass(frozen=True, slots=True)
 class OfferRef:
     offer_id: str
@@ -144,6 +157,7 @@ class Message:
     text: str | None
     created_at: datetime
     attachment: Attachment | None = None
+    attachments: tuple[MediaAttachment, ...] = ()
     offer_ref: OfferRef | None = None
     event: str | None = None
     event_data: dict[str, Any] | None = None
@@ -172,6 +186,7 @@ class MessageDraft:
     type: MessageType
     text: str | None = None
     attachment: Attachment | None = None
+    attachments: tuple[MediaAttachment, ...] = ()
     offer_ref: OfferRef | None = None
     client_message_id: str | None = None
 

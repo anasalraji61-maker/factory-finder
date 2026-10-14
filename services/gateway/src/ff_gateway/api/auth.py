@@ -4,7 +4,7 @@ import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Request, Response
 from sqlalchemy import delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -212,7 +212,7 @@ async def verify_email(body: VerifyEmailIn, request: Request) -> Response:
 
 
 @router.post("/resend-verification", status_code=202)
-async def resend_verification(body: ResendVerificationIn, request: Request) -> dict:
+async def resend_verification(body: ResendVerificationIn, request: Request, tasks: BackgroundTasks) -> dict:
     """Always 202 with the same body: no account / verified-state enumeration. Throttled per address."""
     app = request.app
     key = "resend:" + hashlib.sha256(body.email.encode()).hexdigest()[:32]
@@ -220,7 +220,7 @@ async def resend_verification(body: ResendVerificationIn, request: Request) -> d
         async with app.state.sessionmaker() as s:
             user = await s.scalar(select(User).where(User.email == body.email))
         if user is not None and user.is_active and not user.email_verified:
-            await send_verification(request, user)
+            tasks.add_task(send_verification, request, user)  # after the response: no timing oracle
     return {"status": "accepted"}
 
 

@@ -20,7 +20,7 @@ from pydantic import (
 from .categories import CATEGORY_TREE
 from .models import Condition, ListingKind
 
-STATUSES = ("draft", "published", "archived")
+STATUSES = ("draft", "published", "archived", "pending_review", "hidden")
 INCOTERMS = ("EXW", "FCA", "FOB", "CFR", "CIF", "DAP", "DDP")
 MAX_IMAGES = 8
 MAX_AMOUNT = Decimal("1000000000")  # 1e9 per unit

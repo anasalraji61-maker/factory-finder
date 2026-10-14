@@ -181,3 +181,12 @@ def test_parse_and_rules():
     assert tracking.parse_event(ev(kind="shipment_delayed")).rule is RuleKind.SHIPMENT_DELAYED
     assert len(tracking.parse_event(ev(ship="s" * 100)).watch_id) <= 40
     assert tracking.status_texts("delivered") == ("delivered", "تم التسليم")
+
+
+def test_non_finite_delay_hours_never_crash_build():
+    for bad in (float("inf"), float("nan"), 1e308):
+        e = tracking.parse_event(ev(kind="shipment_delayed", delay_hours=bad))
+        msg, payload = tracking.build(e)
+        assert "delayed" in msg.body
+        if bad != 1e308:
+            assert "delay_hours" not in payload.shipment

@@ -95,6 +95,13 @@ class Settings(BaseSettings):
     attachment_allowed_hosts: StrList = Field(default_factory=list)  # empty = any https host
     attachment_allow_http: bool = False
 
+    # --- media attachments (attachments[]: URLs of files held by the media service) ------------
+    # Absolute URLs must use one of these hosts (empty = any host); the path must start with one
+    # of the prefixes. Relative URLs ("/v1/media/files/<id>.<ext>") are accepted as-is.
+    media_allowed_hosts: StrList = Field(default_factory=list)
+    media_path_prefixes: StrList = Field(default_factory=lambda: ["/v1/media/files/"])
+    media_max_attachments: int = Field(default=5, ge=1, le=20)
+
     # --- platform accounts ---------------------------------------------------------------------
     platform_user_ids: StrList = Field(default_factory=lambda: ["usr_support"])
     support_user_id: str | None = "usr_support"
@@ -122,6 +129,8 @@ class Settings(BaseSettings):
         "abuse_terms_extra",
         "attachment_allowed_mime_types",
         "attachment_allowed_hosts",
+        "media_allowed_hosts",
+        "media_path_prefixes",
         "platform_user_ids",
         mode="before",
     )

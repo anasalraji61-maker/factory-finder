@@ -27,8 +27,10 @@ from urllib.parse import urlsplit
 from ff_messaging.domain.errors import InvalidInputError
 from ff_messaging.domain.models import (
     FLAG_ABUSIVE_LANGUAGE,
+    MEDIA_KINDS,
     AbuseAction,
     Attachment,
+    MediaAttachment,
     MessageDraft,
     MessageType,
 )
@@ -96,10 +98,7 @@ def fold(text: str) -> str:
 
 
 def _is_arabic_script(text: str) -> bool:
-    return any(
-        "؀" <= c <= "ۿ" or "ݐ" <= c <= "ݿ" or "ࢠ" <= c <= "ࣿ"
-        for c in text
-    )
+    return any("؀" <= c <= "ۿ" or "ݐ" <= c <= "ݿ" or "ࢠ" <= c <= "ࣿ" for c in text)
 
 
 def _collapse_runs(word: str) -> str:
@@ -312,7 +311,88 @@ def check_attachment(attachment: Attachment, rules: AttachmentRules) -> Attachme
             code="attachment_too_large",
             details={"max_bytes": rules.max_bytes, "size": attachment.size},
         )
-    return Attachment(url=url, mime=mime, size=attachment.size, name=_clean_filename(attachment.name))
+    return Attachment(
+        url=url, mime=mime, size=attachment.size, name=_clean_filename(attachment.name)
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class MediaRules:
+    """Where ``attachments[]`` URLs may point: the media service only (host + path prefix)."""
+
+    path_prefixes: tuple[str, ...] = ("/v1/media/files/",)
+    allowed_hosts: tuple[str, ...] = ()  # empty = any host (relative URLs are always fine)
+    allow_http: bool = False
+    max_count: int = 5
+    max_bytes: int = 25 * 1024 * 1024
+    max_url_length: int = 2048
+
+
+_MEDIA_FILE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{5,127}\.[A-Za-z0-9]{2,8}$")
+_MEDIA_QUERY_RE = re.compile(r"^(w=\d{2,4})?$")
+
+
+def check_media_attachments(
+    items: Sequence[MediaAttachment], rules: MediaRules
+) -> tuple[MediaAttachment, ...]:
+    if len(items) > rules.max_count:
+        raise InvalidInputError(
+            "Too many attachments",
+            code="too_many_attachments",
+            details={"max": rules.max_count, "count": len(items)},
+        )
+    schemes = {"https", "http"} if rules.allow_http else {"https"}
+    url_error = InvalidInputError(
+        "Attachment URL must point to the media service", code="attachment_url_not_allowed"
+    )
+    out: list[MediaAttachment] = []
+    for item in items:
+        if item.kind not in MEDIA_KINDS:
+            raise InvalidInputError(
+                "Attachment kind must be image or document",
+                code="invalid_attachment",
+                details={"kinds": list(MEDIA_KINDS)},
+            )
+        if item.size is not None and not 1 <= item.size <= rules.max_bytes:
+            raise InvalidInputError(
+                "Attachment size is out of range",
+                code="invalid_attachment",
+                details={"max_bytes": rules.max_bytes},
+            )
+        url = item.url.strip()
+        if not url or len(url) > rules.max_url_length:
+            raise url_error
+        if any(ch.isspace() or unicodedata.category(ch) == "Cc" for ch in url):
+            raise url_error
+        try:
+            parts = urlsplit(url)
+            host = (parts.hostname or "").rstrip(".").lower()
+            has_credentials = parts.username is not None or parts.password is not None
+        except ValueError as exc:
+            raise url_error from exc
+        if parts.fragment or has_credentials or not _MEDIA_QUERY_RE.fullmatch(parts.query):
+            raise url_error
+        if parts.scheme or parts.netloc:
+            if parts.scheme.lower() not in schemes or not host:
+                raise url_error
+            if rules.allowed_hosts and not _host_allowed(host, rules.allowed_hosts):
+                raise url_error
+        path = parts.path
+        prefix = next((p for p in rules.path_prefixes if path.startswith(p)), None)
+        if prefix is None or not _MEDIA_FILE_RE.fullmatch(path[len(prefix) :]):
+            raise url_error
+        out.append(
+            MediaAttachment(
+                url=url, kind=item.kind, size=item.size, name=_clean_filename(item.name)
+            )
+        )
+    return tuple(out)
+
+
+def attachments_preview(items: Sequence[MediaAttachment]) -> str:
+    """Language-neutral preview key for attachment-only messages (clients localise it)."""
+    kinds = {i.kind for i in items}
+    return f"[{kinds.pop()}]" if len(kinds) == 1 else "[attachment]"
 
 
 # --------------------------------------------------------------------------------------------
@@ -339,7 +419,9 @@ class ContentPolicy:
         abuse_filter: AbuseFilter,
         abuse_action: AbuseAction,
         attachment_rules: AttachmentRules,
+        media_rules: MediaRules | None = None,
     ) -> None:
+        self.media_rules = media_rules or MediaRules()
         self.max_text_length = max_text_length
         self.max_title_length = max_title_length
         self.abuse_filter = abuse_filter
@@ -351,6 +433,12 @@ class ContentPolicy:
         if text is not None and not has_visible_content(text):
             text = None
         attachment = draft.attachment
+        media = draft.attachments
+        if media and (draft.attachment is not None or draft.offer_ref is not None):
+            raise InvalidInputError(
+                "attachments[] cannot be combined with attachment or offer_ref",
+                code="invalid_message",
+            )
 
         if draft.type is MessageType.TEXT:
             if draft.attachment is not None or draft.offer_ref is not None:
@@ -358,16 +446,18 @@ class ContentPolicy:
                     "Text messages cannot carry an attachment or an offer reference",
                     code="invalid_message",
                 )
-            if text is None:
+            if text is None and not media:
                 raise InvalidInputError("Message text must not be empty", code="empty_message")
         elif draft.type is MessageType.ATTACHMENT:
-            if draft.attachment is None or draft.offer_ref is not None:
+            if draft.offer_ref is not None or (draft.attachment is None) == (not media):
                 raise InvalidInputError(
-                    "Attachment messages need exactly one attachment", code="invalid_message"
+                    "Attachment messages need exactly one attachment or attachments[]",
+                    code="invalid_message",
                 )
-            attachment = check_attachment(draft.attachment, self.attachment_rules)
+            if draft.attachment is not None:
+                attachment = check_attachment(draft.attachment, self.attachment_rules)
         elif draft.type is MessageType.OFFER_REF:
-            if draft.offer_ref is None or draft.attachment is not None:
+            if draft.offer_ref is None or draft.attachment is not None or media:
                 raise InvalidInputError(
                     "Offer messages need exactly one offer reference", code="invalid_message"
                 )
@@ -394,8 +484,12 @@ class ContentPolicy:
                 preview = mask_spans(text, spans)
                 if self.abuse_action is AbuseAction.MASK:
                     text = preview
-        cleaned = replace(draft, text=text, attachment=attachment)
-        return CheckedMessage(draft=cleaned, flags=flags, abuse_matches=matches, preview_text=preview)
+        if media:
+            media = check_media_attachments(media, self.media_rules)
+        cleaned = replace(draft, text=text, attachment=attachment, attachments=media)
+        return CheckedMessage(
+            draft=cleaned, flags=flags, abuse_matches=matches, preview_text=preview
+        )
 
     def check_title(self, title: str | None) -> str | None:
         if title is None:

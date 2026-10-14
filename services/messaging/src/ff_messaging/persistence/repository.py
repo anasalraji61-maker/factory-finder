@@ -14,6 +14,7 @@ from ff_messaging.domain.models import (
     Conversation,
     ConversationContext,
     LastMessage,
+    MediaAttachment,
     Message,
     MessageType,
     OfferRef,
@@ -39,10 +40,14 @@ def _to_participant(row: Mapping[str, Any], last_seq: int) -> Participant:
     )
 
 
-def _to_conversation(row: Mapping[str, Any], participant_rows: Sequence[Mapping[str, Any]]) -> Conversation:
+def _to_conversation(
+    row: Mapping[str, Any], participant_rows: Sequence[Mapping[str, Any]]
+) -> Conversation:
     context = None
     if row["context_type"] is not None:
-        context = ConversationContext(type=ContextType(row["context_type"]), ref_id=row["context_ref_id"])
+        context = ConversationContext(
+            type=ContextType(row["context_type"]), ref_id=row["context_ref_id"]
+        )
     last_message = None
     if row["last_message_id"] is not None:
         last_message = LastMessage(
@@ -77,6 +82,10 @@ def _to_message(row: Mapping[str, Any]) -> Message:
             size=row["attachment_size"],
             name=row["attachment_name"],
         )
+    media = tuple(
+        MediaAttachment(url=a["url"], kind=a["kind"], size=a.get("size"), name=a.get("name"))
+        for a in (row["attachments"] or ())
+    )
     offer_ref = None
     if row["offer_id"] is not None:
         offer_ref = OfferRef(offer_id=row["offer_id"], request_id=row["offer_request_id"])
@@ -89,6 +98,7 @@ def _to_message(row: Mapping[str, Any]) -> Message:
         text=row["text"],
         created_at=row["created_at"],
         attachment=attachment,
+        attachments=media,
         offer_ref=offer_ref,
         event=row["event"],
         event_data=row["event_data"],
@@ -105,7 +115,9 @@ class Repository:
 
     # ---------------------------------------------------------------- conversations
 
-    async def get_conversation(self, conversation_id: str, *, lock: bool = False) -> Conversation | None:
+    async def get_conversation(
+        self, conversation_id: str, *, lock: bool = False
+    ) -> Conversation | None:
         stmt = select(conversations_t).where(conversations_t.c.id == conversation_id)
         if lock:
             # PostgreSQL: row lock serialises writers of one conversation (sequence numbers,
@@ -276,6 +288,11 @@ class Repository:
                 attachment_mime=message.attachment.mime if message.attachment else None,
                 attachment_size=message.attachment.size if message.attachment else None,
                 attachment_name=message.attachment.name if message.attachment else None,
+                attachments=[
+                    {"url": a.url, "kind": a.kind, "size": a.size, "name": a.name}
+                    for a in message.attachments
+                ]
+                or None,
                 offer_id=message.offer_ref.offer_id if message.offer_ref else None,
                 offer_request_id=message.offer_ref.request_id if message.offer_ref else None,
                 event=message.event,
@@ -337,7 +354,9 @@ class Repository:
         row = (await self.conn.execute(stmt)).mappings().first()
         return _to_message(row) if row is not None else None
 
-    async def find_message_by_dedupe_key(self, conversation_id: str, dedupe_key: str) -> Message | None:
+    async def find_message_by_dedupe_key(
+        self, conversation_id: str, dedupe_key: str
+    ) -> Message | None:
         stmt = select(messages_t).where(
             messages_t.c.conversation_id == conversation_id,
             messages_t.c.dedupe_key == dedupe_key,

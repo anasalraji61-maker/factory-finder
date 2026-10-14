@@ -173,3 +173,25 @@ def test_app_uses_injected_redis_for_limits():
     with TestClient(create_app(s, redis_client=fake)) as t:
         codes = [t.post("/v1/auth/login", json={"email": "a@b.co", "password": "x"}).status_code for _ in range(4)]
     assert 429 in codes and any(k.startswith("ff:gw:rl:auth:") for k in fake.d)
+
+
+def test_gated_write_fails_closed_for_unknown_or_disabled_user(make_client, mock_upstream):
+    import asyncio
+
+    from sqlalchemy import update
+
+    from ff_gateway.db import User
+
+    c = _mk(make_client, require_email_verified=True)
+    tok = c.post("/v1/auth/register", json=REG).json()["access_token"]
+    h = {"Authorization": f"Bearer {tok}"}
+    sm = c.app.state.sessionmaker
+
+    async def disable():
+        async with sm() as s:
+            await s.execute(update(User).values(is_active=False))
+            await s.commit()
+
+    asyncio.run(disable())
+    r = c.post("/v1/invoices", json={}, headers=h)
+    assert r.status_code in (401, 403) and r.json()["error"]["code"] != "email_not_verified"

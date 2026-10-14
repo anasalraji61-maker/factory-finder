@@ -34,6 +34,9 @@ def message_json(m: Message) -> dict[str, Any]:
             if m.attachment
             else None
         ),
+        "attachments": [
+            {"url": a.url, "kind": a.kind, "size": a.size, "name": a.name} for a in m.attachments
+        ],
         "offer_ref": (
             {"offer_id": m.offer_ref.offer_id, "request_id": m.offer_ref.request_id}
             if m.offer_ref

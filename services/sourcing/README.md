@@ -49,6 +49,25 @@ non-red trust band and fails closed (503 `trust_unavailable`) if trust is down/u
 (validation), `adapters/native.py` (store + adapter), `native_service.py`, `api/my.py`.
 Env: `DATABASE_URL`, `DB_AUTO_CREATE`, `MAX_LISTINGS_PER_SUPPLIER`, `CREATE_RATE_PER_HOUR`, `INTERNAL_TOKEN`.
 
+## Moderation (native listings)
+Statuses `pending_review` and `hidden` take a listing out of search/detail/supplier counts for everyone but its owner
+(owner sees `status`, `moderation_source` auto|report|admin, `moderation_reason`); they cannot be published (409
+`under_moderation`). Code: `domain/moderation.py`, `api/moderation.py`, data `data/prohibited_goods.json`.
+- **Screening** on create/update (title, descriptions, unit, specs; ar+en): contact info/links (URL, email, phone >= 9
+  digits incl. Arabic-Indic, messaging handles) and banned goods (word-level match, Arabic prefixes/plurals handled; edit
+  the JSON to extend). Flagged create -> `pending_review`; flagged update of a draft/published/archived listing -> goes
+  offline; owner fixing an auto-flagged listing lifts it and restores the previous status. Reasons name the field and
+  kind only, never the matched text.
+- **Reports** `POST /v1/listings/{id}/report` (`X-User-Id` from gateway; 401 without): reason enum, optional details (500
+  chars, emails/links/phones redacted). Published listings only (else 404). Dedupe per reporter+listing (repeat = same
+  202), 10/hour per reporter (429), own listing 409. Reporter stored only as keyed hash. 3 distinct open reports ->
+  `pending_review` (`REPORT_REVIEW_THRESHOLD`, 0 = off).
+- **Admin** (`X-Admin-Token` = `FF_SOURCING_ADMIN_TOKEN`; 404 while unset, 401 wrong): `GET /v1/admin/moderation/reports`,
+  `GET /v1/admin/moderation/listings`, `POST .../listings/{id}/hide {reason}`, `POST .../listings/{id}/restore` (back to
+  the status before moderation; open reports become actioned/dismissed). With `FF_INTERNAL_TOKEN` set, report and admin
+  paths also need `X-Internal-Token`. Gateway routing: `docs/requests/sourcing-moderation-gateway.md`.
+Env: `ADMIN_TOKEN`, `REPORT_RATE_PER_HOUR`, `REPORT_REVIEW_THRESHOLD`, `REPORTER_HASH_KEY`. Migration `0002_moderation`.
+
 ## Env (prefix `FF_SOURCING_`)
 `ENABLED_SOURCES` (default `mock`; e.g. `mock,alibaba`), `ADAPTER_TIMEOUT_S` (3), `CACHE_TTL_S` (60),
 `TRUST_MODE` (`mock`|`http`|`off`), `TRUST_BASE_URL`, `TRUST_TIMEOUT_S` (0.8), `MIN_REQUEST_INTERVAL_S` (3),

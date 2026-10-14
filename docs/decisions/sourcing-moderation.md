@@ -1,0 +1,6 @@
+2026-10-14 | Moderation statuses `pending_review` (auto-screen / report threshold) and `hidden` (admin) added to native listing status; `status_before` remembers where restore goes | keeps one visibility rule (only `published` is public) and lets restore be lossless
+2026-10-14 | Auto-screening flags go offline immediately (even published listings on update) and auto-lift when the owner fixes the text; report/admin holds never auto-lift | contact info/links defeat in-app messaging + commission; owners can self-correct, abuse holds need a human
+2026-10-14 | Banned-goods list omits ambiguous words (ivory colour, forged steel, silencer/suppressor as car/electrical parts, bullet) | avoid false positives on legitimate industrial goods; list lives in data/prohibited_goods.json for easy extension
+2026-10-14 | Reporter identity = HMAC-SHA256(user id) truncated, details redacted of email/link/phone, repeat reports return the identical 202 | no PII leak; no oracle for who already reported
+2026-10-14 | Admin endpoints use X-Admin-Token (gateway/payments pattern): 404 while token unset, 401 when wrong; internal-token middleware extended to /v1/admin and */report | identity headers are only trusted from the gateway
+2026-10-14 | Report threshold 3 distinct open reports, 10 reports/hour/reporter (in-process, like create limit) | simple defaults; configurable via env

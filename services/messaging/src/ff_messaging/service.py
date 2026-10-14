@@ -35,7 +35,7 @@ from ff_messaging.domain.rules import (
     resolve_participants,
     user_message_dedupe_key,
 )
-from ff_messaging.domain.safety import ContentPolicy
+from ff_messaging.domain.safety import ContentPolicy, attachments_preview
 from ff_messaging.persistence.database import Database
 from ff_messaging.persistence.repository import Repository
 
@@ -181,12 +181,15 @@ class MessagingService:
                 text=d.text,
                 created_at=self.clock(),
                 attachment=d.attachment,
+                attachments=d.attachments,
                 offer_ref=d.offer_ref,
                 flags=checked.flags,
                 client_message_id=d.client_message_id,
             )
             await repo.insert_message(message, dedupe_key=dedupe)
             preview = make_preview(checked.preview_text, self.settings.preview_length)
+            if preview is None and d.attachments:
+                preview = attachments_preview(d.attachments)
             if preview is None:
                 preview = f"[{d.type.value}]"
             await repo.record_last_message(message, preview=preview)

@@ -90,6 +90,14 @@ class DealService:
 
     async def _apply(self, s: AsyncSession, deal: DealRow, b: PaymentStatusCallback, now: datetime) -> str:
         state = {k: dict(v) for k, v in (deal.payment_state or {}).items()}
+        prev = state.get(b.kind) or {}
+        if b.status == "paid" and prev.get("status") == "refunded" and prev.get("invoice_id") == b.invoice_id:
+            # refunded is terminal per invoice: a late/replayed 'paid' (outbox reorder) must not re-settle the deal
+            frm = D(deal.status)
+            await self._log(s, deal, "payment_paid", SYSTEM, now, frm=frm.value, to=frm.value, event_id=b.event_id,
+                            data={"kind": b.kind, "invoice_id": b.invoice_id, "outcome": "ignored",
+                                  "amount": {"amount": format(b.amount.amount, "f"), "currency": b.amount.currency}})
+            return "ignored"
         state[b.kind] = {"invoice_id": b.invoice_id, "status": b.status}
         if b.status == "paid":
             for k in b.other_open_kinds:

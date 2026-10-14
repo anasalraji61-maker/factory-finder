@@ -20,10 +20,10 @@ def make_deal(client, sup=SUP_A_V):
     return client.post(f"/v1/offers/{off['id']}/accept", headers=BUYER).json()
 
 
-def cb(client, deal, kind="deal_payment", status="paid", other_open=(), event_id=None, amount=None, headers=None):
+def cb(client, deal, kind="deal_payment", status="paid", other_open=(), event_id=None, amount=None, headers=None, inv=None):
     N[0] += 1
     m = amount or (deal["subtotal"] if kind == "deal_payment" else deal["commission"]["amount"])
-    body = {"invoice_id": f"inv_{kind}", "kind": kind, "status": status, "amount": m,
+    body = {"invoice_id": inv or f"inv_{kind}", "kind": kind, "status": status, "amount": m,
             "event_id": event_id or f"evt_{N[0]}", "other_open_kinds": list(other_open)}
     return client.post(f"/v1/internal/deals/{deal['id']}/payment-status", json=body, headers=headers or {})
 
@@ -84,7 +84,7 @@ def test_refund_paths(client):
     cb(client, d, "commission")
     r = cb(client, d, "commission", "refunded")
     assert r.json()["deal_status"] == "pending_payment" and r.json()["payment"]["commission"] == "refunded"
-    assert cb(client, d, "commission").json()["deal_status"] == "paid"
+    assert cb(client, d, "commission", inv="inv_commission_2").json()["deal_status"] == "paid"  # a NEW invoice
     # refund during fulfilment -> disputed; after completion -> only recorded
     d = make_deal(client)
     cb(client, d)
@@ -205,3 +205,12 @@ def test_event_log_is_immutable(client):
 
     with pytest.raises(DealEventImmutable):
         client.portal.call(run)
+
+
+def test_stale_paid_after_refund_of_same_invoice_is_ignored(client):
+    d = make_deal(client)
+    cb(client, d, "commission")
+    assert cb(client, d, "commission", "refunded").json()["deal_status"] == "pending_payment"
+    late = cb(client, d, "commission")  # reordered/replayed old 'paid' for the refunded invoice
+    assert late.json()["outcome"] == "ignored" and late.json()["deal_status"] == "pending_payment"
+    assert late.json()["payment"]["commission"] == "refunded"

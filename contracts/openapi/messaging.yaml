@@ -146,12 +146,22 @@ components:
       type: object
       required: [url, mime, size]
       properties: {url: {type: string}, mime: {type: string}, size: {type: integer}, name: {type: [string, "null"]}}
+    MediaAttachment:
+      type: object
+      description: Reference to a file held by the media service (no bytes in messaging). `url` must be a media-service URL (host/path-prefix validated by config; relative `/v1/media/files/<id>.<ext>` accepted).
+      required: [url, kind]
+      properties:
+        url: {type: string, maxLength: 2048}
+        kind: {type: string, enum: [image, document]}
+        size: {type: [integer, "null"], minimum: 1}
+        name: {type: [string, "null"], maxLength: 255}
     MessageCreate:
       type: object
       properties:
         type: {type: string, enum: [text, attachment, offer_ref], default: text}
         text: {type: [string, "null"]}
         attachment: {$ref: "#/components/schemas/Attachment"}
+        attachments: {type: array, maxItems: 5, items: {$ref: "#/components/schemas/MediaAttachment"}, description: "Optional media attachments (max 5, config-limited). Allowed on type text/attachment; an attachments-only message needs no text. Not combinable with attachment/offer_ref. Errors: 422 too_many_attachments | attachment_url_not_allowed | invalid_attachment."}
         offer_ref: {type: object, required: [offer_id], properties: {offer_id: {type: string}, request_id: {type: [string, "null"]}}}
         client_message_id: {type: string, maxLength: 64}
     Message:
@@ -165,6 +175,7 @@ components:
         type: {type: string, enum: [text, attachment, offer_ref, system]}
         text: {type: [string, "null"]}
         attachment: {oneOf: [{$ref: "#/components/schemas/Attachment"}, {type: "null"}]}
+        attachments: {type: array, items: {$ref: "#/components/schemas/MediaAttachment"}}
         offer_ref: {type: [object, "null"]}
         event: {type: [string, "null"]}
         event_data: {type: [object, "null"]}

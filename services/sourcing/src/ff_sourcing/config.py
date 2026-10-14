@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .dburl import resolve_auto_create
@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured (see main.py)
     max_listings_per_supplier: int = 200
     create_rate_per_hour: int = 30
+
+    # Moderation: X-Admin-Token guards /v1/admin/*; admin endpoints answer 404 while unset.
+    admin_token: SecretStr | None = Field(default=None, repr=False)
+    reporter_hash_key: str = Field(default="ff-sourcing-reporter", repr=False)  # keyed hash of reporter ids
+    report_rate_per_hour: int = 10  # per reporter, per process (attempts count, duplicates included)
+    report_review_threshold: int = 3  # distinct open reports that move a listing to pending_review (0 = off)
 
     trust_mode: str = "mock"  # mock | http | off
     trust_base_url: str = "http://localhost:8104"

@@ -29,7 +29,7 @@ def supplier_id(x_supplier_id: Annotated[str | None, Header()] = None) -> str:
 
 Supplier = Annotated[str, Depends(supplier_id)]
 Svc = Annotated[NativeService, Depends(native)]
-Status = Literal["draft", "published", "archived"]
+Status = Literal["draft", "published", "archived", "pending_review", "hidden"]
 
 
 @router.post("/listings", status_code=201, response_model=OwnedListing, response_model_exclude_none=True)

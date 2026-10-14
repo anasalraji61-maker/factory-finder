@@ -181,7 +181,7 @@ paths:
       summary: List the caller's own listings (all statuses), newest first
       parameters:
         - {$ref: "#/components/parameters/SupplierId"}
-        - {name: status, in: query, schema: {type: string, enum: [draft, published, archived]}}
+        - {name: status, in: query, schema: {type: string, enum: [draft, published, archived, pending_review, hidden]}}
         - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
@@ -270,8 +270,123 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
+  /v1/listings/{id}/report:
+    post:
+      summary: Report a published listing (signed-in user)
+      description: |
+        Reporter identity is the gateway-set X-User-Id (401 without it). Only published listings can be reported
+        (404 otherwise, so hidden/draft ids are not revealed). One report per reporter+listing: repeats answer exactly
+        like the first (202). At most 10 reports per hour per reporter (429 + Retry-After). Reporting your own listing
+        (X-Supplier-Id matches) is 409 own_listing. Free-text details are capped at 500 chars and emails/links/phone
+        numbers are redacted. Reporter identity is stored only as a keyed hash and never returned to the owner.
+        Enough distinct open reports (default 3) move the listing to pending_review.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: X-User-Id, in: header, required: true, description: Set by the gateway, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string, enum: [prohibited_item, counterfeit, scam_or_fraud, misleading, contact_info_in_listing, offensive, other]}
+                details: {type: string, maxLength: 500}
+      responses:
+        "202":
+          description: Report received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, enum: [received]}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/admin/moderation/reports:
+    get:
+      summary: List user reports (admin)
+      description: Requires X-Admin-Token (404 while FF_SOURCING_ADMIN_TOKEN is unset, 401 when wrong). Reporter is an opaque hash prefix, never a user id.
+      parameters:
+        - {$ref: "#/components/parameters/AdminToken"}
+        - {name: status, in: query, schema: {type: string, enum: [open, actioned, dismissed, all], default: open}}
+        - {name: listing_id, in: query, schema: {type: string}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page of reports (id, listing_id, reason, details, status, reporter_ref, created_at, resolved_at, listing{title,status,supplier_id})
+          content:
+            application/json:
+              schema: {type: object}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/moderation/listings:
+    get:
+      summary: List listings that are pending_review or hidden (admin)
+      parameters:
+        - {$ref: "#/components/parameters/AdminToken"}
+        - {name: status, in: query, schema: {type: string, enum: [pending_review, hidden, all], default: all}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200":
+          description: One page (id, title, supplier_id, status, moderation_source, moderation_reason, moderated_at, open_reports)
+          content:
+            application/json:
+              schema: {type: object}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/moderation/listings/{id}/hide:
+    post:
+      summary: Hide a listing (admin); open reports become actioned
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {$ref: "#/components/parameters/AdminToken"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string, minLength: 3, maxLength: 300, description: Shown to the owner}
+      responses:
+        "200":
+          description: Moderation state
+          content:
+            application/json:
+              schema: {type: object}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/moderation/listings/{id}/restore:
+    post:
+      summary: Restore a hidden/pending_review listing to its previous status (admin); open reports become dismissed
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {$ref: "#/components/parameters/AdminToken"}
+      responses:
+        "200":
+          description: Moderation state
+          content:
+            application/json:
+              schema: {type: object}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
 components:
   parameters:
+    AdminToken:
+      name: X-Admin-Token
+      in: header
+      required: true
+      schema: {type: string}
     SupplierId:
       name: X-Supplier-Id
       in: header
@@ -320,7 +435,10 @@ components:
         - type: object
           required: [status, created_at, updated_at]
           properties:
-            status: {type: string, enum: [draft, published, archived]}
+            status: {type: string, enum: [draft, published, archived, pending_review, hidden], description: "pending_review/hidden = moderated: not searchable, not visible to anyone but the owner"}
+            moderation_source: {type: string, enum: [auto, report, admin]}
+            moderation_reason: {type: string, description: Why the listing is pending_review/hidden; never contains reporter data}
+            moderated_at: {type: string, format: date-time}
             created_at: {type: string, format: date-time}
             updated_at: {type: string, format: date-time}
             published_at: {type: string, format: date-time}

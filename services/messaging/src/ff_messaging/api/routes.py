@@ -31,6 +31,7 @@ from ff_messaging.domain.models import (
     Attachment,
     ContextType,
     ConversationContext,
+    MediaAttachment,
     MessageDraft,
     MessageType,
     OfferRef,
@@ -71,6 +72,13 @@ class AttachmentIn(_Body):
     name: str | None = None
 
 
+class MediaAttachmentIn(_Body):
+    url: str
+    kind: Literal["image", "document"]
+    size: int | None = None
+    name: str | None = None
+
+
 class OfferRefIn(_Body):
     offer_id: str = Field(pattern=EXTERNAL_ID_PATTERN)
     request_id: str | None = Field(default=None, pattern=EXTERNAL_ID_PATTERN)
@@ -80,6 +88,7 @@ class MessageCreate(_Body):
     type: Literal["text", "attachment", "offer_ref"] = "text"
     text: str | None = None
     attachment: AttachmentIn | None = None
+    attachments: list[MediaAttachmentIn] = Field(default_factory=list, max_length=20)
     offer_ref: OfferRefIn | None = None
     client_message_id: str | None = Field(
         default=None, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:\-]+$"
@@ -201,6 +210,7 @@ async def send_message(
         type=MessageType(body.type),
         text=body.text,
         attachment=Attachment(**body.attachment.model_dump()) if body.attachment else None,
+        attachments=tuple(MediaAttachment(**a.model_dump()) for a in body.attachments),
         offer_ref=OfferRef(**body.offer_ref.model_dump()) if body.offer_ref else None,
         client_message_id=body.client_message_id,
     )

@@ -158,3 +158,20 @@ def test_outbox_survives_without_client_support_for_unpaid_flow():
         c.post("/v1/invoices", json={"deal_id": "deal_1", "kind": "commission"}, headers=BUYER)
         assert c.post("/v1/payments/sweep", headers=ADMIN).json()["outbox_delivered"] == 0
     assert deals.notifications == []
+
+
+async def test_http_deal_client_quotes_deal_id_in_path():
+    import httpx
+
+    from ff_payments.clients.deals import HttpDealClient
+
+    seen = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.raw_path.decode())
+        return httpx.Response(200, json={})
+
+    c = HttpDealClient("http://rfq", "t", transport=httpx.MockTransport(handler))
+    await c.notify_payment_status("../../v1/requests?x=1", {"event_id": "e"})
+    await c.get_deal("a/b", "u1")
+    assert seen == ["/v1/internal/deals/..%2F..%2Fv1%2Frequests%3Fx%3D1/payment-status", "/v1/deals/a%2Fb"]

@@ -5,7 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Float, Index, Integer, String, Text, TypeDecorator
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -34,7 +44,7 @@ class NativeListingRow(Base):
 
     id: Mapped[str] = mapped_column(String(16), primary_key=True)
     supplier_id: Mapped[str] = mapped_column(String(64), index=True)
-    status: Mapped[str] = mapped_column(String(10), index=True)
+    status: Mapped[str] = mapped_column(String(16), index=True)
     kind: Mapped[str] = mapped_column(String(20))
     condition: Mapped[str] = mapped_column(String(12))
     title: Mapped[str] = mapped_column(String(140))
@@ -59,6 +69,30 @@ class NativeListingRow(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
     published_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    # moderation (status hidden / pending_review): who/why, and where to go back to on restore
+    moderation_source: Mapped[str | None] = mapped_column(String(8), nullable=True)  # auto | report | admin
+    moderation_reason: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    status_before: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    moderated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class ListingReportRow(Base):
+    """One user report. ``reporter_ref`` is a keyed hash of the reporter's user id: never the id itself."""
+
+    __tablename__ = "listing_reports"
+    __table_args__ = (
+        UniqueConstraint("listing_id", "reporter_ref", name="uq_listing_reports_listing_reporter"),
+        Index("ix_listing_reports_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    listing_id: Mapped[str] = mapped_column(String(16), index=True)
+    reporter_ref: Mapped[str] = mapped_column(String(32))
+    reason: Mapped[str] = mapped_column(String(24))
+    details: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    status: Mapped[str] = mapped_column(String(10))  # open | actioned | dismissed
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
 
 def make_engine(url: str) -> AsyncEngine:

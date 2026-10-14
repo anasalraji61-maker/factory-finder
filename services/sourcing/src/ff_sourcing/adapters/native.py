@@ -13,10 +13,11 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import delete, func, select
+from sqlalchemy import update as sa_update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from ..db import Base, NativeListingRow
+from ..db import Base, ListingReportRow, NativeListingRow
 from ..domain.models import (
     DayRange,
     GeoPoint,
@@ -28,6 +29,7 @@ from ..domain.models import (
     Supplier,
     SupplierSummary,
 )
+from ..domain.moderation import HIDDEN_STATUSES
 from ..domain.native import ListingWrite
 from .base import Health, SourceAdapter
 
@@ -41,10 +43,30 @@ class OwnedListing(ListingDetail):
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None = None
+    moderation_source: str | None = None
+    moderation_reason: str | None = None
+    moderated_at: datetime | None = None
 
 
 def _new_id() -> str:
     return "nat_" + uuid.uuid4().hex[:8]
+
+
+def _new_report_id() -> str:
+    return "rpt_" + uuid.uuid4().hex[:12]
+
+
+def _flag(row: NativeListingRow, source: str, reason: str, now: datetime) -> None:
+    """Move a listing into pending_review/hidden, remembering where restore should go."""
+    if row.status not in HIDDEN_STATUSES:
+        row.status_before = row.status
+    row.moderation_source, row.moderation_reason, row.moderated_at = source, reason, now
+
+
+def _clear_moderation(row: NativeListingRow) -> None:
+    row.moderation_source = row.moderation_reason = row.moderated_at = None
+    row.status = row.status_before or "draft"
+    row.status_before = None
 
 
 def _apply(row: NativeListingRow, body: ListingWrite) -> None:
@@ -95,13 +117,18 @@ class NativeStore:
             q = select(func.count()).select_from(NativeListingRow)
             return await s.scalar(q.where(NativeListingRow.supplier_id == supplier_id)) or 0
 
-    async def create(self, supplier_id: str, body: ListingWrite, now: datetime) -> NativeListingRow:
+    async def create(
+        self, supplier_id: str, body: ListingWrite, now: datetime, flagged: str | None = None
+    ) -> NativeListingRow:
         await self.ensure_ready()
         for _ in range(5):
             row = NativeListingRow(
                 id=_new_id(), supplier_id=supplier_id, status="draft", created_at=now, updated_at=now
             )
             _apply(row, body)
+            if flagged:
+                _flag(row, "auto", flagged, now)
+                row.status = "pending_review"
             try:
                 async with self.sm() as s:
                     s.add(row)
@@ -138,7 +165,7 @@ class NativeStore:
         return list(rows), total or 0
 
     async def update(
-        self, supplier_id: str, listing_id: str, body: ListingWrite, now: datetime
+        self, supplier_id: str, listing_id: str, body: ListingWrite, now: datetime, flagged: str | None = None
     ) -> NativeListingRow | None:
         await self.ensure_ready()
         async with self.sm() as s:
@@ -147,6 +174,14 @@ class NativeStore:
                 return None
             _apply(row, body)
             row.updated_at = now
+            if flagged:
+                if row.status not in HIDDEN_STATUSES:  # live/draft content that now trips screening goes offline
+                    _flag(row, "auto", flagged, now)
+                    row.status = "pending_review"
+                elif row.status == "pending_review" and row.moderation_source == "auto":
+                    row.moderation_reason = flagged
+            elif row.status == "pending_review" and row.moderation_source == "auto":
+                _clear_moderation(row)  # owner fixed the content: automatic flags lift themselves
             await s.commit()
             return row
 
@@ -167,6 +202,9 @@ class NativeStore:
     async def delete(self, supplier_id: str, listing_id: str) -> bool:
         await self.ensure_ready()
         async with self.sm() as s:
+            owned = await s.get(NativeListingRow, listing_id)
+            if owned is not None and owned.supplier_id == supplier_id:
+                await s.execute(delete(ListingReportRow).where(ListingReportRow.listing_id == listing_id))
             res = await s.execute(
                 delete(NativeListingRow).where(
                     NativeListingRow.id == listing_id, NativeListingRow.supplier_id == supplier_id
@@ -200,6 +238,145 @@ class NativeStore:
                 NativeListingRow.supplier_id == supplier_id, NativeListingRow.status == "published"
             )
             return await s.scalar(q) or 0
+
+
+    # ---- moderation -------------------------------------------------------
+    async def add_report(
+        self,
+        listing_id: str,
+        reporter_ref: str,
+        reason: str,
+        details: str | None,
+        now: datetime,
+        threshold: int,
+        own_supplier: str | None = None,
+    ) -> tuple[bool, str | None]:
+        """-> (created, supplier_id) ; supplier_id None when the listing is not publicly visible (404).
+
+        Only published listings can be reported. One report per reporter+listing (duplicates are no-ops).
+        Reaching ``threshold`` distinct open reports moves the listing to pending_review.
+        """
+        await self.ensure_ready()
+        async with self.sm() as s:
+            row = await s.get(NativeListingRow, listing_id)
+            if row is None or row.status != "published":
+                return False, None
+            if own_supplier is not None and row.supplier_id == own_supplier:
+                return False, row.supplier_id
+            dup = await s.scalar(
+                select(ListingReportRow.id).where(
+                    ListingReportRow.listing_id == listing_id, ListingReportRow.reporter_ref == reporter_ref
+                )
+            )
+            if dup:
+                return False, row.supplier_id
+            s.add(
+                ListingReportRow(
+                    id=_new_report_id(),
+                    listing_id=listing_id,
+                    reporter_ref=reporter_ref,
+                    reason=reason,
+                    details=details,
+                    status="open",
+                    created_at=now,
+                )
+            )
+            try:
+                await s.flush()
+            except IntegrityError:  # concurrent duplicate
+                await s.rollback()
+                return False, row.supplier_id
+            open_n = await s.scalar(
+                select(func.count())
+                .select_from(ListingReportRow)
+                .where(ListingReportRow.listing_id == listing_id, ListingReportRow.status == "open")
+            )
+            if threshold > 0 and (open_n or 0) >= threshold:
+                _flag(row, "report", "Under review after reports from other users", now)
+                row.status = "pending_review"
+            await s.commit()
+            return True, row.supplier_id
+
+    async def moderate(
+        self, listing_id: str, action: str, reason: str | None, now: datetime
+    ) -> NativeListingRow | str:
+        """Admin hide/restore. -> row, or 'not_found' / 'not_moderated'."""
+        await self.ensure_ready()
+        async with self.sm() as s:
+            row = await s.get(NativeListingRow, listing_id)
+            if row is None:
+                return "not_found"
+            if action == "hide":
+                _flag(row, "admin", reason or "Removed by moderators", now)
+                row.status = "hidden"
+                new_report_status = "actioned"
+            else:
+                if row.status not in HIDDEN_STATUSES:
+                    return "not_moderated"
+                _clear_moderation(row)
+                new_report_status = "dismissed"
+            row.updated_at = now
+            await s.execute(
+                sa_update(ListingReportRow)
+                .where(ListingReportRow.listing_id == listing_id, ListingReportRow.status == "open")
+                .values(status=new_report_status, resolved_at=now)
+            )
+            await s.commit()
+            return row
+
+    async def list_reports(
+        self, status: str | None, listing_id: str | None, page: int, page_size: int
+    ) -> tuple[list[tuple[ListingReportRow, NativeListingRow | None]], int]:
+        await self.ensure_ready()
+        cond = []
+        if status:
+            cond.append(ListingReportRow.status == status)
+        if listing_id:
+            cond.append(ListingReportRow.listing_id == listing_id)
+        async with self.sm() as s:
+            total = await s.scalar(select(func.count()).select_from(ListingReportRow).where(*cond))
+            reports = (
+                await s.scalars(
+                    select(ListingReportRow)
+                    .where(*cond)
+                    .order_by(ListingReportRow.created_at.desc(), ListingReportRow.id)
+                    .offset((page - 1) * page_size)
+                    .limit(page_size)
+                )
+            ).all()
+            ids = {r.listing_id for r in reports}
+            listings = {}
+            if ids:
+                rows = await s.scalars(select(NativeListingRow).where(NativeListingRow.id.in_(ids)))
+                listings = {r.id: r for r in rows}
+        return [(r, listings.get(r.listing_id)) for r in reports], total or 0
+
+    async def list_moderated(
+        self, status: str | None, page: int, page_size: int
+    ) -> tuple[list[tuple[NativeListingRow, int]], int]:
+        await self.ensure_ready()
+        statuses = [status] if status else sorted(HIDDEN_STATUSES)
+        cond = NativeListingRow.status.in_(statuses)
+        async with self.sm() as s:
+            total = await s.scalar(select(func.count()).select_from(NativeListingRow).where(cond))
+            rows = (
+                await s.scalars(
+                    select(NativeListingRow)
+                    .where(cond)
+                    .order_by(NativeListingRow.moderated_at.desc(), NativeListingRow.id)
+                    .offset((page - 1) * page_size)
+                    .limit(page_size)
+                )
+            ).all()
+            counts: dict[str, int] = {}
+            if rows:
+                q = (
+                    select(ListingReportRow.listing_id, func.count())
+                    .where(ListingReportRow.listing_id.in_([r.id for r in rows]), ListingReportRow.status == "open")
+                    .group_by(ListingReportRow.listing_id)
+                )
+                counts = {lid: n for lid, n in (await s.execute(q)).all()}
+        return [(r, counts.get(r.id, 0)) for r in rows], total or 0
 
 
 def location_of(origin: dict) -> Location:
@@ -291,6 +468,9 @@ class NativeAdapter(SourceAdapter):
             created_at=row.created_at,
             updated_at=row.updated_at,
             published_at=row.published_at,
+            moderation_source=row.moderation_source,
+            moderation_reason=row.moderation_reason,
+            moderated_at=row.moderated_at,
         )
 
     # ---- SourceAdapter ----------------------------------------------------

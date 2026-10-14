@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Protocol
+from urllib.parse import quote
 
 import httpx
 
@@ -45,7 +46,7 @@ class HttpDealClient:
         if self._token:
             headers["X-Internal-Token"] = self._token
         try:
-            r = await self._c.get(f"/v1/deals/{deal_id}", headers=headers)
+            r = await self._c.get(f"/v1/deals/{quote(deal_id, safe='')}", headers=headers)
         except httpx.HTTPError as exc:
             raise UpstreamUnavailable("RFQ service unavailable") from exc
         if r.status_code in (403, 404):
@@ -59,7 +60,7 @@ class HttpDealClient:
     async def notify_payment_status(self, deal_id: str, payload: dict[str, Any]) -> None:
         headers = {"X-Internal-Token": self._token} if self._token else {}
         try:
-            r = await self._c.post(f"/v1/internal/deals/{deal_id}/payment-status", json=payload, headers=headers)
+            r = await self._c.post(f"/v1/internal/deals/{quote(deal_id, safe='')}/payment-status", json=payload, headers=headers)
         except httpx.HTTPError as exc:
             raise UpstreamUnavailable("RFQ service unavailable") from exc
         if r.status_code >= 500 or r.status_code in (408, 429):

@@ -1,0 +1,1 @@
+2026-10-14 | messages get optional attachments[] (<=5, JSON column, migration 0002) referencing media-service URLs validated by host/path-prefix config; legacy single attachment kept | additive; no bytes in messaging; preview keys [image]/[document]/[attachment]

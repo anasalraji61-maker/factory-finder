@@ -9,7 +9,9 @@ from sqlalchemy import select
 from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers, require_verified
 from ff_gateway.db import User
 from ff_gateway.domain.errors import (
+    AccountDisabled,
     InvalidPath,
+    InvalidToken,
     PayloadTooLarge,
     UpstreamTimeout,
     UpstreamUnavailable,
@@ -86,8 +88,11 @@ async def proxy(full_path: str, request: Request) -> Response:
     if user_id and request.app.state.settings.require_email_verified and _needs_verified(request.method, upstream, path):
         async with request.app.state.sessionmaker() as s:
             u = await s.get(User, user_id)
-        if u is not None:
-            require_verified(request, u)
+        if u is None:  # fail closed: a token for a deleted account must not reach money/listing writes
+            raise InvalidToken("Token refers to an unknown user")
+        if not u.is_active:
+            raise AccountDisabled()
+        require_verified(request, u)
 
     body = await request.body()
     if len(body) > request.app.state.settings.max_body_bytes:

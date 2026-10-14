@@ -7,6 +7,8 @@ Conversations between buyers and suppliers (context: listing / request / deal / 
 - Safety: abuse word list (flag by default, or mask/reject), length cap, attachment URL/MIME checks, per-user send rate limit (429 + Retry-After).
 - WebSocket `/v1/ws/conversations/{id}?user_id=` (query user id only when no internal token is set): events `message.created`, `read.updated`, `typing`; in-process hub (single instance).
 
+Media attachments: optional `attachments[]` on text/attachment messages (max 5): `{url, kind: image|document, size?, name?}`. Messaging stores references only (no bytes); `url` must be a media-service URL: path under `FF_MESSAGING_MEDIA_PATH_PREFIXES` (default `/v1/media/files/`, file name `<id>.<ext>`, only `?w=NNN` query), absolute URLs also need a host in `FF_MESSAGING_MEDIA_ALLOWED_HOSTS` (empty = any host; https only unless `ATTACHMENT_ALLOW_HTTP`). Attachment-only messages need no text; conversation preview is `[image]` / `[document]` / `[attachment]` (language-neutral keys the clients localise). Not combinable with legacy single `attachment`. Migration `0002` adds `messages.attachments`. Env: `MEDIA_ALLOWED_HOSTS`, `MEDIA_PATH_PREFIXES`, `MEDIA_MAX_ATTACHMENTS`.
+
 Run: `uvicorn ff_messaging.main:app --port 8106` (from `src/`). Test: `../../.venv/bin/python -m pytest -q`.
 
 Env (prefix `FF_MESSAGING_`): `DATABASE_URL`, `MAX_TEXT_LENGTH`, `ABUSE_ACTION` (flag|mask|reject), `ABUSE_TERMS_EXTRA`, `SEND_RATE_LIMIT`, `SEND_RATE_WINDOW_SECONDS`, `ATTACHMENT_ALLOWED_HOSTS`, `PLATFORM_USER_IDS`, ... see `config.py`.

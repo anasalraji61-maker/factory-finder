@@ -11,6 +11,8 @@ from . import __version__
 from .adapters.native import NativeAdapter, NativeStore
 from .adapters.registry import AdapterRegistry, build_registry
 from .api.errors import install_error_handlers
+from .api.moderation import admin as admin_router
+from .api.moderation import router as moderation_router
 from .api.my import router as my_router
 from .api.routes import router
 from .clients.trust import HttpTrustClient, MockTrustClient, NullTrustClient, TrustClient
@@ -75,16 +77,21 @@ def create_app(
         trust,
         settings.max_listings_per_supplier,
         settings.create_rate_per_hour,
+        settings.report_rate_per_hour,
+        settings.report_review_threshold,
+        settings.reporter_hash_key,
     )
+    app.state.admin_token = settings.admin_token.get_secret_value() if settings.admin_token else None
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
-        # /v1/my/* trusts X-Supplier-Id, which only the gateway may set: when an internal
-        # token is configured, calls without it are rejected (mirrors rfq).
+        # /v1/my/*, reports and admin tools trust gateway-set identity headers (X-Supplier-Id, X-User-Id):
+        # when an internal token is configured, calls without it are rejected (mirrors rfq).
+        path = request.url.path
         if (
             token
-            and request.url.path.startswith("/v1/my")
+            and (path.startswith(("/v1/my", "/v1/admin")) or path.endswith("/report"))
             and not hmac.compare_digest(request.headers.get("X-Internal-Token", ""), token)
         ):
             body = {"error": {"code": "invalid_internal_token", "message": "Missing or invalid X-Internal-Token", "details": {}}}
@@ -94,6 +101,8 @@ def create_app(
     install_error_handlers(app)
     app.include_router(router)
     app.include_router(my_router)
+    app.include_router(moderation_router)
+    app.include_router(admin_router)
 
     @app.get("/health")
     async def health() -> dict:

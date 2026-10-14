@@ -15,6 +15,7 @@ from ff_messaging.domain.safety import (
     AbuseFilter,
     AttachmentRules,
     ContentPolicy,
+    MediaRules,
     load_default_abuse_terms,
 )
 from ff_messaging.obs import db_ready, install_observability, ready_response
@@ -57,6 +58,13 @@ def build_service(settings: Settings, db: Database, hub: ConversationHub) -> Mes
             allowed_mime_types=tuple(settings.attachment_allowed_mime_types),
             allow_http=settings.attachment_allow_http,
             allowed_hosts=tuple(settings.attachment_allowed_hosts),
+        ),
+        media_rules=MediaRules(
+            path_prefixes=tuple(settings.media_path_prefixes),
+            allowed_hosts=tuple(settings.media_allowed_hosts),
+            allow_http=settings.attachment_allow_http,
+            max_count=settings.media_max_attachments,
+            max_bytes=settings.attachment_max_bytes,
         ),
     )
     limiter = SlidingWindowRateLimiter(
