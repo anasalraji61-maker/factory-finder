@@ -1,6 +1,5 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
-import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/requests/data/mock_rfq.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
