@@ -14,6 +14,9 @@
 - Mobile: onboarding, persistence, watchlist/alerts, compare, saved searches, trust v2 UI, notification prefs, 120+ tests incl. widget smoke tests.
 - Notifications delivery adapters (push/email, off by default); payments (mock + USDT skeleton, ledger, signed webhooks).
 
+- 13 services now (+media). Suppliers can publish their own listings (native source), upload images, verify digest email. Contract validation (132 responses, 0 drift) and e2e (31 steps) in CI.
+- Gateway: public image GETs have their own rate bucket (media_rate_limit_per_minute).
+
 ## Next (needs owner input)
 - Phase 4: official supplier API account (Alibaba or licensed provider) and a freight-rate provider; until then all data is mock.
 - Real-device test of the APK (Flutter never compiled locally; CI is the only check).

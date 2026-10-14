@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     upstream_timeout_seconds: float = 15.0
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300
+    # Public image GETs (feeds load many thumbnails) get their own, larger bucket per IP.
+    media_rate_limit_per_minute: int = 3000
     # Per authenticated user on write routes (POST/PUT/PATCH/DELETE outside /v1/auth); 0 disables.
     user_write_rate_limit_per_minute: int = 120
     rate_limit_max_keys: int = 50_000  # cap on limiter memory (oldest windows are evicted)

@@ -321,3 +321,17 @@ def test_media_traversal_is_rejected_at_gateway(client, mock_upstream):
     route = mock_upstream.get(url__regex=r"http://localhost:8112/.*").mock(return_value=httpx.Response(200))
     assert client.get("/v1/media/files/../../auth/me").status_code in (400, 404, 401)
     assert not route.called
+
+
+def test_public_image_reads_have_their_own_rate_bucket(make_client, mock_upstream):
+    c = make_client(rate_limit_per_minute=2, media_rate_limit_per_minute=5)
+    mock_upstream.get(url__regex=r"http://localhost:8112/v1/media/files/.*").mock(
+        return_value=httpx.Response(200, content=b"x", headers={"content-type": "image/png"})
+    )
+    mock_upstream.get("http://localhost:8103/v1/countries").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    media = [c.get("/v1/media/files/" + "a" * 32 + ".png").status_code for _ in range(6)]
+    assert media[:5] == [200] * 5 and media[5] == 429
+    # the ordinary API bucket is untouched by image traffic
+    assert c.get("/v1/countries").status_code == 200

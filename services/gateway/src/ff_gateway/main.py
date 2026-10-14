@@ -120,14 +120,19 @@ def create_app(
         path = request.url.path
         if path != "/health" and request.method != "OPTIONS":
             auth_route = path.startswith("/v1/auth")
+            media_read = request.method == "GET" and path.startswith("/v1/media/files/")
             limit = (
                 settings.auth_rate_limit_per_minute
                 if auth_route
+                else settings.media_rate_limit_per_minute
+                if media_read
                 else settings.rate_limit_per_minute
             )
             peer = request.client.host if request.client else None
             ip = client_ip(peer, request.headers.get("x-forwarded-for"), trusted_nets)
-            wait = limiter.check(f"{'auth' if auth_route else 'api'}:{ip}", limit)
+            wait = limiter.check(
+                f"{'auth' if auth_route else 'media' if media_read else 'api'}:{ip}", limit
+            )
             if wait is not None:
                 e = RateLimited(wait, limit)
                 return _error(e.status_code, e.code, e.message, e.details, e.headers)
