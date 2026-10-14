@@ -306,16 +306,6 @@ void main() {
   });
 
   group('list screen', () {
-    Deal mk(String id, String status, {String? supplier}) => Deal(
-          id: id,
-          requestId: 'r_$id',
-          offerId: 'o',
-          subtotal: const Money(amount: '10', currency: 'USD'),
-          commission: const Money(amount: '1', currency: 'USD'),
-          status: status,
-          supplierUserId: supplier,
-          createdAt: DateTime.utc(2026, 10, 14),
-        );
 
     Future<void> pumpList(WidgetTester tester, DealsRepository repo) async {
       tester.view.physicalSize = const Size(1080, 2400);

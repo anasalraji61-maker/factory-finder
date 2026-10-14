@@ -6,7 +6,6 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/deals/deals_models.dart';
 import 'package:factory_finder/features/deals/deals_repository.dart';
 import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart';
-import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

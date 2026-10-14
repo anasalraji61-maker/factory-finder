@@ -7,6 +7,7 @@ import 'package:factory_finder/features/deals/deals_repository.dart';
 import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart'
     show dealStatusColor;
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
+import 'package:factory_finder/features/requests/screens/requests_screen.dart' show StatusPill;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
