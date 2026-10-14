@@ -2,6 +2,7 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
+import 'package:factory_finder/features/discover/data/search_facets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// UI category chip keys -> real sourcing category slugs (GET /v1/categories).
@@ -49,18 +50,25 @@ class DiscoverRepository {
       if (q.maxMoq != null) 'moq_max': q.maxMoq,
       if (q.verifiedOnly) 'verified_only': true,
       if (categorySlug != null) 'category': categorySlug,
+      if (q.sort != SortOption.relevance) 'sort': q.sort.api,
       'page': 1,
       'page_size': 50,
     });
-    final page = PageResult.fromJson<Listing>(
-      Map<String, dynamic>.from(json as Map),
-      Listing.fromJson,
+    final map = Map<String, dynamic>.from(json as Map);
+    final base = PageResult.fromJson<Listing>(map, Listing.fromJson);
+    final page = ListingPage(
+      items: base.items,
+      total: base.total,
+      page: base.page,
+      pageSize: base.pageSize,
+      facets: SearchFacets.tryParse(map['facets']),
     );
     return applyClientSort(page, q);
   }
 
-  /// The search contract has no sort/supplier params: handled client-side.
-  static PageResult<Listing> applyClientSort(PageResult<Listing> page, ListingQuery q) {
+  /// `sort` is also sent to the server; the client re-sorts defensively and
+  /// handles the supplier filter (no supplier param in the contract).
+  static ListingPage applyClientSort(PageResult<Listing> page, ListingQuery q) {
     final items = page.items
         .where((l) => q.supplierId == null || l.supplier.id == q.supplierId)
         .toList();
@@ -74,12 +82,15 @@ class DiscoverRepository {
       case SortOption.trust:
         items.sort((a, b) =>
             (b.supplier.trustScore ?? 0).compareTo(a.supplier.trustScore ?? 0));
+      case SortOption.moq:
+        items.sort((a, b) => (a.moq ?? 1 << 30).compareTo(b.moq ?? 1 << 30));
     }
-    return PageResult<Listing>(
+    return ListingPage(
       items: items,
       total: q.supplierId == null ? page.total : items.length,
       page: page.page,
       pageSize: page.pageSize,
+      facets: page is ListingPage ? page.facets : null,
     );
   }
 

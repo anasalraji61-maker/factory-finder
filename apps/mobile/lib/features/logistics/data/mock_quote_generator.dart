@@ -12,6 +12,7 @@ const Map<String, double> kUsdRates = {
   'TRY': 41,
   'AED': 3.6725,
   'SAR': 3.75,
+  'GBP': 0.78,
 };
 
 const String _kSource = 'mock-rate-table-2026Q4';

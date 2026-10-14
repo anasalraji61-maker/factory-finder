@@ -6,6 +6,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart';
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
+import 'package:factory_finder/features/logistics/screens/hs_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -272,10 +273,9 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                TextField(
+                HsCodePicker(
                   controller: _hs,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: context.tr('logistics.calc.hs')),
+                  destinationCountry: _destination.countryCode,
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

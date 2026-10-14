@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
+import 'package:factory_finder/features/discover/data/search_facets.dart';
 
 TrustBand _bandFor(int score) =>
     score >= 75 ? TrustBand.green : (score >= 50 ? TrustBand.yellow : TrustBand.red);
@@ -211,11 +212,15 @@ PageResult<Listing> filterMockListings(ListingQuery q) {
     case SortOption.trust:
       items.sort((a, b) =>
           (b.supplier.trustScore ?? 0).compareTo(a.supplier.trustScore ?? 0));
+    case SortOption.moq:
+      items.sort((a, b) => (a.moq ?? 1 << 30).compareTo(b.moq ?? 1 << 30));
   }
-  return PageResult<Listing>(
+  final textOnly = mockListings.where((l) => _matches(l, ListingQuery(query: q.query))).toList();
+  return ListingPage(
     items: items,
     total: items.length,
     page: 1,
     pageSize: 50,
+    facets: SearchFacets.fromListings(textOnly),
   );
 }

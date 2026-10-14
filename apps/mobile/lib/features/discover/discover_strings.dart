@@ -21,6 +21,7 @@ const Map<String, (String, String)> _pairs = {
   'discover.sort.relevance': ('الأنسب', 'Relevance'),
   'discover.sort.price_low': ('الأرخص', 'Price: low'),
   'discover.sort.price_high': ('الأغلى', 'Price: high'),
+  'discover.sort.moq': ('أقل كمية طلب', 'Lowest MOQ'),
   'discover.sort.trust': ('الأكثر ثقة', 'Most trusted'),
   'discover.filter.kind': ('النوع', 'Type'),
   'discover.filter.condition': ('الحالة', 'Condition'),

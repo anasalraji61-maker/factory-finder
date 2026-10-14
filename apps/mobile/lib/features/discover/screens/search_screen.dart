@@ -6,6 +6,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/data/saved_search.dart';
+import 'package:factory_finder/features/discover/data/search_facets.dart';
 import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
@@ -32,12 +33,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
+  SearchFacets? _facets;
+
+  String _sortLabel(SortOption o) {
+    switch (o) {
+      case SortOption.relevance:
+        return context.tr('discover.sort.relevance');
+      case SortOption.priceLow:
+        return context.tr('discover.sort.price_low');
+      case SortOption.priceHigh:
+        return context.tr('discover.sort.price_high');
+      case SortOption.trust:
+        return context.tr('discover.sort.trust');
+      case SortOption.moq:
+        return context.tr('discover.sort.moq');
+    }
+  }
+
   Future<void> _openFilters() async {
+    final facets = _facets;
     final result = await showModalBottomSheet<ListingQuery>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _FilterSheet(initial: _query),
+      builder: (_) => _FilterSheet(initial: _query, facets: facets),
     );
     if (result != null) setState(() => _query = result);
   }
@@ -77,12 +96,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final results = ref.watch(listingsProvider(_query));
-    final sortLabels = [
-      context.tr('discover.sort.relevance'),
-      context.tr('discover.sort.price_low'),
-      context.tr('discover.sort.price_high'),
-      context.tr('discover.sort.trust'),
-    ];
+    final pageFacets = results.valueOrNull;
+    if (pageFacets is ListingPage && pageFacets.facets != null) {
+      _facets = pageFacets.facets;
+    }
     return Scaffold(
       bottomNavigationBar: const CompareTray(),
       appBar: AppBar(
@@ -116,11 +133,35 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: Column(
         children: [
           const SizedBox(height: AppSpacing.sm),
-          FilterChipBar(
-            labels: sortLabels,
-            selectedIndex: _query.sort.index,
-            onSelected: (i) => setState(
-              () => _query = _query.copyWith(sort: SortOption.values[i]),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Text(
+                  context.tr('discover.sort'),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: DropdownButton<SortOption>(
+                    key: const ValueKey('search-sort'),
+                    value: _query.sort,
+                    isExpanded: true,
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => _query = _query.copyWith(sort: v));
+                      }
+                    },
+                    items: [
+                      for (final o in SortOption.values)
+                        DropdownMenuItem<SortOption>(
+                          value: o,
+                          child: Text(_sortLabel(o), overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -163,9 +204,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 }
 
 class _FilterSheet extends StatefulWidget {
-  const _FilterSheet({required this.initial});
+  const _FilterSheet({required this.initial, this.facets});
 
   final ListingQuery initial;
+  final SearchFacets? facets;
 
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
@@ -212,7 +254,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 ),
                 for (final k in ListingKind.values)
                   ChoiceChip(
-                    label: Text(context.tr('discover.kind.${k.json}')),
+                    label: Text(
+                      '${context.tr('discover.kind.${k.json}')}${facetSuffix(widget.facets?.kind, k.json)}',
+                    ),
                     selected: _kind == k,
                     onSelected: (_) => setState(() => _kind = k),
                   ),
@@ -229,7 +273,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 ),
                 for (final c in ItemCondition.values)
                   ChoiceChip(
-                    label: Text(context.tr('condition.${c.json}')),
+                    label: Text(
+                      '${context.tr('condition.${c.json}')}${facetSuffix(widget.facets?.condition, c.json)}',
+                    ),
                     selected: _condition == c,
                     onSelected: (_) => setState(() => _condition = c),
                   ),
@@ -248,7 +294,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 for (final o in _origins)
                   ChoiceChip(
                     avatar: CountryFlag(countryCode: o, size: 14),
-                    label: Text(context.tr('country.$o')),
+                    label: Text(
+                      '${context.tr('country.$o')}${facetSuffix(widget.facets?.originCountry, o)}',
+                    ),
                     selected: _origin == o,
                     onSelected: (_) => setState(() => _origin = o),
                   ),

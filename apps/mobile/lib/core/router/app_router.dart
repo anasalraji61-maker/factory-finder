@@ -20,9 +20,11 @@ List<RouteBase> _branch(String key) => <RouteBase>[
       for (final m in featureModules) ...(m.branchRoutes[key] ?? const <RouteBase>[]),
     ];
 
-GoRouter createAppRouter() {
+/// [showOnboarding] starts on the first-run flow (the real app does; tests
+/// start on the shell).
+GoRouter createAppRouter({bool showOnboarding = false}) {
   return GoRouter(
-    initialLocation: '/discover',
+    initialLocation: showOnboarding ? '/onboarding' : '/discover',
     routes: <RouteBase>[
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -51,4 +53,4 @@ GoRouter createAppRouter() {
   );
 }
 
-final GoRouter appRouter = createAppRouter();
+final GoRouter appRouter = createAppRouter(showOnboarding: true);

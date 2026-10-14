@@ -1,6 +1,17 @@
 import 'package:factory_finder/core/models/models.dart';
 
-enum SortOption { relevance, priceLow, priceHigh, trust }
+enum SortOption {
+  relevance('relevance'),
+  priceLow('price_asc'),
+  priceHigh('price_desc'),
+  trust('trust'),
+  moq('moq');
+
+  const SortOption(this.api);
+
+  /// Value of the `sort` query parameter of GET /v1/search.
+  final String api;
+}
 
 /// Immutable search query + filters; usable as a Riverpod family key.
 class ListingQuery {
