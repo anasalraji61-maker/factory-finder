@@ -10,7 +10,7 @@ services:
     environment:
       PORT: '8000'
       FF_GATEWAY_UPSTREAMS: '{"sourcing": "http://sourcing:8101", "logistics": "http://logistics:8102", "geo": "http://geo:8103", "trust": "http://trust:8104", "rfq": "http://rfq:8105", "messaging": "http://messaging:8106",
-        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110"}'
+        "tracking": "http://tracking:8107", "notifications": "http://notifications:8108", "assistant": "http://assistant:8109", "demand": "http://demand:8110", "payments": "http://payments:8111"}'
       FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:-}
       FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:-[]}
@@ -25,6 +25,7 @@ services:
       notifications: {condition: service_healthy}
       assistant: {condition: service_healthy}
       demand: {condition: service_healthy}
+      payments: {condition: service_healthy}
       geo: {condition: service_healthy}
     restart: unless-stopped
     healthcheck:
@@ -280,6 +281,40 @@ services:
       start_period: 20s
     expose:
     - '8110'
+  payments:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: payments
+        EXTRAS: ${FF_DOCKER_EXTRAS:-}
+    environment:
+      PORT: '8111'
+      FF_PAYMENTS_DATABASE_URL: ${FF_PAYMENTS_DATABASE_URL:-}
+      FF_PAYMENTS_DB_AUTO_CREATE: ${FF_PAYMENTS_DB_AUTO_CREATE:-}
+      FF_PAYMENTS_PROVIDER: ${FF_PAYMENTS_PROVIDER:-mock}
+      FF_PAYMENTS_RFQ_URL: http://rfq:8105
+      FF_PAYMENTS_ADMIN_TOKEN: ${FF_PAYMENTS_ADMIN_TOKEN:-}
+      FF_PAYMENTS_WEBHOOK_SECRET_MOCK: ${FF_PAYMENTS_WEBHOOK_SECRET_MOCK:-}
+      FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON: ${FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON:-}
+      FF_PAYMENTS_USDT_RECEIVE_ADDRESS: ${FF_PAYMENTS_USDT_RECEIVE_ADDRESS:-}
+      FF_PAYMENTS_USDT_EXPLORER_URL: ${FF_PAYMENTS_USDT_EXPLORER_URL:-}
+      FF_PAYMENTS_USDT_EXPLORER_API_KEY: ${FF_PAYMENTS_USDT_EXPLORER_API_KEY:-}
+      FF_PAYMENTS_USDT_CONTRACT: ${FF_PAYMENTS_USDT_CONTRACT:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
+    restart: unless-stopped
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request;urllib.request.urlopen('http://localhost:8111/health')
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    expose:
+    - '8111'
   # Optional PostgreSQL (not started by default). Usage:
   #   FF_DOCKER_EXTRAS=pg docker compose --profile pg up --build postgres rfq ...
   #   FF_RFQ_DATABASE_URL=postgresql://ff:${FF_POSTGRES_PASSWORD}@postgres:5432/ff_rfq   (one database per service)

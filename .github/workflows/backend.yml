@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [geo, logistics, sourcing, trust, gateway, rfq, tracking, messaging, notifications, assistant, demand]
+        service: [geo, logistics, sourcing, trust, gateway, rfq, tracking, messaging, notifications, assistant, demand, payments]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

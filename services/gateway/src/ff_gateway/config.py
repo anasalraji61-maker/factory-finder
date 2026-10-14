@@ -19,6 +19,7 @@ DEFAULT_UPSTREAMS: dict[str, str] = {
     "notifications": "http://localhost:8108",
     "assistant": "http://localhost:8109",
     "demand": "http://localhost:8110",
+    "payments": "http://localhost:8111",
 }
 
 

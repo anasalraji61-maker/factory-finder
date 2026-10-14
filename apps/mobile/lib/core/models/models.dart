@@ -520,18 +520,64 @@ class TrustFactor {
       };
 }
 
+class TrustDataGap {
+  const TrustDataGap({required this.key, required this.label, this.labelAr});
+
+  final String key;
+  final String label;
+  final String? labelAr;
+
+  String display(String lang) =>
+      (lang == 'ar' && labelAr != null && labelAr!.isNotEmpty) ? labelAr! : label;
+}
+
+/// Tolerant: ints 0-100; a fractional double <= 1.0 (older servers) is scaled.
+int? parseConfidence(Object? v) {
+  if (v is! num) return null;
+  var n = v.toDouble();
+  if (v is double && n <= 1.0) n = n * 100;
+  return n.round().clamp(0, 100).toInt();
+}
+
+List<TrustDataGap> parseDataGaps(Object? v) {
+  if (v is! List) return const <TrustDataGap>[];
+  final out = <TrustDataGap>[];
+  for (final e in v) {
+    if (e is! Map) continue;
+    final key = e['key']?.toString() ?? '';
+    final label = e['label']?.toString() ?? key;
+    if (key.isEmpty && label.isEmpty) continue;
+    out.add(TrustDataGap(
+      key: key,
+      label: label,
+      labelAr: e['label_ar']?.toString(),
+    ));
+  }
+  return out;
+}
+
 class TrustScore {
   const TrustScore({
     required this.supplierId,
     required this.score,
     required this.band,
     required this.factors,
+    this.confidence,
+    this.dataGaps = const <TrustDataGap>[],
+    this.flags = const <String>[],
+    this.modelVersion,
   });
 
   final String supplierId;
   final int score;
   final TrustBand band;
   final List<TrustFactor> factors;
+
+  /// Trust v2 (additive): 0-100, how much evidence backs the score.
+  final int? confidence;
+  final List<TrustDataGap> dataGaps;
+  final List<String> flags;
+  final String? modelVersion;
 
   factory TrustScore.fromJson(Map<String, dynamic> j) => TrustScore(
         supplierId: j['supplier_id'] as String,
@@ -540,6 +586,12 @@ class TrustScore {
         factors: ((j['factors'] as List?) ?? const [])
             .map((e) => TrustFactor.fromJson(_map(e)))
             .toList(),
+        confidence: parseConfidence(j['confidence']),
+        dataGaps: parseDataGaps(j['data_gaps']),
+        flags: ((j['flags'] is List) ? j['flags'] as List : const [])
+            .whereType<String>()
+            .toList(),
+        modelVersion: j['model_version'] is String ? j['model_version'] as String : null,
       );
 
   Map<String, dynamic> toJson() => {

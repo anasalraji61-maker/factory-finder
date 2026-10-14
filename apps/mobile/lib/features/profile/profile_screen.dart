@@ -225,6 +225,13 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.tune),
+                  title: Text(context.tr('notifyprefs.tile')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/notification-prefs'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: Text(context.tr('profile.about')),
                   subtitle: Text(context.tr('profile.about_text')),

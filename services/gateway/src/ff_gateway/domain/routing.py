@@ -12,6 +12,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/watchlist": "notifications", "/v1/alerts": "notifications", "/v1/devices": "notifications",
     "/v1/notification-prefs": "notifications",
     "/v1/assistant": "assistant",
+    "/v1/invoices": "payments", "/v1/ledger": "payments", "/v1/payments": "payments",
 }  # fmt: skip
 
 PUBLIC_GET_PREFIXES = (

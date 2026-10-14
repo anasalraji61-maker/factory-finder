@@ -177,6 +177,18 @@ TrustScore mockTrustFor(SupplierSummary s) {
     score: score,
     band: _bandFor(score),
     factors: factors,
+    confidence: s.verified ? 82 : 40,
+    dataGaps: s.verified
+        ? const <TrustDataGap>[]
+        : const [
+            TrustDataGap(
+              key: 'third_party_audit',
+              label: 'Third-party factory audit',
+              labelAr: 'تدقيق مصنع من طرف ثالث',
+            ),
+          ],
+    flags: score < 50 ? const ['price_anomaly'] : const <String>[],
+    modelVersion: 'mock-v2',
   );
 }
 

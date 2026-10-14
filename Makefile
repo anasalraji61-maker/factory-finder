@@ -1,4 +1,4 @@
-SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand
+SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments
 .PHONY: venv test lint dev down compose-e2e e2e $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml

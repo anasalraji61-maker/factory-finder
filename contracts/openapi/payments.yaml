@@ -1,0 +1,223 @@
+openapi: 3.1.0
+info:
+  title: Factory Finder payments
+  version: 0.1.0
+  description: |
+    Platform commission and deal payments (ROADMAP Phase 6 prep), crypto first. Invoices, payment attempts, an
+    append-only double-entry ledger and provider webhooks. Money is always a decimal STRING plus currency, never a number.
+    User routes need X-User-Id (401 otherwise); an invoice is visible only to its payer, its payee and admins (other
+    callers get 404, never 403, so ids cannot be probed). Admin = header X-Admin-Token equal to FF_PAYMENTS_ADMIN_TOKEN
+    (the gateway never forwards it; admin is disabled when the variable is unset). Webhooks are authenticated only by an
+    HMAC-SHA256 signature (X-FF-Signature: t=<unix>,v1=<hex(hmac(secret, "<t>.<raw body>"))>), 5 minute tolerance,
+    replay-protected by event_id. Providers: mock | usdt_tron (UNVERIFIED against a live chain) | off (FF_PAYMENTS_PROVIDER).
+    Not a licensed payment institution: see the service README (compliance note).
+servers: [{url: http://localhost:8111}]
+paths:
+  /health:
+    get: {operationId: health, responses: {"200": {description: ok}}}
+  /ready:
+    get:
+      summary: Readiness (database reachable)
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, service, checks]
+                properties:
+                  status: {type: string, enum: [ready]}
+                  service: {type: string, const: payments}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, const: unavailable}
+                  service: {type: string, const: payments}
+                  checks: {type: object, additionalProperties: {type: boolean}}
+  /v1/invoices:
+    post:
+      operationId: createInvoice
+      description: |
+        Deal owner (the buyer of an rfq deal): send deal_id + kind only; payer, payee and amount are derived from the deal
+        (commission = the deal's commission, deal_payment = its subtotal). Overrides (payer_user_id, payee, amount,
+        commission_basis, expires_in_minutes) are admin only (403 admin_required). Idempotent: an open or paid invoice of the same
+        deal and kind is returned again with 200.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/InvoiceCreate"}}}}
+      responses:
+        "200": {description: Existing invoice, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}
+        "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+    get:
+      operationId: listInvoices
+      description: Caller's invoices (payer or payee); admins see all. Filter by deal_id.
+      parameters:
+        - {name: deal_id, in: query, schema: {type: string}}
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/InvoiceStatus"}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/InvoicePage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+  /v1/invoices/{id}:
+    get:
+      operationId: getInvoice
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Invoice, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /v1/invoices/{id}/cancel:
+    post:
+      operationId: cancelInvoice
+      description: Payer or admin. Only pending / awaiting_payment invoices (status becomes failed, status_reason cancelled).
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Cancelled, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/invoices/{id}/refund:
+    post:
+      operationId: refundInvoice
+      description: Admin only. Only paid invoices; appends a reversing ledger group. The actual crypto transfer back is manual.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200": {description: Refunded, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /v1/ledger:
+    get:
+      operationId: listLedger
+      description: Admin only. Immutable ledger legs of an invoice (debits and credits balance per group_id).
+      parameters:
+        - {name: invoice_id, in: query, required: true, schema: {type: string}}
+      responses:
+        "200": {description: Entries, content: {application/json: {schema: {$ref: "#/components/schemas/LedgerPage"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/payments/sweep:
+    post:
+      operationId: sweepPayments
+      description: Admin / scheduler only. Expires overdue invoices and polls the provider for awaiting / confirming ones.
+      responses:
+        "200":
+          description: Report
+          content: {application/json: {schema: {type: object, properties: {expired: {type: integer}, polled: {type: integer}, updated: {type: integer}}}}}
+        "403": {$ref: "#/components/responses/Error"}
+  /v1/payments/webhooks/{provider}:
+    post:
+      operationId: receiveWebhook
+      description: |
+        Signed provider event (no X-User-Id). Body: {event_id, type: payment.confirming|payment.confirmed|payment.failed|payment.expired,
+        invoice_id or provider_ref, tx_ref?, confirmations?, amount?}. Idempotent: a repeated event_id answers 200 duplicate and changes
+        nothing; an event that no longer fits the status machine is acknowledged as ignored.
+      parameters: [{name: provider, in: path, required: true, schema: {type: string, enum: [mock, usdt_tron]}}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WebhookEvent"}}}}
+      responses:
+        "200":
+          description: Accepted
+          content: {application/json: {schema: {type: object, required: [status], properties: {status: {type: string, enum: [applied, duplicate, ignored]}, invoice_id: {type: [string, "null"]}, invoice_status: {type: [string, "null"]}}}}}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    Id: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error
+      content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      additionalProperties: false
+      properties:
+        amount: {type: string, pattern: '^[0-9]{1,12}(\.[0-9]{1,6})?$', description: "decimal string, > 0; fiat at most 2 decimals, USDT at most 6"}
+        currency: {type: string, pattern: '^[A-Z]{3,5}$'}
+    InvoiceKind: {type: string, enum: [commission, deal_payment]}
+    InvoiceStatus: {type: string, enum: [pending, awaiting_payment, confirming, paid, expired, failed, refunded]}
+    InvoiceCreate:
+      type: object
+      required: [deal_id, kind]
+      additionalProperties: false
+      properties:
+        deal_id: {type: string}
+        kind: {$ref: "#/components/schemas/InvoiceKind"}
+        memo: {type: [string, "null"], maxLength: 200}
+        payer_user_id: {type: [string, "null"], description: admin only}
+        payee: {type: [string, "null"], description: "admin only; 'platform' for commission, else the supplier user id"}
+        amount: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}], description: admin only}
+        commission_basis:
+          type: [object, "null"]
+          description: admin only; computes the commission (product 3%, raw_material 2%, production_line 4%, min 25 USD, half-up cents) when amount is omitted
+          required: [subtotal, listing_kind]
+          properties: {subtotal: {$ref: "#/components/schemas/Money"}, listing_kind: {type: string, enum: [product, raw_material, production_line]}}
+        expires_in_minutes: {type: [integer, "null"], minimum: 1, maximum: 10080, description: admin only}
+    Invoice:
+      type: object
+      required: [id, deal_id, payer_user_id, payee, kind, amount, status, expires_at, provider, created_at, updated_at]
+      properties:
+        id: {type: string}
+        deal_id: {type: string}
+        payer_user_id: {type: string}
+        payee: {type: string}
+        kind: {$ref: "#/components/schemas/InvoiceKind"}
+        amount: {$ref: "#/components/schemas/Money"}
+        status: {$ref: "#/components/schemas/InvoiceStatus"}
+        status_reason: {type: [string, "null"]}
+        expires_at: {type: string, format: date-time}
+        provider: {type: string}
+        provider_ref: {type: [string, "null"]}
+        pay_address: {type: [string, "null"], description: public receiving address only}
+        pay_url: {type: [string, "null"]}
+        pay_amount: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}], description: exact amount to send (USDT adds a unique sub-cent suffix used for matching)}
+        memo: {type: string, description: unique reference the payer should quote}
+        tx_ref: {type: [string, "null"]}
+        confirmations: {type: integer}
+        paid_at: {type: [string, "null"], format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    InvoicePage:
+      type: object
+      required: [items, total, page, page_size]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/Invoice"}}, total: {type: integer}, page: {type: integer}, page_size: {type: integer}}
+    LedgerEntry:
+      type: object
+      required: [id, group_id, invoice_id, account, direction, amount, created_at]
+      properties:
+        id: {type: string}
+        group_id: {type: string}
+        invoice_id: {type: string}
+        account: {type: string}
+        direction: {type: string, enum: [debit, credit]}
+        amount: {$ref: "#/components/schemas/Money"}
+        reason: {type: string, enum: [payment, refund]}
+        created_at: {type: string, format: date-time}
+    LedgerPage:
+      type: object
+      required: [items, total]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/LedgerEntry"}}, total: {type: integer}}
+    WebhookEvent:
+      type: object
+      required: [event_id, type]
+      properties:
+        event_id: {type: string, maxLength: 128}
+        type: {type: string, enum: [payment.confirming, payment.confirmed, payment.failed, payment.expired]}
+        invoice_id: {type: string}
+        provider_ref: {type: string}
+        tx_ref: {type: string}
+        confirmations: {type: integer, minimum: 0}
+        amount: {$ref: "#/components/schemas/Money"}
