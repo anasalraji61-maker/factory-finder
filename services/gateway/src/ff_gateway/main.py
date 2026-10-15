@@ -35,14 +35,15 @@ from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
 from ff_gateway.domain import privacy
+from ff_gateway.domain.circuit_breaker import BreakerRegistry
 from ff_gateway.domain.client_ip import client_ip, rate_key
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
 from ff_gateway.domain.http_guard import HttpGuardMiddleware
 from ff_gateway.domain.mail import build_mailer
-from ff_gateway.domain.rate_limit import build_limit_store
+from ff_gateway.domain.rate_limit import build_limit_store, make_redis_client
 from ff_gateway.domain.security import TokenService
-from ff_gateway.domain.ws_tickets import WsTicketStore
+from ff_gateway.domain.ws_tickets import build_ws_stores
 from ff_gateway.obs import db_ready, install_observability, ready_response
 
 log = logging.getLogger("ff_gateway")
@@ -96,7 +97,17 @@ def create_app(
             raise RuntimeError("FF_ENV=production requires FF_GATEWAY_JWT_SECRET of at least 32 characters (refusing to start)")
     clock = clock or SystemClock()
     engine = make_engine(settings.database_url)
-    http = http_client or httpx.AsyncClient(timeout=settings.upstream_timeout_seconds)
+    http = http_client or httpx.AsyncClient(
+        timeout=httpx.Timeout(
+            settings.upstream_timeout_seconds, connect=settings.upstream_connect_timeout_seconds,
+            pool=settings.upstream_pool_timeout_seconds,
+        ),
+        limits=httpx.Limits(
+            max_connections=settings.upstream_max_connections,
+            max_keepalive_connections=settings.upstream_max_keepalive_connections,
+        ),
+    )
+    shared_redis = redis_client if redis_client is not None else make_redis_client(settings.redis_url)
 
     async def deletion_worker() -> None:
         """Grace-period sweep + retry of per-service erasure jobs (never dies on an error)."""
@@ -120,7 +131,10 @@ def create_app(
     app = FastAPI(title="Factory Finder gateway", version=__version__, lifespan=lifespan)
     app.state.settings = settings
     app.state.clock = clock
-    app.state.ws_tickets = WsTicketStore(clock, settings.ws_ticket_ttl_seconds, settings.ws_ticket_max)
+    app.state.ws_tickets, app.state.ws_counter, app.state.ws_local_counter = build_ws_stores(
+        clock, settings.ws_ticket_ttl_seconds, settings.ws_ticket_max, shared_redis
+    )
+    app.state.breakers = BreakerRegistry(clock, settings.breaker_failure_threshold, settings.breaker_cooldown_seconds)
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.http = http
     app.state.tokens = TokenService(
@@ -133,7 +147,7 @@ def create_app(
         else HttpHomeClient(http, settings.upstream_map())
     )
     limiter = build_limit_store(
-        clock, settings.rate_limit_max_keys, settings.redis_url, redis_client
+        clock, settings.rate_limit_max_keys, None, shared_redis
     )
     app.state.limiter = limiter
     app.state.mailer = mailer or build_mailer(settings)
@@ -141,7 +155,6 @@ def create_app(
         log.warning("FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on but mail is off: nobody can verify")
     trusted_nets = settings.trusted_proxy_networks()  # fails at startup on a bad CIDR
     app.state.trusted_nets = trusted_nets
-    app.state.ws_connections = {}  # user_id -> open proxied websockets (per process)
     app.state.engine = engine
     write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 

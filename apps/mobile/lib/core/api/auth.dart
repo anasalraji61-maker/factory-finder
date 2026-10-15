@@ -141,6 +141,20 @@ class AuthRepository {
 
   void logout() => _api.tokens.clear();
 
+  /// Revokes every session of the user on the server (any 2xx is success).
+  /// A 401 means this session is already gone, which is the goal: success.
+  Future<void> logoutAll() async {
+    if (_api.isMock) {
+      await mockDelay(200);
+      return;
+    }
+    try {
+      await _api.post('/v1/auth/logout-all');
+    } on ApiException catch (e) {
+      if (!e.isUnauthorized) rethrow;
+    }
+  }
+
   /// Restores a session from the stored refresh token: refresh, then
   /// `/v1/me`. Returns null when the session cannot be restored.
   Future<Me?> restoreSession() async {
@@ -316,6 +330,13 @@ class AuthController extends StateNotifier<Me?> {
   void logout() {
     _repo.logout();
     state = null;
+  }
+
+  /// Signs out of every device, then locally. Throws (staying signed in) when
+  /// the server call fails for a reason other than an already-dead session.
+  Future<void> logoutAll() async {
+    await _repo.logoutAll();
+    logout();
   }
 }
 

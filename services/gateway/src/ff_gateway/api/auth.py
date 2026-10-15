@@ -5,12 +5,18 @@ import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from sqlalchemy import delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
-from ff_gateway.api.deps import request_ip_key, to_me
-from ff_gateway.db import EmailVerificationToken, PasswordResetToken, RefreshToken, User
+from ff_gateway.api.deps import current_user, request_ip_key, to_me
+from ff_gateway.db import (
+    EmailVerificationToken,
+    PasswordResetToken,
+    RefreshToken,
+    User,
+    bump_token_version,
+)
 from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import (
     AccountDisabled,
@@ -54,7 +60,7 @@ async def _tokens(
         ))  # fmt: skip
         await s.commit()
     return TokensOut(
-        access_token=t.access(user.id), refresh_token=refresh, expires_in=t.access_ttl,
+        access_token=t.access(user.id, user.token_version or 0), refresh_token=refresh, expires_in=t.access_ttl,
         user=to_me(user) if with_user else None,
     )  # fmt: skip
 
@@ -342,5 +348,25 @@ async def password_reset(body: ResetPasswordIn, request: Request) -> Response:
             .where(PasswordResetToken.user_id == user.id, PasswordResetToken.token_hash != key)
             .execution_options(synchronize_session=False)
         )
+        await bump_token_version(s, user.id)  # access tokens issued before the reset stop working
         await s.commit()
+    privacy.drop_active_cache(app, user.id)
+    return Response(status_code=204)
+
+
+@router.post("/logout-all", status_code=204)
+async def logout_all(request: Request, user: User = Depends(current_user)) -> Response:
+    """Sign out everywhere: every refresh token of the user is revoked and every access token issued so far (this one
+    included) stops working."""
+    app = request.app
+    async with app.state.sessionmaker() as s:
+        await s.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=app.state.clock.now())
+            .execution_options(synchronize_session=False)
+        )
+        await bump_token_version(s, user.id)
+        await s.commit()
+    privacy.drop_active_cache(app, user.id)
     return Response(status_code=204)

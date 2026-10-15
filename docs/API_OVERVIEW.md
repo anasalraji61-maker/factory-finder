@@ -42,6 +42,7 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 | POST | `/v1/auth/login` | login |
 | POST | `/v1/auth/refresh` | Rotating refresh - each refresh token is single-use; replaying a used one revokes the family (401) |
 | POST | `/v1/auth/logout` | Revoke the refresh token's whole family (idempotent; always 204) |
+| POST | `/v1/auth/logout-all` | (bearer) Revoke every refresh token and every access token issued so far; 204 |
 | POST | `/v1/auth/verify-email` | Consume an email verification token (single use, hashed at rest, TTL 24 h) |
 | POST | `/v1/auth/resend-verification` | Re-send the verification mail (always 202; no account enumeration; throttled per address) |
 | GET | `/v1/me` | getMe |

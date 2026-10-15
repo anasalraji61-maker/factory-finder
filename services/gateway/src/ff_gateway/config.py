@@ -4,7 +4,7 @@ import logging
 import secrets
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger("ff_gateway")
@@ -52,7 +52,15 @@ class Settings(BaseSettings):
     trust_admin_token: str | None = Field(default=None, validation_alias="FF_TRUST_ADMIN_TOKEN")
     freight_admin_token: str | None = Field(default=None, validation_alias="FF_FREIGHT_ADMIN_TOKEN")
     feed_admin_token: str | None = Field(default=None, validation_alias="FF_FEED_ADMIN_TOKEN")
-    upstream_timeout_seconds: float = 15.0
+    upstream_timeout_seconds: float = 15.0  # read/write timeout per upstream call
+    upstream_connect_timeout_seconds: float = 3.0  # TCP connect (a dead host fails fast instead of after 15 s)
+    upstream_pool_timeout_seconds: float = 5.0  # waiting for a free pooled connection
+    upstream_max_connections: int = 200  # pool size over all upstreams
+    upstream_max_keepalive_connections: int = 50
+    # Per-upstream circuit breaker (proxy only): N consecutive failures (connect error, timeout, 502/503/504) open it for
+    # cooldown seconds (503 upstream_unavailable + Retry-After without calling the service), then one half-open probe.
+    breaker_failure_threshold: int = 5  # 0 = breaker off
+    breaker_cooldown_seconds: float = 30.0
     # WebSocket tickets (POST /v1/ws-ticket): short-lived, single-use, in memory.
     ws_ticket_ttl_seconds: int = 30
     ws_ticket_max: int = 10_000
@@ -89,7 +97,8 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = 12
     # Rate-limit store: unset -> in-memory (per process). FF_GATEWAY_REDIS_URL=redis://host:6379/0 shares counters
     # across replicas (needs the "redis" extra; falls back to memory with a warning if unavailable).
-    redis_url: str | None = None
+    # FF_REDIS_URL is accepted as well. The same Redis also backs the ws tickets and per-user socket counters.
+    redis_url: str | None = Field(default=None, validation_alias=AliasChoices("FF_GATEWAY_REDIS_URL", "FF_REDIS_URL", "redis_url"))
     # Email verification. FF_GATEWAY_REQUIRE_EMAIL_VERIFIED=true blocks payments writes, supplier claims
     # and supplier listing writes (/v1/my) for accounts whose email is not verified. Default off.
     require_email_verified: bool = False

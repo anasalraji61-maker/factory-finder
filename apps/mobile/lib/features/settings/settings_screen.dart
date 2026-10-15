@@ -156,6 +156,17 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                key: const ValueKey<String>('settings-logout-all'),
+                leading: const Icon(Icons.devices_other_outlined),
+                title: Text(context.tr('auth.logout_all.title')),
+                subtitle: Text(context.tr('auth.logout_all.sub')),
+                onTap: () => _confirmLogoutAll(context, ref),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
           ],
           AppCard(
             padding: EdgeInsets.zero,
@@ -171,6 +182,36 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+Future<void> _confirmLogoutAll(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(ctx.tr('auth.logout_all.title')),
+      content: Text(ctx.tr('auth.logout_all.body')),
+      actions: [
+        TextButton(
+          key: const ValueKey<String>('logout-all-cancel'),
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(ctx.tr('auth.logout_all.cancel')),
+        ),
+        TextButton(
+          key: const ValueKey<String>('logout-all-confirm'),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(ctx.tr('auth.logout_all.confirm')),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+  final messenger = ScaffoldMessenger.of(context);
+  final failed = context.tr('auth.logout_all.failed');
+  try {
+    await ref.read(authProvider.notifier).logoutAll();
+  } catch (_) {
+    messenger.showSnackBar(SnackBar(content: Text(failed)));
   }
 }
 

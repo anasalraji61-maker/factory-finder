@@ -128,6 +128,19 @@ class FallbackLimiter:
             return await self._fallback.blocked(key, limit)
 
 
+def make_redis_client(redis_url: str | None) -> Any:
+    """One shared ``redis.asyncio`` client for every Redis-backed store, or None (no URL / library missing)."""
+    if not redis_url:
+        return None
+    try:
+        from redis.asyncio import Redis  # lazy: optional dependency (extra "redis")
+
+        return Redis.from_url(redis_url, socket_connect_timeout=1.0, socket_timeout=1.0, decode_responses=True)
+    except Exception as e:
+        log.warning("Redis URL set but Redis is unusable (%s); using in-memory stores", type(e).__name__)
+        return None
+
+
 def build_limit_store(
     clock: Clock, max_keys: int, redis_url: str | None = None, redis_client: Any = None
 ) -> LimitStore:

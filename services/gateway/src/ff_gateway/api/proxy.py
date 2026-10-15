@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers, require_verified
 from ff_gateway.db import User
+from ff_gateway.domain.circuit_breaker import CircuitBreaker
 from ff_gateway.domain.client_ip import client_ip
 from ff_gateway.domain.errors import (
     AccountDisabled,
@@ -17,6 +18,7 @@ from ff_gateway.domain.errors import (
     InvalidToken,
     PayloadTooLarge,
     SupplierClaimRequired,
+    UpstreamCircuitOpen,
     UpstreamTimeout,
     UpstreamUnavailable,
 )
@@ -28,6 +30,7 @@ from ff_gateway.domain.routing import (
     matched_prefix,
     resolve_upstream,
 )
+from ff_gateway.domain.security import token_version_ok
 
 router = APIRouter()
 
@@ -54,6 +57,7 @@ FORWARD_RESPONSE_HEADERS = {
     "referrer-policy",  # private media: no-referrer must reach the client
     "x-quota-remaining",  # assistant per-day quota
 }
+BREAKER_STATUSES = {502, 503, 504}  # upstream answers that count as a failed call (transport errors / timeouts always do)
 METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
 
@@ -76,13 +80,14 @@ ACTIVE_CACHE_MAX = 10_000
 
 
 async def _ensure_active(request: Request, user_id: str) -> None:
-    """Disabled/deleted users lose access on proxied routes within a few seconds (short cache, fail closed)."""
+    """Disabled/deleted users (and tokens older than the last password change / logout-all) lose access on proxied
+    routes within a few seconds (short cache, fail closed)."""
     state = request.app.state
-    cache: dict[str, tuple[float, bool]] = state.__dict__.setdefault("_active_cache", {})
+    cache: dict[str, tuple[float, bool, int]] = state.__dict__.setdefault("_active_cache", {})
     now = state.clock.monotonic()
     hit = cache.get(user_id)
     if hit is not None and hit[0] > now:
-        active = hit[1]
+        active, version = hit[1], hit[2]
     else:
         async with state.sessionmaker() as s:
             u = await s.get(User, user_id)
@@ -90,11 +95,14 @@ async def _ensure_active(request: Request, user_id: str) -> None:
         if u is None:
             cache.pop(user_id, None)
             raise InvalidToken("Token refers to an unknown user")
+        version = u.token_version or 0
         if len(cache) >= ACTIVE_CACHE_MAX:
             cache.clear()
-        cache[user_id] = (now + ACTIVE_CACHE_SECONDS, active)
+        cache[user_id] = (now + ACTIVE_CACHE_SECONDS, active, version)
     if not active:
         raise AccountDisabled()
+    if not token_version_ok(getattr(request.state, "token_tv", None), version):
+        raise InvalidToken("Token has been revoked")
 
 
 def _is_error_envelope(content: bytes) -> bool:
@@ -210,6 +218,9 @@ async def proxy(full_path: str, request: Request) -> Response:
         if row and row.name and upstream == "rfq":  # reviewer display name (rfq shows first name + initial only)
             headers["X-User-Name"] = quote(row.name[:100], safe="")
     base = request.app.state.settings.upstream_map()[upstream].rstrip("/")
+    breaker: CircuitBreaker = request.app.state.breakers.get(upstream)
+    if (retry_after := breaker.before()) is not None:
+        raise UpstreamCircuitOpen(upstream, retry_after)  # fast-fail: the service is not called
     try:
         resp = await request.app.state.http.request(
             request.method,
@@ -219,9 +230,18 @@ async def proxy(full_path: str, request: Request) -> Response:
             headers=headers,
         )
     except httpx.TimeoutException as e:
+        breaker.failure()
         raise UpstreamTimeout(upstream) from e
     except httpx.HTTPError as e:
+        breaker.failure()
         raise UpstreamUnavailable(upstream) from e
+    except BaseException:
+        breaker.abort()  # cancelled (client went away): no verdict, free the half-open probe slot
+        raise
+    if resp.status_code in BREAKER_STATUSES:
+        breaker.failure()
+    else:
+        breaker.success()
     out = {k: v for k, v in resp.headers.items() if k.lower() in FORWARD_RESPONSE_HEADERS}
     if resp.status_code >= 500 and not _is_error_envelope(resp.content):
         # a crashing upstream (framework debug page, stack trace, plain text) must not leak through the gateway

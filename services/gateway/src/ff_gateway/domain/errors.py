@@ -169,6 +169,16 @@ class UpstreamUnavailable(GatewayError):
         self.upstream = upstream
 
 
+class UpstreamCircuitOpen(UpstreamUnavailable):
+    """Fast-fail while an upstream's circuit breaker is open (the service was not called)."""
+
+    status_code = 503
+
+    def __init__(self, upstream: str, retry_after: int) -> None:
+        super().__init__(upstream, details={"circuit": "open", "retry_after": retry_after})
+        self.headers["Retry-After"] = str(retry_after)
+
+
 class UpstreamTimeout(GatewayError):
     status_code = 504
     code = "upstream_timeout"

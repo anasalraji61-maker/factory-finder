@@ -35,8 +35,18 @@ With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pen
 ## Password reset and change
 - `POST /v1/auth/password/forgot {email}`: always 202 `{"status":"accepted"}`, identical for unknown/disabled/known accounts and when mail is off. Lookup, token and mail happen after the response (no timing oracle). Token: `token_urlsafe(32)`, only SHA-256 in `password_reset_tokens`, TTL `PASSWORD_RESET_TTL_SECONDS` (1800), a newer request drops older tokens. Silent throttle (still 202) per email+IP (`PASSWORD_FORGOT_PER_MINUTE`, 1) and per email (`PASSWORD_FORGOT_PER_EMAIL_PER_MINUTE`, 3); the per-IP auth limit gives 429. Mail via `domain/mail.py` (needs `MAIL_BACKEND` mock|smtp; optional `PASSWORD_RESET_URL_TEMPLATE` with `{token}`).
 - `POST /v1/auth/password/reset {token, new_password}`: 204; unknown/expired/used token -> generic 400 `invalid_reset_token`; weak password -> 422 and the token is kept; success sets the hash, marks the token used (atomic) and revokes every refresh token of the user.
-- `POST /v1/me/password {current_password, new_password}` (bearer): wrong current -> 403 `reauth_failed` (failures throttled per user via `LOGIN_FAIL_LIMIT_PER_MINUTE`, then 429); revokes all refresh tokens and returns a fresh `Tokens` pair for this device. Access tokens of other sessions live out their <= 15 min.
+- `POST /v1/me/password {current_password, new_password}` (bearer): wrong current -> 403 `reauth_failed` (failures throttled per user via `LOGIN_FAIL_LIMIT_PER_MINUTE`, then 429); revokes all refresh tokens and returns a fresh `Tokens` pair for this device. Other sessions' access tokens stop working immediately (token version, below).
 - `PATCH /v1/me` with a changed/removed `email` needs `current_password` (422 missing, 403 wrong); the old address gets a notice mail.
+
+## Access-token revocation (`tv`)
+`users.token_version` (int, default 0; the column is added on startup to existing DBs like the other additive columns) is carried in access tokens as claim `tv`. Everywhere the user row is re-checked (native routes via `current_user`, the proxy's `is_active` cache (<= 5 s, per process), `DELETE /v1/me`, ws handshakes using `?token=`) a mismatching `tv` answers 401 `invalid_token`. Tokens without `tv` (issued before this change) are accepted only while the user's version is 0. The version is bumped (atomically, `SET token_version = token_version + 1`) on password change, password reset, `POST /v1/auth/logout-all` and account deactivation/deletion (so cancelling a deletion by logging in does not revive old tokens). `POST /v1/auth/logout-all` (bearer, 204) revokes every refresh token and bumps the version. Residual: a ws ticket minted just before a bump stays valid for its 30 s TTL; other replicas' `is_active` caches lag up to 5 s.
+
+## Redis-backed ws tickets and socket counters
+With `FF_GATEWAY_REDIS_URL` (alias `FF_REDIS_URL`) set the same Redis client that backs the rate limiter also stores ws tickets (`SET ... EX ttl` / `GETDEL`, key `ff:gw:wst:*`, Redis >= 6.2) and the per-user open-socket counters (`INCR`/`DECR`, `ff:gw:wsc:<user>`, safety TTL 6 h refreshed on every connect), so several replicas share them. Without it (or if Redis is unreachable at runtime, logged once per outage) the in-memory implementations in `domain/ws_tickets.py` are used. Tests inject a fake client (`create_app(redis_client=...)`); no network.
+
+## Upstream resilience (proxy)
+- Timeouts/pool: `UPSTREAM_CONNECT_TIMEOUT_SECONDS` (3), `UPSTREAM_TIMEOUT_SECONDS` (15, read/write), `UPSTREAM_POOL_TIMEOUT_SECONDS` (5), `UPSTREAM_MAX_CONNECTIONS` (200), `UPSTREAM_MAX_KEEPALIVE_CONNECTIONS` (50); one shared pool, so a slow service can no longer hold all connections for ever (pool wait -> 504).
+- Circuit breaker per upstream (`domain/circuit_breaker.py`): `BREAKER_FAILURE_THRESHOLD` (5, 0 = off) consecutive failures (connect error, timeout, upstream 502/503/504) open it for `BREAKER_COOLDOWN_SECONDS` (30); while open the proxy answers 503 `upstream_unavailable` (`details.circuit=open`) with `Retry-After` without calling the service; after the cooldown exactly one half-open probe goes through (others keep failing fast), success closes, failure reopens. 4xx and plain 500 do not count; any success resets the streak. State is per process. Applies to proxied HTTP routes only (not ws, privacy fan-out or `/ready`).
 
 ## Ops (logging / readiness / rate limits)
 - `GET /ready`: 503 if the database is down; otherwise 200 with `checks` and `upstreams` as `{name: up|down boolean}` only (no URLs; probed via each upstream `/health`, cached 5 s). `status` is `degraded` when any upstream is down.
@@ -71,6 +81,13 @@ Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env na
 | `FF_FREIGHT_ADMIN_TOKEN` | unset |
 | `FF_FEED_ADMIN_TOKEN` | unset |
 | `FF_GATEWAY_UPSTREAM_TIMEOUT_SECONDS` | 15.0 |
+| `FF_GATEWAY_UPSTREAM_CONNECT_TIMEOUT_SECONDS` | 3.0 |
+| `FF_GATEWAY_UPSTREAM_POOL_TIMEOUT_SECONDS` | 5.0 |
+| `FF_GATEWAY_UPSTREAM_MAX_CONNECTIONS` | 200 |
+| `FF_GATEWAY_UPSTREAM_MAX_KEEPALIVE_CONNECTIONS` | 50 |
+| `FF_GATEWAY_BREAKER_FAILURE_THRESHOLD` | 5 (0 = off) |
+| `FF_GATEWAY_BREAKER_COOLDOWN_SECONDS` | 30.0 |
+| `FF_GATEWAY_REDIS_URL` / `FF_REDIS_URL` | unset (memory); also backs ws tickets + socket counters |
 | `FF_GATEWAY_WS_TICKET_TTL_SECONDS` | 30 |
 | `FF_GATEWAY_WS_TICKET_MAX` | 10000 |
 | `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` | False |

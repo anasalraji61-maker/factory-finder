@@ -11,15 +11,17 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.client import connect as ws_connect
 from websockets.exceptions import ConnectionClosed, InvalidStatus, WebSocketException
 
-from ff_gateway.api.deps import current_user_id, request_ip_key
+from ff_gateway.api.deps import current_user, request_ip_key
 from ff_gateway.db import User
 from ff_gateway.domain.errors import GatewayError, RateLimited
+from ff_gateway.domain.security import token_version_ok
 
 router = APIRouter()
 log = logging.getLogger("ff_gateway")
 
 WS_PREFIX = "/v1/ws/conversations/"
 MAX_FRAME_BYTES = 1 << 20
+_TICKET = object()
 HANDSHAKE_CODES = {401: 4401, 403: 4403, 429: 4429}
 
 
@@ -31,12 +33,13 @@ def _token(ws: WebSocket) -> str | None:
 
 
 @router.post("/v1/ws-ticket")
-async def ws_ticket(request: Request, user_id: str = Depends(current_user_id)) -> dict:
+async def ws_ticket(request: Request, user: User = Depends(current_user)) -> dict:
     """Single-use ticket (default 30 s) for the websocket handshake: ``?ticket=``."""
+    user_id = user.id
     limit = request.app.state.settings.ws_ticket_rate_limit_per_minute
     if limit > 0 and (wait := await request.app.state.limiter.check(f"wsticket:{user_id}", limit)) is not None:
         raise RateLimited(wait, limit)
-    ticket, ttl = request.app.state.ws_tickets.issue(user_id)
+    ticket, ttl = await request.app.state.ws_tickets.issue(user_id)
     return {"ticket": ticket, "expires_in": ttl}
 
 
@@ -60,8 +63,9 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
     if await state.limiter.check(f"api:{ip}", state.settings.rate_limit_per_minute) is not None:
         return await _reject(ws, 4429)
     ticket = ws.query_params.get("ticket")
+    tv: int | None | object = _TICKET  # tickets are minted from a version-checked access token seconds ago
     if ticket:
-        user_id = state.ws_tickets.consume(ticket)
+        user_id = await state.ws_tickets.consume(ticket)
         if user_id is None:
             return await _reject(ws, 4401)
     else:
@@ -69,7 +73,7 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
         if token is None:
             return await _reject(ws, 4401)
         try:
-            user_id = state.tokens.decode(token, "access")
+            user_id, tv = state.tokens.decode_with_version(token, "access")
         except GatewayError:
             return await _reject(ws, 4401)
     async with state.sessionmaker() as s:
@@ -85,19 +89,16 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
         )
     if user is None or not user.is_active:
         return await _reject(ws, 4401)
+    if tv is not _TICKET and not token_version_ok(tv, user.token_version):
+        return await _reject(ws, 4401)
 
-    cap = state.settings.ws_max_connections_per_user
-    open_sockets: dict[str, int] = state.ws_connections
-    if cap > 0 and open_sockets.get(user_id, 0) >= cap:
+    lease = await state.ws_counter.acquire(user_id, state.settings.ws_max_connections_per_user)
+    if lease is None:
         return await _reject(ws, 4429)
-    open_sockets[user_id] = open_sockets.get(user_id, 0) + 1
     try:
         await _proxy(ws, state, user_id, claimed, full)
     finally:
-        if open_sockets[user_id] <= 1:
-            open_sockets.pop(user_id, None)
-        else:
-            open_sockets[user_id] -= 1
+        await lease.release()
 
 
 async def _proxy(ws: WebSocket, state, user_id: str, claimed: str | None, full: str) -> None:

@@ -157,6 +157,7 @@ async def request_deletion(app, user_id: str, request_id: str | None) -> dict[st
         already = u.deleted_at is not None or u.deletion_scheduled_at is not None
         if not already:
             u.is_active = False
+            u.token_version = (u.token_version or 0) + 1  # access tokens die with the deactivation
             u.deletion_scheduled_at = now + timedelta(days=grace)
             await s.execute(delete(RefreshToken).where(RefreshToken.user_id == user_id))  # every session ends now
             await s.commit()
@@ -187,6 +188,7 @@ async def finalize_deletion(app, user_id: str, request_id: str | None = None) ->
         u.default_destination, u.supplier_id, u.supplier_claim_status = None, None, "none"
         u.password_hash = "!deleted:" + secrets.token_hex(8)  # never matches a bcrypt hash
         u.email_verified, u.is_active, u.deleted_at = False, False, now
+        u.token_version = (u.token_version or 0) + 1
         await s.execute(delete(RefreshToken).where(RefreshToken.user_id == user_id))
         await s.execute(delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user_id))
         for svc in PRIVACY_SERVICES:

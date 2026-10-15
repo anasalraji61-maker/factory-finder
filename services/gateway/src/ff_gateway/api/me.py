@@ -6,7 +6,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ff_gateway.api.auth import _tokens, send_verification
 from ff_gateway.api.deps import current_user, internal_headers, require_verified, to_me
-from ff_gateway.db import RefreshToken, User
+from ff_gateway.db import RefreshToken, User, bump_token_version
+from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import (
     AccountExists,
     RateLimited,
@@ -63,7 +64,10 @@ async def change_password(
             .values(revoked_at=now)
             .execution_options(synchronize_session=False)
         )
+        await bump_token_version(s, user.id)  # other sessions' access tokens stop working now, not after <= 15 min
         await s.commit()
+        await s.refresh(db_user)  # fresh token_version for the new access token
+    privacy.drop_active_cache(request.app, user.id)
     return await _tokens(request, db_user, with_user=False)
 
 

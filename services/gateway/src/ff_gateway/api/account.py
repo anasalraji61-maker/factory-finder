@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from ff_gateway.api.deps import current_user, current_user_id
+from ff_gateway.api.deps import check_token_version, current_user, current_user_id
 from ff_gateway.db import RefreshToken, User
 from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import AccountDisabled, InvalidToken, RateLimited, ReauthFailed
@@ -22,6 +22,8 @@ async def account_user(request: Request) -> User:
         raise InvalidToken("Token refers to an unknown user")
     if not user.is_active and user.deleted_at is None and user.deletion_scheduled_at is None:
         raise AccountDisabled()
+    if user.is_active:  # a scheduled/finished deletion bumped the version itself; repeating DELETE must stay possible
+        check_token_version(request, user)
     return user
 
 

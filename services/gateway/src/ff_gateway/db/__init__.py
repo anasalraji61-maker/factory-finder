@@ -4,7 +4,17 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, UniqueConstraint, false, text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Integer,
+    String,
+    UniqueConstraint,
+    false,
+    text,
+    update,
+)
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -42,6 +52,8 @@ class User(Base):
     display_currency: Mapped[str] = mapped_column(String(3), default="USD")
     language: Mapped[str] = mapped_column(String(2), default="ar")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Bumped on password change/reset, logout-all and deactivation: access tokens carry it as claim `tv`.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
@@ -146,6 +158,8 @@ def _add_missing_columns(sync_conn) -> None:
         sync_conn.execute(
             text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE")
         )
+    if "token_version" not in cols:
+        sync_conn.execute(text("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0"))
     ts = "TIMESTAMP WITH TIME ZONE" if sync_conn.dialect.name == "postgresql" else "DATETIME"
     for col in ("deletion_scheduled_at", "deleted_at"):
         if col not in cols:
@@ -160,3 +174,11 @@ def _add_missing_columns(sync_conn) -> None:
         sync_conn.execute(
             text("UPDATE users SET supplier_claim_status = 'pending' WHERE supplier_id IS NOT NULL")
         )
+
+
+async def bump_token_version(session: AsyncSession, user_id: str) -> None:
+    """Atomically invalidate every access token issued so far for the user (caller commits)."""
+    await session.execute(
+        update(User).where(User.id == user_id).values(token_version=User.token_version + 1)
+        .execution_options(synchronize_session=False)
+    )

@@ -70,6 +70,15 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
       responses:
         "204": {description: Revoked}
+  /v1/auth/logout-all:
+    post:
+      operationId: logoutAll
+      summary: Sign out everywhere (revoke every refresh token and every access token issued so far)
+      description: "Bearer required. Revokes all refresh tokens of the user and bumps the per-user token version, so access tokens carrying an older `tv` claim (this one included) answer 401 from then on. Sign in again to get a new session."
+      responses:
+        "204": {description: Signed out everywhere}
+        "401": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/auth/verify-email:
     post:
       operationId: verifyEmail
@@ -115,7 +124,7 @@ paths:
     post:
       operationId: changePassword
       summary: Change my password (re-auth with the current one)
-      description: "Revokes every refresh token of the user (other sessions end when their access token expires, at most 15 min) and returns a fresh token pair for this device (no `user`). Wrong current password -> 403 `reauth_failed`; failures are throttled per user (FF_GATEWAY_LOGIN_FAIL_LIMIT_PER_MINUTE, then 429). The new password must satisfy the registration policy and differ from the current one (422)."
+      description: "Revokes every refresh token of the user and invalidates all earlier access tokens (per-user token version) and returns a fresh token pair for this device (no `user`). Wrong current password -> 403 `reauth_failed`; failures are throttled per user (FF_GATEWAY_LOGIN_FAIL_LIMIT_PER_MINUTE, then 429). The new password must satisfy the registration policy and differ from the current one (422)."
       requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [current_password, new_password], properties: {current_password: {type: string}, new_password: {type: string, minLength: 8, maxLength: 128}}}}}}
       responses:
         "200": {description: Password changed; new session, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
@@ -431,7 +440,7 @@ paths:
       freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is an admin-only passthrough (see below)
     get:
       operationId: proxy
-      description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504."
+      description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504; circuit open after repeated failures -> 503 upstream_unavailable with Retry-After (fast-fail, details.circuit=open)."
       parameters: [{name: proxied_path, in: path, required: true, schema: {type: string}}]
       responses:
         "200": {description: Upstream response passed through}

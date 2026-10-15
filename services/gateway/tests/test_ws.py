@@ -190,10 +190,10 @@ def test_ticket_store_cap(clock):
     from ff_gateway.domain.ws_tickets import WsTicketStore
 
     st = WsTicketStore(clock, 30, 2)
-    a, _ = st.issue("u1")
-    b, _ = st.issue("u2")
-    c, _ = st.issue("u3")
-    assert st.consume(a) is None and st.consume(b) == "u2" and st.consume(c) == "u3"
+    a, _ = st.issue_sync("u1")
+    b, _ = st.issue_sync("u2")
+    c, _ = st.issue_sync("u3")
+    assert st.consume_sync(a) is None and st.consume_sync(b) == "u2" and st.consume_sync(c) == "u3"
 
 
 def test_token_param_can_be_disabled(make_client):
@@ -238,11 +238,11 @@ def test_per_user_connection_cap(make_client):
     c.app.state.ws_connect = lambda url, additional_headers=None, **kw: FakeUp(url, additional_headers, None)
     with c.websocket_connect(_ticket_url(c, hdr)) as w1, c.websocket_connect(_ticket_url(c, hdr)) as w2:
         assert w1.receive_text() == "hello" and w2.receive_text() == "hello"
-        assert c.app.state.ws_connections[tok["user"]["id"]] == 2
+        assert c.app.state.ws_local_counter.counts[tok["user"]["id"]] == 2
         assert _code(c, _ticket_url(c, hdr)) == 4429  # third socket refused
         _finish(w1)
         _finish(w2)
-    assert c.app.state.ws_connections == {}  # counters released
+    assert c.app.state.ws_local_counter.counts == {}  # counters released
     with c.websocket_connect(_ticket_url(c, hdr)) as w:  # slot free again
         assert w.receive_text() == "hello"
         _finish(w)
@@ -259,7 +259,7 @@ def test_cap_is_per_user_and_releases_on_upstream_failure(make_client):
     c.app.state.ws_connect = boom
     for _ in range(3):  # failed connects must not leak slots
         assert _code(c, _ticket_url(c, hdr)) == 1011
-    assert c.app.state.ws_connections == {}
+    assert c.app.state.ws_local_counter.counts == {}
 
 
 def test_cap_off_with_zero(make_client):

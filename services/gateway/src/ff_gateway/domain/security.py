@@ -59,7 +59,7 @@ class TokenService:
         self._verify_keys = [secret, *([previous_secret] if previous_secret else [])]
         self.access_ttl, self.refresh_ttl = access_ttl, refresh_ttl
 
-    def _encode(self, user_id: str, typ: str, ttl: int) -> str:
+    def _encode(self, user_id: str, typ: str, ttl: int, tv: int | None = None) -> str:
         now = self._clock.now()
         claims = {
             "sub": user_id,
@@ -69,10 +69,13 @@ class TokenService:
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(seconds=ttl)).timestamp()),
         }
+        if tv is not None:
+            claims["tv"] = tv
         return jwt.encode(claims, self._secret, algorithm=self._alg)
 
-    def access(self, user_id: str) -> str:
-        return self._encode(user_id, "access", self.access_ttl)
+    def access(self, user_id: str, token_version: int = 0) -> str:
+        """``tv`` = the user's token_version at issue time; a later bump (password change, logout-all, deactivation) kills the token."""
+        return self._encode(user_id, "access", self.access_ttl, token_version)
 
     def new_refresh(self, user_id: str, family: str | None = None) -> tuple[str, RefreshClaims]:
         """Mint a refresh token carrying a unique jti and a family id (one family per login)."""
@@ -123,11 +126,25 @@ class TokenService:
             raise TokenExpired()
         return RefreshClaims(str(c["sub"]), str(c["jti"]), str(c["fam"]), int(c["exp"]))
 
-    def decode(self, token: str, expected_type: str) -> str:
-        """Return the user id or raise TokenExpired / InvalidToken. Expiry uses our clock."""
+    def decode_with_version(self, token: str, expected_type: str) -> tuple[str, int | None]:
+        """(user id, ``tv`` claim or None for tokens minted before it existed). Raises TokenExpired / InvalidToken."""
         claims = self._decode(token, ["sub", "exp", "typ"])
         if claims.get("typ") != expected_type:
             raise InvalidToken(f"Expected a {expected_type} token")
         if self._clock.now().timestamp() >= claims["exp"]:
             raise TokenExpired()
-        return str(claims["sub"])
+        tv = claims.get("tv")
+        if tv is not None and (isinstance(tv, bool) or not isinstance(tv, int)):
+            raise InvalidToken()
+        return str(claims["sub"]), tv
+
+    def decode(self, token: str, expected_type: str) -> str:
+        """Return the user id or raise TokenExpired / InvalidToken. Expiry uses our clock."""
+        return self.decode_with_version(token, expected_type)[0]
+
+
+def token_version_ok(tv: int | None, user_version: int | None) -> bool:
+    """A token carrying ``tv`` must match the user's current version; tokens issued before ``tv`` existed (None) are
+    accepted only while the user's version is still 0 (i.e. nothing has been revoked since the rollout)."""
+    uv = user_version or 0
+    return uv == 0 if tv is None else tv == uv

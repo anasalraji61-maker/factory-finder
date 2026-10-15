@@ -72,7 +72,19 @@ class PasswordRepository {
       }
       return;
     }
-    await _api.post('/v1/me/password', body: changeBody(currentPassword, newPassword));
+    final json = await _api.post(
+      '/v1/me/password',
+      body: changeBody(currentPassword, newPassword),
+    );
+    // The server revoked every refresh token and answers with a fresh pair for
+    // this device: store it so the session survives. Tolerate an empty body.
+    if (json is Map) {
+      final access = json['access_token'];
+      final refresh = json['refresh_token'];
+      if (access is String && access.isNotEmpty) {
+        _api.tokens.set(access, refresh is String ? refresh : null);
+      }
+    }
   }
 }
 

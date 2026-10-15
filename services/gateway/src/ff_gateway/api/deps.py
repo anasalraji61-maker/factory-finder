@@ -10,6 +10,7 @@ from ff_gateway.domain.errors import (
     EmailNotVerified,
     InvalidToken,
 )
+from ff_gateway.domain.security import token_version_ok
 from ff_gateway.schemas import Location, MeOut
 
 
@@ -32,9 +33,16 @@ def current_user_id(request: Request) -> str:
     token = bearer_token(request)
     if token is None:
         raise AuthenticationRequired()
-    uid = request.app.state.tokens.decode(token, "access")
+    uid, tv = request.app.state.tokens.decode_with_version(token, "access")
     request.state.user_id = uid  # picked up by the request log
+    request.state.token_tv = tv  # checked against users.token_version wherever the user row is loaded
     return uid
+
+
+def check_token_version(request: Request, user: User) -> None:
+    """Reject access tokens minted before the user's last password change / logout-all / deactivation."""
+    if not token_version_ok(getattr(request.state, "token_tv", None), user.token_version):
+        raise InvalidToken("Token has been revoked")
 
 
 async def current_user(request: Request) -> User:
@@ -45,6 +53,7 @@ async def current_user(request: Request) -> User:
         raise InvalidToken("Token refers to an unknown user")
     if not user.is_active:
         raise AccountDisabled()
+    check_token_version(request, user)
     return user
 
 
@@ -78,6 +87,7 @@ def internal_headers(request: Request, user_id: str | None) -> dict[str, str]:
 __all__ = [
     "AsyncSession",
     "bearer_token",
+    "check_token_version",
     "current_user",
     "current_user_id",
     "internal_headers",
