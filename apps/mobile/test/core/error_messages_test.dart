@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/providers.dart' show DigitStyle;
 import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
