@@ -52,6 +52,14 @@ def is_internal_only(method: str, path: str) -> bool:
     return (method.upper(), path) in INTERNAL_ONLY
 
 
+# Anonymous listing analytics events (view / contact_click / share); identity optional, see sourcing analytics.
+LISTING_EVENTS_PATH = re.compile(r"^/v1/listings/[A-Za-z0-9_.:\-]{1,64}/events$")
+
+
+def is_listing_events(method: str, path: str) -> bool:
+    return method.upper() == "POST" and bool(LISTING_EVENTS_PATH.match(path.rstrip("/") or "/"))
+
+
 # Supplier review reads live in rfq although /v1/suppliers belongs to sourcing (public GETs, see PUBLIC_GET_PREFIXES).
 RFQ_SUPPLIER_PATH = re.compile(r"^/v1/suppliers/[^/]+/(reviews|review-summary)$")
 
@@ -80,7 +88,7 @@ def is_public(method: str, path: str) -> bool:
     path = path.rstrip("/") or "/"
     if path == "/health" or _under(path, "/v1/auth"):
         return True
-    if (method.upper(), path) in PUBLIC_EXACT:
+    if (method.upper(), path) in PUBLIC_EXACT or is_listing_events(method, path):
         return True
     if method.upper() in ("GET", "HEAD") and TRUST_BADGE_PATH.match(path):
         return True

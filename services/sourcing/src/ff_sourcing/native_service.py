@@ -42,6 +42,7 @@ class NativeService:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._mono = monotonic
         self._creates: dict[str, deque[float]] = defaultdict(deque)  # per process
+        self.analytics = None  # Analytics (set by main); report counts are best effort
         self.on_change: Callable[[list], Awaitable[object]] | None = None  # price observation hook (best effort)
 
     # ---- helpers ----------------------------------------------------------
@@ -171,13 +172,15 @@ class NativeService:
         q.append(now)
         if details:
             details = redact(clean_text(details, multiline=True))[:500] or None
-        _, owner = await self.store.add_report(
+        created, owner = await self.store.add_report(
             listing_id, ref, reason, details, self._clock(), self.report_threshold, own_supplier
         )
         if owner is None:
             raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
         if own_supplier is not None and own_supplier == owner:
             raise ApiError(409, "own_listing", "You cannot report your own listing")
+        if created and self.analytics is not None:
+            await self.analytics.bump(listing_id, "report")
 
     # ---- moderation: admin ---------------------------------------------------
     async def admin_reports(self, status, listing_id, page, page_size) -> dict:

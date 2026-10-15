@@ -1,0 +1,69 @@
+name: mobile-live
+# Runs the Flutter live-contract tests against a real local backend stack, so drift between the
+# gateway responses and the Dart models fails CI (fixtures alone cannot see it).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["contracts/**", "services/**", "apps/mobile/lib/**", "apps/mobile/test/live_contract/**", "scripts/serve_stack.py", ".github/workflows/mobile-live.yml"]
+
+jobs:
+  live-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FF_STACK_PORT: "8000"
+      FF_STACK_INFO: ${{ github.workspace }}/ff_stack.json
+      FF_LIVE_BASE_URL: http://localhost:8000
+      FF_LIVE_INFO: ${{ github.workspace }}/ff_stack.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install shared deps
+        run: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pyyaml jsonschema referencing
+      - name: Install service deps
+        run: |
+          for s in gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight; do
+            python scripts/install_service.py services/$s --deps-only
+          done
+      - name: Start backend stack
+        run: |
+          nohup python scripts/serve_stack.py > stack.log 2>&1 &
+          echo $! > stack.pid
+          for i in $(seq 1 180); do
+            if grep -q '^READY' stack.log; then echo "stack ready"; exit 0; fi
+            if ! kill -0 "$(cat stack.pid)" 2>/dev/null; then echo "::error title=stack::serve_stack.py exited"; tail -50 stack.log; exit 1; fi
+            sleep 1
+          done
+          echo "::error title=stack::stack not READY in 180s"; tail -50 stack.log; exit 1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate platform folders if missing
+        working-directory: apps/mobile
+        run: |
+          if [ ! -d android ]; then
+            flutter create . --platforms=android --org com.factoryfinder --project-name factory_finder
+          fi
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - name: Live contract tests
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          set +e
+          rm -f test/widget_test.dart
+          flutter test test/live_contract 2>&1 | tee live.txt
+          code=${PIPESTATUS[0]}
+          msg=$(grep -vE "^\s*$|✅" live.txt | grep -iE "mismatch|\] |fail|error|expected|actual|exception|\.dart" | head -120 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=live-contract::$msg"; fi
+          exit $code
+      - name: Show backend log on failure
+        if: failure()
+        run: tail -100 stack.log || true
+      - name: Stop backend stack
+        if: always()
+        run: |
+          if [ -f stack.pid ]; then kill "$(cat stack.pid)" 2>/dev/null || true; sleep 3; fi

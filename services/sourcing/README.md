@@ -111,3 +111,20 @@ token overlap 0.30 + price band (same currency, within 2x) 0.15 + condition 0.05
 Bounded: <= 300 candidates scored, trust looked up for the best 60 only. `/v1/recommendations?ref=<ids, most recent first, max 20>&country=`:
 stateless (client sends its recent ids; nothing stored/logged per user), weight decays with position, <= 3 per supplier, `country`
 = preferred origin (+0.05, not a filter), no usable ref -> top trusted listings. Gateway: public GET, routed to sourcing.
+
+## Supplier analytics (native listings)
+Privacy-safe, aggregate only: table `listing_stats_daily` (listing_id, day, metric, count, uniques; migration `0004`), no IP/user
+id/UA ever stored or logged. Metrics: `impression` (native listing on a served search page, server side), `view` / `contact_click` /
+`share` (client `POST /v1/listings/{id}/events {type}` -> 202 `{counted}`), `report` (new non-duplicate report), `watchlist_add`
+(internal hook only: `app.state.analytics.bump(listing_id, "watchlist_add")`, no HTTP endpoint; notifications may call it once
+an internal route is agreed). Events: viewer = `X-User-Id` else `X-Client-Ip` (both gateway-set) -> HMAC keyed by a secret **and the
+UTC day** (rotates daily, wiped at day change/restart), kept only in bounded memory: same viewer counts once per listing+type per
+30 min, 60 events/min per IP and per user (429), unique-viewer set capped (2000 per listing+type+day, 20000 sets, saturates =
+undercounts), dedupe map 50k entries. Only published native listings count; anything else answers the same 202 `counted:false`.
+`GET /v1/my/analytics?days=7|30|90&listing_id=` (X-Supplier-Id; only own listings, others 404): `totals`, `previous_totals`,
+`change_pct`, zero-filled daily `series`, `conversion` (view->contact, impression->view, capped at 1), `unique_viewers` (sum of
+daily estimates), top-20 `listings` table. Retention 400 days (purged opportunistically, hourly); rows are deleted with the
+listing and with account erasure (`counts.analytics_rows_deleted`). Env: `ANALYTICS_HASH_KEY` (empty = random per process),
+`ANALYTICS_DEDUPE_S`, `ANALYTICS_EVENT_RATE_PER_MIN`, `ANALYTICS_UNIQUE_CAP`, `ANALYTICS_MAX_SETS`, `ANALYTICS_DEDUPE_MAX`,
+`ANALYTICS_RETENTION_DAYS`. Code: `analytics.py`, `api/analytics.py`. Gateway: events are public (optional bearer) and get a
+trusted-proxy-resolved `X-Client-Ip`.

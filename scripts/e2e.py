@@ -71,7 +71,7 @@ def items(d) -> list:
     raise AssertionError(f"no list in {str(d)[:200]}")
 
 
-def start_services(tmp: Path) -> list[subprocess.Popen]:
+def start_services(tmp: Path, extra_env: dict[str, str] | None = None) -> list[subprocess.Popen]:
     procs = []
     base_env = {
         **os.environ,
@@ -86,6 +86,7 @@ def start_services(tmp: Path) -> list[subprocess.Popen]:
         "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN, "FF_FREIGHT_ADMIN_TOKEN": ADMIN_TOKEN,
         "FF_MEDIA_ADMIN_TOKEN": ADMIN_TOKEN,
     }  # fmt: skip
+    base_env.update(extra_env or {})  # serve_stack.py: shifted ports / URLs
     base_env.pop("FF_INTERNAL_TOKEN", None)
     base_env.pop("FF_PAYMENTS_INTERNAL_TOKEN", None)
     for name, (port, app) in SERVICES.items():

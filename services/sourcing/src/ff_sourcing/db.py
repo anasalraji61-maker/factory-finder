@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Date,
     DateTime,
     Float,
     Index,
@@ -108,6 +109,19 @@ class PriceObservationRow(Base):
     currency: Mapped[str] = mapped_column(String(3))
     source: Mapped[str] = mapped_column(String(32))
     observed_at: Mapped[datetime] = mapped_column(UTCDateTime())
+
+
+class ListingStatRow(Base):
+    """Daily aggregate counter of one listing and metric. No viewer data: only counts (see analytics.py)."""
+
+    __tablename__ = "listing_stats_daily"
+    __table_args__ = (Index("ix_listing_stats_daily_day", "day"),)
+
+    listing_id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    day: Mapped[date] = mapped_column(Date(), primary_key=True)
+    metric: Mapped[str] = mapped_column(String(16), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, default=0)
+    uniques: Mapped[int] = mapped_column(Integer, default=0)  # estimate of distinct viewers that day
 
 
 def make_engine(url: str) -> AsyncEngine:

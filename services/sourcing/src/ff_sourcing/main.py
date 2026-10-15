@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse
 from . import __version__
 from .adapters.native import NativeAdapter, NativeStore
 from .adapters.registry import AdapterRegistry, build_registry
+from .analytics import Analytics
+from .api.analytics import router as analytics_router
 from .api.errors import install_error_handlers
 from .api.internal import router as internal_router
 from .api.moderation import admin as admin_router
@@ -78,6 +80,18 @@ def create_app(
         settings.price_history_retention_days,
     )
     app.state.service = service
+    analytics = Analytics(
+        engine,
+        settings.auto_create_tables,
+        hash_key=settings.analytics_hash_key,
+        dedupe_s=settings.analytics_dedupe_s,
+        rate_per_min=settings.analytics_event_rate_per_min,
+        unique_cap=settings.analytics_unique_cap,
+        max_sets=settings.analytics_max_sets,
+        dedupe_max=settings.analytics_dedupe_max,
+        retention_days=settings.analytics_retention_days,
+    )
+    app.state.analytics = analytics
 
     async def resolve_supplier(supplier_id: str):
         for a in registry.enabled():
@@ -99,6 +113,7 @@ def create_app(
         settings.reporter_hash_key,
     )
     native_service = app.state.native
+    native_service.analytics = analytics
     native_service.on_change = service.history.record_listings
     app.state.admin_token = settings.admin_token.get_secret_value() if settings.admin_token else None
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
@@ -110,7 +125,7 @@ def create_app(
         path = request.url.path
         if (
             token
-            and (path.startswith(("/v1/my", "/v1/admin", "/v1/internal")) or path.endswith("/report"))
+            and (path.startswith(("/v1/my", "/v1/admin", "/v1/internal")) or path.endswith(("/report", "/events")))
             and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode())
         ):
             if path.startswith("/v1/internal/"):  # account export/erasure: invisible to non-internal callers
@@ -122,6 +137,7 @@ def create_app(
     install_error_handlers(app)
     app.include_router(router)
     app.include_router(my_router)
+    app.include_router(analytics_router)
     app.include_router(internal_router)
     app.include_router(moderation_router)
     app.include_router(admin_router)

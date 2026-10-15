@@ -17,7 +17,7 @@ from sqlalchemy import update as sa_update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from ..db import Base, ListingReportRow, NativeListingRow
+from ..db import Base, ListingReportRow, ListingStatRow, NativeListingRow
 from ..domain.models import (
     DayRange,
     GeoPoint,
@@ -144,6 +144,14 @@ class NativeStore:
             row = await s.get(NativeListingRow, listing_id)
         return row if row is not None and row.supplier_id == supplier_id else None
 
+    async def owned_summaries(self, supplier_id: str, cap: int = 500) -> list[tuple[str, str, str]]:
+        """(id, title, status) of the supplier's listings (all statuses), bounded."""
+        await self.ensure_ready()
+        async with self.sm() as s:
+            q = select(NativeListingRow.id, NativeListingRow.title, NativeListingRow.status)
+            q = q.where(NativeListingRow.supplier_id == supplier_id).order_by(NativeListingRow.id).limit(cap)
+            return [(r[0], r[1], r[2]) for r in (await s.execute(q)).all()]
+
     async def list_owned(
         self, supplier_id: str, status: str | None, page: int, page_size: int
     ) -> tuple[list[NativeListingRow], int]:
@@ -205,6 +213,7 @@ class NativeStore:
             owned = await s.get(NativeListingRow, listing_id)
             if owned is not None and owned.supplier_id == supplier_id:
                 await s.execute(delete(ListingReportRow).where(ListingReportRow.listing_id == listing_id))
+                await s.execute(delete(ListingStatRow).where(ListingStatRow.listing_id == listing_id))
             res = await s.execute(
                 delete(NativeListingRow).where(
                     NativeListingRow.id == listing_id, NativeListingRow.supplier_id == supplier_id
@@ -238,10 +247,12 @@ class NativeStore:
         await self.ensure_ready()
         async with self.sm() as s:
             n = 0
+            stats = 0
             if supplier_id:
                 ids = list((await s.scalars(select(NativeListingRow.id).where(NativeListingRow.supplier_id == supplier_id))).all())
                 if ids:
                     await s.execute(delete(ListingReportRow).where(ListingReportRow.listing_id.in_(ids)))
+                    stats = int((await s.execute(delete(ListingStatRow).where(ListingStatRow.listing_id.in_(ids)))).rowcount or 0)
                     await s.execute(delete(NativeListingRow).where(NativeListingRow.id.in_(ids)))
                 n = len(ids)
             res = await s.execute(
@@ -250,7 +261,7 @@ class NativeStore:
                 .values(details=None)
             )
             await s.commit()
-        return {"listings_deleted": n, "report_details_cleared": int(res.rowcount or 0)}
+        return {"listings_deleted": n, "analytics_rows_deleted": stats, "report_details_cleared": int(res.rowcount or 0)}
 
     # ---- public (published only) ----------------------------------------
     async def published(self, limit: int = 200, supplier_id: str | None = None) -> list[NativeListingRow]:

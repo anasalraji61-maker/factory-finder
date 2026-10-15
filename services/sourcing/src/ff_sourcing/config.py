@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     price_history_max_points: int = 500
     price_history_retention_days: int = 400
 
+    # Supplier analytics (daily aggregate counters only; see analytics.py)
+    analytics_hash_key: str = Field(default="", repr=False)  # empty = random per process (rotates on restart too)
+    analytics_dedupe_s: float = 1800.0  # same viewer + listing + event type counts once per window
+    analytics_event_rate_per_min: int = 60  # per client IP and per user, per process
+    analytics_unique_cap: int = 2000  # distinct-viewer set size per listing+type+day (estimate saturates)
+    analytics_max_sets: int = 20000
+    analytics_dedupe_max: int = 50000
+    analytics_retention_days: int = 400
+
     trust_mode: str = "mock"  # mock | http | off
     trust_base_url: str = "http://localhost:8104"
     trust_timeout_s: float = 0.8

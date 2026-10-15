@@ -58,7 +58,9 @@ async def search(
         moq_max=moq_max,
         verified_only=verified_only,
     )
-    return await svc(request).search(query, page, page_size, sort)
+    res = await svc(request).search(query, page, page_size, sort)
+    await request.app.state.analytics.impressions([i.id for i in res.items if i.source == "native"])
+    return res
 
 
 @router.get("/listings/{listing_id}", response_model=ListingDetail, response_model_exclude_none=True)

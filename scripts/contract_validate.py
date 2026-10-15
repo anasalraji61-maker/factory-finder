@@ -207,6 +207,9 @@ def scenario() -> None:
         c("sourcing", "PUT", f"/v1/my/listings/{mid}", json=my_body, headers=hsup, template="/v1/my/listings/{id}")
         c("sourcing", "GET", f"/v1/my/listings/{mid}", headers={"X-Supplier-Id": "sup_other"}, want=(404,), template="/v1/my/listings/{id}")
         c("sourcing", "POST", f"/v1/my/listings/{mid}/publish", headers=hsup, want=(200, 403, 503), template="/v1/my/listings/{id}/publish")
+        c("sourcing", "POST", f"/v1/listings/{mid}/events", json={"type": "view"}, want=(202,), template="/v1/listings/{id}/events")
+        c("sourcing", "GET", "/v1/my/analytics", headers=hsup, params={"days": 7})
+        c("sourcing", "GET", "/v1/my/analytics", headers=hsup, params={"days": 30, "listing_id": mid})
         c("sourcing", "POST", f"/v1/my/listings/{mid}/unpublish", headers=hsup, want=(200, 409), template="/v1/my/listings/{id}/unpublish")
         c("sourcing", "DELETE", f"/v1/my/listings/{mid}", headers=hsup, want=(204,), template="/v1/my/listings/{id}")
 

@@ -379,7 +379,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/{proxied_path}:
     x-proxy:
-      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my, /v1/recommendations]  # GET /v1/recommendations is public (client sends recent ids; nothing stored)
+      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my, /v1/recommendations]  # GET /v1/recommendations is public (client sends recent ids; nothing stored); POST /v1/listings/{id}/events (view|contact_click|share) is public with optional bearer: the gateway forwards X-User-Id (if signed in) and X-Client-Ip (resolved via FF_GATEWAY_TRUSTED_PROXIES, never client-supplied) only as transient input to a daily-salted hash in sourcing, nothing per-viewer is stored; GET /v1/my/analytics needs a bearer token and forwards X-Supplier-Id only for a verified claim
       logistics: [/v1/quotes, /v1/fx, /v1/carriers, /v1/hs, /v1/compliance]  # GET /v1/compliance/* and POST /v1/compliance/checklist are public (static indicative data; same rate-limit class as landed-cost)
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]  # /v1/trust/verification/* (supplier documents) needs a verified supplier claim (403 supplier_claim_required otherwise; X-Supplier-Id forwarded from the DB, JSON body <= 64 KiB, non-GET needs a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on); GET /v1/trust/suppliers/{id}/verification (badge) is public; the rest of /v1/trust needs a bearer token

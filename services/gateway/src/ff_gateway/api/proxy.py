@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers, require_verified
 from ff_gateway.db import User
+from ff_gateway.domain.client_ip import client_ip
 from ff_gateway.domain.errors import (
     AccountDisabled,
     InvalidPath,
@@ -19,6 +20,7 @@ from ff_gateway.domain.errors import (
 )
 from ff_gateway.domain.routing import (
     is_internal_only,
+    is_listing_events,
     is_public,
     is_trust_verification_write_path,
     matched_prefix,
@@ -149,6 +151,10 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
+    if upstream == "sourcing" and is_listing_events(request.method, path):
+        # transient input for sourcing's daily-salted viewer hash (never stored); client-sent values are not forwarded
+        peer = request.client.host if request.client else None
+        headers["X-Client-Ip"] = client_ip(peer, request.headers.get("x-forwarded-for"), request.app.state.settings.trusted_proxy_networks())
     if (
         user_id
         and (upstream in ("messaging", "rfq", "feed") or trust_verification or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))

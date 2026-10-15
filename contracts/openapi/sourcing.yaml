@@ -373,6 +373,68 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
         "429": {$ref: "#/components/responses/Error"}
+  /v1/listings/{id}/events:
+    post:
+      summary: Record an anonymous listing event (view, contact click, share) for supplier analytics
+      description: |
+        Privacy-safe: only daily aggregate counters per listing and type are stored (`listing_stats_daily`); no IP,
+        user id or per-viewer row is persisted. The viewer (X-User-Id when signed in, else X-Client-Ip, both set by the
+        gateway) exists only as a transient HMAC keyed by a secret and the UTC day, held in bounded memory: the same
+        viewer counts at most once per listing+type per 30 minutes (`counted: false` for repeats) and feeds a
+        size-capped unique-viewer estimate. At most 60 events per minute per client IP and per user (429 + Retry-After).
+        Ids that are not published native listings answer the same 202 with `counted: false` (nothing is revealed).
+        With FF_INTERNAL_TOKEN configured the call needs X-Internal-Token (401 otherwise). Search impressions and
+        report counts are recorded server side; watchlist adds only through the internal `Analytics.bump` hook.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: X-User-Id, in: header, required: false, description: Set by the gateway (signed-in viewers only), schema: {type: string}}
+        - {name: X-Client-Ip, in: header, required: false, description: Set by the gateway; used only for the transient daily-salted hash, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: {type: string, enum: [view, contact_click, share]}
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [counted]
+                properties:
+                  counted: {type: boolean, description: "false when deduplicated or the listing is not countable"}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/my/analytics:
+    get:
+      summary: Analytics for the verified supplier's own listings
+      description: |
+        Identity is the gateway-set X-Supplier-Id (403 supplier_required without it); only the caller's own listings
+        are counted (`listing_id` of someone else's or an unknown listing is 404). Periods end today (UTC, inclusive);
+        `previous_*` covers the equally long period before. `unique_viewers` sums per-day estimates (a person on two
+        days counts twice; the estimate saturates when the in-memory cap is hit). Conversions are capped at 1.
+        `change_pct` is null when the previous value is 0. The per-listing table is top 20 by views.
+        Counters are kept 400 days and deleted with the listing or the account.
+      parameters:
+        - {$ref: "#/components/parameters/SupplierId"}
+        - {name: days, in: query, schema: {type: integer, enum: [7, 30, 90], default: 30}}
+        - {name: listing_id, in: query, schema: {type: string, maxLength: 64}}
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SupplierAnalytics"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/reports:
     get:
       summary: List user reports (admin)
@@ -511,6 +573,73 @@ components:
         application/json:
           schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
   schemas:
+    AnalyticsCounts:
+      type: object
+      required: [impression, view, contact_click, share, watchlist_add, report]
+      properties:
+        impression: {type: integer, minimum: 0, description: Appearances on served search pages}
+        view: {type: integer, minimum: 0}
+        contact_click: {type: integer, minimum: 0}
+        share: {type: integer, minimum: 0}
+        watchlist_add: {type: integer, minimum: 0}
+        report: {type: integer, minimum: 0}
+    SupplierAnalytics:
+      type: object
+      required: [period, totals, unique_viewers, previous_totals, change_pct, conversion, series, listings, listings_total]
+      properties:
+        period:
+          type: object
+          required: [days, from, to, previous_from, previous_to]
+          properties:
+            days: {type: integer, enum: [7, 30, 90]}
+            from: {type: string, format: date}
+            to: {type: string, format: date}
+            previous_from: {type: string, format: date}
+            previous_to: {type: string, format: date}
+        totals: {$ref: "#/components/schemas/AnalyticsCounts"}
+        unique_viewers:
+          type: object
+          required: [view, contact_click, note]
+          properties:
+            view: {type: integer, minimum: 0}
+            contact_click: {type: integer, minimum: 0}
+            note: {type: string}
+        previous_totals: {$ref: "#/components/schemas/AnalyticsCounts"}
+        change_pct:
+          type: object
+          description: Period-over-period change in percent per metric; null when the previous value is 0
+          additionalProperties: {type: [number, "null"]}
+        conversion:
+          type: object
+          required: [view_to_contact, impression_to_view, previous_view_to_contact]
+          properties:
+            view_to_contact: {type: [number, "null"], minimum: 0, maximum: 1}
+            impression_to_view: {type: [number, "null"], minimum: 0, maximum: 1}
+            previous_view_to_contact: {type: [number, "null"], minimum: 0, maximum: 1}
+        series:
+          type: array
+          description: One entry per day of the period, zero filled, oldest first
+          items:
+            allOf:
+              - $ref: "#/components/schemas/AnalyticsCounts"
+              - type: object
+                required: [date]
+                properties:
+                  date: {type: string, format: date}
+        listings:
+          type: array
+          description: Top 20 listings by views (only those with activity in the period)
+          items:
+            allOf:
+              - $ref: "#/components/schemas/AnalyticsCounts"
+              - type: object
+                required: [listing_id, title, status, view_to_contact]
+                properties:
+                  listing_id: {type: string}
+                  title: {type: string}
+                  status: {type: string}
+                  view_to_contact: {type: [number, "null"], minimum: 0, maximum: 1}
+        listings_total: {type: integer, minimum: 0, description: Listings with activity in the period (before the top-20 cut)}
     ListingWrite:
       type: object
       description: Unknown fields are ignored (supplier, source, status, id can not be set by the client). Text is stripped of control/bidi-override characters.

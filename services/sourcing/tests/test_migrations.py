@@ -74,3 +74,11 @@ def test_url_normalisation_and_auto_create_flag():
     assert Settings(database_url="postgresql://u:p@h/db").auto_create_tables is False
     forced = Settings(database_url="postgresql://u:p@h/db", db_auto_create=True)
     assert forced.auto_create_tables is True
+
+
+def test_listing_stats_table_in_head(tmp_path):
+    db = tmp_path / "mig.db"
+    command.upgrade(_cfg(db), "head")
+    assert "listing_stats_daily" in _tables(db)
+    command.downgrade(_cfg(db), "0003")
+    assert "listing_stats_daily" not in _tables(db) and "price_observations" in _tables(db)
