@@ -65,6 +65,7 @@ class Features:
     currency: str
     supplier_id: str
     country: str | None
+    all_tokens: frozenset[str] = frozenset()  # title | spec tokens, precomputed once per candidate
 
 
 def features(item: Listing) -> Features:
@@ -86,6 +87,7 @@ def features(item: Listing) -> Features:
         currency=item.price.min.currency,
         supplier_id=item.supplier.id,
         country=(item.origin.country_code if item.origin else item.supplier.location.country_code),
+        all_tokens=frozenset(title | specs),
     )
 
 
@@ -99,7 +101,7 @@ def similarity(ref: Features, cand: Features, item: Listing) -> tuple[float, lis
         return 0.0, []
     score, why = 0.0, []
     same_cat = bool(ref.category) and ref.category == cand.category
-    ref_all, cand_all = ref.title_tokens | ref.spec_tokens, cand.title_tokens | cand.spec_tokens
+    ref_all, cand_all = ref.all_tokens, cand.all_tokens
     text = _dice(ref_all, cand_all)
     if not same_cat and text < 0.2:
         return 0.0, []

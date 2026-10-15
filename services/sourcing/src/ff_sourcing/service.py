@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from .adapters.base import SourceAdapter
 from .adapters.registry import AdapterRegistry
+from .api.errors import ApiError
 from .clients.trust import TrustClient, TrustInfo, unknown
 from .domain import reco
 from .domain import search as engine
-from .domain.cache import TTLCache
+from .domain.cache import LRUTTLCache, TTLCache
 from .domain.models import (
     Facets,
     Listing,
@@ -32,12 +36,24 @@ class SourcingService:
         adapter_timeout_s: float = 3.0,
         cache_ttl_s: float = 60.0,
         trust_cache_ttl_s: float = 300.0,
+        reco_cache_ttl_s: float = 60.0,
+        reco_response_ttl_s: float = 30.0,
+        reco_cache_max: int = 256,
+        provider_concurrency: int = 6,
+        reco_budget_s: float = 5.0,
+        clock: Callable[[], float] = time.monotonic,
     ):
         self.registry = registry
         self.trust = trust
         self.timeout = adapter_timeout_s
         self._results = TTLCache(cache_ttl_s)
         self._trust_cache = TTLCache(trust_cache_ttl_s, maxsize=4096)
+        # similar / recommendations: anonymous endpoints, so everything below is keyed by public inputs only
+        self._pools = LRUTTLCache(reco_cache_ttl_s, reco_cache_max, clock)  # (adapter, kind, query shape) -> items
+        self._details = LRUTTLCache(reco_cache_ttl_s, reco_cache_max, clock)  # listing id -> detail | None
+        self._reco_resp = LRUTTLCache(reco_response_ttl_s, reco_cache_max, clock)
+        self._sem = asyncio.Semaphore(max(1, provider_concurrency))
+        self.reco_budget_s = reco_budget_s
         self.history = None  # PriceHistoryStore (set by main); None = no observations recorded
 
     # ---- trust ----------------------------------------------------------
@@ -213,16 +229,64 @@ class SourcingService:
             return []
 
     # ---- similar / recommendations -------------------------------------------
-    async def _pool(self, kinds: set[str]) -> list[ListingDetail]:
-        queries = [SearchQuery(kind=k, limit=200) for k in (sorted(kinds) or [None])]  # type: ignore[arg-type]
-        outcomes = await asyncio.gather(
-            *(self._query_adapter(a, q) for q in queries for a in self.registry.enabled())
-        )
+    PARTIAL_WARNING = "partial_results: time budget exceeded, results may be incomplete"
+
+    def invalidate_reco(self) -> None:
+        """Drop cached pools/details/responses (called when a live local store changes)."""
+        for c in (self._pools, self._details, self._reco_resp):
+            c.clear()
+
+    @staticmethod
+    async def _gather_until(coros: list[Coroutine[Any, Any, Any]], deadline: float) -> tuple[list[Any], bool]:
+        """Run ``coros`` concurrently until ``deadline`` (time.monotonic). Unfinished/failed ones yield ``None``;
+        returns (results in input order, whether any was cut off by the budget)."""
+        tasks = [asyncio.ensure_future(c) for c in coros]
+        if not tasks:
+            return [], False
+        _, pending = await asyncio.wait(tasks, timeout=max(0.0, deadline - time.monotonic()))
+        for t in pending:
+            t.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+        out = [None if (t in pending or t.cancelled() or t.exception() is not None) else t.result() for t in tasks]
+        return out, bool(pending)
+
+    async def _detail(self, listing_id: str) -> ListingDetail | None:
+        """Reference lookup: cached (also negatively) and bounded by the provider semaphore."""
+        hit = self._details.get(listing_id)
+        if hit is not LRUTTLCache.MISS:
+            return hit
+
+        async def one(a: SourceAdapter):
+            async with self._sem:
+                try:
+                    return await asyncio.wait_for(a.get_listing(listing_id), timeout=self.timeout)
+                except Exception:
+                    return None
+
+        item = next((r for r in await asyncio.gather(*(one(a) for a in self.registry.enabled())) if r is not None), None)
+        self._details.set(listing_id, item)
+        return item
+
+    async def _pool_part(self, adapter: SourceAdapter, kind: str | None) -> list[ListingDetail]:
+        key = (adapter.id, kind, "limit200")  # the query shape is fixed: SearchQuery(kind=kind, limit=200)
+        hit = self._pools.get(key)
+        if hit is not LRUTTLCache.MISS:
+            return hit
+        async with self._sem:
+            status, items = await self._query_adapter(adapter, SearchQuery(kind=kind, limit=200))  # type: ignore[arg-type]
+        if status.status == "ok" and not status.warning:  # never cache failures or degraded (mock-substituted) results
+            self._pools.set(key, items)
+        return items
+
+    async def _pool(self, kinds: set[str], deadline: float) -> tuple[list[ListingDetail], bool]:
+        coros = [self._pool_part(a, k) for k in (sorted(kinds) or [None]) for a in self.registry.enabled()]
+        outcomes, cut = await self._gather_until(coros, deadline)
         seen: dict[str, ListingDetail] = {}
-        for _, items in outcomes:
-            for it in items:
+        for items in outcomes:
+            for it in items or ():
                 seen.setdefault(it.id, it)
-        return list(seen.values())
+        return list(seen.values()), cut
 
     async def _rank_candidates(
         self,
@@ -231,13 +295,13 @@ class SourcingService:
         country: str | None,
         limit: int,
         per_supplier: int | None,
-    ) -> list[reco.Recommended]:
+        deadline: float | None = None,
+    ) -> tuple[list[reco.Recommended], bool]:
         ref_ids = {r.id for r, _ in refs}
         pool = [c for c in pool if c.id not in ref_ids]
         country = country.upper() if country else None
 
-        def score(item: ListingDetail, feats: list[tuple[reco.Features, float, str]]):
-            cf = reco.features(item)
+        def score(item: ListingDetail, cf: reco.Features, feats: list[tuple[reco.Features, float, str]]):
             best: tuple[float, list[reco.Reason], str | None] = (0.0, [], None)
             if feats:
                 for rf, w, rid in feats:
@@ -264,17 +328,23 @@ class SourcingService:
         feats = [(reco.features(r), w, r.id) for r, w in refs]
         cats = {f.category for f, _, _ in feats}
         pool = sorted(pool, key=lambda c: (c.category not in cats, not c.supplier.verified, c.id))[: reco.MAX_CANDIDATES]
-        pre = sorted(((score(c, feats)[0], c) for c in pool), key=lambda x: (-x[0], x[1].id))
+        cfeat = {c.id: reco.features(c) for c in pool}  # token sets built once per candidate, reused by both scoring passes
+        pre = sorted(((score(c, cfeat[c.id], feats)[0], c) for c in pool), key=lambda x: (-x[0], x[1].id))
         stage = [c.model_copy() for sc, c in pre[: reco.TRUST_STAGE] if sc > 0]
-        await self._enrich(stage)  # trust lookups only for the best pre-scored candidates (cached per supplier)
+        degraded = False
+        try:  # trust lookups only for the best pre-scored candidates (cached per supplier)
+            left = 30.0 if deadline is None else max(0.25, deadline - time.monotonic())
+            await asyncio.wait_for(self._enrich(stage), timeout=left)
+        except TimeoutError:
+            degraded = True  # score without trust bands rather than fail
         out: list[reco.Recommended] = []
         for c in stage:
-            sc, why = score(c, feats)
+            sc, why = score(c, cfeat[c.id], feats)
             if sc >= reco.MIN_SCORE:
                 out.append(reco.Recommended(listing=reco.as_listing(c), score=round(sc, 4), reasons=why))
         out.sort(key=reco.rank_key)
         if per_supplier is None:
-            return out[:limit]
+            return out[:limit], degraded
         kept: list[reco.Recommended] = []
         count: dict[str, int] = {}
         for r in out:
@@ -282,27 +352,49 @@ class SourcingService:
             if n < per_supplier:
                 count[r.listing.supplier.id] = n + 1
                 kept.append(r)
-        return kept[:limit]
+        return kept[:limit], degraded
 
-    async def similar(self, listing_id: str, limit: int) -> tuple[ListingDetail, list[reco.Recommended]] | None:
-        ref = await self.get_listing(listing_id)
-        if ref is None:
+    async def similar(
+        self, listing_id: str, limit: int
+    ) -> tuple[ListingDetail, list[reco.Recommended], str | None] | None:
+        key = ("sim", listing_id, limit)
+        hit = self._reco_resp.get(key)
+        if hit is not LRUTTLCache.MISS:
+            return hit
+        deadline = time.monotonic() + self.reco_budget_s
+        found, cut = await self._gather_until([self._detail(listing_id)], deadline)
+        if found[0] is None:
+            if cut:
+                raise ApiError(503, "upstream_timeout", "Sources did not answer in time; retry shortly")
             return None
-        pool = await self._pool({ref.kind})
-        return ref, await self._rank_candidates([(ref, 1.0)], pool, None, limit, None)
+        ref = found[0].model_copy()  # shared cache entry: never mutate it
+        await self._enrich([ref])
+        await self._observe([ref])
+        pool, cut2 = await self._pool({ref.kind}, deadline)
+        ranked, degraded = await self._rank_candidates([(ref, 1.0)], pool, None, limit, None, deadline)
+        partial = cut or cut2 or degraded
+        res = (ref, ranked, self.PARTIAL_WARNING if partial else None)
+        if not partial:
+            self._reco_resp.set(key, res)
+        return res
 
     async def recommendations(
         self, ref_ids: list[str], country: str | None, limit: int
-    ) -> tuple[list[str], list[reco.Recommended]]:
+    ) -> tuple[list[str], list[reco.Recommended], str | None]:
         """``ref_ids`` are recent listing ids, most recent first (weight decays with position)."""
-        async def one(i: str):
-            try:
-                return await self._first(lambda a: a.get_listing(i))
-            except Exception:
-                return None
-
-        found = await asyncio.gather(*(one(i) for i in ref_ids))
+        # Key keeps the caller's order (it sets the recency weights), de-duplicated; sorting it would merge
+        # different rankings.
+        key = ("rec", tuple(dict.fromkeys(ref_ids)), country.upper() if country else None, limit)
+        hit = self._reco_resp.get(key)
+        if hit is not LRUTTLCache.MISS:
+            return hit
+        deadline = time.monotonic() + self.reco_budget_s
+        found, cut = await self._gather_until([self._detail(i) for i in key[1]], deadline)
         refs = [(r, max(0.5, 1 - 0.05 * n)) for n, r in enumerate(x for x in found if x is not None)]
-        pool = await self._pool({r.kind for r, _ in refs})
-        ranked = await self._rank_candidates(refs, pool, country, limit, reco.PER_SUPPLIER_CAP)
-        return [r.id for r, _ in refs], ranked
+        pool, cut2 = await self._pool({r.kind for r, _ in refs}, deadline)
+        ranked, degraded = await self._rank_candidates(refs, pool, country, limit, reco.PER_SUPPLIER_CAP, deadline)
+        partial = cut or cut2 or degraded
+        res = ([r.id for r, _ in refs], ranked, self.PARTIAL_WARNING if partial else None)
+        if not partial:
+            self._reco_resp.set(key, res)
+        return res

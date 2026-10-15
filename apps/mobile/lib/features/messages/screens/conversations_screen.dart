@@ -65,21 +65,34 @@ class ConversationsScreen extends ConsumerStatefulWidget {
   ConsumerState<ConversationsScreen> createState() => _ConversationsScreenState();
 }
 
-class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
+class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
+    with WidgetsBindingObserver {
   Timer? _poll;
+  bool _foreground = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _poll = Timer.periodic(const Duration(seconds: 8), (_) {
       // The tab stays mounted (indexed stack) while hidden; only poll when
       // it is the visible branch (hidden branches have tickers disabled).
-      if (mounted && TickerMode.of(context)) ref.invalidate(conversationsProvider);
+      if (mounted && _foreground && TickerMode.of(context)) ref.invalidate(conversationsProvider);
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Paused/hidden app: no polling (battery, 401 spam after a token expiry).
+    final fg = state == AppLifecycleState.resumed || state == AppLifecycleState.inactive;
+    if (fg == _foreground) return;
+    _foreground = fg;
+    if (fg && mounted) ref.invalidate(conversationsProvider);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _poll?.cancel();
     super.dispose();
   }

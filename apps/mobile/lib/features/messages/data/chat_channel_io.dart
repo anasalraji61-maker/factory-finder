@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:factory_finder/features/messages/data/chat_socket.dart';
@@ -17,7 +18,15 @@ class _IoChannel implements ChatChannel {
 }
 
 Future<ChatChannel> connectChatChannel(Uri uri) async {
-  final ws = await WebSocket.connect(uri.toString()).timeout(const Duration(seconds: 10));
+  final pending = WebSocket.connect(uri.toString());
+  final WebSocket ws;
+  try {
+    ws = await pending.timeout(const Duration(seconds: 10));
+  } on TimeoutException {
+    // Do not leak a socket that connects after the timeout.
+    pending.then((late) => late.close()).catchError((Object _) => null);
+    rethrow;
+  }
   // Detect half-open connections (NAT idle drop, airplane toggle) so the
   // reconnect logic in LiveChatSocket actually fires.
   ws.pingInterval = const Duration(seconds: 25);

@@ -424,16 +424,26 @@ class FeedActions {
     }
   }
 
+  /// Only the lists a post can appear in (not every alive supplier list).
+  void _invalidateLists(String? supplierId) {
+    _ref.invalidate(feedListProvider('home'));
+    _ref.invalidate(feedListProvider('trending'));
+    if (supplierId != null && supplierId.isNotEmpty) {
+      _ref.invalidate(feedListProvider('sup:$supplierId'));
+    }
+  }
+
   Future<void> deletePost(String postId) async {
+    final sid = _ref.read(feedPostStoreProvider)[postId]?.supplierId;
     await _repo.deletePost(postId);
     _store.remove(postId);
-    _ref.invalidate(feedListProvider);
+    _invalidateLists(sid);
   }
 
   Future<FeedPost> publish(PostDraft draft) async {
     final post = await _repo.createPost(draft);
     _store.putAll(<FeedPost>[post]);
-    _ref.invalidate(feedListProvider);
+    _invalidateLists(post.supplierId);
     return post;
   }
 

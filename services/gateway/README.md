@@ -9,7 +9,7 @@ Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 
 ## WebSocket proxy
 
-`WS /v1/ws/conversations/{id}` is proxied to messaging (same path). Auth: `Authorization: Bearer <access>` or `?token=<access>`. Only the verified `X-User-Id` / `X-Supplier-Id` (and `X-Internal-Token` if configured) go upstream; client-supplied `user_id` and the token are never forwarded. Close codes: 4401 unauthenticated, 4403/4429 from messaging, 4404 unknown path, 1011 upstream unavailable. Note: access logs of the ASGI server may record `?token=`; prefer the header where possible.
+`WS /v1/ws/conversations/{id}` is proxied to messaging (same path). Auth: preferred `?ticket=` from `POST /v1/ws-ticket` (single use, 30 s, `FF_GATEWAY_WS_TICKET_TTL_SECONDS` / `FF_GATEWAY_WS_TICKET_MAX`); legacy `Authorization: Bearer <access>` or `?token=<access>` stays accepted while `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true` (default). Only the verified `X-User-Id` / `X-Supplier-Id` (and `X-Internal-Token` if configured) go upstream; client-supplied `user_id` and the token are never forwarded. Close codes: 4401 unauthenticated, 4403/4429 from messaging, 4404 unknown path, 1011 upstream unavailable. Note: access logs of the ASGI server may record `?token=`; prefer the header where possible.
 
 ## Supplier claims
 

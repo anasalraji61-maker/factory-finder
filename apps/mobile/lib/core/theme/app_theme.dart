@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   AppColors._();
@@ -35,6 +34,9 @@ class AppRadius {
   static const double sm = 8, md = 14, lg = 20, xl = 28;
 }
 
+/// Bundled Arabic-capable UI font (variable weight), see pubspec `fonts:`.
+const String kAppFontFamily = 'Cairo';
+
 class AppTheme {
   AppTheme._();
 
@@ -45,8 +47,9 @@ class AppTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static TextTheme _textTheme(TextTheme base) {
+    // Cairo is bundled (assets/fonts, OFL): no runtime fetch, works offline.
     try {
-      return GoogleFonts.cairoTextTheme(base);
+      return base.apply(fontFamily: kAppFontFamily);
     } catch (_) {
       return base; // graceful fallback to the platform font
     }

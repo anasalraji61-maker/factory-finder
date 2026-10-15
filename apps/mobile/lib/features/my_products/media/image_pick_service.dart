@@ -17,6 +17,10 @@ class PickedImage {
 abstract class ImagePickService {
   Future<PickedImage?> pickFromGallery();
   Future<PickedImage?> pickFromCamera();
+
+  /// Android only: a pick result lost because the OS killed the app while the
+  /// camera/gallery was open. Null when there is none (and on other platforms).
+  Future<PickedImage?> retrieveLost();
 }
 
 class PluginImagePickService implements ImagePickService {
@@ -34,6 +38,10 @@ class PluginImagePickService implements ImagePickService {
       imageQuality: 85,
     );
     if (file == null) return null;
+    return _toPicked(file);
+  }
+
+  Future<PickedImage> _toPicked(XFile file) async {
     final bytes = await file.readAsBytes();
     final name = file.name.isEmpty ? 'photo.jpg' : file.name;
     return PickedImage(
@@ -41,6 +49,17 @@ class PluginImagePickService implements ImagePickService {
       filename: name,
       mime: inferImageMime(name, file.mimeType),
     );
+  }
+
+  @override
+  Future<PickedImage?> retrieveLost() async {
+    try {
+      final r = await _picker.retrieveLostData();
+      if (r.isEmpty || r.file == null) return null;
+      return _toPicked(r.file!);
+    } catch (_) {
+      return null; // unsupported platform / plugin error
+    }
   }
 
   @override
@@ -55,8 +74,18 @@ class FakeImagePickService implements ImagePickService {
   FakeImagePickService({this.next});
 
   PickedImage? next;
+
+  /// Returned once by [retrieveLost], then cleared.
+  PickedImage? lost;
   int galleryCalls = 0;
   int cameraCalls = 0;
+
+  @override
+  Future<PickedImage?> retrieveLost() async {
+    final l = lost;
+    lost = null;
+    return l;
+  }
 
   @override
   Future<PickedImage?> pickFromGallery() async {

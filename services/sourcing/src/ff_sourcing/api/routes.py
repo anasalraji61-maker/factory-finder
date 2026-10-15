@@ -117,12 +117,14 @@ class SimilarResponse(BaseModel):
     listing_id: str
     items: list[reco.Recommended]
     total: int
+    warning: str | None = None  # additive: set when the time budget cut the work short (partial results)
 
 
 class RecommendationsResponse(BaseModel):
     items: list[reco.Recommended]
     total: int
     based_on: list[str]  # the reference ids that resolved to listings (others are ignored)
+    warning: str | None = None  # additive: set when the time budget cut the work short (partial results)
 
 
 @router.get("/listings/{listing_id}/similar", response_model=SimilarResponse, response_model_exclude_none=True)
@@ -130,7 +132,7 @@ async def similar(listing_id: str, request: Request, limit: int = Query(10, ge=1
     found = await svc(request).similar(listing_id, limit)
     if found is None:
         raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
-    return SimilarResponse(listing_id=listing_id, items=found[1], total=len(found[1]))
+    return SimilarResponse(listing_id=listing_id, items=found[1], total=len(found[1]), warning=found[2])
 
 
 _REF_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}\Z")
@@ -155,5 +157,5 @@ async def recommendations(
             ids.append(part)
     if len(ids) > MAX_REFS:
         raise ApiError(422, "too_many_refs", f"At most {MAX_REFS} ref ids are allowed")
-    based_on, items = await svc(request).recommendations(ids, country, limit)
-    return RecommendationsResponse(items=items, total=len(items), based_on=based_on)
+    based_on, items, warning = await svc(request).recommendations(ids, country, limit)
+    return RecommendationsResponse(items=items, total=len(items), based_on=based_on, warning=warning)

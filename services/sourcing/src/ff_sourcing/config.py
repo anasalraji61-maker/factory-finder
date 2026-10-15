@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     licensed_allow_example: bool = False  # tests/demos only; example mappings are refused by default
     cache_ttl_s: float = 60.0
     trust_cache_ttl_s: float = 300.0
+    # /v1/recommendations + /v1/listings/{id}/similar amplification guards (0 TTL disables the caches)
+    reco_cache_ttl_s: float = 60.0  # candidate pools and reference details
+    reco_response_ttl_s: float = 30.0  # whole responses
+    reco_cache_max: int = 256  # entries per cache (LRU)
+    provider_concurrency: int = 6  # max concurrent provider calls made by those two endpoints
+    reco_budget_s: float = 5.0  # overall time budget per request; partial results + `warning` when exceeded
 
     # Persistent supplier-owned ("native") listings. SQLite by default; see docs/DB.md.
     database_url: str = "sqlite+aiosqlite:///./sourcing.db"

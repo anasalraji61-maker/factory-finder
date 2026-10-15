@@ -16,6 +16,15 @@ final chatSocketProvider = Provider.autoDispose.family<ChatSocket, String>((ref,
     refreshSession: api.refreshSession,
     connector: connectChatChannel,
     myUserId: ref.read(authProvider)?.id,
+    ticketProvider: () async {
+      try {
+        final r = await api.post('/v1/ws-ticket');
+        final t = r is Map ? r['ticket'] : null;
+        return t is String && t.isNotEmpty ? t : null;
+      } catch (_) {
+        return null; // old gateway / transient: fall back to the token param
+      }
+    },
   );
   ref.onDispose(() {
     socket.close();

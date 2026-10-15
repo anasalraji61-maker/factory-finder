@@ -210,6 +210,7 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () => context.push('/settings'),
                 ),
+                if (serverUrlOverrideAllowed()) ...[
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.dns_outlined),
@@ -225,6 +226,7 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.edit_outlined, size: 20),
                   onTap: () => _editServerUrl(context, ref, serverUrl),
                 ),
+                ],
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.storefront_outlined),

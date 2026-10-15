@@ -111,7 +111,7 @@ class PersistedSettings {
           displayCurrencyProvider.overrideWith((ref) => currency!),
         if (hasDestination)
           destinationProvider.overrideWith((ref) => destination),
-        if (serverUrl != null && serverUrl!.isNotEmpty)
+        if (serverUrl != null && serverUrl!.isNotEmpty && serverUrlOverrideAllowed())
           serverUrlProvider.overrideWith((ref) => serverUrl!),
         if (themeMode != null) themeModeProvider.overrideWith((ref) => themeMode!),
         if (digitStyle != null)

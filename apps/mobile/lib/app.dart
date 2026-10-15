@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart' show kReleaseMockBuild;
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/router/app_router.dart';
@@ -10,7 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class FactoryFinderApp extends ConsumerWidget {
-  const FactoryFinderApp({super.key, this.router});
+  const FactoryFinderApp({super.key, this.router, this.showMockBanner = kReleaseMockBuild});
+
+  /// Release build running on mock data: paint a visible banner.
+  final bool showMockBanner;
 
   /// Router override (tests pass a fresh one). Defaults to the app singleton.
   final GoRouter? router;
@@ -32,10 +36,20 @@ class FactoryFinderApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) => DigitStyleScope(
-        style: digits,
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) {
+        final body = child ?? const SizedBox.shrink();
+        return DigitStyleScope(
+          style: digits,
+          child: showMockBanner
+              ? Banner(
+                  key: const ValueKey<String>('mock-release-banner'),
+                  message: 'MOCK DATA',
+                  location: BannerLocation.topEnd,
+                  child: body,
+                )
+              : body,
+        );
+      },
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,

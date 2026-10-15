@@ -41,10 +41,6 @@ class _InvoiceScreenState extends ConsumerState<InvoiceScreen> {
   void initState() {
     super.initState();
     _fetch();
-    _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() => _now = DateTime.now().toUtc());
-    });
     _pollTimer = Timer.periodic(widget.pollInterval, (_) {
       if (!mounted) return;
       final inv = _invoice;
@@ -59,6 +55,26 @@ class _InvoiceScreenState extends ConsumerState<InvoiceScreen> {
     super.dispose();
   }
 
+  /// Runs the 1 s repaint only while a countdown is actually visible
+  /// (payable invoice that has not expired yet).
+  void _syncTick() {
+    final inv = _invoice;
+    final now = DateTime.now().toUtc();
+    final counting = inv != null &&
+        inv.status.showsPayDetails &&
+        invoiceTimeLeft(inv.expiresAt, now) > Duration.zero;
+    if (counting) {
+      _tickTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() => _now = DateTime.now().toUtc());
+        _syncTick();
+      });
+    } else {
+      _tickTimer?.cancel();
+      _tickTimer = null;
+    }
+  }
+
   Future<void> _fetch() async {
     if (_fetching) return;
     _fetching = true;
@@ -69,7 +85,9 @@ class _InvoiceScreenState extends ConsumerState<InvoiceScreen> {
       setState(() {
         _invoice = inv;
         _error = null;
+        _now = DateTime.now().toUtc();
       });
+      _syncTick();
     } catch (e) {
       if (!mounted) return;
       // Keep showing the last good invoice if a background poll fails.
@@ -119,7 +137,9 @@ class _InvoiceScreenState extends ConsumerState<InvoiceScreen> {
       setState(() {
         _invoice = inv;
         _cancelling = false;
+        _now = DateTime.now().toUtc();
       });
+      _syncTick();
       ref.invalidate(dealInvoicesProvider(inv.dealId));
       _snack(context.tr('pay.cancelled'));
     } catch (e) {

@@ -46,7 +46,22 @@ All repositories call the gateway with the contract paths: `GET /v1/search`, `/v
 `/v1/requests` (`scope=mine|public`), `/v1/requests/{id}/offers`, `POST /v1/offers/{id}/accept`,
 `/v1/auth/*`. `ApiClient` keeps access/refresh tokens in memory, sends `Authorization: Bearer`,
 refreshes once on 401 and maps errors to `ApiException(status, code, message)`.
-The server URL can be changed at runtime from Profile (memory only).
+The server URL can be changed at runtime from Profile (persisted). In a **release** build that was
+built with an explicit `FF_API_BASE_URL`, the stored override is ignored and the editor is hidden
+unless the build also passes `--dart-define=FF_ALLOW_SERVER_URL=true` (developer toggle).
+
+## Release builds
+
+`FF_MOCK` defaults to `true` (dev/CI). A release build still in mock mode paints a **MOCK DATA**
+banner so it cannot ship silently. Always build releases with:
+
+```bash
+flutter build apk --release --dart-define=FF_MOCK=false --dart-define=FF_API_BASE_URL=https://api.example.com
+```
+
+Chat uses a single-use WebSocket ticket (`POST /v1/ws-ticket`, `?ticket=`) so the access token never
+appears in a URL; against an older gateway it falls back to `?token=`. The Cairo font is bundled
+(`assets/fonts`, OFL) - no runtime font download.
 
 ## Layout
 

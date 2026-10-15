@@ -30,7 +30,7 @@ class _PendingUpload {
   double progress = 0;
 }
 
-class _ChatScreenState extends ConsumerState<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObserver {
   final TextEditingController _input = TextEditingController();
   final List<MessageAttachment> _attached = <MessageAttachment>[];
   final List<_PendingUpload> _uploads = <_PendingUpload>[];
@@ -40,6 +40,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _loading = true;
   Object? _error;
   Timer? _poll;
+  Timer? _readTimer;
   int _seq = 0;
   ProviderSubscription<ChatSocket>? _keepAlive;
   StreamSubscription<ChatMessage>? _wsMsgs;
@@ -51,14 +52,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
-    _poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
+    _startPoll();
     // Keep the autoDispose provider alive while this screen is open.
     _keepAlive = ref.listenManual(chatSocketProvider(widget.conversationId), (_, __) {});
     final socket = _keepAlive!.read();
     _wsMsgs = socket.messages.listen((m) {
       if (!mounted) return;
+      final before = _messages;
       setState(() => _messages = appendIncoming(_messages, m));
+      _markReadIfPeerNew(before, _messages);
     });
     _wsStatus = socket.statuses.listen((s) {
       if (!mounted) return;
@@ -68,8 +72,48 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     socket.connect();
   }
 
+  void _startPoll() {
+    _poll?.cancel();
+    _poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // No polling while the app is paused/hidden (battery, 401 spam).
+    if (state == AppLifecycleState.resumed) {
+      if (_poll == null || !_poll!.isActive) {
+        _startPoll();
+        _refresh();
+      }
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _poll?.cancel();
+    }
+  }
+
+  /// Debounced read receipt when a message from the peer arrives while the
+  /// chat is open (otherwise conversation badges stay stale until reopen).
+  void _markReadIfPeerNew(List<ChatMessage> before, List<ChatMessage> after) {
+    final known = <String>{for (final m in before) m.id};
+    final fresh = after.any((m) => !m.isMine && !m.isSystem && !known.contains(m.id));
+    if (!fresh) return;
+    _readTimer?.cancel();
+    _readTimer = Timer(const Duration(milliseconds: 800), () async {
+      if (!mounted) return;
+      try {
+        await _repo.markRead(widget.conversationId);
+      } catch (_) {
+        return;
+      }
+      if (mounted) ref.invalidate(conversationsProvider);
+    });
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _readTimer?.cancel();
     _poll?.cancel();
     _wsMsgs?.cancel();
     _wsStatus?.cancel();
@@ -116,7 +160,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       final msgs = await _repo.messages(widget.conversationId);
       if (!mounted) return;
+      final before = _messages;
       setState(() => _messages = mergeServer(_messages, msgs));
+      _markReadIfPeerNew(before, _messages);
     } catch (_) {
       // Polling failures are silent; the next tick retries.
     } finally {

@@ -41,6 +41,25 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recoverLostPick());
+  }
+
+  /// Android may kill the app while the camera is open; pick it back up.
+  Future<void> _recoverLostPick() async {
+    if (!mounted) return;
+    PickedImage? lost;
+    try {
+      lost = await ref.read(imagePickServiceProvider).retrieveLost();
+    } catch (_) {
+      return;
+    }
+    if (lost == null || !mounted) return;
+    await _uploadPicked(lost);
+  }
+
+  @override
   void dispose() {
     _body.dispose();
     _tags.dispose();
@@ -61,6 +80,10 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
       return;
     }
     if (picked == null || !mounted) return;
+    await _uploadPicked(picked);
+  }
+
+  Future<void> _uploadPicked(PickedImage picked) async {
     final problem = checkImageFile(bytes: picked.bytes.length, mime: picked.mime);
     if (problem != null) {
       showFeedSnack(context, context.tr(problem));
@@ -231,7 +254,8 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.black54,
                             foregroundColor: Colors.white,
-                            minimumSize: const Size(32, 32),
+                            minimumSize: const Size(48, 48),
+                            tapTargetSize: MaterialTapTargetSize.padded,
                             padding: EdgeInsets.zero,
                           ),
                           icon: const Icon(Icons.close, size: 18),

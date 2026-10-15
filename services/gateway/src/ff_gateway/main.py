@@ -41,6 +41,7 @@ from ff_gateway.domain.errors import GatewayError, RateLimited
 from ff_gateway.domain.mail import build_mailer
 from ff_gateway.domain.rate_limit import build_limit_store
 from ff_gateway.domain.security import TokenService
+from ff_gateway.domain.ws_tickets import WsTicketStore
 from ff_gateway.obs import db_ready, install_observability, ready_response
 
 log = logging.getLogger("ff_gateway")
@@ -116,6 +117,7 @@ def create_app(
     app = FastAPI(title="Factory Finder gateway", version=__version__, lifespan=lifespan)
     app.state.settings = settings
     app.state.clock = clock
+    app.state.ws_tickets = WsTicketStore(clock, settings.ws_ticket_ttl_seconds, settings.ws_ticket_max)
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.http = http
     app.state.tokens = TokenService(

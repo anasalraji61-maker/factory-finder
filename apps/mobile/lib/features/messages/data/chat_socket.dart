@@ -21,7 +21,10 @@ Duration backoffDelay(int attempt) {
 }
 
 /// `http(s)://host[/prefix]` -> `ws(s)://host[/prefix]/v1/ws/conversations/{id}?token=...`
-Uri chatSocketUri(String baseUrl, String conversationId, String token) {
+///
+/// Pass [ticket] (from `POST /v1/ws-ticket`) instead of an access token to keep
+/// the token out of the URL / server access logs: `...?ticket=...`.
+Uri chatSocketUri(String baseUrl, String conversationId, String token, {bool ticket = false}) {
   final base = Uri.parse(baseUrl);
   final scheme = base.scheme == 'https' || base.scheme == 'wss' ? 'wss' : 'ws';
   var prefix = base.path;
@@ -33,7 +36,7 @@ Uri chatSocketUri(String baseUrl, String conversationId, String token) {
     host: base.host,
     port: base.hasPort ? base.port : null,
     path: '$prefix/v1/ws/conversations/$conversationId',
-    queryParameters: <String, String>{'token': token},
+    queryParameters: <String, String>{ticket ? 'ticket' : 'token': token},
   );
 }
 
@@ -117,6 +120,7 @@ class LiveChatSocket implements ChatSocket {
     required this.refreshSession,
     required this.connector,
     this.myUserId,
+    this.ticketProvider,
   });
 
   final String baseUrl;
@@ -128,6 +132,10 @@ class LiveChatSocket implements ChatSocket {
   final ChatChannelConnector connector;
   final String? myUserId;
 
+  /// Fetches a single-use websocket ticket. Null result (or no provider) falls
+  /// back to sending the access token (old gateways).
+  final Future<String?> Function()? ticketProvider;
+
   final StreamController<ChatMessage> _msgs = StreamController<ChatMessage>.broadcast();
   final StreamController<ChatSocketStatus> _stat =
       StreamController<ChatSocketStatus>.broadcast();
@@ -138,6 +146,7 @@ class LiveChatSocket implements ChatSocket {
   int _attempt = 0;
   bool _closed = false;
   bool _refreshUsed = false;
+  bool _opening = false;
 
   @override
   Stream<ChatMessage> get messages => _msgs.stream;
@@ -154,28 +163,45 @@ class LiveChatSocket implements ChatSocket {
 
   @override
   void connect() {
-    if (_closed || _channel != null) return;
+    if (_closed || _channel != null || _opening) return;
     _open();
   }
 
   Future<void> _open() async {
-    final token = accessToken();
-    if (token == null || token.isEmpty) {
-      _set(ChatSocketStatus.failed);
-      return;
-    }
-    _set(_attempt == 0 ? ChatSocketStatus.connecting : ChatSocketStatus.reconnecting);
-    ChatChannel ch;
+    if (_opening) return;
+    _opening = true;
+    ChatChannel? opened;
+    var retryNow = false;
     try {
-      ch = await connector(chatSocketUri(baseUrl, conversationId, token));
-    } catch (_) {
-      _scheduleRetry();
-      return;
+      opened = await _dial();
+      if (opened == null && !_closed && !_refreshUsed) {
+        // A rejected handshake (expired token) surfaces as a connector error:
+        // refresh once per failure streak, then retry right away.
+        _refreshUsed = true;
+        bool ok;
+        try {
+          ok = await refreshSession();
+        } catch (_) {
+          ok = false;
+        }
+        retryNow = ok && !_closed;
+      }
+    } finally {
+      _opening = false;
     }
     if (_closed) {
-      await ch.close();
+      await opened?.close();
       return;
     }
+    if (opened == null) {
+      if (retryNow) {
+        _open();
+      } else if (_status != ChatSocketStatus.failed) {
+        _scheduleRetry();
+      }
+      return;
+    }
+    final ch = opened;
     _channel = ch;
     _attempt = 0;
     _refreshUsed = false;
@@ -189,6 +215,35 @@ class LiveChatSocket implements ChatSocket {
       onDone: () => _onDone(ch.closeCode),
       cancelOnError: false,
     );
+  }
+
+  /// One connection attempt. Null on failure (status already set to failed
+  /// when there is no token at all).
+  Future<ChatChannel?> _dial() async {
+    final token = accessToken();
+    if (token == null || token.isEmpty) {
+      _set(ChatSocketStatus.failed);
+      return null;
+    }
+    _set(_attempt == 0 ? ChatSocketStatus.connecting : ChatSocketStatus.reconnecting);
+    try {
+      String? ticket;
+      final provider = ticketProvider;
+      if (provider != null) {
+        try {
+          ticket = await provider();
+        } catch (_) {
+          ticket = null;
+        }
+      }
+      if (_closed) return null;
+      final uri = (ticket != null && ticket.isNotEmpty)
+          ? chatSocketUri(baseUrl, conversationId, ticket, ticket: true)
+          : chatSocketUri(baseUrl, conversationId, accessToken() ?? token);
+      return await connector(uri);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _onDone(int? code) async {

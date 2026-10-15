@@ -113,4 +113,98 @@ void main() {
     expect(channels.length, 2);
     await s.close();
   });
+
+  test('ticket uri uses ticket param, not token', () {
+    final u = chatSocketUri('https://api.example.com', 'c1', 'wst_abc', ticket: true);
+    expect(u.toString(), 'wss://api.example.com/v1/ws/conversations/c1?ticket=wst_abc');
+    expect(u.queryParameters.containsKey('token'), isFalse);
+  });
+
+  test('uses the ticket from ticketProvider and falls back to the token', () async {
+    final uris = <Uri>[];
+    var ticket = 'wst_1';
+    final s = LiveChatSocket(
+      baseUrl: 'http://h',
+      conversationId: 'c1',
+      accessToken: () => 'tok',
+      refreshSession: () async => true,
+      ticketProvider: () async => ticket.isEmpty ? null : ticket,
+      connector: (uri) async {
+        uris.add(uri);
+        return FakeChannel();
+      },
+    );
+    s.connect();
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(uris.single.queryParameters, {'ticket': 'wst_1'});
+    await s.close();
+
+    final uris2 = <Uri>[];
+    final s2 = LiveChatSocket(
+      baseUrl: 'http://h',
+      conversationId: 'c1',
+      accessToken: () => 'tok',
+      refreshSession: () async => true,
+      ticketProvider: () async => null,
+      connector: (uri) async {
+        uris2.add(uri);
+        return FakeChannel();
+      },
+    );
+    s2.connect();
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(uris2.single.queryParameters, {'token': 'tok'});
+    await s2.close();
+  });
+
+  test('connect twice while opening opens a single socket', () async {
+    var calls = 0;
+    final gate = Completer<void>();
+    final s = LiveChatSocket(
+      baseUrl: 'http://h',
+      conversationId: 'c1',
+      accessToken: () => 'tok',
+      refreshSession: () async => true,
+      connector: (uri) async {
+        calls++;
+        await gate.future;
+        return FakeChannel();
+      },
+    );
+    s.connect();
+    s.connect();
+    await Future<void>.delayed(Duration.zero);
+    gate.complete();
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    s.connect();
+    expect(calls, 1);
+    await s.close();
+  });
+
+  test('handshake failure refreshes the session once and retries', () async {
+    var token = 'old';
+    var refreshes = 0;
+    final seen = <String?>[];
+    final s = LiveChatSocket(
+      baseUrl: 'http://h',
+      conversationId: 'c1',
+      accessToken: () => token,
+      refreshSession: () async {
+        refreshes++;
+        token = 'new';
+        return true;
+      },
+      connector: (uri) async {
+        seen.add(uri.queryParameters['token']);
+        if (uri.queryParameters['token'] == 'old') throw Exception('401');
+        return FakeChannel();
+      },
+    );
+    s.connect();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(refreshes, 1);
+    expect(seen, ['old', 'new']);
+    expect(s.status, ChatSocketStatus.connected);
+    await s.close();
+  });
 }

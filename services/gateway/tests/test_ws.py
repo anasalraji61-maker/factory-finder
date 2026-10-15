@@ -160,3 +160,50 @@ def test_upstream_handshake_403_maps_4403(client, fake, hdr):
 def test_upstream_down_1011(client, fake, hdr):
     fake["fail"] = ConnectionRefusedError()
     assert _code(client, "/v1/ws/conversations/c1", headers=hdr) == 1011
+
+
+def test_ticket_requires_auth(client):
+    assert client.post("/v1/ws-ticket").status_code == 401
+
+
+@retry_on_cancel()
+def test_ticket_single_use_and_identity(client, fake, auth, hdr):
+    r = client.post("/v1/ws-ticket", headers=hdr)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["expires_in"] == 30 and body["ticket"]
+    url = f"/v1/ws/conversations/c1?ticket={body['ticket']}"
+    with client.websocket_connect(url) as w:
+        assert w.receive_text() == "hello"
+    assert fake["up"].headers["X-User-Id"] == auth["user"]["id"]
+    assert "ticket" not in fake["up"].url
+    assert _code(client, url) == 4401  # burned
+
+
+def test_ticket_expires(client, fake, hdr, clock):
+    t = client.post("/v1/ws-ticket", headers=hdr).json()["ticket"]
+    clock.advance(31)
+    assert _code(client, f"/v1/ws/conversations/c1?ticket={t}") == 4401
+
+
+def test_unknown_ticket_4401(client, fake):
+    assert _code(client, "/v1/ws/conversations/c1?ticket=wst_nope") == 4401
+
+
+def test_ticket_store_cap(clock):
+    from ff_gateway.domain.ws_tickets import WsTicketStore
+
+    st = WsTicketStore(clock, 30, 2)
+    a, _ = st.issue("u1")
+    b, _ = st.issue("u2")
+    c, _ = st.issue("u3")
+    assert st.consume(a) is None and st.consume(b) == "u2" and st.consume(c) == "u3"
+
+
+def test_token_param_can_be_disabled(make_client):
+    c = make_client(ws_allow_token_param=False)
+    tok = c.post(
+        "/v1/auth/register", json={"email": "z@example.com", "password": "password123", "name": "Z"}
+    ).json()
+    c.app.state.ws_connect = lambda *a, **k: None
+    assert _code(c, f"/v1/ws/conversations/c1?token={tok['access_token']}") == 4401

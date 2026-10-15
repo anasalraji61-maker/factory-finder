@@ -1,7 +1,7 @@
 # Mobile runtime review (apps/mobile/lib) - 2026-10
 
 Static review only (no Flutter SDK, never run on a device). Items below are
-UNFIXED, ordered by priority. Fixed items are summarised at the end.
+UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass (bottom).
 
 ## P0 - blocks first device run
 
@@ -14,31 +14,31 @@ UNFIXED, ordered by priority. Fixed items are summarised at the end.
      (flutter_secure_storage 9 needs 23 - set `minSdkVersion 23`).
    - iOS `Info.plist`: `NSCameraUsageDescription`,
      `NSPhotoLibraryUsageDescription`; ATS exception for http dev server.
-2. **`FF_MOCK` defaults to `true`** (`api_client.dart`). A release build without
+2. [FIXED (see second pass)] **`FF_MOCK` defaults to `true`** (`api_client.dart`). A release build without
    `--dart-define=FF_MOCK=false --dart-define=FF_API_BASE_URL=https://...`
    silently ships mock data. Consider defaulting to false for `kReleaseMode`.
-3. Persisted `server_url` (Profile editor) overrides the `--dart-define` URL on
+3. [FIXED] Persisted `server_url` (Profile editor) overrides the `--dart-define` URL on
    every launch, including release. Ignore the stored value when
    `kReleaseMode`, or validate it is https.
 
 ## P1 - likely user-visible
 
-4. WebSocket token is sent as `?token=` query (`chat_socket.dart`), which ends
+4. [FIXED] WebSocket token is sent as `?token=` query (`chat_socket.dart`), which ends
    up in server/proxy access logs. Prefer a first-frame auth or header if the
    gateway can support it. Also: on a handshake rejection (expired token) the
    connector throws and retries with the same stale token forever (30 s cap);
    it never calls `refreshSession()` on that path (only on close code 4401).
-5. `LiveChatSocket.connect()` can be called twice while the first
+5. [FIXED] `LiveChatSocket.connect()` can be called twice while the first
    `connector()` await is pending (`_channel` is still null) and opens two
    sockets. Guard with an `_opening` flag. `WebSocket.connect(...).timeout()`
    also leaks the socket if it connects after the 10 s timeout.
-6. Chat: incoming messages while the screen is open are never marked read
+6. [FIXED] Chat: incoming messages while the screen is open are never marked read
    (`markRead` only runs in `_load`), so conversation badges stay stale until
    reopen. Call `markRead` (debounced) when `_messages` grows from a peer.
-7. Chat/conversation polling runs on a fixed timer even when the app is in the
+7. [FIXED] Chat/conversation polling runs on a fixed timer even when the app is in the
    background or the user is logged out (401 spam). Pause on
    `AppLifecycleState.paused` (WidgetsBindingObserver).
-8. `invoice_screen.dart` rebuilds the whole screen every second forever
+8. [FIXED] `invoice_screen.dart` rebuilds the whole screen every second forever
    (`_tickTimer`), even when the invoice has no countdown (paid/cancelled).
    Only run the tick while an expiry countdown is visible.
 9. Session restore race at cold start: `restoreSessionOnStart` runs after
@@ -48,10 +48,10 @@ UNFIXED, ordered by priority. Fixed items are summarised at the end.
 10. `watchlist` star: `_existingWatch()` treats a still-loading watchlist as
     empty, so tapping before it loads adds a duplicate watch. Await
     `watchlistProvider.future` first.
-11. `google_fonts` fetches Cairo at runtime (`AppTheme`); offline first launch
+11. [FIXED] `google_fonts` fetches Cairo at runtime (`AppTheme`); offline first launch
     falls back to the system font and logs errors. Bundle the font asset for
     release (also relevant for Arabic glyph consistency).
-12. Android `image_picker`: process death while the camera is open loses the
+12. [PARTLY FIXED (feed composer only)] Android `image_picker`: process death while the camera is open loses the
     result (`retrieveLostData` never called). Low frequency, bad UX on
     low-memory devices.
 13. No `deep link` host configuration (AndroidManifest intent-filters / iOS
@@ -60,7 +60,7 @@ UNFIXED, ordered by priority. Fixed items are summarised at the end.
 
 ## P2 - polish / hardening
 
-14. `FeedActions.deletePost` and `publish` invalidate *all* `feedListProvider`
+14. [FIXED] `FeedActions.deletePost` and `publish` invalidate *all* `feedListProvider`
     families (home, trending, every supplier list) -> refetch storm when many
     are alive. Invalidate only `home` and the affected supplier key.
 15. `CommentsController.refresh` has no generation guard (unlike the post
@@ -69,7 +69,7 @@ UNFIXED, ordered by priority. Fixed items are summarised at the end.
     `chat_screen` rebuilds `buildChatItems(_messages).reversed.toList()` on
     every build (including each keystroke-driven rebuild of the composer
     state). Memoise when `_messages` changes if chats get long (1000+ rows).
-17. Several `IconButton.styleFrom(minimumSize: Size(32,32))` (feed composer
+17. [PARTLY FIXED (composer remove-image button; compact chips left)] Several `IconButton.styleFrom(minimumSize: Size(32,32))` (feed composer
     remove-image) and `VisualDensity.compact` chips are below 48 dp tap size.
 18. `Icons.send_rounded` in the chat composer: confirm it mirrors in RTL on a
     device (Icons.send does; the rounded variant may not).
@@ -123,6 +123,41 @@ UNFIXED, ordered by priority. Fixed items are summarised at the end.
 15. Tooltips (a11y labels) added to three unlabeled IconButtons.
 16. Tests added in `test/live/live_repositories_test.dart` (transient refresh
     failure keeps the session; unsafe path is rejected).
+
+## Fixed in second pass (release safety / realtime)
+
+- #2 `FF_MOCK` default stays true for dev/CI, but `kReleaseMockBuild`
+  (`kReleaseMode && mock`) paints a "MOCK DATA" banner (`app.dart`); README
+  "Release builds" documents the required dart-defines.
+- #3 `serverUrlOverrideAllowed()`: a release build built with an explicit
+  `FF_API_BASE_URL` ignores the persisted `server_url` and hides the Profile
+  editor unless built with `--dart-define=FF_ALLOW_SERVER_URL=true`. Release
+  builds without a build-time URL keep the editor (the default URL is unusable).
+- #4 Gateway: `POST /v1/ws-ticket` (30 s, single use, in-memory, capped) and
+  `?ticket=` at the websocket handshake; old `?token=`/Bearer still accepted
+  while `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` is true (default). Contract additive.
+  Mobile fetches a ticket per connect (falls back to token on old gateways) and
+  refreshes the session once after a rejected handshake, then backs off.
+- #5 `LiveChatSocket._opening` guard; the io connector closes a socket that
+  connects after its 10 s timeout.
+- #6 Chat marks read (800 ms debounce) when a new peer message arrives via
+  socket or poll.
+- #7 Chat and conversations polling pause on paused/hidden (WidgetsBindingObserver)
+  and resume with an immediate refresh.
+- #8 Invoice 1 s tick runs only while a payable invoice has time left.
+- #11 Cairo bundled (`assets/fonts/Cairo.ttf`, OFL.txt); `AppTheme` uses
+  `fontFamily: 'Cairo'` - no google_fonts runtime fetch (the package stays a
+  dependency; tests still set `allowRuntimeFetching = false`).
+- #12 `ImagePickService.retrieveLost()` (image_picker `retrieveLostData`),
+  consumed by the feed composer on open. Chat/product editor/verification
+  sheet do not recover lost picks yet.
+- #14 `FeedActions` invalidates only `home`, `trending` and `sup:<supplier>`.
+- #17 Composer remove-image button is 48 dp.
+- Cairo variable font renders weights through the `wght` axis; verify bold
+  Arabic on a device.
+- New tests: `test/core/release_safety_test.dart`, `test/messages/chat_socket_test.dart`
+  (ticket, double connect, handshake refresh), `services/gateway/tests/test_ws.py`.
+  Nothing was compiled (no Flutter SDK).
 
 Note for reviewer: nothing here was compiled. Edits were re-read for syntax;
 `make test` / `flutter analyze` must be run in CI. One read-only git command

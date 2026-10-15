@@ -1,12 +1,35 @@
 import 'package:dio/dio.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Default stays `true` for dev/CI. A RELEASE build that is still in mock mode
+/// shows a visible banner (see [kReleaseMockBuild]); ship with
+/// `--dart-define=FF_MOCK=false --dart-define=FF_API_BASE_URL=https://...`.
 const bool kMockMode = bool.fromEnvironment('FF_MOCK', defaultValue: true);
-const String kDefaultBaseUrl = String.fromEnvironment(
-  'FF_API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:8000',
-);
+
+/// Build-time gateway URL ('' when not given).
+const String _kBuildBaseUrl = String.fromEnvironment('FF_API_BASE_URL');
+const String kDefaultBaseUrl =
+    _kBuildBaseUrl == '' ? 'http://10.0.2.2:8000' : _kBuildBaseUrl;
+
+/// Developer toggle: `--dart-define=FF_ALLOW_SERVER_URL=true` lets the Profile
+/// server-URL override win even over a pinned build-time URL in release.
+const bool kAllowServerUrlOverride =
+    bool.fromEnvironment('FF_ALLOW_SERVER_URL', defaultValue: false);
+
+/// True for a release build still running on mock data (shows a banner).
+const bool kReleaseMockBuild = kReleaseMode && kMockMode;
+
+/// Whether a user-entered/persisted server URL may replace the build default.
+/// Release builds with a build-time `FF_API_BASE_URL` ignore it (and hide the
+/// editor) unless [allowFlag] (`FF_ALLOW_SERVER_URL`) is set.
+bool serverUrlOverrideAllowed({
+  bool release = kReleaseMode,
+  bool pinned = _kBuildBaseUrl != '',
+  bool allowFlag = kAllowServerUrlOverride,
+}) =>
+    !release || !pinned || allowFlag;
 
 /// Gateway URL used when not in mock mode. Editable from Profile (memory only).
 final serverUrlProvider = StateProvider<String>((ref) => kDefaultBaseUrl);

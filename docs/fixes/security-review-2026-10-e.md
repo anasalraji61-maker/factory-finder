@@ -36,7 +36,7 @@
   `X-Client-Ip` is only forwarded by the gateway for the events route, computed from the trusted-proxy chain (never from client headers), and sourcing rejects `/events` without the internal token when one is configured.
 
 ## Open (design / needs product decision)
-1. MEDIUM - **Recommendations / similar are an amplification endpoint** (public, anonymous): one request fans out up to 20 `get_listing` calls plus a
+1. MEDIUM - **Recommendations / similar are an amplification endpoint** - FIXED 2026-10-15 (docs/decisions/sourcing-reco-cache.md): TTL-cached pools/details/responses, provider semaphore, time budget with partial+warning, cheaper scoring. Original finding: (public, anonymous): one request fans out up to 20 `get_listing` calls plus a
    pool query of up to 200 items per adapter per kind, then scores pool x refs (~10k similarity evaluations on the event loop), with no cache. Needs a short TTL
    cache for the pool (keyed by kind set) and for `get_listing` by id, plus a semaphore around licensed-provider calls. Not done here: caching changes freshness semantics tests rely on.
 2. LOW - Freight accept's `revision` is optional; a client that omits it keeps the bait-and-switch window. Make the mobile app always send it, then require it in `/v2`.

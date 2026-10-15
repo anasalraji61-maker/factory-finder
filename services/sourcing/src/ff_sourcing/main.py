@@ -71,6 +71,11 @@ def create_app(
         adapter_timeout_s=settings.adapter_timeout_s,
         cache_ttl_s=settings.cache_ttl_s,
         trust_cache_ttl_s=settings.trust_cache_ttl_s,
+        reco_cache_ttl_s=settings.reco_cache_ttl_s,
+        reco_response_ttl_s=settings.reco_response_ttl_s,
+        reco_cache_max=settings.reco_cache_max,
+        provider_concurrency=settings.provider_concurrency,
+        reco_budget_s=settings.reco_budget_s,
     )
     service.history = PriceHistoryStore(
         engine,
@@ -114,7 +119,13 @@ def create_app(
     )
     native_service = app.state.native
     native_service.analytics = analytics
-    native_service.on_change = service.history.record_listings
+    record_obs = service.history.record_listings
+
+    async def on_native_change(items: list):
+        service.invalidate_reco()  # native listings are live: drop cached pools/details/responses
+        return await record_obs(items)
+
+    native_service.on_change = on_native_change
     app.state.admin_token = settings.admin_token.get_secret_value() if settings.admin_token else None
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 

@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     freight_admin_token: str | None = Field(default=None, validation_alias="FF_FREIGHT_ADMIN_TOKEN")
     feed_admin_token: str | None = Field(default=None, validation_alias="FF_FEED_ADMIN_TOKEN")
     upstream_timeout_seconds: float = 15.0
+    # WebSocket tickets (POST /v1/ws-ticket): short-lived, single-use, in memory.
+    ws_ticket_ttl_seconds: int = 30
+    ws_ticket_max: int = 10_000
+    # Keep accepting the access token in the ?token= query / Authorization header at the websocket
+    # handshake (compat for old app builds). Set false once clients use ?ticket=.
+    ws_allow_token_param: bool = True
     max_body_bytes: int = 10 * 1024 * 1024
     rate_limit_per_minute: int = 300
     # Public image GETs (feeds load many thumbnails) get their own, larger bucket per IP.

@@ -147,8 +147,10 @@ paths:
                   listing_id: {type: string}
                   items: {type: array, items: {$ref: "#/components/schemas/Recommended"}}
                   total: {type: integer}
+                  warning: {type: string, nullable: true, description: "Set (e.g. partial_results: ...) when the time budget ran out"}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
   /v1/recommendations:
     get:
       summary: Recommendations from recently viewed listing ids (stateless, no user tracking)
@@ -172,6 +174,7 @@ paths:
                   items: {type: array, items: {$ref: "#/components/schemas/Recommended"}}
                   total: {type: integer}
                   based_on: {type: array, items: {type: string}, description: "Reference ids that resolved to listings"}
+                  warning: {type: string, nullable: true, description: "Set (e.g. partial_results: ...) when the time budget ran out"}
         "422": {$ref: "#/components/responses/Error"}
   /v1/suppliers/{id}:
     get:
