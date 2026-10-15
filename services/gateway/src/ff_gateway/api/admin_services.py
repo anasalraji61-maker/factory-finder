@@ -13,7 +13,7 @@ import httpx
 from fastapi import APIRouter, Request, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ff_gateway.api.admin import require_admin
+from ff_gateway.api.admin import require_admin, sanitize_reviewer
 from ff_gateway.api.admin_demand import ADMIN_ACTOR, MAX_ADMIN_BODY, _seg
 from ff_gateway.api.deps import internal_headers
 from ff_gateway.domain.errors import PayloadTooLarge, UpstreamTimeout, UpstreamUnavailable
@@ -112,7 +112,7 @@ def _make(svc: AdminService):
         headers.update(internal_headers(request, ADMIN_ACTOR))
         headers["X-Admin-Token"] = token
         if svc.reviewer:
-            headers["X-Reviewer"] = ADMIN_ACTOR
+            headers["X-Reviewer"] = sanitize_reviewer(request.headers.get("x-reviewer"))
         base = request.app.state.settings.upstream_map()[svc.name].rstrip("/")
         try:
             resp = await request.app.state.http.request(

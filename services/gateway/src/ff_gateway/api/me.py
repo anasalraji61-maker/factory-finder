@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ff_gateway.api.auth import _tokens, send_verification
 from ff_gateway.api.deps import current_user, internal_headers, require_verified, to_me
-from ff_gateway.db import RefreshToken, User, bump_token_version
+from ff_gateway.db import ClaimDecision, RefreshToken, User, bump_token_version
 from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import (
     AccountExists,
@@ -113,6 +113,12 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             )
         if "supplier_id" in data:
             if sid is None:  # release
+                if db_user.supplier_id:
+                    s.add(ClaimDecision(
+                        user_id=db_user.id, supplier_id=db_user.supplier_id, action="self_release",
+                        previous_status=db_user.supplier_claim_status, new_status="none",
+                        reviewer=db_user.id[:64], reason=None, created_at=request.app.state.clock.now(),
+                    ))  # fmt: skip
                 db_user.supplier_claim_status = "none"
             elif sid != db_user.supplier_id:  # new claim: never trusted until an admin approves it
                 db_user.supplier_claim_status = "pending"

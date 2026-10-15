@@ -104,7 +104,7 @@ def test_trust_admin_passthrough(make_client, mock_upstream):
     assert r.status_code == 200
     h = lst.calls.last.request.headers
     assert h["x-admin-token"] == "tr-adm" and h["x-internal-token"] == "int" and h["x-user-id"] == "admin"
-    assert h["x-reviewer"] == "admin" and "x-supplier-id" not in h
+    assert h["x-reviewer"] == "evil" and "x-supplier-id" not in h
     assert c.post(f"{base}/documents/d1/decision", json={"decision": "approve"}, headers=adm).status_code == 200
     assert dec.calls.last.request.content == b'{"decision":"approve"}' or b"approve" in dec.calls.last.request.content
     assert c.put(f"{base}/documents/d1/expiry", json={"expires_on": None}, headers=adm).status_code == 200

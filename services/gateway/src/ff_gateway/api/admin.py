@@ -1,14 +1,16 @@
 """Admin review of supplier claims (disabled unless FF_GATEWAY_ADMIN_TOKEN is set)."""
 
 import hmac
+import re
 from typing import Literal
 
 from fastapi import APIRouter, Query, Request
 from sqlalchemy import func, select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ff_gateway.db import DeletionJob, User
-from ff_gateway.domain.errors import BEARER_REALM, GatewayError
+from ff_gateway.db import ClaimDecision, DeletionJob, User
+from ff_gateway.domain import privacy
+from ff_gateway.domain.errors import BEARER_REALM, GatewayError, ValidationFailed
 
 router = APIRouter(tags=["admin"])
 
@@ -65,31 +67,100 @@ async def list_claims(
     return {"items": [_claim(u) for u in rows], "total": total, "page": page, "page_size": limit}
 
 
-async def _decide(request: Request, user_id: str, approve: bool) -> dict:
+_REVIEWER_BAD = re.compile(r"[^A-Za-z0-9_.:-]")
+MAX_REASON = 500
+
+
+def sanitize_reviewer(raw: str | None) -> str:
+    """Audit label from the optional X-Reviewer header: charset-restricted (so no '@' / emails), <= 64 chars, else 'admin'."""
+    return _REVIEWER_BAD.sub("", raw or "")[:64] or "admin"
+
+
+class ClaimNotVerified(GatewayError):
+    status_code = 409
+    code = "claim_not_verified"
+    default_message = "This user has no verified supplier claim"
+
+
+async def _reason(request: Request, required: bool) -> str | None:
+    raw = await request.body()
+    data = None
+    if raw.strip():
+        try:
+            data = await request.json()
+        except ValueError:
+            raise ValidationFailed.for_field("reason", "body must be JSON") from None
+    if data is not None and not isinstance(data, dict):
+        raise ValidationFailed.for_field("reason", "body must be a JSON object")
+    reason = (data or {}).get("reason")
+    if reason is not None and not isinstance(reason, str):
+        raise ValidationFailed.for_field("reason", "reason must be a string")
+    reason = reason.strip() if reason else None
+    if required and not reason:
+        raise ValidationFailed.for_field("reason", "reason is required")
+    if reason and len(reason) > MAX_REASON:
+        raise ValidationFailed.for_field("reason", f"reason must be at most {MAX_REASON} characters")
+    return reason or None
+
+
+async def _decide(request: Request, user_id: str, action: str) -> dict:
     require_admin(request)
+    reason = await _reason(request, required=action == "revoke")
+    reviewer = sanitize_reviewer(request.headers.get("x-reviewer"))
     async with request.app.state.sessionmaker() as s:
         u = await s.get(User, user_id)
         if u is None:
             raise StarletteHTTPException(404, "User not found")
-        if u.supplier_claim_status != "pending" or not u.supplier_id:
+        before = u.supplier_claim_status
+        if action == "revoke":
+            if before != "verified" or not u.supplier_id:
+                raise ClaimNotVerified()
+        elif before != "pending" or not u.supplier_id:
             raise ClaimNotPending()
-        if approve:
+        sid = u.supplier_id
+        if action == "approve":
             u.supplier_claim_status = "verified"
-        else:  # reject releases the id so it can be claimed again
+        else:  # reject / revoke release the id so it can be claimed again (after fresh approval)
             u.supplier_claim_status = "none"
             u.supplier_id = None
+        s.add(ClaimDecision(
+            user_id=u.id, supplier_id=sid, action=action, previous_status=before, new_status=u.supplier_claim_status,
+            reviewer=reviewer, reason=reason, created_at=request.app.state.clock.now(),
+        ))  # fmt: skip
         await s.commit()
-        return _claim(u)
+        out = _claim(u)
+    privacy.drop_active_cache(request.app, user_id)  # X-Supplier-Id is read per request; drop the 5 s active cache too
+    return out
 
 
 @router.post("/v1/admin/supplier-claims/{user_id}/approve")
 async def approve_claim(user_id: str, request: Request) -> dict:
-    return await _decide(request, user_id, True)
+    return await _decide(request, user_id, "approve")
 
 
 @router.post("/v1/admin/supplier-claims/{user_id}/reject")
 async def reject_claim(user_id: str, request: Request) -> dict:
-    return await _decide(request, user_id, False)
+    return await _decide(request, user_id, "reject")
+
+
+@router.post("/v1/admin/supplier-claims/{user_id}/revoke")
+async def revoke_claim(user_id: str, request: Request) -> dict:
+    return await _decide(request, user_id, "revoke")
+
+
+@router.get("/v1/admin/supplier-claims/audit")
+async def claim_audit(request: Request, user_id: str | None = Query(None, max_length=40), limit: int = Query(100, ge=1, le=500)) -> dict:
+    """Append-only decision log, newest first."""
+    require_admin(request)
+    q = select(ClaimDecision).order_by(ClaimDecision.id.desc()).limit(limit)
+    if user_id:
+        q = q.where(ClaimDecision.user_id == user_id)
+    async with request.app.state.sessionmaker() as s:
+        rows = (await s.scalars(q)).all()
+    return {"items": [
+        {"id": r.id, "user_id": r.user_id, "supplier_id": r.supplier_id, "action": r.action, "previous_status": r.previous_status,
+         "new_status": r.new_status, "reviewer": r.reviewer, "reason": r.reason, "created_at": r.created_at.isoformat()} for r in rows
+    ]}  # fmt: skip
 
 
 @router.get("/v1/admin/account-deletions")

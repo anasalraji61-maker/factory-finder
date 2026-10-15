@@ -217,6 +217,33 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
+  /v1/admin/supplier-claims/{user_id}/revoke:
+    post:
+      operationId: revokeSupplierClaim
+      description: "Admin only (X-Admin-Token). Verified -> released (supplier_id cleared, status none, X-Supplier-Id stops at once); 409 claim_not_verified otherwise; 422 without a reason. Optional X-Reviewer (sanitized: charset [A-Za-z0-9_.:-], max 64, so no '@') is recorded in the audit log, default admin. approve/reject also accept an optional {reason} body and are audited."
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 1, maxLength: 500}}}}}
+      responses:
+        "200": {description: Updated claim, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierClaim"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/admin/supplier-claims/audit:
+    get:
+      operationId: listSupplierClaimAudit
+      description: "Admin only (X-Admin-Token). Append-only claim decision log (approve, reject, revoke, self_release), newest first."
+      parameters:
+        - {name: user_id, in: query, schema: {type: string, maxLength: 40}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}
+      responses:
+        "200": {description: Decisions, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {type: object, properties: {id: {type: integer}, user_id: {type: string}, supplier_id: {type: string}, action: {type: string, enum: [approve, reject, revoke, self_release]}, previous_status: {type: string}, new_status: {type: string}, reviewer: {type: string}, reason: {type: [string, "null"]}, created_at: {type: string, format: date-time}}}}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
   /v1/admin/overview:
     get:
       operationId: adminOverview
@@ -368,7 +395,7 @@ paths:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the trust admin path, may contain slashes"}]
     get: &adminTrustVerification
       operationId: adminTrustVerificationGet
-      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_TRUST_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to trust /v1/admin/trust/verification/{path} (GET documents, POST documents/{id}/decision, PUT documents/{id}/expiry, GET audit; X-Reviewer=admin is added for the audit log); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_TRUST_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to trust /v1/admin/trust/verification/{path} (GET documents, POST documents/{id}/decision, PUT documents/{id}/expiry, GET audit; X-Reviewer is forwarded sanitized (charset [A-Za-z0-9_.:-], max 64, default admin) for the audit log); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
       responses:
         "200": {description: Upstream trust response (status and body passed through)}
         "401": {$ref: "#/components/responses/Error"}

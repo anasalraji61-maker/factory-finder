@@ -131,6 +131,23 @@ class PasswordResetToken(Base):
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class ClaimDecision(Base):
+    """Append-only audit of supplier-claim decisions (approve / reject / revoke / self_release). Never updated or deleted
+    by the app; rows hold opaque ids and an admin-written reason (<= 500 chars) only."""
+
+    __tablename__ = "claim_decisions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    supplier_id: Mapped[str] = mapped_column(String(64), index=True)
+    action: Mapped[str] = mapped_column(String(16))
+    previous_status: Mapped[str] = mapped_column(String(10))
+    new_status: Mapped[str] = mapped_column(String(10))
+    reviewer: Mapped[str] = mapped_column(String(64))
+    reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 def make_engine(url: str) -> AsyncEngine:
     if ":memory:" in url or url.endswith("sqlite+aiosqlite://"):
         return create_async_engine(
