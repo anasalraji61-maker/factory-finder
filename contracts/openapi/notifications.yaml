@@ -3,9 +3,10 @@ info: {title: Factory Finder notifications, version: 0.1.0, description: "Watchl
 servers: [{url: http://localhost:8108}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -32,6 +33,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/watchlist:
     get:
+      summary: "Get watchlist"
       operationId: listWatchlist
       parameters:
         - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
@@ -40,6 +42,7 @@ paths:
         "200": {description: Caller's watches, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Watch"}}, total: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}
     post:
+      summary: "Create watchlist"
       operationId: addWatch
       description: Exactly one of listing_id or search. Idempotent per owner and target (200 returns the existing watch, 201 a new one).
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WatchCreate"}}}}
@@ -50,6 +53,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/watchlist/{id}:
     delete:
+      summary: "Delete watchlist by id"
       operationId: deleteWatch
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -59,6 +63,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/alerts:
     get:
+      summary: "Get alerts"
       operationId: listAlerts
       parameters:
         - {name: unread_only, in: query, schema: {type: boolean, default: false}}
@@ -69,6 +74,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/alerts/evaluate:
     post:
+      summary: "Create alerts evaluate"
       operationId: evaluateAlerts
       description: Internal. Evaluates active watches against sourcing, applies cooldown/dedupe, stores alerts and sends push summaries.
       requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {owner_id: {type: [string, "null"]}, watch_id: {type: [string, "null"]}}}}}}
@@ -77,6 +83,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/internal/tracking-events:
     post:
+      summary: "Create internal tracking-events"
       operationId: ingestTrackingEvents
       description: |
         Internal (X-Internal-Token when FF_INTERNAL_TOKEN is set). Consumer side of tracking's outbox: each event is one `tracking_outbox` row.
@@ -132,11 +139,13 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/alerts/read-all:
     post:
+      summary: "Create alerts read-all"
       operationId: markAllAlertsRead
       responses:
         "200": {description: Count marked, content: {application/json: {schema: {type: object, properties: {marked: {type: integer}}}}}}
   /v1/alerts/{id}/read:
     post:
+      summary: "Create alerts by id read"
       operationId: markAlertRead
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -145,10 +154,12 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/devices:
     get:
+      summary: "Get devices"
       operationId: listDevices
       responses:
         "200": {description: Caller's devices, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/Device"}}}}}}}
     post:
+      summary: "Create devices"
       operationId: registerDevice
       description: Upsert by token (a token moves to the latest registering user). At most 10 active devices per user (422 device_limit).
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/DeviceCreate"}}}}
@@ -158,11 +169,13 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/notification-prefs:
     get:
+      summary: "Get notification-prefs"
       operationId: getNotificationPrefs
       description: Caller's delivery preferences (defaults when never saved).
       responses:
         "200": {description: Preferences, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
     put:
+      summary: "Update notification-prefs"
       operationId: putNotificationPrefs
       description: Partial update. Channels per alert type (in_app, push, email), quiet hours in the user's timezone (push is deferred, not dropped), language ar/en. Enforced at delivery time. in_app is accepted but the inbox is never suppressed.
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefsUpdate"}}}}
@@ -171,6 +184,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/notification-prefs/verify-email:
     post:
+      summary: "Create notification-prefs verify-email"
       operationId: verifyDigestEmail
       description: Promotes the pending digest address to verified when the code matches (15 min expiry; 5 wrong tries lock verification for 1 hour).
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/VerifyEmail"}}}}
@@ -181,6 +195,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/notification-prefs/resend-code:
     post:
+      summary: "Create notification-prefs resend-code"
       operationId: resendDigestEmailCode
       description: Mails a fresh code to the pending address (max 3 sends/hour/user, shared with address changes). Invalidates the previous code.
       responses:
@@ -189,12 +204,14 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/alerts/digest:
     post:
+      summary: "Create alerts digest"
       operationId: sendDigests
       description: Internal (X-Internal-Token). Enqueues and sends the daily email digest (idempotent per user per local day).
       responses:
         "200": {description: Sent, content: {application/json: {schema: {type: object, properties: {sent: {type: integer}}}}}}
   /v1/devices/{id}:
     delete:
+      summary: "Delete devices by id"
       operationId: deleteDevice
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:

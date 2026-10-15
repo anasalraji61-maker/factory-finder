@@ -98,3 +98,11 @@ Read straight from the environment (not in `Settings`): kill switches `FF_TRACKI
 - Validators (`domain/validators.py`): ISO 6346 container check digit, AWB mod-7 (separators `- . / space` tolerated), tolerant B/L (strips "B/L No.:" labels; digit-only numbers accepted). Invalid input returns `suggestions` (max 3 valid numbers one typo away: O/0, I/1, S/5, B/8 ...).
 - `data/carrier_directory.json` (+ `domain/directory.py`): ~45 ocean carriers/forwarders (SCAC, BIC owner prefixes, B/L prefixes) and ~69 airlines (3-digit AWB prefix). INDICATIVE, `as_of` 2026-10; `confidence: low` rows are best effort; leasing owner prefixes yield no suggestion. Used for `carrier_suggestion` in `GET /v1/validate/...` and as fallback when a shipment is added without a carrier. Never overrides a carrier the user chose.
 - `data/status_map.json`: provider status -> canonical status, default table + per-carrier overrides + generic DCSA profile. Unknown codes are skipped and never change status; a delivered shipment is never reopened (`resolve_status`). Carrier names are UNVERIFIED.
+
+## Reference detection
+
+`GET /v1/references/detect?q=` (1-64 chars, otherwise 422) guesses whether free text is a container, AWB, vessel IMO or B/L
+number using `domain/detect.py` and the existing validators. Local only, no network, linear-time regexes on a 64-char
+input. Response: `{candidates: [{type, confidence: high|medium|low, normalized, note}]}`; `[]` for garbage. `high` only when
+exactly one type fits (and, for B/L, a known carrier prefix with a matching shape); overlapping shapes are capped at `medium`.
+Gateway passthrough: see `docs/requests/gateway-tracking-detect.md`.

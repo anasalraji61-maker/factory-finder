@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ff_tracking.domain.carriers import find_carrier
+from ff_tracking.domain.detect import detect_reference
 from ff_tracking.domain.directory import suggest_carrier
 from ff_tracking.domain.enums import ReferenceType, ShipmentStatus, TransportMode
 from ff_tracking.domain.errors import Unauthenticated
@@ -101,6 +102,24 @@ async def validate(reference_type: ReferenceType, reference: Annotated[str, Path
         "suggestions": list(v.suggestions),
         "carrier_suggestion": suggestion.to_dict() if suggestion else None,
     }
+
+
+_DETECT_NOTES = {
+    ReferenceType.CONTAINER: "ISO 6346 container number (check digit valid)",
+    ReferenceType.AWB: "Air waybill (IATA prefix + mod-7 check digit valid)",
+    ReferenceType.VESSEL_IMO: "Vessel IMO number (check digit valid)",
+    ReferenceType.BL: "Bill of lading number (format only, cannot be verified offline)",
+}
+
+
+@router.get("/references/detect")
+async def detect(q: Annotated[str, Query(min_length=1, max_length=64)]) -> dict[str, Any]:
+    """Guess the reference type from free text. Pure local computation, no network. Empty list when nothing fits."""
+    return {"candidates": [
+        {"type": c.reference_type.value, "confidence": c.confidence, "normalized": c.normalized,
+         "note": _DETECT_NOTES[c.reference_type]}
+        for c in detect_reference(q)
+    ]}
 
 
 __all__ = ["find_carrier", "router"]

@@ -7,6 +7,7 @@ Social side of the app: supplier/factory **posts**, **follow** / unfollow, a per
 - Screening (`moderation.py`, a trimmed copy of sourcing's): links, e-mails, phone numbers, messaging handles and prohibited goods (ar + en) are rejected with 422 `content_rejected`; the match is never echoed.
 - Anti-spam (`antispam.py`, pure and deterministic): same-author exact/near duplicate (last 20 posts or comments; normalized hash or 3-word-shingle Jaccard >= 0.9) -> 409 `duplicate_content`; near duplicate of another author's item (24h, Jaccard >= 0.8), per-author velocity (5 posts / 10 comments per 60 s) or obfuscated contact/solicitation/flooding -> 201 with `status: needs_review` (hidden from public surfaces, visible to its author, listed in the admin queue; admin restore publishes). Plain contact info is still rejected by screening (422). See `docs/decisions/feed-antispam.md`.
 - Feeds use opaque keyset cursors (`limit` <= 50). Trending = likes + 2 x comments over the last 14 days.
+- Mutes: `PUT/DELETE /v1/feed/mutes/{supplier_id}` (idempotent) and `GET /v1/feed/mutes` (cursor page). Per viewer only: a muted supplier's posts are left out of that viewer's home, trending and supplier-post listings (the viewer's own posts stay visible to them). Counts, ranking and other viewers are unaffected. Capped at 500 per user (409 `mute_limit_reached`; re-muting at the cap is fine), muting your own supplier is 422 `cannot_mute_self`. Table `mutes` (migration 0002, index `ix_mutes_user_created`); included in privacy export/erasure.
 - Reports: N distinct reporters (default 3) hide a post/comment; repeats are accepted silently (202). Admin hide/restore (restore clears the reports).
 - Limits: per-user rolling-hour rate limits stored in the DB (so they hold across replicas), plus caps on posts per supplier, follows per user and comments per post.
 - Admin: `X-Admin-Token` = `FF_FEED_ADMIN_TOKEN`; 404 when unset.
@@ -14,7 +15,7 @@ Social side of the app: supplier/factory **posts**, **follow** / unfollow, a per
 
 Run: `uvicorn ff_feed.main:app --port 8113` (from `src/`). Test: `../../.venv/bin/python -m pytest`. Migrations: `alembic upgrade head` (SQLite tables are auto-created in dev; PostgreSQL needs the `pg` extra and Alembic).
 
-Env (prefix `FF_FEED_`): `DATABASE_URL`, `DB_AUTO_CREATE`, `ADMIN_TOKEN`, `MEDIA_BASE_URL` (also read from `FF_MEDIA_PUBLIC_BASE_URL`), `REPORT_HIDE_THRESHOLD` (3), `MAX_POSTS_PER_SUPPLIER` (500), `MAX_FOLLOWS_PER_USER` (500), `MAX_COMMENTS_PER_POST` (1000), `MAX_PAGE_SIZE` (50), `TRENDING_WINDOW_DAYS` (14), `RATE_WINDOW_SECONDS` (3600), `RATE_POSTS` (10), `RATE_COMMENTS` (30), `RATE_LIKES` (200), `RATE_FOLLOWS` (60), `RATE_REPORTS` (20) (0 disables a limit); shared `FF_INTERNAL_TOKEN`, `FF_ENV`, `FF_LOG_FORMAT`.
+Env (prefix `FF_FEED_`): `DATABASE_URL`, `DB_AUTO_CREATE`, `ADMIN_TOKEN`, `MEDIA_BASE_URL` (also read from `FF_MEDIA_PUBLIC_BASE_URL`), `REPORT_HIDE_THRESHOLD` (3), `MAX_POSTS_PER_SUPPLIER` (500), `MAX_FOLLOWS_PER_USER` (500), `MAX_MUTES_PER_USER` (500), `MAX_COMMENTS_PER_POST` (1000), `MAX_PAGE_SIZE` (50), `TRENDING_WINDOW_DAYS` (14), `RATE_WINDOW_SECONDS` (3600), `RATE_POSTS` (10), `RATE_COMMENTS` (30), `RATE_LIKES` (200), `RATE_FOLLOWS` (60), `RATE_REPORTS` (20) (0 disables a limit); shared `FF_INTERNAL_TOKEN`, `FF_ENV`, `FF_LOG_FORMAT`.
 
 ## Ops
 `GET /ready` (unauthenticated): 503 when the database is unreachable. One JSON log line per request (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or bodies. `X-Request-Id` is accepted or generated and echoed. Code: `obs.py` (self-contained copy).
@@ -33,6 +34,7 @@ Every setting in `src/ff_feed/config.py` (`Settings`, case-insensitive env names
 | `FF_FEED_REPORT_MIN_ACCOUNT_AGE_SECONDS` | 86400 |
 | `FF_FEED_MAX_POSTS_PER_SUPPLIER` | 500 |
 | `FF_FEED_MAX_FOLLOWS_PER_USER` | 500 |
+| `FF_FEED_MAX_MUTES_PER_USER` | 500 |
 | `FF_FEED_MAX_COMMENTS_PER_POST` | 1000 |
 | `FF_FEED_MAX_PAGE_SIZE` | 50 |
 | `FF_FEED_DEFAULT_PAGE_SIZE` | 20 |

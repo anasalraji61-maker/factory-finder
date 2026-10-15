@@ -3,9 +3,10 @@ info: {title: Factory Finder trust, version: 0.2.0, description: "Explainable su
 servers: [{url: http://localhost:8104}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -32,6 +33,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/trust/suppliers/{supplier_id}:
     get:
+      summary: "Get trust suppliers by supplier id"
       operationId: getSupplierTrust
       parameters: [{name: supplier_id, in: path, required: true, schema: {type: string}}]
       responses:
@@ -40,6 +42,7 @@ paths:
         "503": {$ref: "#/components/responses/Error"}
   /v1/trust/suppliers:batch:
     get:
+      summary: "Get trust suppliers batch"
       operationId: batchSupplierTrust
       parameters: [{name: ids, in: query, required: true, description: "comma separated, max 50", schema: {type: string}}]
       responses:
@@ -49,6 +52,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/trust/evaluate:
     post:
+      summary: "Create trust evaluate"
       operationId: evaluateTrust
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierSignals"}}}}
       responses:

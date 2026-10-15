@@ -14,9 +14,10 @@ info:
 servers: [{url: http://localhost:8111}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (database reachable)
       responses:
         "200":
@@ -42,6 +43,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/invoices:
     post:
+      summary: "Create invoices"
       operationId: createInvoice
       description: |
         Deal owner (the buyer of an rfq deal): send deal_id + kind only; payer, payee and amount are derived from the deal
@@ -58,6 +60,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
         "503": {$ref: "#/components/responses/Error"}
     get:
+      summary: "Get invoices"
       operationId: listInvoices
       description: Caller's invoices (payer or payee); admins see all. Filter by deal_id.
       parameters:
@@ -71,6 +74,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/invoices/{id}:
     get:
+      summary: "Get invoices by id"
       operationId: getInvoice
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -79,6 +83,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/invoices/{id}/cancel:
     post:
+      summary: "Create invoices by id cancel"
       operationId: cancelInvoice
       description: Payer or admin. Only pending / awaiting_payment invoices (status becomes failed, status_reason cancelled). 409 when the invoice is in another state, or 409 `concurrent_update` if it changed concurrently (retry). Creating an invoice can also return 409 `concurrent_update` (retry). X-User-Id longer than 64 chars is 401.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -89,6 +94,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/invoices/{id}/refund:
     post:
+      summary: "Create invoices by id refund"
       operationId: refundInvoice
       description: Admin only. Only paid invoices; appends a reversing ledger group. The actual crypto transfer back is manual.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -99,6 +105,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/ledger:
     get:
+      summary: "Get ledger"
       operationId: listLedger
       description: Admin only. Immutable ledger legs of an invoice (debits and credits balance per group_id).
       parameters:
@@ -109,6 +116,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/ledger/deals/{deal_id}/commission:
     get:
+      summary: "Get ledger deals by deal id commission"
       operationId: dealCommission
       description: Admin only. Platform commission booked for a deal (revenue:commission credits minus refund reversals), per currency, exact decimal strings.
       parameters: [{name: deal_id, in: path, required: true, schema: {type: string}}]
@@ -119,6 +127,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
   /v1/payments/review:
     get:
+      summary: "Get payments review"
       operationId: listPaymentReview
       description: Admin only. Invoices that need a human, oldest first - money arrived after expiry / cancel (`late_payment_review`) or with the wrong amount (`amount_mismatch_review`). Refund or settle manually; sweep also scans invoices expired in the last 7 days for late transfers.
       parameters:
@@ -129,6 +138,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
   /v1/payments/sweep:
     post:
+      summary: "Create payments sweep"
       operationId: sweepPayments
       description: |
         Admin / scheduler only. Expires overdue invoices, polls the provider for awaiting / confirming ones and drains the
@@ -140,6 +150,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
   /v1/payments/outbox:
     get:
+      summary: "Get payments outbox"
       operationId: listOutbox
       description: |
         Admin only. Settlement events owed to rfq (POST /v1/internal/deals/{id}/payment-status), written in the same
@@ -156,6 +167,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
   /v1/payments/outbox/{id}/requeue:
     post:
+      summary: "Create payments outbox by id requeue"
       operationId: requeueOutbox
       description: Admin only. Puts a dead-lettered event back to pending (attempts reset). 409 `not_dead` otherwise, 404 unknown.
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
@@ -166,6 +178,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/payments/webhooks/{provider}:
     post:
+      summary: "Create payments webhooks by provider"
       operationId: receiveWebhook
       description: |
         Signed provider event (no X-User-Id). Body: {event_id, type: payment.confirming|payment.confirmed|payment.failed|payment.expired,

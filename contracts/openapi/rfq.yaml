@@ -12,6 +12,7 @@ servers:
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200":
@@ -27,6 +28,7 @@ paths:
                   version: {type: string}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -53,6 +55,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/requests:
     post:
+      operationId: createRequests
       summary: Post a buyer request
       parameters: [{$ref: "#/components/parameters/UserId"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RequestCreate"}}}}
@@ -61,6 +64,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     get:
+      operationId: listRequests
       summary: My requests (scope=mine, default) or the public feed of others' live requests (scope=public)
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -76,6 +80,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}:
     get:
+      operationId: getRequestsById
       summary: Request detail (link-accessible, including private ones)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -84,6 +89,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}/close:
     post:
+      operationId: createRequestsByIdClose
       summary: Buyer closes the request (active offers are rejected)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -92,6 +98,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}/suggestions:
     get:
+      operationId: listRequestsByIdSuggestions
       summary: Matching listings from sourcing (buyer only)
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -112,6 +119,7 @@ paths:
         "502": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}/offers:
     post:
+      operationId: createRequestsByIdOffers
       summary: Supplier submits an offer (not on own request; request must be open/negotiating)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/OfferCreate"}}}}
@@ -121,6 +129,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     get:
+      operationId: listRequestsByIdOffers
       summary: Offers on a request (buyer sees all, a supplier only their own)
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -141,6 +150,7 @@ paths:
                       items: {type: array, items: {$ref: "#/components/schemas/Offer"}}
   /v1/offers/{id}/accept:
     post:
+      operationId: createOffersByIdAccept
       summary: Buyer accepts an offer -> Deal with commission; other offers are rejected, request becomes awarded
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -149,6 +159,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/offers/{id}/reject:
     post:
+      operationId: createOffersByIdReject
       summary: Buyer rejects an offer
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -157,6 +168,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/offers/{id}/withdraw:
     post:
+      operationId: createOffersByIdWithdraw
       summary: Supplier withdraws their offer
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -165,6 +177,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/deals:
     get:
+      operationId: listDeals
       summary: The caller's own deals, newest first (buyer = X-User-Id is buyer; supplier = X-User-Id is the offer owner). Never includes other parties' deals.
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -186,6 +199,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}/deal:
     get:
+      operationId: getRequestsByIdDeal
       summary: Accepted deal of a request (request owner/buyer only; 404 for anyone else or when not awarded yet)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -193,6 +207,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}:
     get:
+      operationId: getDealsById
       summary: Deal (buyer or supplier only; others get 404)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -200,6 +215,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/fulfilment/start:
     post:
+      operationId: createDealsByIdFulfilmentStart
       summary: Supplier starts fulfilment (paid -> in_fulfilment; idempotent)
       description: |
         Only the supplier user of the deal; when the offer carried a verified supplier ref, the gateway-verified
@@ -216,6 +232,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/delivered:
     post:
+      operationId: createDealsByIdDelivered
       summary: Supplier marks the goods shipped / delivered (sets delivered_at; idempotent)
       description: Same caller rules as fulfilment/start. Requires status in_fulfilment (409 otherwise). Does not complete the deal.
       parameters:
@@ -229,6 +246,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/confirm-receipt:
     post:
+      operationId: createDealsByIdConfirmReceipt
       summary: Buyer confirms receipt (in_fulfilment -> completed; idempotent)
       description: Only the buyer (403 for the supplier, 404 for strangers). 409 unless in_fulfilment.
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
@@ -239,6 +257,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/events:
     get:
+      operationId: listDealsByIdEvents
       summary: Immutable event log of a deal (buyer or supplier; others 404), oldest first
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -248,6 +267,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/internal/deals/{id}/payment-status:
     post:
+      operationId: createInternalDealsByIdPaymentStatus
       summary: INTERNAL (payments -> rfq). Never routed by the gateway (404 publicly).
       description: |
         Guarded by X-Internal-Token (401 `invalid_internal_token`). Idempotent by `event_id` (repeat -> outcome `duplicate`).
@@ -266,6 +286,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/deals/{id}/reviews:
     post:
+      operationId: createDealsByIdReviews
       summary: Buyer reviews a deal (once per deal)
       description: |
         Only the buyer of a deal in status paid | in_fulfilment | completed, once per deal (deleting does not free the slot).
@@ -286,6 +307,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/suppliers/{supplier_ref}/reviews:
     get:
+      operationId: listSuppliersBySupplierRefReviews
       summary: Public reviews of a supplier (no auth; deleted reviews excluded)
       description: Served by rfq (the gateway routes this path here although /v1/suppliers belongs to sourcing). With X-User-Id present (optional) the caller's own review carries `mine=true`.
       parameters:
@@ -307,12 +329,14 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/suppliers/{supplier_ref}/review-summary:
     get:
+      operationId: getSuppliersBySupplierRefReviewSummary
       summary: Review aggregates of a supplier (public, no auth; input for the trust rating signal)
       parameters: [{name: supplier_ref, in: path, required: true, schema: {type: string, maxLength: 64}}]
       responses:
         "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewSummary"}}}}
   /v1/reviews/{id}:
     put:
+      operationId: updateReviewsById
       summary: Buyer edits own review (within 24h of creation; prior values kept in the audit trail)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewInput"}}}}
@@ -323,6 +347,7 @@ paths:
         "409": {description: "`review_window_closed`", content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "422": {$ref: "#/components/responses/Error"}
     delete:
+      operationId: deleteReviewsById
       summary: Buyer deletes own review (within 24h; soft delete, stops counting, audit trail kept)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       responses:
@@ -341,6 +366,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/reviews/{id}/reply:
     post:
+      operationId: createReviewsByIdReply
       summary: The verified supplier of the deal posts one public reply (<= 500 chars)
       description: Requires the gateway-verified X-Supplier-Id equal to the review's supplier_ref (else 403). 409 `reply_already_exists`.
       parameters:
@@ -365,6 +391,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/reviews/{id}/report:
     post:
+      operationId: createReviewsByIdReport
       summary: Report abuse (marks flagged_for_review, never auto-hides; idempotent per user; 10 reports/hour/user -> 429)
       parameters: [{$ref: "#/components/parameters/UserId"}, {$ref: "#/components/parameters/Id"}]
       requestBody:
@@ -526,7 +553,7 @@ components:
         quantity: {type: string}
         unit: {type: string, default: piece}
         condition: {type: string, enum: [new, used, any], default: any}
-        target_price: {$ref: "#/components/schemas/Money"}
+        target_price: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}], description: "null when the buyer set no target price"}
         destination: {type: object, required: [country_code], properties: {country_code: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}, city: {type: string}}}
         deadline: {type: [string, "null"], format: date-time}
         attachments: {type: array, items: {type: string, maxLength: 500}, maxItems: 10}

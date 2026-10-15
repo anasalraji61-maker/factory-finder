@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # caps
     max_posts_per_supplier: int = Field(default=500, ge=1)
     max_follows_per_user: int = Field(default=500, ge=1)
+    max_mutes_per_user: int = Field(default=500, ge=1)
     max_comments_per_post: int = Field(default=1000, ge=1)
     max_page_size: int = Field(default=50, ge=1, le=100)
     default_page_size: int = Field(default=20, ge=1, le=100)

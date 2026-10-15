@@ -7,11 +7,13 @@ servers: [{url: http://localhost:8102}]
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Health"}}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -38,6 +40,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/quotes/landed-cost:
     post:
+      operationId: createQuotesLandedCost
       summary: Landed cost to the buyer's city, one option per feasible mode (sorted by total, one recommended)
       requestBody:
         required: true
@@ -48,6 +51,7 @@ paths:
         "502": {$ref: "#/components/responses/Error"}
   /v1/fx/rates:
     get:
+      operationId: listFxRates
       summary: Rates per 1 unit of base
       parameters: [{name: base, in: query, schema: {type: string, default: USD, pattern: "^[A-Z]{3}$"}}]
       responses:
@@ -55,6 +59,7 @@ paths:
         "400": {$ref: "#/components/responses/Error"}
   /v1/fx/convert:
     post:
+      operationId: createFxConvert
       summary: Convert an amount
       requestBody:
         required: true
@@ -64,6 +69,7 @@ paths:
         "400": {$ref: "#/components/responses/Error"}
   /v1/carriers:
     get:
+      operationId: listCarriers
       summary: Carrier / forwarder directory (mock)
       parameters:
         - {name: origin_country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
@@ -73,6 +79,7 @@ paths:
         "200": {description: carriers, content: {application/json: {schema: {$ref: "#/components/schemas/CarrierList"}}}}
   /v1/hs/search:
     get:
+      operationId: getHsSearch
       summary: HS-code finder (curated, indicative dataset; confirm with a customs broker)
       description: Arabic/English token search; a numeric q is a code-prefix match. q is required (non-blank).
       parameters:
@@ -84,6 +91,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/hs/suggest:
     get:
+      operationId: getHsSuggest
       summary: Indicative HS-heading suggestions from a free-text goods description (ar/en/zh); never an official classification
       parameters:
         - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 100}}
@@ -93,6 +101,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/hs/{code}:
     get:
+      operationId: getHsByCode
       summary: One HS subheading by 6-digit code (dots and 8/10-digit national codes are truncated to 6)
       parameters:
         - {name: code, in: path, required: true, schema: {type: string}}
@@ -103,11 +112,13 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/compliance/countries:
     get:
+      operationId: listComplianceCountries
       summary: Destinations covered by the import-compliance advisor (indicative)
       responses:
         "200": {description: coverage list, content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceCountryList"}}}}
   /v1/compliance/countries/{code}:
     get:
+      operationId: getComplianceCountriesByCode
       summary: Full compliance profile of a destination (EU members resolve to the EU profile; unknown countries to a generic low-confidence profile)
       parameters:
         - {name: code, in: path, required: true, schema: {type: string, pattern: "^[A-Z]{2}$"}}
@@ -116,6 +127,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/compliance/incoterms:
     get:
+      operationId: listComplianceIncoterms
       summary: Who pays which landed-cost leg under each incoterm (same table the quote engine uses)
       parameters:
         - {name: incoterm, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/Incoterm"}}
@@ -124,6 +136,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/compliance/checklist:
     post:
+      operationId: createComplianceChecklist
       summary: Import-compliance checklist for a destination (documents, restriction flags, incoterm split, clearance timeline). Indicative only.
       description: Deterministic, bilingual (ar+en), no network. Always carries source, as_of, confidence and the "verify with a licensed customs broker" label.
       requestBody:

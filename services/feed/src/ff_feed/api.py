@@ -117,6 +117,22 @@ async def unfollow(supplier_id: SupplierId, s: S, user: User):
     return await s.unfollow(user, supplier_id)
 
 
+# ---- mutes (per-viewer; only changes what this viewer sees)
+@router.get("/mutes")
+async def list_mutes(s: S, user: User, cursor: Cursor = None, limit: Limit = None):
+    return await s.list_mutes(user, cursor, limit)
+
+
+@router.put("/mutes/{supplier_id}")
+async def mute(supplier_id: SupplierId, s: S, user: User, supplier: Supplier):
+    return await s.mute(user, supplier, supplier_id)
+
+
+@router.delete("/mutes/{supplier_id}")
+async def unmute(supplier_id: SupplierId, s: S, user: User):
+    return await s.unmute(user, supplier_id)
+
+
 # ---- likes
 @router.put("/posts/{post_id}/like")
 async def like(post_id: ObjId, s: S, user: User):

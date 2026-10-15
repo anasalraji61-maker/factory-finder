@@ -8,6 +8,7 @@ servers:
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200":
@@ -23,6 +24,7 @@ paths:
                   version: {type: string}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -49,6 +51,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/countries:
     get:
+      operationId: listCountries
       summary: List supported countries
       responses:
         "200":
@@ -63,6 +66,7 @@ paths:
                   total: {type: integer}
   /v1/cities:
     get:
+      operationId: listCities
       summary: Search cities (Arabic or English, diacritics/alef/ya/ta-marbuta insensitive)
       parameters:
         - {name: q, in: query, schema: {type: string}}
@@ -83,6 +87,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/hubs:
     get:
+      operationId: listHubs
       summary: List hubs located in, or serving, a country
       parameters:
         - {name: country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
@@ -102,6 +107,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/hubs/nearest:
     get:
+      operationId: getHubsNearest
       summary: Nearest hubs to a coordinate (straight-line), ascending distance
       parameters:
         - {name: lat, in: query, required: true, schema: {type: number, minimum: -90, maximum: 90}}
@@ -123,6 +129,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/distance:
     get:
+      operationId: getDistance
       summary: Distance estimate between two points
       description: road = haversine x road factor (country of `country`, else nearest city to origin); sea = shipping-lane waypoint approximation; air = great-circle. Always an estimate.
       parameters:

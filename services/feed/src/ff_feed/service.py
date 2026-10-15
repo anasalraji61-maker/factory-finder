@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ff_feed import antispam
 from ff_feed import cursor as cur
 from ff_feed.config import Settings
-from ff_feed.db import comments, follows, likes, now, posts, rate_events, reports
+from ff_feed.db import comments, follows, likes, mutes, now, posts, rate_events, reports
 from ff_feed.errors import Conflict, Forbidden, Invalid, NotFound, RateLimited
 from ff_feed.moderation import redact, screen_fields
 from ff_feed.schemas import SUPPLIER_RE, CommentCreate, PostCreate
@@ -258,6 +258,14 @@ class FeedService:
         pub = posts.c.status == "published"
         return or_(pub, and_(posts.c.status == "needs_review", posts.c.author_user_id == user)) if user else pub
 
+    @staticmethod
+    def _not_muted(user: str | None):
+        """Hide posts of suppliers this viewer muted; the author's own posts always stay visible to the author."""
+        if not user:
+            return None
+        muted = select(mutes.c.supplier_id).where(mutes.c.user_id == user)
+        return or_(posts.c.supplier_id.not_in(muted), posts.c.author_user_id == user)
+
     async def get_post(self, user: str | None, post_id: str) -> dict:
         async with self.engine.connect() as c:
             r = (await c.execute(select(posts).where(posts.c.id == post_id, self._readable(user)))).first()
@@ -280,6 +288,8 @@ class FeedService:
     async def supplier_posts(self, user: str | None, supplier_id: str, cursor: str | None, limit: int | None) -> dict:
         limit = self._limit(limit)
         q = select(posts).where(posts.c.supplier_id == supplier_id, self._readable(user))
+        if (nm := self._not_muted(user)) is not None:
+            q = q.where(nm)
         q = self._after_time(q, cursor)
         async with self.engine.connect() as c:
             return await self._post_page(c, q, user, limit, "c")
@@ -320,6 +330,8 @@ class FeedService:
         fresh = case((posts.c.created_at > as_of - timedelta(hours=FRESH_HOURS), FRESH_BOOST), else_=0)
         rank = (lk + 2 * cm + fresh).label("rank")
         window = (posts.c.status == "published", posts.c.created_at >= since, posts.c.created_at <= as_of)
+        if (nm := self._not_muted(user)) is not None:
+            window += (nm,)
         # ``posts.score`` (external likes + 2 * external comments, maintained on write) is an upper bound of
         # the exact snapshot engagement, so we only compute the exact rank for the top-scored candidates
         # (index ix_posts_status_score) and widen the pool until no unseen post can beat the page.
@@ -357,6 +369,8 @@ class FeedService:
         limit = self._limit(limit)
         followed = select(follows.c.supplier_id).where(follows.c.user_id == user)
         q = select(posts).where(posts.c.status == "published", posts.c.supplier_id.in_(followed))
+        if (nm := self._not_muted(user)) is not None:
+            q = q.where(nm)
         if cursor:
             d = cur.decode(cursor, ("f",))
             q = q.where(
@@ -425,6 +439,50 @@ class FeedService:
         nxt = cur.encode("s", rows[-1].created_at, rows[-1].supplier_id) if more else None
         return {
             "items": [{"supplier_id": r.supplier_id, "followed_at": _iso(r.created_at)} for r in rows],
+            "next_cursor": nxt,
+        }
+
+    # ------------------------------------------------------------------ mutes (per-viewer; affects only that viewer's lists)
+    async def mute(self, user: str, own_supplier: str | None, supplier_id: str) -> dict:
+        if own_supplier == supplier_id:
+            raise Invalid("You cannot mute your own supplier account", code="cannot_mute_self")
+        try:
+            async with self.engine.begin() as c:
+                have = await c.scalar(
+                    select(func.count()).select_from(mutes).where(mutes.c.user_id == user, mutes.c.supplier_id == supplier_id)
+                )
+                if not have:
+                    n = await c.scalar(select(func.count()).select_from(mutes).where(mutes.c.user_id == user))
+                    if (n or 0) >= self.s.max_mutes_per_user:
+                        raise Conflict("Mute limit reached; unmute someone first", code="mute_limit_reached")
+                    await c.execute(insert(mutes).values(user_id=user, supplier_id=supplier_id, created_at=self.clock()))
+        except IntegrityError:
+            pass  # concurrent duplicate mute: already muted
+        return {"supplier_id": supplier_id, "muted": True}
+
+    async def unmute(self, user: str, supplier_id: str) -> dict:
+        async with self.engine.begin() as c:
+            await c.execute(delete(mutes).where(mutes.c.user_id == user, mutes.c.supplier_id == supplier_id))
+        return {"supplier_id": supplier_id, "muted": False}
+
+    async def list_mutes(self, user: str, cursor: str | None, limit: int | None) -> dict:
+        limit = self._limit(limit)
+        q = select(mutes.c.supplier_id, mutes.c.created_at).where(mutes.c.user_id == user)
+        if cursor:
+            d = cur.decode(cursor, ("m",))
+            q = q.where(
+                or_(
+                    mutes.c.created_at < d["t"],
+                    and_(mutes.c.created_at == d["t"], mutes.c.supplier_id < d["i"]),
+                )
+            )
+        q = q.order_by(mutes.c.created_at.desc(), mutes.c.supplier_id.desc()).limit(limit + 1)
+        async with self.engine.connect() as c:
+            rows = (await c.execute(q)).all()
+        more, rows = len(rows) > limit, rows[:limit]
+        nxt = cur.encode("m", rows[-1].created_at, rows[-1].supplier_id) if more else None
+        return {
+            "items": [{"supplier_id": r.supplier_id, "muted_at": _iso(r.created_at)} for r in rows],
             "next_cursor": nxt,
         }
 

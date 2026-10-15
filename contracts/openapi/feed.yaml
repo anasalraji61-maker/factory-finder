@@ -26,7 +26,7 @@ info:
     pages can reorder items on later pages.
 
     Caps (defaults, per environment): 500 posts per supplier (409 `post_limit_reached`), 500 follows per user (409
-    `follow_limit_reached`), 1000 comments per post (409 `comment_limit_reached`).
+    `follow_limit_reached`), 500 muted suppliers per user (409 `mute_limit_reached`), 1000 comments per post (409 `comment_limit_reached`).
     Rate limits per user per rolling hour (429 `rate_limited` + `Retry-After`): 10 posts, 30 comments, 200 like/unlike,
     60 follow/unfollow, 20 reports. Attempts rejected by screening count too.
 
@@ -43,7 +43,7 @@ info:
 servers: [{url: http://localhost:8113}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
       operationId: ready
@@ -159,6 +159,35 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
         "429": {$ref: "#/components/responses/Error"}
+  /v1/feed/mutes:
+    get:
+      operationId: listMutes
+      summary: Suppliers the caller has muted, most recently muted first
+      description: |
+        Mutes are per viewer: a muted supplier's posts are left out of that viewer's home, trending and supplier-post
+        listings only. The supplier's own view (the author), other viewers, and like/comment/follower counts are unchanged.
+      parameters: [{$ref: "#/components/parameters/Cursor"}, {$ref: "#/components/parameters/Limit"}]
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/MutesPage"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/feed/mutes/{supplier_id}:
+    parameters: [{$ref: "#/components/parameters/SupplierId"}]
+    put:
+      operationId: muteSupplier
+      summary: Mute a supplier for this viewer (idempotent; muting your own supplier is 422 `cannot_mute_self`)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/MuteState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    delete:
+      operationId: unmuteSupplier
+      summary: Unmute a supplier (idempotent; restores its posts in the viewer's listings)
+      responses:
+        "200": {description: State, content: {application/json: {schema: {$ref: "#/components/schemas/MuteState"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/feed/posts/{post_id}/like:
     parameters: [{$ref: "#/components/parameters/PostId"}]
     put:
@@ -256,6 +285,7 @@ paths:
   /v1/admin/feed/posts/{post_id}/hide:
     parameters: [{$ref: "#/components/parameters/PostId"}]
     post:
+      summary: "Create admin feed posts by post id hide"
       operationId: adminHidePost
       security: [{AdminToken: []}]
       requestBody:
@@ -269,6 +299,7 @@ paths:
   /v1/admin/feed/posts/{post_id}/restore:
     parameters: [{$ref: "#/components/parameters/PostId"}]
     post:
+      summary: "Create admin feed posts by post id restore"
       operationId: adminRestorePost
       security: [{AdminToken: []}]
       responses:
@@ -293,6 +324,7 @@ paths:
   /v1/admin/feed/comments/{comment_id}/hide:
     parameters: [{$ref: "#/components/parameters/CommentId"}]
     post:
+      summary: "Create admin feed comments by comment id hide"
       operationId: adminHideComment
       security: [{AdminToken: []}]
       requestBody:
@@ -306,6 +338,7 @@ paths:
   /v1/admin/feed/comments/{comment_id}/restore:
     parameters: [{$ref: "#/components/parameters/CommentId"}]
     post:
+      summary: "Create admin feed comments by comment id restore"
       operationId: adminRestoreComment
       security: [{AdminToken: []}]
       responses:
@@ -444,6 +477,25 @@ components:
         supplier_id: {type: string}
         following: {type: boolean}
         follower_count: {type: integer, minimum: 0}
+    MuteState:
+      type: object
+      required: [supplier_id, muted]
+      properties:
+        supplier_id: {type: string}
+        muted: {type: boolean}
+    MutesPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [supplier_id, muted_at]
+            properties:
+              supplier_id: {type: string}
+              muted_at: {type: string, format: date-time}
+        next_cursor: {type: [string, "null"]}
     FollowingPage:
       type: object
       required: [items, next_cursor]

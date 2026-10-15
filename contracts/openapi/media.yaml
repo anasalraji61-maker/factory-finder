@@ -29,9 +29,10 @@ info:
 servers: [{url: http://localhost:8112}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (database reachable and storage writable)
       responses:
         "200":

@@ -7,6 +7,7 @@ servers:
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200":
@@ -22,6 +23,7 @@ paths:
                   version: {type: string}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -48,6 +50,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/search:
     get:
+      operationId: getSearch
       summary: Search listings across enabled sources (Arabic or English query)
       parameters:
         - {name: q, in: query, schema: {type: string, maxLength: 200}}
@@ -214,6 +217,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/listings/{id}:
     get:
+      operationId: getListingsById
       summary: Listing detail
       parameters:
         - {name: id, in: path, required: true, schema: {type: string}}
@@ -231,6 +235,7 @@ paths:
           content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
   /v1/listings/{id}/price-history:
     get:
+      operationId: getListingsByIdPriceHistory
       summary: Price history of a listing (headline min unit price) with min/max/avg and trend
       description: >
         Observations are recorded (best effort) whenever a non-mock listing is fetched in search/detail or a native
@@ -252,6 +257,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/listings/{id}/similar:
     get:
+      operationId: getListingsByIdSimilar
       summary: Similar listings (same kind, category/title/spec overlap, price band, trust-aware)
       description: Deterministic and bounded (at most 300 candidates scored, trust looked up for the best 60). Different suppliers rank above the same supplier; red-band suppliers are demoted. Every item carries bilingual reason codes.
       parameters:
@@ -275,6 +281,7 @@ paths:
         "503": {$ref: "#/components/responses/Error"}
   /v1/recommendations:
     get:
+      operationId: listRecommendations
       summary: Recommendations from recently viewed listing ids (stateless, no user tracking)
       description: >
         The client sends its own recent listing ids (`ref`, most recent first, max 20; unknown ids are ignored). Nothing is
@@ -300,6 +307,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/suppliers/{id}:
     get:
+      operationId: getSuppliersById
       summary: Supplier profile (with trust band)
       parameters:
         - {name: id, in: path, required: true, schema: {type: string}}
@@ -312,6 +320,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/categories:
     get:
+      operationId: listCategories
       summary: Bilingual category tree (top level = listing kinds)
       responses:
         "200":
@@ -323,6 +332,7 @@ paths:
                 items: {$ref: "#/components/schemas/CategoryNode"}
   /v1/sources:
     get:
+      operationId: listSources
       summary: Registered sources, enabled flag, health and compliance note
       responses:
         "200":
@@ -344,6 +354,7 @@ paths:
                     compliance: {type: string}
   /v1/my/listings:
     post:
+      operationId: createMyListings
       summary: Create a listing owned by the calling (verified) supplier; starts as draft
       description: |
         Identity is the gateway-set X-Supplier-Id (only forwarded for an admin-verified claim); it is never read from the
@@ -369,6 +380,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
         "429": {$ref: "#/components/responses/Error"}
     get:
+      operationId: listMyListings
       summary: List the caller's own listings (all statuses), newest first
       parameters:
         - {$ref: "#/components/parameters/SupplierId"}
@@ -391,6 +403,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/my/listings/import:
     post:
+      operationId: createMyListingsImport
       summary: Bulk create/update the caller's listings (max 100 per call), idempotent by external_ref
       description: |
         Same identity/authz rules as POST /v1/my/listings (gateway-set X-Supplier-Id; 403 supplier_required, 401 bad
@@ -426,6 +439,7 @@ paths:
       - {name: id, in: path, required: true, schema: {type: string}}
       - {$ref: "#/components/parameters/SupplierId"}
     get:
+      operationId: getMyListingsById
       summary: One of the caller's listings (404 for anyone else's)
       responses:
         "200":
@@ -437,6 +451,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
     put:
+      operationId: updateMyListingsById
       summary: Replace the listing's content (status is unchanged)
       requestBody:
         required: true
@@ -454,6 +469,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     delete:
+      operationId: deleteMyListingsById
       summary: Permanently delete the listing
       responses:
         "204": {description: Deleted}
@@ -462,6 +478,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/my/listings/{id}/publish:
     post:
+      operationId: createMyListingsByIdPublish
       summary: Make the listing searchable (draft or archived -> published)
       description: Blocked (403 trust_blocked) while the supplier trust band is red. Fails closed with 503 trust_unavailable when trust cannot be checked or is unknown.
       parameters:
@@ -479,6 +496,7 @@ paths:
         "503": {$ref: "#/components/responses/Error"}
   /v1/my/listings/{id}/unpublish:
     post:
+      operationId: createMyListingsByIdUnpublish
       summary: Remove the listing from search (published -> archived)
       parameters:
         - {name: id, in: path, required: true, schema: {type: string}}
@@ -495,6 +513,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/listings/{id}/report:
     post:
+      operationId: createListingsByIdReport
       summary: Report a published listing (signed-in user)
       description: |
         Reporter identity is the gateway-set X-User-Id (401 without it). Only published listings can be reported
@@ -532,6 +551,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/listings/{id}/events:
     post:
+      operationId: createListingsByIdEvents
       summary: Record an anonymous listing event (view, contact click, share) for supplier analytics
       description: |
         Privacy-safe: only daily aggregate counters per listing and type are stored (`listing_stats_daily`); no IP,
@@ -570,6 +590,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/my/analytics:
     get:
+      operationId: listMyAnalytics
       summary: Analytics for the verified supplier's own listings
       description: |
         Identity is the gateway-set X-Supplier-Id (403 supplier_required without it); only the caller's own listings
@@ -594,6 +615,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/reports:
     get:
+      operationId: listAdminModerationReports
       summary: List user reports (admin)
       description: Requires X-Admin-Token (404 while FF_SOURCING_ADMIN_TOKEN is unset, 401 when wrong). Reporter is an opaque hash prefix, never a user id.
       parameters:
@@ -612,6 +634,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/listings:
     get:
+      operationId: listAdminModerationListings
       summary: List listings that are pending_review or hidden (admin)
       parameters:
         - {$ref: "#/components/parameters/AdminToken"}
@@ -628,6 +651,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/listings/{id}/hide:
     post:
+      operationId: createAdminModerationListingsByIdHide
       summary: Hide a listing (admin); open reports become actioned
       parameters:
         - {name: id, in: path, required: true, schema: {type: string}}
@@ -652,6 +676,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/admin/moderation/listings/{id}/restore:
     post:
+      operationId: createAdminModerationListingsByIdRestore
       summary: Restore a hidden/pending_review listing to its previous status (admin); open reports become dismissed
       parameters:
         - {name: id, in: path, required: true, schema: {type: string}}

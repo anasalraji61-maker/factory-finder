@@ -4,9 +4,10 @@ servers: [{url: http://localhost:8000}]
 security: [{bearer: []}]
 paths:
   /health:
-    get: {operationId: health, security: [], responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, security: [], responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise. Gateway status is `degraded` (still 200) when only upstreams are down.
       responses:
@@ -37,6 +38,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/auth/register:
     post:
+      summary: "Create auth register"
       operationId: register
       security: []
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/RegisterIn"}}}}
@@ -47,6 +49,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/auth/login:
     post:
+      summary: "Create auth login"
       operationId: login
       security: []
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/LoginIn"}}}}
@@ -135,11 +138,13 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/me:
     get:
+      summary: "Get me"
       operationId: getMe
       responses:
         "200": {description: Profile, content: {application/json: {schema: {$ref: "#/components/schemas/Me"}}}}
         "401": {$ref: "#/components/responses/Error"}
     patch:
+      summary: "Patch me"
       operationId: patchMe
       description: "Changing or removing `email` requires `current_password` (422 if missing, 403 `reauth_failed` if wrong; failures throttled per user). The previous address is notified when mail is on."
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MePatch"}}}}
@@ -177,6 +182,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/admin/account-deletions:
     get:
+      summary: "Get admin account-deletions"
       operationId: listAccountDeletionJobs
       description: "Admin only (X-Admin-Token; 404 unset, 401 wrong). Erasure jobs that have not completed: opaque user id, service, attempts, short error code. No PII."
       parameters:
@@ -188,6 +194,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims:
     get:
+      summary: "Get admin supplier-claims"
       operationId: listSupplierClaims
       description: "Admin only: header X-Admin-Token must equal FF_GATEWAY_ADMIN_TOKEN. 404 when the token is not configured, 401 when missing/wrong."
       parameters:
@@ -200,6 +207,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims/{user_id}/approve:
     post:
+      summary: "Create admin supplier-claims by user id approve"
       operationId: approveSupplierClaim
       description: "Admin only (X-Admin-Token). Pending -> verified; 409 claim_not_pending otherwise."
       parameters: [{name: user_id, in: path, required: true, schema: {type: string}}]
@@ -210,6 +218,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims/{user_id}/reject:
     post:
+      summary: "Create admin supplier-claims by user id reject"
       operationId: rejectSupplierClaim
       description: "Admin only (X-Admin-Token). Pending -> released (supplier_id cleared, status none); 409 claim_not_pending otherwise."
       parameters: [{name: user_id, in: path, required: true, schema: {type: string}}]
@@ -220,6 +229,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims/{user_id}/revoke:
     post:
+      summary: "Create admin supplier-claims by user id revoke"
       operationId: revokeSupplierClaim
       description: "Admin only (X-Admin-Token). Verified -> released (supplier_id cleared, status none, X-Supplier-Id stops at once); 409 claim_not_verified otherwise; 422 without a reason. Optional X-Reviewer (sanitized: charset [A-Za-z0-9_.:-], max 64, so no '@') is recorded in the audit log, default admin. approve/reject also accept an optional {reason} body and are audited. Reject/revoke and PATCH /v1/me releasing or changing supplier_id also call trust POST /v1/admin/trust/verification/suppliers/{id}/release for the old id (best-effort, 3 s timeout, only when FF_TRUST_ADMIN_TOKEN is set; failures are logged and never fail the request)."
       parameters:
@@ -236,6 +246,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims/audit:
     get:
+      summary: "Get admin supplier-claims audit"
       operationId: listSupplierClaimAudit
       description: "Admin only (X-Admin-Token). Append-only claim decision log (approve, reject, revoke, self_release), newest first."
       parameters:
@@ -247,6 +258,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/overview:
     get:
+      summary: "Get admin overview"
       operationId: adminOverview
       description: "Admin only (X-Admin-Token; 404 unset, 401 wrong)."
       responses:
@@ -255,6 +267,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/signals:
     get:
+      summary: "Get admin demand signals"
       operationId: adminListSignals
       description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/signals with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
       responses:
@@ -262,6 +275,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
     post:
+      summary: "Create admin demand signals"
       operationId: adminImportSignal
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/signals; status and body pass through."
       responses:
@@ -270,6 +284,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/signals/poll:
     post:
+      summary: "Create admin demand signals poll"
       operationId: adminPollSignals
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/signals/poll with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
       responses:
@@ -278,6 +293,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts:
     get:
+      summary: "Get admin demand drafts"
       operationId: adminListDrafts
       description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/drafts (?status=) with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
       responses:
@@ -286,6 +302,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/quota:
     get:
+      summary: "Get admin demand quota"
       operationId: adminDemandQuota
       description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/quota with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
       responses:
@@ -294,6 +311,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts/{id}:
     get:
+      summary: "Get admin demand drafts by id"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminGetDraft
       description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/drafts/{id} with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -303,6 +321,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts/{id}/approve:
     post:
+      summary: "Create admin demand drafts by id approve"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminApproveDraft
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/approve with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -312,6 +331,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts/{id}/reject:
     post:
+      summary: "Create admin demand drafts by id reject"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminRejectDraft
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/reject with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -321,6 +341,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts/{id}/mark-published:
     post:
+      summary: "Create admin demand drafts by id mark-published"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminMarkPublishedDraft
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/mark-published with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -330,6 +351,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/drafts/{id}/outcome:
     post:
+      summary: "Create admin demand drafts by id outcome"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminOutcomeDraft
       description: "Admin only (X-Admin-Token). Proxied to demand POST /v1/drafts/{id}/outcome with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -339,6 +361,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/demand/signals/{id}:
     get:
+      summary: "Get admin demand signals by id"
       parameters: [{name: id, in: path, required: true, schema: {type: string}}]
       operationId: adminGetSignal
       description: "Admin only (X-Admin-Token). Proxied to demand GET /v1/signals/{id} with X-User-Id=admin; client identity headers are never forwarded; demand status codes pass through."
@@ -348,6 +371,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/payments/outbox:
     get:
+      summary: "Get admin payments outbox"
       operationId: adminPaymentsOutboxList
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_PAYMENTS_ADMIN_TOKEN is unset, 401 wrong). Proxied to payments GET /v1/payments/outbox; gateway injects payments' X-Admin-Token and X-Internal-Token (X-User-Id=admin); client identity headers never forwarded. Only status/limit/cursor (plus upstream page/page_size) are accepted, others 422; limit maps to page_size (max 100)."
       parameters:
@@ -363,6 +387,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/admin/payments/outbox/{id}/requeue:
     post:
+      summary: "Create admin payments outbox by id requeue"
       operationId: adminPaymentsOutboxRequeue
       description: "Admin only, same guards as the list route. Proxied to payments POST /v1/payments/outbox/{id}/requeue (no body, no query). Upstream 404/409 pass through."
       parameters: [{name: id, in: path, required: true, schema: {type: string, pattern: "^[A-Za-z0-9_-]{1,64}$"}}]
@@ -372,6 +397,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/admin/payments/review:
     get:
+      summary: "Get admin payments review"
       operationId: adminPaymentsReviewList
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_PAYMENTS_ADMIN_TOKEN is unset, 401 wrong). Proxied to payments GET /v1/payments/review (invoices in late_payment_review / amount_mismatch_review, oldest first); gateway injects payments' X-Admin-Token and X-Internal-Token (X-User-Id=admin) and forwards X-Reviewer sanitized (charset [A-Za-z0-9_.:-], max 64, default admin); the action is audit-logged. Client identity headers never forwarded. Only limit/cursor/page/page_size accepted, others 422; limit maps to page_size (max 100). Payments down: 502 upstream_unavailable, timeout: 504."
       parameters:
@@ -388,6 +414,7 @@ paths:
         "504": {$ref: "#/components/responses/Error"}
   /v1/admin/media/files/{name}:
     get:
+      summary: "Get admin media files by name"
       operationId: adminMediaFileGet
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_MEDIA_ADMIN_TOKEN is unset, 401 wrong). Reads a private (or any) media file from media GET /v1/media/admin/files/{name}; the gateway injects media's X-Admin-Token and X-Internal-Token (X-User-Id=admin); client identity/admin headers and query strings are never forwarded (any query is 404). Response: image bytes with Cache-Control private, no-store and nosniff. No listing. Used by the admin console to view verification documents."
       parameters: [{name: name, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}(\\.(jpg|png|webp))?$'}}]
@@ -398,19 +425,21 @@ paths:
   /v1/admin/moderation/{path}:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the sourcing path, may contain slashes (see sourcing.yaml /v1/admin/moderation/*)"}]
     get: &adminModeration
+      summary: "Admin proxy to moderation (GET)"
       operationId: adminModerationGet
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_SOURCING_ADMIN_TOKEN is unset). Proxied to sourcing /v1/admin/moderation/{path}; the gateway injects sourcing's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; sourcing status codes pass through. Methods GET/POST/PUT/PATCH/DELETE."
       responses:
         "200": {description: Upstream sourcing response (status and body passed through)}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
-    post: {<<: *adminModeration, operationId: adminModerationPost}
-    put: {<<: *adminModeration, operationId: adminModerationPut}
-    patch: {<<: *adminModeration, operationId: adminModerationPatch}
-    delete: {<<: *adminModeration, operationId: adminModerationDelete}
+    post: {summary: "Create admin moderation by path", <<: *adminModeration, operationId: adminModerationPost}
+    put: {summary: "Update admin moderation by path", <<: *adminModeration, operationId: adminModerationPut}
+    patch: {summary: "Patch admin moderation by path", <<: *adminModeration, operationId: adminModerationPatch}
+    delete: {summary: "Delete admin moderation by path", <<: *adminModeration, operationId: adminModerationDelete}
   /v1/admin/trust/verification/{path}:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the trust admin path, may contain slashes"}]
     get: &adminTrustVerification
+      summary: "Admin proxy to trust verification (GET)"
       operationId: adminTrustVerificationGet
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_TRUST_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to trust /v1/admin/trust/verification/{path} (GET documents, POST documents/{id}/decision, PUT documents/{id}/expiry, GET audit; X-Reviewer is forwarded sanitized (charset [A-Za-z0-9_.:-], max 64, default admin) for the audit log); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
       responses:
@@ -418,13 +447,14 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
-    post: {<<: *adminTrustVerification, operationId: adminTrustVerificationPost}
-    put: {<<: *adminTrustVerification, operationId: adminTrustVerificationPut}
-    patch: {<<: *adminTrustVerification, operationId: adminTrustVerificationPatch}
-    delete: {<<: *adminTrustVerification, operationId: adminTrustVerificationDelete}
+    post: {summary: "Create admin trust verification by path", <<: *adminTrustVerification, operationId: adminTrustVerificationPost}
+    put: {summary: "Update admin trust verification by path", <<: *adminTrustVerification, operationId: adminTrustVerificationPut}
+    patch: {summary: "Patch admin trust verification by path", <<: *adminTrustVerification, operationId: adminTrustVerificationPatch}
+    delete: {summary: "Delete admin trust verification by path", <<: *adminTrustVerification, operationId: adminTrustVerificationDelete}
   /v1/admin/freight/{path}:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the freight admin path, may contain slashes"}]
     get: &adminFreight
+      summary: "Admin proxy to freight (GET)"
       operationId: adminFreightGet
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_FREIGHT_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to freight /v1/admin/freight/{path} (applications list + approve/reject, forwarders list + suspend/reinstate, requests/quotes list + hide/restore, reports, POST sweep); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
       responses:
@@ -432,13 +462,14 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
-    post: {<<: *adminFreight, operationId: adminFreightPost}
-    put: {<<: *adminFreight, operationId: adminFreightPut}
-    patch: {<<: *adminFreight, operationId: adminFreightPatch}
-    delete: {<<: *adminFreight, operationId: adminFreightDelete}
+    post: {summary: "Create admin freight by path", <<: *adminFreight, operationId: adminFreightPost}
+    put: {summary: "Update admin freight by path", <<: *adminFreight, operationId: adminFreightPut}
+    patch: {summary: "Patch admin freight by path", <<: *adminFreight, operationId: adminFreightPatch}
+    delete: {summary: "Delete admin freight by path", <<: *adminFreight, operationId: adminFreightDelete}
   /v1/admin/feed/{path}:
     parameters: [{name: path, in: path, required: true, schema: {type: string}, description: "Remainder of the feed admin path, may contain slashes"}]
     get: &adminFeed
+      summary: "Admin proxy to feed (GET)"
       operationId: adminFeedGet
       description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_FEED_ADMIN_TOKEN is unset, 401 wrong). Allow-listed passthrough to feed /v1/admin/feed/{path} (posts/comments list + hide/restore, reports); anything else 404. Path ids must match [A-Za-z0-9_-]{1,64}, unknown query params 422. The gateway injects the service's X-Admin-Token and X-Internal-Token with X-User-Id=admin; client identity/admin headers are never forwarded; upstream status codes pass through."
       responses:
@@ -446,12 +477,13 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
-    post: {<<: *adminFeed, operationId: adminFeedPost}
-    put: {<<: *adminFeed, operationId: adminFeedPut}
-    patch: {<<: *adminFeed, operationId: adminFeedPatch}
-    delete: {<<: *adminFeed, operationId: adminFeedDelete}
+    post: {summary: "Create admin feed by path", <<: *adminFeed, operationId: adminFeedPost}
+    put: {summary: "Update admin feed by path", <<: *adminFeed, operationId: adminFeedPut}
+    patch: {summary: "Patch admin feed by path", <<: *adminFeed, operationId: adminFeedPatch}
+    delete: {summary: "Delete admin feed by path", <<: *adminFeed, operationId: adminFeedDelete}
   /v1/home:
     get:
+      summary: "Get home"
       operationId: getHome
       description: Aggregated feed. A failing section is null and listed in warnings.
       responses:
@@ -483,6 +515,7 @@ paths:
       feed: [/v1/feed]  # GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is an admin-only passthrough (see below)
       freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is an admin-only passthrough (see below)
     get:
+      summary: "Get by proxied path"
       operationId: proxy
       description: "Reverse proxy by prefix (x-proxy). Adds X-User-Id, X-Internal-Token (if configured), X-Request-Id. Upstream down -> 502 upstream_unavailable; timeout -> 504; circuit open after repeated failures -> 503 upstream_unavailable with Retry-After (fast-fail, details.circuit=open)."
       parameters: [{name: proxied_path, in: path, required: true, schema: {type: string}}]
@@ -500,6 +533,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/ws/conversations/{conversation_id}:
     get:
+      summary: "Get ws conversations by conversation id"
       operationId: wsConversation
       description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: ?ticket= from POST /v1/ws-ticket (preferred; single use), or (legacy, off by default: FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true) Authorization Bearer access token / ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections (per-user cap FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER, default 5, or the per-IP HTTP rate limit), 1011 upstream unavailable, 1009 client frame too large (oversized frames are never relayed), 1001 session lifetime elapsed (FF_GATEWAY_WS_MAX_SESSION_SECONDS, default 4 h; reconnect with a fresh ticket)."
       parameters:

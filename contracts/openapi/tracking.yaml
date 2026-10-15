@@ -25,6 +25,7 @@ paths:
                   oldest_pending_at: {type: [string, "null"], format: date-time}
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200":
@@ -40,6 +41,7 @@ paths:
                   version: {type: string}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -66,6 +68,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/shipments:
     post:
+      operationId: createShipments
       summary: Track a container / bill of lading / air waybill / vessel IMO (idempotent per user+reference -> 409 duplicate_shipment)
       parameters: [{$ref: "#/components/parameters/UserId"}]
       requestBody:
@@ -79,6 +82,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     get:
+      operationId: listShipments
       summary: My shipments, newest first
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -102,12 +106,14 @@ paths:
       - {$ref: "#/components/parameters/UserId"}
       - {name: id, in: path, required: true, schema: {type: string}}
     get:
+      operationId: getShipmentsById
       summary: Shipment with its event timeline (404 if not owned by the caller)
       responses:
         "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/Shipment"}}}}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
     delete:
+      operationId: deleteShipmentsById
       summary: Stop tracking
       responses:
         "204": {description: Deleted}
@@ -115,6 +121,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/shipments/{id}/refresh:
     post:
+      operationId: createShipmentsByIdRefresh
       summary: Pull the latest events from the provider
       parameters:
         - {$ref: "#/components/parameters/UserId"}
@@ -129,6 +136,7 @@ paths:
         "502": {$ref: "#/components/responses/Error"}
   /v1/validate/{reference_type}/{reference}:
     get:
+      operationId: getValidateByReferenceTypeByReference
       summary: Validate a reference (ISO 6346 / AWB mod-7 / IMO check digit / basic B/L) and detect the carrier
       parameters:
         - {name: reference_type, in: path, required: true, schema: {$ref: "#/components/schemas/ReferenceType"}}
@@ -194,6 +202,32 @@ paths:
                           as_of: {type: string, description: "Directory vintage, YYYY-MM"}
                           indicative: {type: boolean}
                       - type: "null"
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/references/detect:
+    get:
+      summary: Guess the reference type (container / AWB / IMO / B/L) from free text; local only, no network
+      operationId: detectReferenceType
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 64}}
+      responses:
+        "200":
+          description: Ranked candidates (empty when nothing fits). `high` only when exactly one type fits; overlapping shapes are capped at `medium`.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [candidates]
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                      required: [type, confidence, normalized, note]
+                      properties:
+                        type: {$ref: "#/components/schemas/ReferenceType"}
+                        confidence: {type: string, enum: [high, medium, low]}
+                        normalized: {type: string}
+                        note: {type: string}
         "422": {$ref: "#/components/responses/Error"}
   /v1/internal/users/{user_id}/export:
     post:

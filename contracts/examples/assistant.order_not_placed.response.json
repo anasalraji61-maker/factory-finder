@@ -1,0 +1,17 @@
+{
+  "spec": "assistant.yaml",
+  "pointer": "#/components/schemas/AssistantResponse",
+  "description": "POST /v1/assistant/query {\"text\":\"place the order for 500 plastic chairs\"} - the assistant never places orders: answer carries the order_not_placed warning.",
+  "value": {
+    "intent": "help",
+    "parsed_query": {
+      "intent": "help",
+      "language": "en"
+    },
+    "answer_text": "I can't place orders.",
+    "listings": [],
+    "warnings": [
+      "order_not_placed"
+    ]
+  }
+}

@@ -7,6 +7,7 @@ servers:
 paths:
   /health:
     get:
+      operationId: getHealth
       summary: Liveness
       responses:
         "200":
@@ -22,6 +23,7 @@ paths:
                   version: {type: string}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -48,6 +50,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/assistant/query:
     post:
+      operationId: createAssistantQuery
       parameters:
         - name: X-User-Id
           in: header
@@ -69,7 +72,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
         "429":
-          description: Daily per-user quota exceeded (error.code quota_exceeded, details.limit, details.retry_after_seconds)
+          description: "Throttled. error.code is rate_limited (per-minute burst limit; details.limit_per_minute, details.retry_after_seconds) or quota_exceeded (daily quota; details.limit, details.retry_after_seconds). Retry-After (seconds) is always set."
           headers: {Retry-After: {schema: {type: integer}}}
           content:
             application/json:
@@ -784,7 +787,7 @@ components:
           items: {$ref: "#/components/schemas/Card"}
         warnings:
           type: array
-          description: "e.g. deals_unavailable, prompt_injection_ignored (the user's own text tried to override instructions; answered with help only), untrusted_text_filtered (instruction-like third-party text was removed), compare_limited_to_two, sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
+          description: "e.g. deals_unavailable, prompt_injection_ignored (the user's own text tried to override instructions; answered with help only), untrusted_text_filtered (instruction-like third-party text was removed), compare_limited_to_two, sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data, order_not_placed (the text asked the assistant to place an order; it never does, the answer says so and points to the RFQ/deal flow)"
           items: {type: string}
     CardRow:
       type: object

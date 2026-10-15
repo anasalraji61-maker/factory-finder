@@ -42,6 +42,9 @@ Every setting in `src/ff_assistant/config.py` (`Settings`, case-insensitive env 
 | `FF_ASSISTANT_SEARCH_PAGE_SIZE` | 10 |
 | `FF_ASSISTANT_QUOTA_PER_DAY` | 200 |
 | `FF_ASSISTANT_ANON_QUOTA_PER_DAY` | 30 |
+| `FF_ASSISTANT_RATE_LIMIT_PER_MINUTE` | 20 (per user; over it: 429 `rate_limited` + Retry-After) |
+| `FF_ASSISTANT_ANON_RATE_LIMIT_PER_MINUTE` | 10 (per anonymous client) |
+| `FF_ASSISTANT_MAX_ANSWER_CHARS` | 1500 (100-10000; answer_text is truncated, the order_not_placed note is kept) |
 | `FF_ASSISTANT_LLM` | off |
 | `FF_ASSISTANT_LLM_API_KEY` | unset |
 | `FF_ASSISTANT_LLM_MODEL` | claude-haiku-5-5 |

@@ -3,9 +3,10 @@ info: {title: Factory Finder demand, version: 0.1.0, description: "Phase 5 deman
 servers: [{url: http://localhost:8110}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -32,6 +33,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/signals:
     post:
+      summary: "Create signals"
       operationId: importSignal
       description: Manual import of a PUBLIC post (URL and/or pasted text). Idempotent - the same URL or normalized text returns the existing signal (200); a new one is 201. A buy-intent signal with matches also gets one draft.
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SignalCreate"}}}}
@@ -41,12 +43,14 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     get:
+      summary: "Get signals"
       operationId: listSignals
       responses:
         "200": {description: Signals newest first, content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: "#/components/schemas/Signal"}}, total: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}
   /v1/signals/poll:
     post:
+      summary: "Create signals poll"
       operationId: pollSignals
       description: Pull new posts from the configured SignalSource adapter (mock by default) and process each like an import.
       responses:
@@ -54,6 +58,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/signals/{id}:
     get:
+      summary: "Get signals by id"
       operationId: getSignal
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -62,6 +67,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/drafts:
     get:
+      summary: "Get drafts"
       operationId: listDrafts
       parameters:
         - {name: status, in: query, schema: {type: string, enum: [draft, approved, rejected, published]}}
@@ -70,6 +76,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}:
     get:
+      summary: "Get drafts by id"
       operationId: getDraft
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -77,6 +84,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
     patch:
+      summary: "Patch drafts by id"
       operationId: editDraft
       description: Human edit of the reply text. Voids any approval (approved -> draft, approved_by/approved_at cleared) so it must be approved again. 422 when the text leaks contact data, claims to be a person, contains unlisted prices/claims, blocked-domain links, injection text or is in the wrong language; 409 unless draft/approved.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -89,6 +97,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/optouts:
     post:
+      summary: "Create optouts"
       operationId: addOptOut
       description: Record that a stranger (author handle and/or post URL) asked not to be contacted. Stored as hashes, permanent, idempotent, no delete. Open drafts for them are rejected.
       requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {author: {type: string}, url: {type: string}, note: {type: string}}}}}}
@@ -97,12 +106,14 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     get:
+      summary: "Get optouts"
       operationId: listOptOuts
       responses:
         "200": {description: Suppression records (hashes only), content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {type: object}}, total: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}/approve:
     post:
+      summary: "Create drafts by id approve"
       operationId: approveDraft
       description: draft -> approved. 403 when the kill-switch is off, 429 when today's cap is used up (counted at approval time, UTC day) or the thread/author was approved within the cooldown (code thread_cooldown), 403 code opted_out when the stranger opted out, 422 on non-compliant text, 409 when not in draft.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -116,6 +127,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}/reject:
     post:
+      summary: "Create drafts by id reject"
       operationId: rejectDraft
       description: draft or approved -> rejected.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -127,6 +139,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}/mark-published:
     post:
+      summary: "Create drafts by id mark-published"
       operationId: markPublished
       description: approved -> published. Records that a human posted the reply by hand; the service posts nothing. 403 when the kill-switch is off, 409 unless approved.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -139,6 +152,7 @@ paths:
         "409": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}/outcome:
     post:
+      summary: "Create drafts by id outcome"
       operationId: recordOutcome
       description: Minimal conversion tracking; only for published drafts (409 otherwise).
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -151,6 +165,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/quota:
     get:
+      summary: "Get quota"
       operationId: getQuota
       responses:
         "200": {description: Today's usage, content: {application/json: {schema: {type: object, required: [enabled, daily_cap, used_today, remaining], properties: {enabled: {type: boolean}, daily_cap: {type: integer}, used_today: {type: integer}, remaining: {type: integer}}}}}}

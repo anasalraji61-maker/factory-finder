@@ -435,6 +435,17 @@ def test_assistant_quota_header_forwarded(client, hdr, mock_upstream):
     assert r.headers.get("x-quota-remaining") == "41"
 
 
+def test_assistant_429_passthrough_keeps_retry_after(client, hdr, mock_upstream):
+    body = {"error": {"code": "rate_limited", "message": "too many requests, slow down",
+                      "details": {"limit_per_minute": 20, "retry_after_seconds": 7}}}
+    mock_upstream.post("http://localhost:8109/v1/assistant/query").mock(
+        return_value=httpx.Response(429, json=body, headers={"Retry-After": "7"})
+    )
+    r = client.post("/v1/assistant/query", json={"text": "hi"}, headers=hdr)
+    assert r.status_code == 429 and r.headers["retry-after"] == "7"
+    assert r.json()["error"]["code"] == "rate_limited"
+
+
 def test_freight_identity_headers_only_from_gateway(make_client, mock_upstream):
     """Forwarder status is resolved inside freight from the gateway-derived X-User-Id; the gateway
     never forwards client-supplied X-Forwarder-Id / X-Supplier-Id to it and does not route admin."""

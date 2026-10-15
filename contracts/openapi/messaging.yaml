@@ -3,9 +3,10 @@ info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversati
 servers: [{url: http://localhost:8106}]
 paths:
   /health:
-    get: {operationId: health, responses: {"200": {description: ok}}}
+    get: {summary: "Liveness", operationId: health, responses: {"200": {description: ok}}}
   /ready:
     get:
+      operationId: ready
       summary: Readiness (dependencies reachable)
       description: 200 when this service can serve traffic (database reachable where one exists); 503 otherwise.
       responses:
@@ -32,6 +33,7 @@ paths:
                   checks: {type: object, additionalProperties: {type: boolean}}
   /v1/conversations:
     get:
+      summary: "Get conversations"
       operationId: listConversations
       parameters:
         - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
@@ -44,6 +46,7 @@ paths:
         "200": {description: "Caller's conversations, newest activity first", content: {application/json: {schema: {$ref: "#/components/schemas/ConversationPage"}}}}
         "401": {$ref: "#/components/responses/Error"}
     post:
+      summary: "Create conversations"
       operationId: createConversation
       description: Idempotent per (participant set, context). 201 when created, 200 when it already existed.
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/ConversationCreate"}}}}
@@ -54,6 +57,7 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
   /v1/conversations/unread-total:
     get:
+      summary: "Get conversations unread-total"
       operationId: getUnreadTotal
       description: "Badge count for the caller: unread messages across visible conversations, excluding muted and archived ones (per-conversation unread_count still counts them)."
       responses:
@@ -61,6 +65,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/conversations/{id}:
     get:
+      summary: "Get conversations by id"
       operationId: getConversation
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
@@ -70,6 +75,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/conversations/{id}/messages:
     get:
+      summary: "Get conversations by id messages"
       operationId: listMessages
       description: Newest first. Pass next_cursor as cursor to get older messages.
       parameters:
@@ -82,6 +88,7 @@ paths:
         "403": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
     post:
+      summary: "Create conversations by id messages"
       operationId: sendMessage
       description: With client_message_id the call is idempotent (200 on replay, 201 on first send). Abuse words flag (default), mask or reject the message.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -95,6 +102,7 @@ paths:
         "429": {$ref: "#/components/responses/Error"}
   /v1/conversations/{id}/read:
     post:
+      summary: "Create conversations by id read"
       operationId: markRead
       description: Moves the caller's read pointer to message_id (default newest). Never moves backwards.
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -105,6 +113,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/conversations/{id}/preferences:
     put:
+      summary: "Update conversations by id preferences"
       operationId: setConversationPreferences
       description: "Per-user mute/archive; idempotent, omitted fields unchanged, never visible to the counterparty. A new message from someone else un-archives the thread for the recipient."
       parameters: [{$ref: "#/components/parameters/Id"}]
@@ -115,6 +124,7 @@ paths:
         "404": {$ref: "#/components/responses/Error"}
   /v1/blocks:
     get:
+      summary: "Get blocks"
       operationId: listBlocks
       responses:
         "200": {description: Users the caller blocked, content: {application/json: {schema: {type: object, required: [items], properties: {items: {type: array, items: {type: object, required: [user_id, blocked_at], properties: {user_id: {type: string}, blocked_at: {type: string, format: date-time}}}}}}}}}
@@ -122,6 +132,7 @@ paths:
   /v1/blocks/{user_id}:
     parameters: [{name: user_id, in: path, required: true, schema: {type: string}}]
     put:
+      summary: "Update blocks by user id"
       operationId: blockUser
       description: "Idempotent. Direct (two-party) conversations with the blocked user are hidden from the caller (404), and the blocked user's new messages / new conversations toward the caller fail with the same 404 conversation_not_found as an unknown conversation (the block is not revealed). Platform accounts cannot be blocked (422)."
       responses:
@@ -129,6 +140,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
     delete:
+      summary: "Delete blocks by user id"
       operationId: unblockUser
       description: Idempotent; restores visibility of existing threads.
       responses:

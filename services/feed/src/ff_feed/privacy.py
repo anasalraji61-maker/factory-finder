@@ -13,7 +13,7 @@ import hashlib
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ff_feed.db import comments, follows, likes, posts, rate_events, reports
+from ff_feed.db import comments, follows, likes, mutes, posts, rate_events, reports
 from ff_feed.service import FeedService
 
 CAP = 1000
@@ -36,16 +36,18 @@ async def export_user(engine: AsyncEngine, user_id: str) -> dict:
             )
         ).mappings().all()
         fs = (await c.execute(select(follows).where(follows.c.user_id == user_id).limit(CAP + 1))).mappings().all()
+        ms = (await c.execute(select(mutes).where(mutes.c.user_id == user_id).limit(CAP + 1))).mappings().all()
         ls = (await c.execute(select(likes).where(likes.c.user_id == user_id).limit(CAP + 1))).mappings().all()
         rs = (await c.execute(select(reports).where(reports.c.reporter_id == user_id).limit(CAP + 1))).mappings().all()
     return {
-        "truncated": any(len(x) > CAP for x in (ps, cs, fs, ls, rs)),
+        "truncated": any(len(x) > CAP for x in (ps, cs, fs, ms, ls, rs)),
         "data": {
             "posts": [{"id": p["id"], "supplier_id": p["supplier_id"], "body": p["body"], "media": p["media"],
                        "tags": p["tags"], "status": p["status"], "created_at": _iso(p["created_at"])} for p in ps[:CAP]],
             "comments": [{"id": r["id"], "post_id": r["post_id"], "body": r["body"], "status": r["status"],
                           "created_at": _iso(r["created_at"])} for r in cs[:CAP]],
             "follows": [{"supplier_id": r["supplier_id"], "created_at": _iso(r["created_at"])} for r in fs[:CAP]],
+            "mutes": [{"supplier_id": r["supplier_id"], "created_at": _iso(r["created_at"])} for r in ms[:CAP]],
             "likes": [{"post_id": r["post_id"], "created_at": _iso(r["created_at"])} for r in ls[:CAP]],
             "reports": [{"target_type": r["target_type"], "target_id": r["target_id"], "reason": r["reason"],
                          "created_at": _iso(r["created_at"])} for r in rs[:CAP]],
@@ -79,6 +81,8 @@ async def erase_user(engine: AsyncEngine, user_id: str) -> dict[str, int]:
         await c.execute(update(comments).where(comments.c.user_id == user_id).values(user_id=tomb))
         res = await c.execute(delete(follows).where(follows.c.user_id == user_id))
         counts["follows_deleted"] = int(res.rowcount or 0)
+        res = await c.execute(delete(mutes).where(mutes.c.user_id == user_id))
+        counts["mutes_deleted"] = int(res.rowcount or 0)
         res = await c.execute(update(reports).where(reports.c.reporter_id == user_id).values(reporter_id=tomb))
         counts["reports_anonymized"] = int(res.rowcount or 0)
         await c.execute(delete(rate_events).where(rate_events.c.user_id == user_id))

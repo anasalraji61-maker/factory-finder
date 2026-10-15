@@ -74,6 +74,15 @@ follows = Table(
     Index("ix_follows_user_created", "user_id", "created_at", "supplier_id"),
 )
 
+mutes = Table(
+    "mutes",
+    metadata,
+    Column("user_id", String(128), primary_key=True),
+    Column("supplier_id", String(64), primary_key=True),
+    Column("created_at", UTCDateTime, nullable=False),
+    Index("ix_mutes_user_created", "user_id", "created_at", "supplier_id"),
+)
+
 likes = Table(
     "likes",
     metadata,
