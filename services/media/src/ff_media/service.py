@@ -157,8 +157,11 @@ class MediaService:
             keys = [make_key(row.id, row.ext, private=row.visibility == "private")] + [
                 make_key(row.id, row.ext, int(w)) for w in row.widths.split(",") if w
             ]
-            await s.delete(row)
+            # Explicit DELETE: a racing delete may already have removed the row; rowcount 0 means we lost the race.
+            res = await s.execute(delete(MediaFileRow).where(MediaFileRow.id == media_id, MediaFileRow.owner_id == owner))
             await s.commit()
+            if res.rowcount == 0:
+                raise NotFound("Image not found")
         await self._cleanup(keys)
 
     # ------------------------------------------------------------------ account export / erasure

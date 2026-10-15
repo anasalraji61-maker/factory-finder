@@ -57,5 +57,6 @@ async def test_delete_races_with_sign_and_read(svc):
         svc.delete("alice", img.id), svc.sign_url("alice", img.id), svc.delete("alice", img.id), return_exceptions=True
     )
     assert not [o for o in out if isinstance(o, Exception) and not isinstance(o, NotFound)], out
+    assert out[0] is None or out[2] is None  # at least one delete wins; the loser sees a clean NotFound
     with pytest.raises(NotFound):
         await svc.read_admin(img.id)
