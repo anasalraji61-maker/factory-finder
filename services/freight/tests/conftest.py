@@ -49,7 +49,8 @@ def make_client(clock):
 
 
 NO_LIMITS = dict(
-    rate_applications=0, rate_requests=0, rate_quotes=0, rate_ratings=0, rate_reports=0, admin_token="adm-secret"
+    rate_applications=0, rate_requests=0, rate_quotes=0, rate_ratings=0, rate_reports=0, admin_token="adm-secret",
+    rating_min_delay_seconds=0, report_min_account_age_seconds=0
 )
 
 

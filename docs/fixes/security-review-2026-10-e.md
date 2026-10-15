@@ -42,7 +42,7 @@
 2. LOW - Freight accept's `revision` is optional; a client that omits it keeps the bait-and-switch window. Make the mobile app always send it, then require it in `/v2`.
 3. LOW - Sourcing erase job deletes by supplier id at run time. The gateway releases the id on finalize, so if the job is still retrying (backoff up to 1 h, max attempts)
    when an admin approves a *new* claim on the same id, the retry could delete the new owner's fresh listings. Carry a claim epoch/created-before timestamp in the job.
-4. LOW - Trust report store makes room at capacity by evicting the oldest rejected, then oldest pending, reports: many throwaway accounts (5 reports/h each) can push out
+4. LOW - OPEN (trust reports have no account signal; needs gateway-supplied account age/verified-email header, see docs/requests/trust-media-ownership.md). Trust report store makes room at capacity by evicting the oldest rejected, then oldest pending, reports: many throwaway accounts (5 reports/h each) can push out
    pending reports from moderation. Same account-age / verified-email gate as feed/freight reports (see d, item 3).
 5. LOW - `DELETE /v1/me` with a stolen access token allows password guessing at 3 attempts/min per user (events are audited). Acceptable; lock re-auth after N failures if desired.
 6. LOW - PostgreSQL audit trigger covers UPDATE/DELETE only, not `TRUNCATE`; revoke TRUNCATE from the app role in the deploy docs.

@@ -92,6 +92,11 @@ class MediaRules:
     max_url_length: int = 2048
 
 
+def _file_key(path: str) -> str:
+    """Media file id without directory or extension (same upload under any prefix/extension is the same file)."""
+    return path.rsplit("/", 1)[-1].rsplit(".", 1)[0].lower()
+
+
 def check_media(urls: list[str], rules: MediaRules) -> tuple[str, ...]:
     """Media-service references only (path prefix + file-name shape); no query, fragment or credentials."""
     err = VerificationError(422, "file_url_not_allowed", "Files must be media-service uploads")
@@ -273,6 +278,11 @@ class VerificationStore:
                     raise VerificationError(409, "document_type_limit_reached", "Too many active documents of this type", {"max": self.max_per_type})
                 if fp and any(r.number_fingerprint == fp for r in mine):
                     raise VerificationError(409, "duplicate_document", "This document was already submitted")
+                # ownership link (security-review-2026-10-d item 1): trust cannot ask media who uploaded a file, but a file
+                # already attached to ANOTHER supplier's document can never be claimed by a second supplier
+                taken = {_file_key(p) for (fl,) in (await conn.execute(select(_D.c.files).where(_D.c.supplier_id != supplier_id))).all() for p in fl}
+                if any(_file_key(p) in taken for p in paths):
+                    raise VerificationError(409, "file_in_use", "This file is already attached to another supplier's document")
                 total = (await conn.execute(select(func.count()).select_from(_D))).scalar_one()
                 if total >= self.max_total:
                     await self._evict_one(conn)

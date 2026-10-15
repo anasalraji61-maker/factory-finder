@@ -63,7 +63,7 @@ UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass
 14. [FIXED] `FeedActions.deletePost` and `publish` invalidate *all* `feedListProvider`
     families (home, trending, every supplier list) -> refetch storm when many
     are alive. Invalidate only `home` and the affected supplier key.
-15. `CommentsController.refresh` has no generation guard (unlike the post
+15. [FIXED] `CommentsController.refresh` has no generation guard (unlike the post
     list); two overlapping refreshes can apply out of order.
 16. `ListView(children: [...])` in several forms/sheets is fine, but
     `chat_screen` rebuilds `buildChatItems(_messages).reversed.toList()` on
@@ -78,7 +78,7 @@ UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass
     exercised in tests against the real `LiveChatSocket` + `dart:io`
     WebSocket; `FeedRepository` mock uses `kMockUserId` for ownership while
     live relies on `Me.id` equality with server `author_id`.
-20. Secure-storage failures: Android Keystore corruption makes `read` throw
+20. [FIXED] Secure-storage failures: Android Keystore corruption makes `read` throw
     `PlatformException` on every launch. `restore()` handles it (signed out)
     but the corrupt entry is never wiped; call `deleteAll()` once on a read
     failure.
@@ -158,6 +158,15 @@ UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass
 - New tests: `test/core/release_safety_test.dart`, `test/messages/chat_socket_test.dart`
   (ticket, double connect, handshake refresh), `services/gateway/tests/test_ws.py`.
   Nothing was compiled (no Flutter SDK).
+
+## Fixed in third pass (P2)
+
+- #15 `CommentsController` has a generation counter; stale refresh/loadMore
+  responses are dropped (test in `test/feed/feed_test.dart`).
+- #20 `restore()` wipes the refresh-token key once when the secure store read
+  throws and starts signed out (test in `test/persistence/persistence_test.dart`).
+- Still open: #16 (memoise chat items), #17 compact chips, #18 RTL send icon
+  (device check), #19 (device/live check). Nothing compiled.
 
 Note for reviewer: nothing here was compiled. Edits were re-read for syntax;
 `make test` / `flutter analyze` must be run in CI. One read-only git command

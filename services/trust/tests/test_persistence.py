@@ -54,7 +54,7 @@ def test_everything_survives_a_restart(tmp_path):
         assert len(hist1) <= len(c2.get("/v1/trust/suppliers/sup_demo_avg/history").json()["points"])
         dup = c2.post("/v1/trust/verification/documents", json={**DOC, "number": DOC["number"].lower()}, headers=SUP)
         assert dup.status_code == 409 and dup.json()["error"]["code"] == "duplicate_document"  # keyed hash is stable
-        assert c2.post("/v1/trust/verification/documents", json=DOC, headers={"X-Supplier-Id": "sup_b"}).status_code == 201
+        assert c2.post("/v1/trust/verification/documents", json={**DOC, "files": ["/v1/media/private/zzzzzz999999.jpg"]}, headers={"X-Supplier-Id": "sup_b"}).status_code == 201
 
 
 def test_report_rate_limit_survives_restart(tmp_path):

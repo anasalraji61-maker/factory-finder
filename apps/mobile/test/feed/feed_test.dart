@@ -189,6 +189,20 @@ Future<GoRouter> _pump(
   return router;
 }
 
+/// Returns a pending comments page per call so tests can finish them out of order.
+class _CommentsRepo extends MockFeedRepository {
+  final List<Completer<FeedPage<FeedComment>>> pending =
+      <Completer<FeedPage<FeedComment>>>[];
+
+  @override
+  Future<FeedPage<FeedComment>> comments(String postId,
+      {String? cursor, int limit = kFeedPageSize}) {
+    final c = Completer<FeedPage<FeedComment>>();
+    pending.add(c);
+    return c.future;
+  }
+}
+
 ProviderContainer _container(FeedRepository repo, {Me? me}) {
   final c = ProviderContainer(overrides: _overrides(repo, me: me));
   addTearDown(c.dispose);
@@ -197,6 +211,24 @@ ProviderContainer _container(FeedRepository repo, {Me? me}) {
 
 void main() {
   setUpWidgetTests();
+
+  test('comments refresh ignores a stale overlapping response', () async {
+    final repo = _CommentsRepo();
+    final ctrl = CommentsController(repo, PostStore(), 'pst_1');
+    addTearDown(ctrl.dispose);
+    // Constructor already started refresh #1; start #2.
+    final second = ctrl.refresh();
+    expect(repo.pending.length, 2);
+    repo.pending[1].complete(const FeedPage<FeedComment>(
+        items: <FeedComment>[], nextCursor: 'fresh'));
+    await second;
+    expect(ctrl.state.nextCursor, 'fresh');
+    // The older request finishes last and must not overwrite the newer one.
+    repo.pending[0].complete(const FeedPage<FeedComment>(
+        items: <FeedComment>[], nextCursor: 'stale'));
+    await Future<void>.delayed(Duration.zero);
+    expect(ctrl.state.nextCursor, 'fresh');
+  });
 
   group('parsing (live fixtures)', () {
     test('home page', () {

@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import uuid
 from collections.abc import Callable
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from types import SimpleNamespace
 
@@ -67,6 +67,10 @@ def _wt(d: Decimal | None) -> str | None:
 
 def _f(d: Decimal) -> float:
     return float(d)
+
+
+def _aware(d: datetime) -> datetime:
+    return d if d.tzinfo else d.replace(tzinfo=UTC)
 
 
 class FreightService:
@@ -935,6 +939,21 @@ class FreightService:
                     raise Conflict("Only a completed (awarded and closed) request can be rated", code="not_completed")
                 if await c.scalar(select(func.count()).select_from(ratings).where(ratings.c.request_id == rid)):
                     raise Conflict("This shipment is already rated", code="already_rated")
+                # anti-farming: no proof of shipment exists yet, so make ratings slow and bounded per buyer/forwarder pair
+                if self.s.rating_min_delay_seconds and r.closed_at is not None:
+                    wait = _aware(r.closed_at) + timedelta(seconds=self.s.rating_min_delay_seconds) - t
+                    if wait.total_seconds() > 0:
+                        raise Conflict("Ratings open some time after the request is closed", code="rating_too_early")
+                if self.s.rating_max_per_pair:
+                    since = t - timedelta(days=self.s.rating_pair_window_days)
+                    n = await c.scalar(
+                        select(func.count()).select_from(ratings).where(
+                            ratings.c.buyer_id == user, ratings.c.forwarder_id == r.awarded_forwarder_id,
+                            ratings.c.created_at > since,
+                        )
+                    )
+                    if n >= self.s.rating_max_per_pair:
+                        raise Conflict("You have rated this forwarder too often", code="rating_pair_limit")
                 row = {"id": _new_id("rat"), "request_id": rid, "forwarder_id": r.awarded_forwarder_id,
                        "buyer_id": user, "stars": body.stars, "comment": body.comment, "created_at": t}  # fmt: skip
                 await c.execute(insert(ratings).values(**row))
@@ -1000,12 +1019,30 @@ class FreightService:
                 tbl = {"request": R, "quote": quotes}.get(kind)
                 if tbl is not None:  # forwarders are never auto-actioned; admins review their reports
                     vals: dict = {"report_count": n}
-                    if n >= self.s.report_hide_threshold:
+                    eligible = await self._eligible_reporters(c, kind, target_id)
+                    in_flight = kind == "request" and (await self._load_request(c, target_id)).status == "awarded"
+                    if eligible >= self.s.report_hide_threshold and not in_flight:  # a deal in progress is left to admins
                         vals |= {"visibility": "hidden", "hidden_reason": "auto: report threshold reached"}
                     await c.execute(update(tbl).where(tbl.c.id == target_id, tbl.c.visibility == "visible").values(**vals))
         except IntegrityError:
             pass  # concurrent identical report
         return {"status": "received"}
+
+    async def _eligible_reporters(self, c, kind: str, target_id: str) -> int:
+        """Distinct reporters old enough to count toward auto-hide (throwaway accounts cannot hide a competitor)."""
+        ids = (await c.execute(select(reports.c.reporter_id).where(reports.c.target_type == kind, reports.c.target_id == target_id))).scalars().all()
+        age = self.s.report_min_account_age_seconds
+        if not age:
+            return len(set(ids))
+        cutoff = self.clock() - timedelta(seconds=age)
+        ok = 0
+        for uid in set(ids):
+            born = await c.scalar(select(func.min(forwarders.c.created_at)).where(forwarders.c.user_id == uid))
+            first_req = await c.scalar(select(func.min(R.c.created_at)).where(R.c.buyer_id == uid))
+            stamps = [_aware(x) for x in (born, first_req) if x is not None]
+            if stamps and min(stamps) <= cutoff:
+                ok += 1
+        return ok
 
     # ------------------------------------------------------------------ admin
     async def admin_applications(self, status: str, cursor: str | None, limit: int | None) -> dict:

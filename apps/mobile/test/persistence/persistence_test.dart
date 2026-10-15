@@ -47,6 +47,18 @@ class FakeAuth implements AuthRepository {
       throw UnimplementedError();
 }
 
+class _ThrowingReadStore extends MemoryStore {
+  final List<String> removed = <String>[];
+
+  @override
+  Future<String?> get(String key) => throw StateError('keystore corrupt');
+
+  @override
+  Future<void> remove(String key) async {
+    removed.add(key);
+  }
+}
+
 ProviderContainer makeContainer(
   MemoryStore prefs,
   MemoryStore secure, {
@@ -150,6 +162,17 @@ void main() {
     final c = makeContainer(MemoryStore(), MemoryStore(), auth: fake);
     await c.read(authProvider.notifier).restore();
     expect(fake.restoreCalls, 0);
+    expect(c.read(authProvider), isNull);
+  });
+
+  test('unreadable secure store is wiped once and restore stays signed out',
+      () async {
+    final secure = _ThrowingReadStore();
+    final fake = FakeAuth(result: const Me(id: 'u1', name: 'Ann'));
+    final c = makeContainer(MemoryStore(), secure, auth: fake);
+    await c.read(authProvider.notifier).restore();
+    expect(fake.restoreCalls, 0);
+    expect(secure.removed, contains(kRefreshTokenKey));
     expect(c.read(authProvider), isNull);
   });
 

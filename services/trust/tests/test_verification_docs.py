@@ -164,7 +164,7 @@ def test_duplicates_and_cross_supplier_flag(client):
     assert submit(client).status_code == 201
     r = submit(client, number=NUM.lower())  # same number, different case
     assert r.status_code == 409 and r.json()["error"]["code"] == "duplicate_document"
-    other = submit(client, sid="sup_b").json()
+    other = submit(client, sid="sup_b", files=[F2]).json()
     assert other["status"] == "pending"
     flagged = client.get("/v1/admin/trust/verification/documents", headers=ADM).json()["items"]
     assert all(i["duplicate_elsewhere"] for i in flagged) and len(flagged) == 2
@@ -178,7 +178,7 @@ def test_rate_limit_and_caps():
         assert submit(c, number=f"LIC-{i}-ABCDE").status_code == 201
     r = submit(c, number="LIC-9-ABCDE")
     assert r.status_code == 429 and int(r.headers["Retry-After"]) >= 1
-    assert submit(c, sid="sup_other", number="LIC-1-ABCDE").status_code == 201  # per supplier
+    assert submit(c, sid="sup_other", files=[F2], number="LIC-1-ABCDE").status_code == 201  # per supplier
     c2 = TestClient(create_app(Settings(verification_rate_limit=50, verification_max_docs_per_type=2, verification_max_docs_per_supplier=3)))
     assert [submit(c2, number=f"LIC-{i}-ABCDE").status_code for i in range(3)] == [201, 201, 409]
     assert submit(c2, doc_type="bank_reference", number="ACCT-123456").status_code == 201
@@ -374,3 +374,13 @@ def test_public_media_refs_rejected_for_verification(client):
         r = submit(c, files=[ref])
         assert r.status_code == 422 and r.json()["error"]["code"] == "file_url_not_allowed"
     assert submit(c, files=["/v1/media/private/" + "a" * 32 + ".png"]).status_code in (200, 201)
+
+
+def test_file_cannot_be_reused_by_another_supplier(client):
+    c = client
+    first = submit(c, "sup_a", files=[F1])
+    assert first.status_code in (200, 201)
+    stolen = submit(c, "sup_b", files=[F2, "/v1/media/private/ABCDEF123456.png"], number="OTHER-NUMBER-1234")
+    assert stolen.status_code == 409 and stolen.json()["error"]["code"] == "file_in_use"
+    assert submit(c, "sup_a", files=[F1], number="SECOND-NUMBER-5678").status_code in (200, 201)  # the same supplier may reuse its own
+    assert submit(c, "sup_b", files=[F2], number="OTHER-NUMBER-1234").status_code in (200, 201)

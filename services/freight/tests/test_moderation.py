@@ -24,7 +24,7 @@ def test_admin_requires_correct_token(client):
 
 
 def test_request_auto_hidden_at_threshold(make_client):
-    c = make_client(admin_token="adm-secret", report_hide_threshold=2, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
+    c = make_client(admin_token="adm-secret", report_min_account_age_seconds=0, report_hide_threshold=2, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
     for u in ("f1", "f2", "f3"):
         make_forwarder(c, u)
     req = make_request(c)
@@ -66,7 +66,7 @@ def test_report_rules(client):
 
 
 def test_report_quote_and_hide_excludes_from_comparison(make_client):
-    c = make_client(admin_token="adm-secret", report_hide_threshold=1, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
+    c = make_client(admin_token="adm-secret", report_min_account_age_seconds=0, report_hide_threshold=1, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
     make_forwarder(c, "fw")
     req = make_request(c)
     q = make_quote(c, req["id"], "fw")
@@ -90,7 +90,7 @@ def test_report_quote_and_hide_excludes_from_comparison(make_client):
 
 
 def test_report_forwarder_requires_dealings_and_never_auto_actions(make_client):
-    c = make_client(admin_token="adm-secret", report_hide_threshold=1, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
+    c = make_client(admin_token="adm-secret", report_min_account_age_seconds=0, report_hide_threshold=1, rate_requests=0, rate_reports=0, rate_quotes=0, rate_applications=0)
     fid = make_forwarder(c, "fw")
     path = f"/v1/freight/forwarders/{fid}/report"
     assert c.post(path, headers=uh("buyer1"), json={"reason": "scam_or_fraud"}).status_code == 404  # never dealt with it

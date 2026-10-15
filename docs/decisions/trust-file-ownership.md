@@ -1,0 +1,1 @@
+2026-10-15 | trust: a media file id attached to any document of supplier A (any status) is refused for supplier B with 409 `file_in_use` | trust cannot see media's uploader; this stops reuse of files already referenced, remaining gap is first-claim of someone else's unreferenced private id (ids are 128-bit random and private, so unguessable)

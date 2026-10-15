@@ -24,12 +24,12 @@ state machine incl. terminal states, HMAC fingerprints, number never stored/retu
 (buyer/forwarder/winner views, 404 for non-parties, no `buyer_id` to losers); feed authz (owner-only delete, supplier-only post).
 
 ## Open (design / needs product decision)
-1. MEDIUM - FIXED 2026-10-15 (see docs/decisions/media-private.md; remaining: no uploader-to-document ownership link in trust; old public copies must be re-uploaded). **Verification documents are publicly readable.** Files are uploaded through media, whose `GET /v1/media/files/*` is public
+1. MEDIUM - FIXED 2026-10-15 (see docs/decisions/media-private.md; partly mitigated 2026-10-15: trust rejects, 409 `file_in_use`, a media file already attached to another supplier's document; true uploader check needs media, see docs/requests/trust-media-ownership.md; old public copies must be re-uploaded). **Verification documents are publicly readable.** Files are uploaded through media, whose `GET /v1/media/files/*` is public
    (unguessable id only). Business licences / bank references need a private bucket class or signed, short-lived, admin-only URLs.
    Owner: media + trust. Also a supplier can reference any other media file id (no ownership link between uploader and document).
-2. MEDIUM - **Freight ratings can be farmed**: award -> close -> rate has no proof of shipment/payment; a forwarder with a sock-puppet buyer
+2. MEDIUM - MITIGATED 2026-10-15 (docs/decisions/freight-anti-abuse.md: rating only after `rating_min_delay_seconds` (24 h) past close, max 2 ratings per buyer/forwarder pair per 365 d; real fix still needs payment/tracking evidence). **Freight ratings can be farmed**: award -> close -> rate has no proof of shipment/payment; a forwarder with a sock-puppet buyer
    account can mint 5-star ratings (rate limited 20/h, one per request). Needs payment/escrow or tracking evidence before a rating counts.
-3. LOW - Feed/freight auto-hide at 3 distinct reporters: three throwaway accounts can hide a competitor's post (feed has no eligibility
+3. LOW - FIXED for freight 2026-10-15 (reports count toward auto-hide only from accounts older than `report_min_account_age_seconds` (24 h); awarded requests are never auto-hidden); feed still open. Feed/freight auto-hide at 3 distinct reporters: three throwaway accounts can hide a competitor's post (feed has no eligibility
    filter; freight limits reporters to parties). Add account-age / verified-email requirement for reports.
 4. LOW - A supplier can delete a hidden/reported post or comment, destroying the report evidence (`delete_post` removes its reports).
    Soft-delete or keep an audit copy.

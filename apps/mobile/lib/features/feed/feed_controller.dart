@@ -220,15 +220,17 @@ class CommentsController extends StateNotifier<CommentsState> {
   final FeedRepository _repo;
   final PostStore _store;
   final String postId;
+  int _gen = 0;
 
   Future<void> refresh() async {
+    final gen = ++_gen;
     state = CommentsState(items: state.items, loading: state.items.isEmpty);
     try {
       final page = await _repo.comments(postId);
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       state = CommentsState(items: page.items, nextCursor: page.nextCursor, loading: false);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       state = CommentsState(items: state.items, loading: false, error: e);
     }
   }
@@ -236,6 +238,7 @@ class CommentsController extends StateNotifier<CommentsState> {
   Future<void> loadMore() async {
     final cursor = state.nextCursor;
     if (cursor == null || state.loadingMore || state.loading) return;
+    final gen = _gen;
     state = CommentsState(
       items: state.items,
       nextCursor: cursor,
@@ -244,7 +247,7 @@ class CommentsController extends StateNotifier<CommentsState> {
     );
     try {
       final page = await _repo.comments(postId, cursor: cursor);
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       final seen = state.items.map((c) => c.id).toSet();
       state = CommentsState(
         items: <FeedComment>[
@@ -256,7 +259,7 @@ class CommentsController extends StateNotifier<CommentsState> {
         loading: false,
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       state = CommentsState(
         items: state.items,
         nextCursor: cursor,

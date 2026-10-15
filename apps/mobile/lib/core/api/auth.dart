@@ -279,8 +279,18 @@ class AuthController extends StateNotifier<Me?> {
     try {
       final tokens = _ref.read(tokenStoreProvider);
       if (tokens.refreshToken == null) {
-        final saved =
-            await _ref.read(secureStoreProvider).get(kRefreshTokenKey);
+        final store = _ref.read(secureStoreProvider);
+        String? saved;
+        try {
+          saved = await store.get(kRefreshTokenKey);
+        } catch (_) {
+          // Unreadable (e.g. corrupt Android Keystore entry): wipe it once so
+          // it does not throw on every launch, and start signed out.
+          try {
+            await store.remove(kRefreshTokenKey);
+          } catch (_) {}
+          return;
+        }
         if (saved == null || saved.isEmpty) return;
         tokens.refreshToken = saved;
       }

@@ -29,6 +29,16 @@ class Settings(BaseSettings):
     # moderation
     report_hide_threshold: int = Field(default=3, ge=1, le=100)  # distinct reporters
 
+    # anti-abuse (security-review-2026-10-d items 2 and 3)
+    # a report only counts toward the auto-hide threshold when its author's account is at least this old
+    # (forwarder profile or first shipment request); 0 disables the age check
+    report_min_account_age_seconds: int = Field(default=86400, ge=0)
+    # a rating is accepted only this long after the request was closed (0 disables)
+    rating_min_delay_seconds: int = Field(default=86400, ge=0)
+    # ratings one buyer may give the same forwarder within rating_pair_window_days (0 disables)
+    rating_max_per_pair: int = Field(default=2, ge=0)
+    rating_pair_window_days: int = Field(default=365, ge=1)
+
     # caps
     max_open_requests_per_buyer: int = Field(default=50, ge=1)
     max_quotes_per_request: int = Field(default=50, ge=1)
