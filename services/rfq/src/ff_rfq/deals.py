@@ -13,11 +13,11 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from ff_rfq.db import DealEventRow, DealRow, OfferRow, RequestRow
+from ff_rfq.db import DealEventRow, DealRow, OfferRow, RequestRow, ReviewEventRow, ReviewRow
 from ff_rfq.domain.enums import DealStatus as D
 from ff_rfq.domain.errors import Forbidden, InvalidTransition, NotFound, ValidationFailed
 from ff_rfq.domain.state import deal_transition
@@ -120,11 +120,25 @@ class DealService:
             if outcome == "ignored":
                 outcome = "recorded"
         deal.status, deal.updated_at = new.value, now
+        if b.status == "refunded" and b.kind == "deal_payment":
+            await self._hide_reviews(s, deal.id, now)
         await self._log(s, deal, f"payment_{b.status}", SYSTEM, now, frm=frm.value, to=new.value,
                         event_id=b.event_id, data={"kind": b.kind, "invoice_id": b.invoice_id, "outcome": outcome,
                                                    "amount": {"amount": format(b.amount.amount, "f"),
                                                               "currency": b.amount.currency}})
         return outcome
+
+    @staticmethod
+    async def _hide_reviews(s: AsyncSession, deal_id: str, now: datetime) -> None:
+        """A refunded / disputed deal is no longer a verified purchase: its review leaves public lists and the
+        summary (status ``hidden``, flagged for a moderator). Rows stay for the audit trail."""
+        ids = (await s.execute(select(ReviewRow.id).where(ReviewRow.deal_id == deal_id,
+                                                          ReviewRow.status == "published"))).scalars().all()
+        for rid in ids:
+            await s.execute(update(ReviewRow).where(ReviewRow.id == rid).values(
+                status="hidden", flagged_for_review=True, updated_at=now))
+            s.add(ReviewEventRow(id=f"rve_{uuid.uuid4().hex}", review_id=rid, action="hidden", actor_id=SYSTEM,
+                                 snapshot=None, created_at=now))
 
     # ---- user transitions ----------------------------------------------------------------
     async def _party(self, s: AsyncSession, user: str, deal_id: str) -> DealRow:

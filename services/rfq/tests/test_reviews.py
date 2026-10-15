@@ -277,3 +277,43 @@ def test_reviewer_display_and_sanitize_units():
     assert sanitize("a‮b\x00c\r\n\r\n\r\n\r\nd") == "abc\n\nd"
     assert detect_contact("nice 12 34 56") is None and detect_contact("a@b.co") == "url"
     assert detect_contact("write to bob@mail") == "email" and detect_contact("great product. thanks") is None
+
+
+def _refund(client, d, n):
+    body = {"invoice_id": "inv_dp", "kind": "deal_payment", "status": "refunded",
+            "amount": d["subtotal"], "event_id": f"evt_hide_{n}", "other_open_kinds": []}
+    r = client.post(f"/v1/internal/deals/{d['id']}/payment-status", json=body)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+@pytest.mark.parametrize("status,expect", [("paid", "refunded"), ("in_fulfilment", "disputed")])
+def test_refund_or_dispute_hides_review(client, status, expect):
+    d = make_deal(client, status=status)
+    rid = post_review(client, d["id"], rating=1).json()["id"]
+    assert client.get(f"/v1/suppliers/{SUP_REF}/review-summary").json()["count"] == 1
+    assert _refund(client, d, status)["deal_status"] == expect
+    assert client.get(f"/v1/suppliers/{SUP_REF}/review-summary").json()["count"] == 0
+    assert client.get(f"/v1/suppliers/{SUP_REF}/reviews").json()["total"] == 0
+    assert client.put(f"/v1/reviews/{rid}", json={"rating": 5}, headers=BUYER).status_code == 404
+
+    async def rows():
+        async with client.app.state.service.engine.begin() as conn:
+            from ff_rfq.db import ReviewRow
+            st = (await conn.execute(select(ReviewRow.status, ReviewRow.flagged_for_review))).one()
+            ev = (await conn.execute(select(ReviewEventRow.action).where(ReviewEventRow.review_id == rid))).scalars().all()
+            return st, ev
+
+    st, ev = client.portal.call(rows)
+    assert tuple(st) == ("hidden", True) and "hidden" in ev
+
+
+def test_free_text_control_chars_stripped(client):
+    req = new_request(client, title="LED\x00 pan\x07el‮ lights", description="line1\x00\nline2​",
+                      unit="pi\x00ece", destination={"country_code": "IQ", "city": "Bagh\x07dad"})
+    assert (req["title"], req["description"], req["unit"]) == ("LED panel lights", "line1\nline2", "piece")
+    assert req["destination"]["city"] == "Baghdad"
+    off = new_offer(client, req["id"], SUP_A, supplier_name="Ac\x00me‮ Ltd", notes="ok\x07​notes")
+    assert off["supplier_name"] == "Acme Ltd" and off["notes"] == "oknotes"
+    bad = client.post("/v1/requests", json={"kind": "product", "title": "\x00\x00\x00\x00", "quantity": "1"}, headers=BUYER)
+    assert bad.status_code == 422

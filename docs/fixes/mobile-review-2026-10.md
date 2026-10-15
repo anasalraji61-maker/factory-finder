@@ -212,3 +212,11 @@ changed nothing.
   `sendErrorKey`) that do not yet consult `apiErrorKey`, so `rating_too_early` /
   `conversation_full` do not surface there; follow-up for the reviews/messages
   lanes. Nothing compiled (no Flutter SDK).
+- RESOLVED (follow-up above): `reviewErrorKey` and `sendErrorKey` now consult
+  `apiErrorKey` first (new import of `core/i18n/error_messages.dart` in
+  `reviews_models.dart` and `chat_logic.dart`), so `rating_too_early`,
+  `rating_pair_limit`, `conversation_limit_reached`, `conversation_full`,
+  `file_in_use`, `upstream_timeout` show the shared ar+en `error.*` text in
+  reviews and chat. Existing feature codes keep priority in chat
+  (attachments); reviews check the shared map before the status fallbacks.
+  Test: `test/core/shared_error_mappers_test.dart` (fake repositories). Not compiled.

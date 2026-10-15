@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
 
 /// Pure helpers for the chat screen (unit-tested).
@@ -141,6 +142,7 @@ String? sendErrorKey(Object error) {
       case 'invalid_attachment':
         return 'messages.err.invalid_attachment';
     }
+    return apiErrorKey(error);
   }
   return null;
 }

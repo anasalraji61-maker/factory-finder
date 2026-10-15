@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 
 /// Sub-rating keys in display order.
 const List<String> kSubRatingKeys = <String>['quality', 'communication', 'shipping'];
@@ -401,6 +402,8 @@ String? validateReply(String text) {
 /// i18n key for any failure of the reviews API.
 String reviewErrorKey(Object e) {
   if (e is! ApiException) return 'reviews.err.generic';
+  final shared = apiErrorKey(e);
+  if (shared != null) return shared;
   switch (e.code) {
     case 'deal_not_reviewable':
     case 'review_already_exists':

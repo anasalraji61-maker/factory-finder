@@ -25,8 +25,15 @@ spelling-variant equivalence).
 - Demand (`ff_demand.intent`): buy-intent detection and lead-word stripping now ignore tashkeel/tatweel and أ/إ/آ, ى, ة
   variants; added `ابغي/ابغى/بدي/عايز`. Query keeps the user's spelling (tashkeel removed).
 
-## Known limitations (not fixed, no catalog support)
-- `دقيق` also matches "High Precision" CNC (Arabic word is ambiguous: flour / accurate); flour mills rank first.
-- Category-only matches still return sibling listings (e.g. `مكيف` -> pumps in the "pumps & air conditioning" category, ranked below).
-- No numeric/unit awareness beyond tokens (`250 طن` matches the literal "250"; kg vs كغ vs كغم vs كجم not unified).
+## Former limitations, now addressed
+- Units: `text.tokens()` maps kg/kgs/kilo/كغ/كغم/كجم/كيلو, ton/tonne/mt/طن, m/meter/متر, l/litre/لتر, pc/pcs/piece/قطعة to one
+  canonical token and splits `250kg/h` / `250كغم` into number + unit (bare `l` is never split off: steel grades 304L).
+- `دقيق` vs "High Precision": ambiguous words (`search._AMBIGUOUS`) score x0.35 when they are the only hit, so the
+  weak-hit prune drops them once real flour listings exist.
+- `مكيف` vs pumps: `Match.sibling` marks hits reached only through a secondary segment of a compound category label;
+  `prune_weak` drops them when title hits exist (`pump` still lists its own category).
+- Latency guard: `test_search_latency_p95_regression` (p95 of 200 mixed queries < 500 ms).
+
+## Remaining limitations
+- No numeric-range/magnitude awareness (`250 طن` still matches the literal 250 plus unit token, not "about 250").
 - Existing test `test_arabic_query_finds_english_title` relaxed: used bakery lines are legitimately production lines now.

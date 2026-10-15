@@ -103,3 +103,56 @@ def test_delivered_shipment_is_not_reopened_by_a_stale_snapshot():
     assert sh.status == S.DELIVERED
     sh.apply_snapshot(TrackingSnapshot(provider="t", fetched_at=NOW, events=(ev(S.IN_TRANSIT, 5),)), NOW)
     assert sh.status == S.DELIVERED and len(sh.events) == 2
+
+
+def _big_provider(body: bytes, headers: dict | None = None):
+    def h(req):
+        return httpx.Response(200, content=body, headers=headers or {})
+
+    return HttpContainerProvider("https://api.example.test", "k", client=httpx.AsyncClient(transport=httpx.MockTransport(h)), env={})
+
+
+def test_oversized_provider_body_rejected_before_parsing():
+    from ff_tracking.adapters.http import MAX_BODY_BYTES
+
+    huge = b'{"x": "' + b"a" * (MAX_BODY_BYTES + 10) + b'"}'
+    p = _big_provider(huge)
+    with pytest.raises(ProviderUnavailable) as e:
+        asyncio.run(p.track("CSQU3054383", ReferenceType.CONTAINER, None, anchor=NOW, now=NOW))
+    assert e.value.reason == "bad_payload"
+    p = _big_provider(b"{}", {"content-length": str(MAX_BODY_BYTES + 1)})
+    with pytest.raises(ProviderUnavailable) as e:
+        asyncio.run(p._get_json("/x"))
+    assert e.value.reason == "bad_payload"
+    assert asyncio.run(_big_provider(b'{"ok": 1}')._get_json("/x")) == {"ok": 1}
+
+
+def test_label_and_carrier_control_chars_stripped(client):
+    r = client.post("/v1/shipments", json={"reference": "CSQU3054383", "reference_type": "container",
+                                           "label": "Tools\x00\x07 ‮for\n  Baghdad​", "carrier": "\x00Maersk\x1b"}, headers=H)
+    assert r.status_code == 201, r.text
+    assert r.json()["label"] == "Tools for Baghdad"
+    assert "\x00" not in json.dumps(r.json()["carrier"]) and "\x1b" not in json.dumps(r.json()["carrier"])
+    r = client.post("/v1/shipments", json={"reference": "176-12345675", "reference_type": "awb", "label": "\x00\x07 "}, headers=H)
+    assert r.status_code == 201 and r.json()["label"] is None
+
+
+def test_delete_shipment_and_erasure_remove_pending_outbox():
+    async def run():
+        repo = ShipmentRepository(make_engine("sqlite+aiosqlite:///:memory:"))
+        await repo.create_tables()
+        for i, (shp, owner) in enumerate([("shp_1", "u1"), ("shp_1", "u1"), ("shp_1", "u1"), ("shp_2", "u1"), ("shp_3", "u2")]):
+            await repo.add_outbox(dedupe_key=f"k{i}", shipment_id=shp, owner_id=owner, kind="status_changed",
+                                  payload="{}", created_at=NOW)
+        first = (await repo.pending_outbox())[0]
+        await repo.record_outbox_result(first.id, delivered_at=NOW)
+        await repo.delete("shp_1")
+        left = {(r.shipment_id) for r in await repo.pending_outbox()}
+        assert left == {"shp_2", "shp_3"}
+        assert (await repo.outbox_stats())["delivered"] == 1  # settled history is kept
+        from ff_tracking.repository import erase_owner
+        counts = await erase_owner(repo.engine, "u1")
+        assert counts["outbox_deleted"] == 2  # delivered row + shp_2
+        assert {r.shipment_id for r in await repo.pending_outbox()} == {"shp_3"}
+
+    asyncio.run(run())

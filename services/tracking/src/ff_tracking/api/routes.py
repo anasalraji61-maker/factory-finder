@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ff_tracking.domain.carriers import find_carrier
 from ff_tracking.domain.enums import ReferenceType, ShipmentStatus, TransportMode
 from ff_tracking.domain.errors import Unauthenticated
 from ff_tracking.domain.models import Shipment
 from ff_tracking.domain.progress import progress_percent
-from ff_tracking.domain.validators import validate_reference
+from ff_tracking.domain.validators import strip_control, validate_reference
 from ff_tracking.service import ShipmentService, detect_carrier
 
 router = APIRouter(prefix="/v1")
@@ -24,6 +24,11 @@ class ShipmentCreate(BaseModel):
     reference_type: ReferenceType
     carrier: str | None = Field(default=None, max_length=80)
     label: str | None = Field(default=None, max_length=120)
+
+    @field_validator("carrier", "label", mode="before")
+    @classmethod
+    def _no_control_chars(cls, v: object) -> object:
+        return strip_control(v) if isinstance(v, str) else v
 
 
 def current_user(x_user_id: Annotated[str | None, Header()] = None) -> str:

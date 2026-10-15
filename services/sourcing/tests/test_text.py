@@ -84,3 +84,17 @@ def test_split_groups_do_not_overmatch():
     assert ("cnc",) not in parse_query("مخرطة")[0].alternatives
     assert ("plywood",) in parse_query("ابلكاش")[0].alternatives
     assert ("brick",) in parse_query("طابوق")[0].alternatives and ("concrete", "block") not in parse_query("طابوق")[0].alternatives
+
+
+def test_unit_spellings_unify_and_compound_tokens_split():
+    from ff_sourcing.domain.text import tokens
+
+    kg = {tokens(f"250 {u}") for u in ("كغ", "كغم", "كجم", "كيلو", "kg", "kgs", "KG")}
+    assert kg == {("250", "kg")}
+    assert tokens("250kg/h") == ("250", "kg", "h") == tokens("250 كغم h")
+    assert tokens("5 طن") == tokens("5 ton") == tokens("5 tonnes") == tokens("5mt") == ("5", "ton")
+    assert tokens("10 متر") == tokens("10m") == tokens("10 metre") == ("10", "meter")
+    assert tokens("2 لتر") == tokens("2 l") == tokens("2litre") == tokens("2 litre") == ("2", "liter")
+    assert tokens("100 قطعة") == tokens("100pcs") == tokens("100 piece") == ("100", "pc")
+    # identifiers that merely start with digits+letters stay intact
+    assert tokens("rtx3080 m8 304L") == ("rtx3080", "m8", "304l")

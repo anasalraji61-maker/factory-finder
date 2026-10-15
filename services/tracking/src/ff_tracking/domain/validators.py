@@ -93,3 +93,15 @@ def validate_reference(reference_type: ReferenceType, raw: str) -> Validation:
         ReferenceType.VESSEL_IMO: validate_imo,
         ReferenceType.BL: validate_bl,
     }[reference_type](raw)
+
+
+def strip_control(value: str | None) -> str | None:
+    """Free text hygiene: drop control / bidi / zero-width / private-use characters, collapse whitespace.
+    Empty results become ``None``."""
+    import unicodedata
+
+    if value is None:
+        return None
+    kept = "".join(" " if ch.isspace() else ch for ch in value
+                   if ch.isspace() or unicodedata.category(ch) not in ("Cc", "Cf", "Cs", "Co", "Cn"))
+    return " ".join(kept.split()) or None

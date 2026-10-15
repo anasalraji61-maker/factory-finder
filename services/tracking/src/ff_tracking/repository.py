@@ -130,9 +130,12 @@ class ShipmentRepository:
     async def delete(self, shipment_id: str) -> None:
         async with self._sessions() as s:
             row = await s.get(ShipmentRow, shipment_id)
+            # a deleted shipment must not notify any more: drop its undelivered (pending / dead) outbox rows
+            await s.execute(delete(OutboxRow).where(OutboxRow.shipment_id == shipment_id,
+                                                    OutboxRow.delivered_at.is_(None)))
             if row:
                 await s.delete(row)
-                await s.commit()
+            await s.commit()
 
     async def list(self, owner_id: str, *, status: str | None, page: int, page_size: int) -> tuple[list[Shipment], int]:
         cond = [ShipmentRow.owner_id == owner_id]

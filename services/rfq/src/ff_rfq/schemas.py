@@ -6,9 +6,18 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from ff_rfq.domain.enums import Incoterm, ListingKind, RequestCondition, Visibility
+from ff_rfq.domain.review_text import sanitize
+
+
+def _clean(v: object, multiline: bool) -> object:
+    """Strip control / bidi / zero-width characters from free text (runs before length constraints)."""
+    if not isinstance(v, str):
+        return v
+    out = sanitize(v)
+    return out if multiline else " ".join(out.split())
 
 
 class Money(BaseModel):
@@ -26,6 +35,11 @@ class Destination(BaseModel):
     country_code: str = Field(pattern=r"^[A-Z]{2}$")
     city: str | None = Field(default=None, max_length=100)
 
+    @field_validator("city", mode="before")
+    @classmethod
+    def _city(cls, v: object) -> object:
+        return _clean(v, False)
+
 
 class RequestCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -42,6 +56,22 @@ class RequestCreate(BaseModel):
     visibility: Visibility = Visibility.PUBLIC
 
 
+    @field_validator("title", "unit", mode="before")
+    @classmethod
+    def _single_line(cls, v: object) -> object:
+        return _clean(v, False)
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def _multi_line(cls, v: object) -> object:
+        return _clean(v, True)
+
+    @field_validator("attachments", mode="before")
+    @classmethod
+    def _attachments(cls, v: object) -> object:
+        return [_clean(x, False) for x in v] if isinstance(v, list) else v
+
+
 class OfferCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     price: Money = Field(description="Per unit")
@@ -52,6 +82,16 @@ class OfferCreate(BaseModel):
     incoterm: Incoterm | None = None
     valid_until: datetime | None = None
     notes: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("supplier_name", mode="before")
+    @classmethod
+    def _name(cls, v: object) -> object:
+        return _clean(v, False)
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def _notes(cls, v: object) -> object:
+        return _clean(v, True)
 
 
 Stars = Annotated[int, Field(ge=1, le=5, strict=True)]

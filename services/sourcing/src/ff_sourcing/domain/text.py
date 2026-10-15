@@ -95,9 +95,31 @@ def stem(token: str) -> str:
     return token
 
 
+# Unit vocabulary: every spelling (post-normalize/stem) -> one canonical token, so "250 كغم" == "250kg" == "250 kilogram".
+_UNIT_SPELLINGS: dict[str, tuple[str, ...]] = {
+    "kg": ("kg", "kgs", "kilo", "kilogram", "kilogramme", "كغ", "كغم", "كجم", "كلغ", "كيلو", "كيلوغرام", "كيلوجرام"),
+    "ton": ("ton", "tonne", "tonnes", "mt", "طن", "اطنان", "أطنان"),
+    "meter": ("m", "meter", "metre", "متر", "امتار"),
+    "liter": ("l", "liter", "litre", "لتر", "لتره", "لترات"),
+    "pc": ("pc", "pcs", "piece", "قطعه", "قطع"),
+}
+_UNIT = {stem(normalize(sp)): canon for canon, sps in _UNIT_SPELLINGS.items() for sp in sps}
+_UNIT.update({normalize(sp): canon for canon, sps in _UNIT_SPELLINGS.items() for sp in sps})
+_NUM_UNIT = re.compile(r"^(\d+)([^\W\d_]+)$", re.UNICODE)  # 250kg / 250كغم (digits then letters, nothing else)
+
+
 @lru_cache(maxsize=16384)
 def tokens(text: str) -> tuple[str, ...]:
-    return tuple(stem(t) for t in normalize(text).split() if t)
+    out: list[str] = []
+    for raw in normalize(text).split():
+        m = _NUM_UNIT.match(raw)
+        # 250kg/h -> 250 kg h; bare "l" is never split off (steel grades 304L / 316L)
+        if m and m.group(2) != "l" and (_UNIT.get(m.group(2)) or _UNIT.get(stem(m.group(2)))):
+            out.append(m.group(1))
+            raw = m.group(2)
+        t = stem(raw)
+        out.append(_UNIT.get(t) or _UNIT.get(raw) or t)
+    return tuple(out)
 
 
 # Equivalence groups; first item is the canonical English keyword for remote APIs.

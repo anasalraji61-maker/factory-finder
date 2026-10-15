@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from itertools import permutations
 
-from .categories import category_labels, expand_category
+from .categories import _BY_SLUG, category_labels, expand_category
 from .models import Listing, SearchQuery
 from .text import QueryTerm, contains_phrase, fuzzy_in, tokens
 
@@ -24,6 +24,7 @@ SORTS = ("relevance", "price_asc", "price_desc", "trust", "moq")
 class Match:
     relevance: float  # 0..1
     phrase: bool = False  # whole query appears contiguously in the title
+    sibling: bool = False  # a term matched only the secondary segment of a compound category label
 
 
 # kind/condition are searchable like a category: "used production line" / "خط انتاج مستعمل"
@@ -33,6 +34,22 @@ _KIND_TEXT = {
     "product": "product منتج",
 }
 _CONDITION_TEXT = {"used": "used مستعمل", "refurbished": "refurbished مجدد"}
+
+
+_ARABIC_AND = "و"
+
+
+def _primary_category_tokens(listing: Listing) -> tuple[str, ...]:
+    """Tokens of the leading segment of the category label ("Pumps" of "Pumps & air conditioning"), plus kind/condition."""
+    node = _BY_SLUG.get(listing.category or "")
+    head_en = node.name.split("&")[0] if node else ""
+    head_ar: list[str] = []
+    for w in (node.name_ar if node else "").split():
+        if head_ar and w.startswith(_ARABIC_AND):
+            break
+        head_ar.append(w)
+    extra = f"{_KIND_TEXT.get(listing.kind, '')} {_CONDITION_TEXT.get(listing.condition, '')}"
+    return tokens(f"{head_en} {' '.join(head_ar)} {listing.category or ''} {extra}".replace("_", " "))
 
 
 def _doc_fields(listing: Listing) -> tuple[tuple[float, tuple[str, ...]], ...]:
@@ -55,10 +72,27 @@ def _doc_fields(listing: Listing) -> tuple[tuple[float, tuple[str, ...]], ...]:
     )
 
 
+# Arabic words with an unrelated second sense: a hit on the bare word alone is down-weighted so the intended
+# sense (flour; every other synonym of the group) wins. "دقيق" = flour / accurate ("High Precision" CNC).
+AMBIGUOUS_FACTOR = 0.35
+_AMBIGUOUS: frozenset[tuple[str, ...]] = frozenset({tokens("دقيق")})
+
+
 def _term_score(term: QueryTerm, fields) -> float:
+    strong = [a for a in term.alternatives if a not in _AMBIGUOUS]
+    weak = [a for a in term.alternatives if a in _AMBIGUOUS]
+    best = 0.0
     for weight, doc in fields:  # fields are ordered by weight: first exact hit is the best
-        if any(contains_phrase(doc, alt) for alt in term.alternatives):
-            return weight
+        if any(contains_phrase(doc, alt) for alt in strong):
+            best = weight
+            break
+    for weight, doc in fields:
+        if weight * AMBIGUOUS_FACTOR <= best:
+            break
+        if any(contains_phrase(doc, alt) for alt in weak):
+            return max(best, weight * AMBIGUOUS_FACTOR)
+    if best:
+        return best
     if term.fuzzy:
         for weight, doc in fields:
             if fuzzy_in(doc, term.fuzzy):
@@ -101,11 +135,16 @@ def match(terms: list[QueryTerm], listing: Listing, phrase: tuple[str, ...] = ()
         return Match(0.5)
     fields = _doc_fields(listing)
     total = 0.0
+    sibling = False
+    primary: tuple[str, ...] | None = None
     for term in terms:
         sc = _term_score(term, fields)
         if sc <= 0:
             return None
         total += sc
+        if sc == F_CATEGORY:  # category-level hit: is it the category's own head word or a sibling segment?
+            primary = _primary_category_tokens(listing) if primary is None else primary
+            sibling = sibling or not any(contains_phrase(primary, alt) for alt in term.alternatives)
     exact_phrase = False
     if len(phrase) > 1:
         title_ar = tokens(listing.title_ar or "")
@@ -115,10 +154,10 @@ def match(terms: list[QueryTerm], listing: Listing, phrase: tuple[str, ...] = ()
         exact_phrase = synonym_phrase(terms, tokens(listing.title)) or synonym_phrase(
             terms, tokens(listing.title_ar or "")
         )
-    return Match(total / (F_TITLE * len(terms)), exact_phrase)
+    return Match(total / (F_TITLE * len(terms)), exact_phrase, sibling)
 
 
-WEAK_RELEVANCE, STRONG_RELEVANCE = 0.4, 0.6
+WEAK_RELEVANCE, STRONG_RELEVANCE, TITLE_RELEVANCE = 0.4, 0.6, 0.95
 
 
 def prune_weak(items: list[tuple[Listing, Match]]) -> list[tuple[Listing, Match]]:
@@ -129,7 +168,12 @@ def prune_weak(items: list[tuple[Listing, Match]]) -> list[tuple[Listing, Match]
     """
     if not any(m.relevance >= STRONG_RELEVANCE for _, m in items):
         return items
-    return [it for it in items if it[1].relevance >= WEAK_RELEVANCE]
+    items = [it for it in items if it[1].relevance >= WEAK_RELEVANCE]
+    # category-aware pruning: when real title hits exist, listings that only reach the query through a secondary
+    # segment of a compound category label ("مكيف" -> pumps/generators in "Pumps & air conditioning") are siblings.
+    if any(m.relevance >= TITLE_RELEVANCE for _, m in items):
+        items = [it for it in items if not it[1].sibling]
+    return items
 
 
 def relevance(terms: list[QueryTerm], listing: Listing) -> float | None:

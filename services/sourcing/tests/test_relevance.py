@@ -61,3 +61,34 @@ async def test_spelling_variants_return_identical_results(service, group):
         results.append([i.id for i in res.items])
     assert results[0], group
     assert all(r == results[0] for r in results), dict(zip(group, results, strict=True))
+
+
+async def test_ambiguous_daqiq_prefers_flour_over_precision(service):
+    res = await service.search(SearchQuery(q="دقيق"), 1, 100)
+    ids = [i.id for i in res.items]
+    assert "lst_0079" not in ids and ids[:2] and set(ids) == {"lst_0012", "lst_0023"}
+
+
+async def test_category_siblings_pruned_but_head_category_word_kept(service):
+    ac = await service.search(SearchQuery(q="مكيف"), 1, 100)
+    assert [i.id for i in ac.items] == ["lst_0057"]
+    pumps = await service.search(SearchQuery(q="pump"), 1, 100)
+    assert len(pumps.items) > 5  # "pump" is the head of "Pumps & air conditioning": siblings stay
+
+
+async def test_search_latency_p95_regression(service):
+    import time
+
+    qs = [c["q"] for c in CASES] + [q for g in FIX["equivalent_queries"] for q in g]
+    qs = (qs * (200 // len(qs) + 1))[:200]
+    assert len(qs) == 200
+    await service.search(SearchQuery(q="warmup"), 1, 20)
+    times = []
+    for q in qs:
+        t0 = time.perf_counter()
+        await service.search(SearchQuery(q=q), 1, 20)
+        times.append(time.perf_counter() - t0)
+    times.sort()
+    p95 = times[int(len(times) * 0.95) - 1]
+    # generous bound (typically a few ms): only catches order-of-magnitude regressions, stays stable on slow CI
+    assert p95 < 0.5, f"p95 search latency {p95 * 1000:.1f} ms"

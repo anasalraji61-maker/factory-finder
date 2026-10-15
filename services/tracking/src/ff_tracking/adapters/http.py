@@ -16,6 +16,7 @@ all raise ``ProviderUnavailable`` with a short ``reason``; callers fall back to 
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import time
@@ -35,6 +36,7 @@ from ff_tracking.domain.normalize import location_of, normalize_events, parse_ts
 GLOBAL_KILL_SWITCH_ENV = "FF_TRACKING_KILL_SWITCH"
 MIN_INTERVAL_FLOOR_S = 3.0
 MAX_CACHE_ENTRIES = 1000
+MAX_BODY_BYTES = 1_048_576  # provider responses larger than this are rejected before JSON parsing
 _FORMAT = {  # defence in depth: never put an unvalidated string into a provider URL
     "container": re.compile(r"[A-Z]{3}[UJZ][0-9]{7}"), "bl": re.compile(r"[A-Z]{4}[A-Z0-9]{4,16}"),
     "awb": re.compile(r"[0-9]{3}-[0-9]{8}"), "imo": re.compile(r"[0-9]{7}"),
@@ -130,16 +132,24 @@ class _HttpBase:
     async def _request(self, url: str, params: dict[str, str]) -> dict[str, Any]:
         client = self._client or httpx.AsyncClient(timeout=self.timeout_s)
         try:
-            r = await client.get(url, params=params, headers={
-                "User-Agent": self.user_agent, "Accept": "application/json",
-                "Authorization": f"Bearer {self._key}"})
-            if r.status_code == 429:
-                raise ProviderUnavailable(f"{self.id}: HTTP 429; not retrying", reason="rate_limited")
-            if r.status_code in (401, 403):
-                raise ProviderUnavailable(f"{self.id}: HTTP {r.status_code}; not retrying", reason="blocked")
-            if r.status_code >= 400:
-                raise ProviderUnavailable(f"{self.id}: HTTP {r.status_code}", reason="upstream_error")
-            data = r.json()
+            async with client.stream("GET", url, params=params, headers={
+                    "User-Agent": self.user_agent, "Accept": "application/json",
+                    "Authorization": f"Bearer {self._key}"}) as r:
+                if r.status_code == 429:
+                    raise ProviderUnavailable(f"{self.id}: HTTP 429; not retrying", reason="rate_limited")
+                if r.status_code in (401, 403):
+                    raise ProviderUnavailable(f"{self.id}: HTTP {r.status_code}; not retrying", reason="blocked")
+                if r.status_code >= 400:
+                    raise ProviderUnavailable(f"{self.id}: HTTP {r.status_code}", reason="upstream_error")
+                declared = r.headers.get("content-length", "")
+                if declared.isdigit() and int(declared) > MAX_BODY_BYTES:
+                    raise ProviderUnavailable(f"{self.id}: response too large", reason="bad_payload")
+                body = bytearray()
+                async for chunk in r.aiter_bytes():
+                    body += chunk
+                    if len(body) > MAX_BODY_BYTES:
+                        raise ProviderUnavailable(f"{self.id}: response too large", reason="bad_payload")
+            data = json.loads(bytes(body))
             if not isinstance(data, dict):
                 raise ValueError("payload is not an object")
             return data

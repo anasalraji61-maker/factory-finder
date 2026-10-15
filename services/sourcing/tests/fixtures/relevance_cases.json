@@ -1,6 +1,16 @@
 {
   "_doc": "Relevance regression fixture over the mock catalog (data/catalog.json). Each case: q (+ optional kind/condition/moq_max/sort), top1 (id that must rank first), in_top5 (ids that must all appear in the top 5), all_kind/all_condition (every returned item), total (exact count, 0 = empty result). Ids are catalog ids; keep deterministic.",
   "cases": [
+    {"q": "250kg/h", "top1": "lst_0003", "total": 1},
+    {"q": "250 كغم", "top1": "lst_0003", "total": 1},
+    {"q": "خط بسكويت 250 كجم", "top1": "lst_0003", "total": 1},
+    {"q": "biscuit line 250 kgs", "top1": "lst_0003"},
+    {"q": "طحين 100 طن", "top1": "lst_0012", "total": 1},
+    {"q": "100tonne flour", "top1": "lst_0012", "total": 1},
+    {"q": "دقيق", "in_top5": ["lst_0012", "lst_0023"], "total": 2},
+    {"q": "مطحنة دقيق", "in_top5": ["lst_0012", "lst_0023"], "total": 2},
+    {"q": "مكيف", "top1": "lst_0057", "total": 1},
+    {"q": "air conditioner", "top1": "lst_0057", "total": 1},
     {"q": "PET resin", "top1": "lst_0030"},
     {"q": "راتنج PET", "in_top5": ["lst_0030"]},
     {"q": "حبيبات بيت للقناني", "in_top5": ["lst_0030"]},
@@ -85,6 +95,8 @@
     {"q": "granules", "sort": "moq", "sorted_by": "moq"}
   ],
   "equivalent_queries": [
+    ["250kg/h", "250 kg/h", "250 كغم/h", "250 كجم h", "250 kgs h", "250كيلو h"],
+    ["100 طن طحين", "100 ton طحين", "100tonne طحين", "100 tonnes طحين", "100mt طحين"],
     ["مضخة ماء", "مضخه ماء", "مَضَخَّة مَاء"],
     ["إطارات", "اطارات", "أطارات"],
     ["ألمنيوم", "المنيوم", "الــمنيوم"],
