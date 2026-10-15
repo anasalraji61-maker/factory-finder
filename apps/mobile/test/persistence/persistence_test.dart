@@ -27,6 +27,9 @@ class FakeAuth implements AuthRepository {
   }
 
   @override
+  Future<Me?> fetchMe() async => null;
+
+  @override
   void logout() {}
 
   @override

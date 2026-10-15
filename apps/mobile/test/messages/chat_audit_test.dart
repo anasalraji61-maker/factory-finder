@@ -1,6 +1,7 @@
 import 'package:factory_finder/features/messages/data/chat_logic.dart';
 import 'package:factory_finder/features/messages/data/chat_socket.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
+import 'package:factory_finder/features/messages/data/messages_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
