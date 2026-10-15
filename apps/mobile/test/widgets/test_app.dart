@@ -28,9 +28,10 @@ Future<GoRouter> pumpApp(
   String? location,
   Size logicalSize = const Size(540, 1200),
   List<Override> overrides = const [],
+  double devicePixelRatio = 2.0,
 }) async {
-  tester.view.physicalSize = logicalSize * 2.0;
-  tester.view.devicePixelRatio = 2.0;
+  tester.view.physicalSize = logicalSize * devicePixelRatio;
+  tester.view.devicePixelRatio = devicePixelRatio;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 

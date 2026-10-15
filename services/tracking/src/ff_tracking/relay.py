@@ -108,6 +108,7 @@ class OutboxRelay:
         self.batch_size = max(1, min(batch_size, 100))
         self.max_attempts = max(1, max_attempts)
         self.backoff_base, self.backoff_max = backoff_base, backoff_max
+        self._lock = asyncio.Lock()  # overlapping runs would send the same rows twice
 
     def backoff(self, attempts: int) -> timedelta:
         return timedelta(seconds=min(self.backoff_base * (2 ** max(attempts - 1, 0)), self.backoff_max))
@@ -121,6 +122,10 @@ class OutboxRelay:
         return "retry"
 
     async def run_once(self) -> dict[str, int]:
+        async with self._lock:
+            return await self._run_once()
+
+    async def _run_once(self) -> dict[str, int]:
         now = self.clock()
         if self._purged_at is None or now - self._purged_at >= timedelta(hours=1):
             self._purged_at = now
@@ -135,7 +140,9 @@ class OutboxRelay:
         stats["sent"] = len(rows)
         try:
             results = await self.client.send([_event(r) for r in rows])
-        except NotifyUnavailable as e:
+        except Exception as e:  # NotifyUnavailable or any client bug: back off, never retry in a tight loop
+            if not isinstance(e, NotifyUnavailable):
+                log.exception("tracking relay client failed")
             for r in rows:
                 stats["dead" if await self._fail(r, f"batch:{e}", now) == "dead" else "retried"] += 1
             return stats
@@ -158,7 +165,7 @@ class OutboxRelay:
                 await self.run_once()
             except Exception:  # keep the loop alive
                 log.exception("tracking relay cycle failed")
-            await asyncio.sleep(poll_seconds)
+            await asyncio.sleep(max(1.0, poll_seconds))  # never a tight loop, even if misconfigured
 
 
 def build_relay(settings, repo: ShipmentRepository, clock: Callable[[], datetime],

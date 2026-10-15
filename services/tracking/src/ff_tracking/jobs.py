@@ -19,8 +19,13 @@ class RefreshJob:
         self.repo, self.service, self.clock = repo, service, clock
         self.interval = timedelta(hours=interval_hours)
         self.batch_size = batch_size
+        self._lock = asyncio.Lock()  # overlapping runs would double-fetch and overwrite each other's saves
 
     async def run_once(self) -> dict[str, int]:
+        async with self._lock:
+            return await self._run_once()
+
+    async def _run_once(self) -> dict[str, int]:
         now = self.clock()
         due = []
         for sh in await self.repo.active():
@@ -35,6 +40,9 @@ class RefreshJob:
                 stats["refreshed"] += 1
             except ProviderFailed:
                 stats["failed"] += 1
+            except Exception:  # one broken shipment must not stop the others
+                log.exception("tracking refresh failed for one shipment")
+                stats["failed"] += 1
         return stats
 
     async def run_forever(self, poll_seconds: float) -> None:
@@ -43,4 +51,4 @@ class RefreshJob:
                 await self.run_once()
             except Exception:  # keep the loop alive; one bad cycle must not stop tracking
                 log.exception("tracking refresh cycle failed")
-            await asyncio.sleep(poll_seconds)
+            await asyncio.sleep(max(1.0, poll_seconds))  # never a tight loop, even if misconfigured

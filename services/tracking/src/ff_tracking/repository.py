@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
@@ -54,6 +56,15 @@ class OutboxRow(Base):
     last_error: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
 
+def _utc_iso(v) -> str | None:
+    """Row datetimes come back naive from SQLite; they were stored as UTC, so label them."""
+    if v is None:
+        return None
+    if getattr(v, "tzinfo", None) is None:
+        v = v.replace(tzinfo=UTC)
+    return v.isoformat()
+
+
 def make_engine(url: str) -> AsyncEngine:
     url = normalize_database_url(url)
     if ":memory:" in url or url.endswith("://"):
@@ -69,7 +80,7 @@ async def export_owner(engine: AsyncEngine, owner_id: str, cap: int = 500) -> di
         rows = (await c.scalars(select(ShipmentRow).where(ShipmentRow.owner_id == owner_id).order_by(ShipmentRow.created_at).limit(cap + 1))).all()
     return {"truncated": len(rows) > cap, "data": {"shipments": [
         {"id": r.id, "reference_type": r.reference_type, "reference": r.reference, "status": r.status,
-         "created_at": r.created_at.isoformat() if hasattr(r.created_at, "isoformat") else str(r.created_at)}
+         "created_at": _utc_iso(r.created_at)}
         for r in rows[:cap]]}}  # fmt: skip
 
 
@@ -201,7 +212,7 @@ class ShipmentRepository:
                 "retrying": await count(OutboxRow.delivered_at.is_(None), OutboxRow.dead_at.is_(None), OutboxRow.attempts > 0),
                 "dead": await count(OutboxRow.dead_at.is_not(None)),
                 "delivered": await count(OutboxRow.delivered_at.is_not(None)),
-                "oldest_pending_at": oldest.isoformat() if oldest else None,
+                "oldest_pending_at": _utc_iso(oldest),
             }
 
     async def mark_outbox_delivered(self, outbox_id: int, when) -> None:

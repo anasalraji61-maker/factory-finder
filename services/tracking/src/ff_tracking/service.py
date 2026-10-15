@@ -86,7 +86,7 @@ class ShipmentService:
         sh.last_refresh_attempt_at = now
         try:
             changes = await self._fetch(sh, now, anchor=sh.created_at)
-        except ProviderFailed:
+        except Exception:  # ProviderFailed or an unexpected bug
             await self.repo.save(sh)  # remember the attempt so we do not hammer a failing provider
             raise
         await self.repo.save(sh)

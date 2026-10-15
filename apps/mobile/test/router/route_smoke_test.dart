@@ -52,6 +52,29 @@ const List<String> _routes = <String>[
   '/listing/lst_001',
   '/supplier/sup_cn_004',
   '/chat/cnv_001',
+  '/requests/req_001',
+  '/requests/req_005',
+  '/feed/post/post_001',
+  '/feed/supplier/sup_cn_001',
+  '/supplier-reviews/sup_cn_004',
+  '/logistics/tracking/shp_001',
+  '/logistics/tracking/shp_005',
+  '/logistics/freight/requests/fr_100',
+  '/logistics/freight/forwarder/requests/fr_200',
+  // Not seeded in mock data (deals/invoices appear only after accepting an
+  // offer; my-products starts empty): exercises the not-found/error states.
+  '/deals/deal_101',
+  '/invoice/inv_mock_1',
+  '/my-products/lst_mock_my_001',
+];
+
+/// Main tab roots, re-run on a small 360 dp phone to catch overflow.
+const List<String> _tabRoutes = <String>[
+  '/discover',
+  '/requests',
+  '/messages',
+  '/logistics',
+  '/profile',
 ];
 
 void main() {
@@ -80,6 +103,30 @@ void main() {
 
         await disposeApp(tester);
         expect(tester.takeException(), isNull, reason: '$route (dispose)');
+      });
+    }
+  }
+
+  // Small phone: 360 x 800 dp (1080 x 2400 px @ 3.0). Overflow errors are
+  // reported through tester.takeException().
+  for (final lang in const ['ar', 'en']) {
+    for (final route in _tabRoutes) {
+      testWidgets('route $route fits a 360dp phone ($lang)', (tester) async {
+        await pumpApp(
+          tester,
+          location: route,
+          logicalSize: const Size(360, 800),
+          devicePixelRatio: 3.0,
+          overrides: [
+            localeProvider.overrideWith((ref) => Locale(lang)),
+          ],
+        );
+
+        expect(tester.takeException(), isNull, reason: '$route @360');
+        expect(find.byType(Scaffold), findsWidgets, reason: route);
+
+        await disposeApp(tester);
+        expect(tester.takeException(), isNull, reason: '$route @360 (dispose)');
       });
     }
   }

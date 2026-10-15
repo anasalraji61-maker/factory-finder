@@ -93,6 +93,7 @@ class NotificationService:
         self.settings = settings
         self.clock = clock
         self._vlock = asyncio.Lock()
+        self._watch_lock = asyncio.Lock()  # serialises check-then-insert in add_watch
         self._eval_lock = asyncio.Lock()  # one evaluation run at a time (API vs scheduler)
         self.cooldown = CooldownPolicy(default=timedelta(hours=settings.cooldown_hours))
         self.rule_config = RuleConfig(Decimal(settings.equivalent_min_saving_pct))
@@ -134,12 +135,13 @@ class NotificationService:
             search=search,
             target_price=target_price,
         )
-        existing = await self.store.find_watch_by_identity(owner_id, watch_identity(watch))
-        if existing is not None:
-            return existing, False
-        if await self.store.count_watches(owner_id) >= self.settings.max_watches_per_user:
-            raise Invalid("Watchlist is full", code="watchlist_full")
-        await self.store.insert_watch(watch)
+        async with self._watch_lock:
+            existing = await self.store.find_watch_by_identity(owner_id, watch_identity(watch))
+            if existing is not None:
+                return existing, False
+            if await self.store.count_watches(owner_id) >= self.settings.max_watches_per_user:
+                raise Invalid("Watchlist is full", code="watchlist_full")
+            await self.store.insert_watch(watch)
         return watch, True
 
     async def list_watches(
@@ -558,7 +560,7 @@ class NotificationService:
 
     async def run_scheduler(self) -> None:
         while True:
-            await asyncio.sleep(self.settings.scheduler_interval_seconds)
+            await asyncio.sleep(self.settings.scheduler_interval_seconds)  # config enforces >= 1s
             with contextlib.suppress(Exception):
                 await self.evaluate_all()
             with contextlib.suppress(Exception):
