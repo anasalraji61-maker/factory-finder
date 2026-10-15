@@ -144,7 +144,7 @@ async def test_concurrent_approve_vs_withdraw_never_both(tmp_path):
 async def test_concurrent_identical_submissions_one_row(tmp_path):
     a, b = two_stores(tmp_path)
     res = await asyncio.gather(*(s.submit("s", "business_license", "CN", [F1], "LIC-AAAA-1", None, True) for s in (a, b)), return_exceptions=True)
-    assert sum(isinstance(r, VerificationError) and r.code == "duplicate_document" for r in res) == 1
+    assert sum(isinstance(r, VerificationError) and r.code == "duplicate_document" for r in res) == 1, repr(res)
     assert len(await a.list_for_supplier("s")) == 1
 
 
