@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -46,6 +46,9 @@ class LandedCostRequest(BaseModel):
     modes: list[Mode] | None = None
     display_currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     insurance: bool = True
+    # Optional forwarder quote (from freight GET /v1/freight/quotes/{id}/landed-cost-input). Deliberately
+    # untyped: expired or malformed values are ignored with an assumption note, never a 422.
+    freight_override: Any = None
 
 
 class ConvertRequest(BaseModel):

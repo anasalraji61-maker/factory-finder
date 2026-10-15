@@ -463,6 +463,25 @@ paths:
         '404': *id001
         '409': *id001
         '422': *id001
+  /v1/freight/quotes/{quote_id}/landed-cost-input:
+    parameters:
+    - {$ref: '#/components/parameters/QuoteId'}
+    get:
+      operationId: getQuoteLandedCostInput
+      summary: 'Read-only: an awarded quote as the `freight_override` object for logistics POST /v1/quotes/landed-cost (request owner only)'
+      description: >
+        404 for anyone but the request owner (forwarders included); 409 `quote_not_awarded` unless the quote is the
+        accepted one. The client passes the body unchanged as `freight_override`; logistics ignores it once
+        `valid_until` has passed. The services never call each other.
+      responses:
+        '200':
+          description: Override object
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LandedCostInput'}
+        '401': *id001
+        '404': *id001
+        '409': *id001
   /v1/freight/quotes/{quote_id}/withdraw:
     parameters:
     - {$ref: '#/components/parameters/QuoteId'}
@@ -1298,6 +1317,16 @@ components:
         created_at: *id007
         updated_at: *id007
         forwarder: {$ref: '#/components/schemas/ForwarderSummary'}
+    LandedCostInput:
+      type: object
+      required: [amount, currency, source, quote_id, valid_until, mode_family]
+      properties:
+        amount: {type: string, pattern: '^\d+(\.\d{1,2})?$'}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+        source: {type: string, const: forwarder_quote}
+        quote_id: {type: string}
+        valid_until: {type: string, format: date-time}
+        mode_family: {$ref: '#/components/schemas/Mode'}
     AdminQuote:
       allOf:
       - {$ref: '#/components/schemas/Quote'}

@@ -397,6 +397,24 @@ components:
         modes: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}, description: "Filter; also bypasses minimum-size rules for FCL/rail"}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode", default: USD}
         insurance: {type: boolean, default: true}
+        freight_override:
+          description: >
+            Optional forwarder quote (the object returned by freight GET /v1/freight/quotes/{id}/landed-cost-input).
+            When valid and unexpired, the main-leg line uses it as an exact price (estimate=false, no range,
+            plus an extra additive boolean `quoted: true` on the line) instead of the table/live estimate, in options whose mode family matches
+            (all options when mode_family is absent). Expired or malformed values are ignored (never a 422)
+            and an assumption note says why. Quote currency is converted through the FX adapter.
+          allOf: [{$ref: "#/components/schemas/FreightOverride"}]
+    FreightOverride:
+      type: object
+      required: [amount, currency, source, quote_id, valid_until]
+      properties:
+        amount: {type: string, pattern: '^\d+(\.\d{1,2})?$', description: "exact decimal, greater than 0"}
+        currency: {type: string, pattern: "^[A-Z]{3}$"}
+        source: {type: string, const: forwarder_quote}
+        quote_id: {type: string, maxLength: 64}
+        valid_until: {type: string, format: date-time}
+        mode_family: {type: string, enum: [sea, air, rail, road], description: "optional; restricts the override to options of this family"}
     LandedCostQuoteResponse:
       allOf:
         - $ref: "../schemas/common.schema.json#/$defs/LandedCostQuote"

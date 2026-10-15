@@ -51,3 +51,6 @@ Every setting in `src/ff_freight/config.py` (`Settings`, case-insensitive env na
 | `FF_FREIGHT_RATE_REPORTS` | 20 |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).
+
+## Landed-cost input
+`GET /v1/freight/quotes/{id}/landed-cost-input`: request owner only (404 for forwarders/strangers), 409 `quote_not_awarded` unless the quote is the accepted one. Returns `{amount, currency, source: "forwarder_quote", quote_id, valid_until, mode_family}`, which the client passes unchanged as `freight_override` to logistics (`POST /v1/quotes/landed-cost`). Services never call each other.

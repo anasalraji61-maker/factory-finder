@@ -7,3 +7,4 @@
 - 2026-10-13 | Quote-level `warnings` and option-level `warnings` added as additive fields; geo outage maps to 502 `geo_unavailable`; unknown city falls back to a default city of the country.
 - 2026-10-13 | Umm Qasr carries a congestion/war-risk surcharge in routes.json so Mersin+truck wins for far-north Iraq (Erbil); values approximate.
 - 2026-10-13 | geo client parses geo responses tolerantly (list or {items}; lat/lon or point) since geo's contract was not final; hub ids in routes.json are UN/LOCODE and skipped gracefully if geo lacks them.
+2026-10-15: freight_override carries optional mode_family and the freight helper lives at /v1/freight/quotes/{id}/landed-cost-input (service prefix); the client relays it, no service-to-service call. Why: a forwarder quote is for one mode, and rule 1 forbids coupling.

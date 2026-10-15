@@ -3,7 +3,8 @@ import asyncio
 import math
 import uuid
 from dataclasses import dataclass, field
-from decimal import Decimal
+from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 
 from ..adapters.freight import FreightRateProvider, FreightRequest, FreightUnavailable
 from ..adapters.fx import FxService, utcnow_iso
@@ -17,6 +18,7 @@ from .money import D, money, quantize
 from .sensitivity import sensitivity
 from .warnings import cargo_warnings, sanctions_warning, value_warnings
 
+ASSUMPTION_MAIN_LEG_FALLBACK = "main-leg freight uses the live-rate/table estimate instead"
 ASSUMPTION_TABLE = "Rates, duties and fees come from an approximate table, verify with a customs broker."
 SPREAD = {"origin_inland": "0.20", "origin_handling": "0.15", "main_leg": "0.15", "insurance": "0.10",
           "destination_handling": "0.20", "duties": "0.25", "taxes": "0.25", "clearance": "0.25",
@@ -59,6 +61,7 @@ class Line:
     estimate: bool = True
     spread: Decimal | None = None  # overrides SPREAD[stage] (e.g. a live quote's own range)
     min_spread_usd: Decimal = Decimal(0)  # absolute half-range floor (table ranges, also when the base amount is 0)
+    orig: tuple[Decimal, str] | None = None  # exact (amount, currency) of a forwarder quote; shown as original_amount
 
 
 @dataclass
@@ -143,6 +146,61 @@ def air_rate_per_kg(lane: dict, chargeable: Decimal) -> Decimal:
     return rate
 
 
+OVERRIDE_SOURCE = "forwarder_quote"
+OVERRIDE_FAMILIES = ("sea", "air", "rail", "road")
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
+@dataclass
+class FreightOverride:
+    amount: Decimal
+    currency: str
+    quote_id: str
+    valid_until: str
+    family: str | None = None
+    usd: Decimal = Decimal(0)
+    used: bool = False
+
+
+def parse_freight_override(raw, now: datetime) -> tuple[FreightOverride | None, str | None]:
+    """Validate a client-supplied forwarder quote. Never raises: (override, None) or (None, reason)."""
+    if not isinstance(raw, dict):
+        return None, "not an object"
+    try:
+        if raw.get("source") != OVERRIDE_SOURCE:
+            return None, f"source must be '{OVERRIDE_SOURCE}'"
+        cur, qid, vu = raw.get("currency"), raw.get("quote_id"), raw.get("valid_until")
+        if not (isinstance(cur, str) and len(cur) == 3 and cur.isascii() and cur.isupper() and cur.isalpha()):
+            return None, "currency must be a 3-letter upper-case code"
+        if not isinstance(qid, str) or not (1 <= len(qid) <= 64):
+            return None, "quote_id is missing or invalid"
+        a = raw.get("amount")
+        if isinstance(a, bool) or not isinstance(a, (str, int, float, Decimal)):
+            return None, "amount is missing or invalid"
+        try:
+            amount = Decimal(str(a))
+        except InvalidOperation:
+            return None, "amount is not a number"
+        if not amount.is_finite() or amount <= 0:
+            return None, "amount must be a positive number"
+        if not isinstance(vu, str):
+            return None, "valid_until is missing or invalid"
+        until = datetime.fromisoformat(vu.replace("Z", "+00:00"))
+        if until.tzinfo is None:
+            until = until.replace(tzinfo=UTC)
+        fam = raw.get("mode_family")
+        if fam is not None and fam not in OVERRIDE_FAMILIES:
+            return None, "mode_family must be one of sea, air, rail, road"
+    except (InvalidOperation, ValueError, TypeError):
+        return None, "malformed field"
+    if until <= now:
+        return None, f"quote {qid} expired at {vu}"
+    return FreightOverride(amount, cur, qid, vu, fam), None
+
+
 class Engine:
     """One instance per request (holds request context and a distance cache)."""
 
@@ -151,6 +209,7 @@ class Engine:
         self.geo, self.fx, self.freight = geo, fx, freight
         self.freight_calls_left = freight_max_calls
         self.freight_notes: list[str] = []
+        self.override: FreightOverride | None = None
         self._dist: dict = {}
         self.ctx: dict = {}
 
@@ -194,6 +253,7 @@ class Engine:
             m3 = max(kg / D(250), D("0.01"))
             assumptions.append("Volume not given: estimated from weight at 250 kg/m3.")
 
+        await self._prepare_override(req, assumptions)
         o_pt, d_pt = await asyncio.gather(self._resolve(req.origin, "origin"),
                                           self._resolve(req.destination, "destination"))
         self.ctx = {"req": req, "kg": kg, "m3": m3, "goods_usd": goods_usd, "o_pt": o_pt, "d_pt": d_pt,
@@ -236,6 +296,7 @@ class Engine:
         dmw = await self._de_minimis_warning(dc, goods_usd)
         if dmw:
             quote_warn.append(dmw)
+        self._override_summary(drafts)
         assumptions.extend(dict.fromkeys(self.freight_notes))
         assumptions.extend(dict.fromkeys(
             freight_volatility(d.mode, oc, dc)[2] for d in drafts
@@ -246,6 +307,46 @@ class Engine:
                 "assumptions": assumptions, "warnings": quote_warn, "created_at": priced_at}
 
     # ------------------------------------------------------------ helpers
+    async def _prepare_override(self, req: LandedCostRequest, assumptions: list[str]) -> None:
+        raw = req.freight_override
+        if raw is None:
+            return
+        ov, why = parse_freight_override(raw, _now())
+        if ov is not None:
+            try:
+                ov.usd = ov.amount * (await self.fx.rate(ov.currency, "USD"))[0]
+            except ApiError:
+                ov, why = None, f"no FX rate for {ov.currency}"
+        if ov is None:
+            assumptions.append(f"Forwarder freight quote ignored ({why}); the {ASSUMPTION_MAIN_LEG_FALLBACK}.")
+            return
+        self.override = ov
+
+    def _override_summary(self, drafts: list["Draft"]) -> None:
+        ov = self.override
+        if ov is None:
+            return
+        if ov.used:
+            self.freight_notes.append(
+                f"Main-leg freight uses forwarder quote {ov.quote_id} ({ov.currency} {ov.amount}, valid until "
+                f"{ov.valid_until}) as an exact price, not an estimate; it was not checked against the cargo "
+                "or lane here. Other lines use the approximate tables.")
+        else:
+            self.freight_notes.append(
+                f"Forwarder freight quote {ov.quote_id} matched no option (mode_family {ov.family}); "
+                f"the {ASSUMPTION_MAIN_LEG_FALLBACK}.")
+
+    def _apply_override(self, lines: dict, fam: str) -> None:
+        ov = self.override
+        ml = lines.get("main_leg")
+        if ov is None or ml is None or (ov.family and ov.family != fam):
+            return
+        ov.used = True
+        lines["main_leg"] = Line(
+            "main_leg", f"{ml.description.split(':')[0]}: forwarder quote {ov.quote_id}", ov.usd,
+            f"{OVERRIDE_SOURCE} {ov.quote_id}, valid until {ov.valid_until}", estimate=False,
+            spread=Decimal(0), orig=(ov.amount, ov.currency))
+
     async def _de_minimis_warning(self, dc: str, goods_usd: Decimal) -> str | None:
         dm = de_minimis(DATA.duties, dc)
         if dm is None:
@@ -515,6 +616,7 @@ class Engine:
             via_txt = f" + truck via {alt.via.name}" if alt.via else ""
             summary = f"{oh.name} -> {alt.hub.name} ({main_mode if mode != 'rail' else 'rail'}){via_txt} -> destination"
             co2_km = main_km
+        self._apply_override(lines, fam)
         # dwell / clearance time
         dw = {"sea": (3, 6), "air": (1, 2), "rail": (3, 5), "road": (0, 0)}[fam]
         cl = h["dest_clearance_days"].get(dc, h["dest_clearance_days"]["default"])
@@ -577,6 +679,8 @@ class Engine:
         raw = [Line("goods", "Goods price from supplier", goods_usd, "supplier quote", False)] + d.lines
         for ln in raw:
             amt = quantize(ln.usd * rate, disp)
+            if ln.orig is not None and ln.orig[1] == disp:
+                amt = quantize(ln.orig[0], disp)  # exact: no USD round trip
             total += amt
             vol_note = None
             if ln.stage == "main_leg" and ln.spread is None:
@@ -601,6 +705,10 @@ class Engine:
                 entry["source"] += f"; volatility {vol_label} (+-{frac * 100:.0f}%)"
             if ln.stage == "goods":
                 entry["original_amount"] = money(goods_val.amount, goods_val.currency)
+            if ln.orig is not None:
+                entry["original_amount"] = money(ln.orig[0], ln.orig[1])
+                entry["fx_rate"] = "1" if ln.orig[1] == disp else f"{amt / ln.orig[0]:.8g}"
+                entry["quoted"] = True
             lines_out.append(entry)
         warns = cargo_warnings(d.mode, self.ctx["kg"], self.ctx["m3"], dg,
                                cargo.air_chargeable_kg(self.ctx["kg"], self.ctx["m3"]))

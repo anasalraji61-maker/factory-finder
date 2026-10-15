@@ -191,6 +191,11 @@ async def get_quote(quote_id: ObjId, s: S, user: User):
     return await s.get_quote(user, quote_id)
 
 
+@router.get("/quotes/{quote_id}/landed-cost-input")
+async def quote_landed_cost_input(quote_id: ObjId, s: S, user: User):
+    return await s.landed_cost_input(user, quote_id)
+
+
 @router.put("/quotes/{quote_id}")
 async def revise_quote(quote_id: ObjId, body: QuoteCreate, s: S, user: User):
     return await s.revise_quote(user, quote_id, body)

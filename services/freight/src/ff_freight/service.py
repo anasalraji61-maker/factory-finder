@@ -790,6 +790,21 @@ class FreightService:
                 raise NotFound("Quote not found")
         return self._quote(q, f)
 
+    async def landed_cost_input(self, user: str, qid: str) -> dict:
+        """Read-only helper: the accepted quote as a logistics `freight_override` object (owner only)."""
+        async with self.engine.connect() as c:
+            q = (await c.execute(select(quotes).where(quotes.c.id == qid))).first()
+            if q is None or q.visibility != "visible":
+                raise NotFound("Quote not found")
+            req = (await c.execute(select(R).where(R.c.id == q.request_id))).one()
+            if req.buyer_id != user or req.visibility != "visible":
+                raise NotFound("Quote not found")  # forwarders and strangers cannot tell it exists
+        if q.status != "accepted" or req.awarded_quote_id != qid:
+            raise Conflict("Only the awarded (accepted) quote can be used as a landed-cost input",
+                           code="quote_not_awarded", details={"status": q.status})
+        return {"amount": q.amount, "currency": q.currency, "source": "forwarder_quote", "quote_id": q.id,
+                "valid_until": _iso(q.valid_until), "mode_family": req.mode}
+
     async def list_quotes(self, user: str, rid: str, status: str | None, cursor: str | None, limit: int | None) -> dict:
         limit = self._limit(limit)
         async with self.engine.begin() as c:
