@@ -3,8 +3,10 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/reco/widgets/recent_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Currencies offered as the default display currency (IQD first: default for Iraq).
 const List<String> kSettingsCurrencies = [
@@ -136,6 +138,18 @@ class SettingsScreen extends ConsumerWidget {
               ],
               keyPrefix: 'settings-digits-',
               onChanged: (v) => ref.read(digitStyleProvider.notifier).state = v,
+            ),
+          ),
+          const RecentlyViewedSettings(),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              key: const ValueKey<String>('settings-privacy'),
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(context.tr('privacy.tile')),
+              subtitle: Text(context.tr('privacy.tile_sub')),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => context.push('/settings/privacy'),
             ),
           ),
         ],

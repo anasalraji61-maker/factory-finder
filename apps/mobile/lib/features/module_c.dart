@@ -6,6 +6,8 @@ import 'package:factory_finder/features/feed/feed_module.dart';
 import 'package:factory_finder/features/my_products/my_products_strings.dart';
 import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/product_editor_screen.dart';
+import 'package:factory_finder/features/privacy/privacy_screen.dart';
+import 'package:factory_finder/features/privacy/privacy_strings.dart';
 import 'package:factory_finder/features/settings/settings_screen.dart';
 import 'package:factory_finder/features/settings/settings_strings.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +25,10 @@ final FeatureModule featureModuleC = FeatureModule(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
+      path: '/settings/privacy',
+      builder: (context, state) => const PrivacyScreen(),
+    ),
+    GoRoute(
       path: '/my-products',
       builder: (context, state) => const MyProductsScreen(),
     ),
@@ -36,5 +42,5 @@ final FeatureModule featureModuleC = FeatureModule(
           ProductEditorScreen(listingId: state.pathParameters['id']),
     ),
   ],
-  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings, feedStrings]),
+  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings, feedStrings, privacyStrings]),
 );

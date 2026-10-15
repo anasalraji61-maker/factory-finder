@@ -105,7 +105,8 @@ class ApiClient {
   Future<dynamic> patch(String path, {Object? body}) =>
       _request('PATCH', path, body: body);
 
-  Future<dynamic> delete(String path) => _request('DELETE', path);
+  Future<dynamic> delete(String path, {Object? body}) =>
+      _request('DELETE', path, body: body);
 
   /// Multipart POST. [build] is called again on a 401 retry because a Dio
   /// [FormData] can only be sent once.

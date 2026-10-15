@@ -6,6 +6,9 @@ import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/discover/widgets/report_sheet.dart';
+import 'package:factory_finder/features/reco/recently_viewed.dart';
+import 'package:factory_finder/features/reco/widgets/price_history_card.dart';
+import 'package:factory_finder/features/reco/widgets/reco_carousel.dart';
 import 'package:factory_finder/features/trust/verification_badge.dart';
 import 'package:factory_finder/features/watchlist/data/watch_models.dart';
 import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
@@ -129,6 +132,17 @@ class _ListingBody extends ConsumerStatefulWidget {
 class _ListingBodyState extends ConsumerState<_ListingBody> {
   int _page = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Local-only "recently viewed" history (never sent to the server except as
+    // the stateless `ref` of the recommendations request).
+    final id = widget.listing.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(recentlyViewedProvider.notifier).add(id);
+    });
+  }
+
   void _snack(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
@@ -144,7 +158,9 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     return null;
   }
 
-  Future<void> _toggleWatch() async {
+  /// Star / watch button. With [suggested] (price history card) it always opens
+  /// the alert sheet prefilled with that target instead of un-watching.
+  Future<void> _toggleWatch({Money? suggested}) async {
     final l = widget.listing;
     final repo = ref.read(watchlistRepositoryProvider);
     final existing = _existingWatch();
@@ -153,14 +169,18 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     final loginText = context.tr('watch.login_required');
     final failText = context.tr('watch.failed');
     try {
-      if (existing != null) {
+      if (existing != null && suggested == null) {
         await repo.remove(existing.id);
         if (!mounted) return;
         ref.invalidate(watchlistProvider);
         _snack(removedText);
         return;
       }
-      final draft = await showWatchSheet(context, currency: l.price.min.currency);
+      final draft = await showWatchSheet(
+        context,
+        currency: suggested?.currency ?? l.price.min.currency,
+        initialTarget: suggested?.amount,
+      );
       if (draft == null || !mounted) return;
       await repo.add(
         l.id,
@@ -456,9 +476,15 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                     ],
                   ),
                 ),
+                const SizedBox(height: AppSpacing.lg),
+                PriceHistoryCard(
+                  listingId: l.id,
+                  onAlertSuggested: (m) => _toggleWatch(suggested: m),
+                ),
               ],
             ),
           ),
+          SimilarListingsSection(listingId: l.id),
         ],
       ),
       bottomNavigationBar: SafeArea(

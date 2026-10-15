@@ -34,25 +34,31 @@ String? validateDropPct(String v) {
 }
 
 /// Shows the optional threshold sheet; null when dismissed.
-Future<WatchDraft?> showWatchSheet(BuildContext context, {required String currency}) {
+Future<WatchDraft?> showWatchSheet(
+  BuildContext context, {
+  required String currency,
+  String? initialTarget,
+}) {
   return showModalBottomSheet<WatchDraft>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _WatchSheet(currency: currency),
+    builder: (_) => _WatchSheet(currency: currency, initialTarget: initialTarget),
   );
 }
 
 class _WatchSheet extends StatefulWidget {
-  const _WatchSheet({required this.currency});
+  const _WatchSheet({required this.currency, this.initialTarget});
   final String currency;
+  final String? initialTarget;
 
   @override
   State<_WatchSheet> createState() => _WatchSheetState();
 }
 
 class _WatchSheetState extends State<_WatchSheet> {
-  final TextEditingController _target = TextEditingController();
+  late final TextEditingController _target =
+      TextEditingController(text: widget.initialTarget ?? '');
   final TextEditingController _pct = TextEditingController();
   String? _targetErr;
   String? _pctErr;

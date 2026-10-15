@@ -7,6 +7,7 @@ import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
+import 'package:factory_finder/features/reco/widgets/reco_carousel.dart';
 import 'package:factory_finder/features/watchlist/screens/alerts_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -188,6 +189,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: RecommendedSection()),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

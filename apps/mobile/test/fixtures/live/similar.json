@@ -1,0 +1,148 @@
+{
+  "listing_id": "lst_0041",
+  "total": 2,
+  "items": [
+    {
+      "listing": {
+        "id": "lst_0042",
+        "source": "mock",
+        "source_url": "https://example.com/mock/listings/lst_0042",
+        "kind": "product",
+        "condition": "new",
+        "title": "LED Street Light 100W IP66 with Photocell",
+        "title_ar": "كشاف شوارع LED 100 واط",
+        "category": "lighting",
+        "images": [
+          "https://picsum.photos/seed/lst_0042/600/600",
+          "https://picsum.photos/seed/lst_0042_2/600/600"
+        ],
+        "price": {
+          "min": {
+            "amount": "22.00",
+            "currency": "USD"
+          },
+          "max": {
+            "amount": "48.00",
+            "currency": "USD"
+          }
+        },
+        "unit": "piece",
+        "moq": 100,
+        "incoterm": "FOB",
+        "unit_weight_kg": 6.5,
+        "unit_volume_m3": 0.04,
+        "hs_code": "9405.42",
+        "lead_time_days": {
+          "min": 15,
+          "max": 25
+        },
+        "supplier": {
+          "id": "sup_cn_018",
+          "name": "Zhongshan Lumina Lighting",
+          "name_ar": "تشونغشان لومينا للإضاءة",
+          "location": {
+            "country_code": "CN",
+            "city": "Zhongshan",
+            "point": {
+              "lat": 22.52,
+              "lon": 113.39
+            }
+          },
+          "years_in_business": 10,
+          "verified": true,
+          "trust_score": 91,
+          "trust_band": "green"
+        },
+        "origin": {
+          "country_code": "CN",
+          "city": "Zhongshan",
+          "point": {
+            "lat": 22.52,
+            "lon": 113.39
+          }
+        }
+      },
+      "score": 0.82,
+      "reasons": [
+        {
+          "code": "same_category",
+          "en": "Same category",
+          "ar": "نفس الفئة"
+        },
+        {
+          "code": "different_supplier",
+          "en": "Different supplier",
+          "ar": "مورّد مختلف"
+        },
+        {
+          "code": "trusted_supplier",
+          "en": "Trusted supplier",
+          "ar": "مورّد موثوق"
+        }
+      ]
+    },
+    {
+      "listing": {
+        "id": "lst_0041",
+        "source": "mock",
+        "source_url": "https://example.com/mock/listings/lst_0041",
+        "kind": "product",
+        "condition": "new",
+        "title": "LED Panel Light 60x60 40W Recessed",
+        "title_ar": "إضاءة LED لوح 60×60 سم",
+        "category": "lighting",
+        "images": [
+          "https://picsum.photos/seed/lst_0041/600/600",
+          "https://picsum.photos/seed/lst_0041_2/600/600"
+        ],
+        "price": {
+          "min": {
+            "amount": "3.00",
+            "currency": "USD"
+          },
+          "max": {
+            "amount": "7.00",
+            "currency": "USD"
+          }
+        },
+        "unit": "piece",
+        "moq": 500,
+        "incoterm": "FOB",
+        "unit_weight_kg": 3.2,
+        "unit_volume_m3": 0.02,
+        "hs_code": "9405.42",
+        "lead_time_days": {
+          "min": 10,
+          "max": 20
+        },
+        "supplier": {
+          "id": "sup_cn_018",
+          "name": "Zhongshan Lumina Lighting",
+          "name_ar": "تشونغشان لومينا للإضاءة",
+          "location": {
+            "country_code": "CN",
+            "city": "Zhongshan",
+            "point": {
+              "lat": 22.52,
+              "lon": 113.39
+            }
+          },
+          "years_in_business": 10,
+          "verified": true,
+          "trust_score": 91,
+          "trust_band": "green"
+        },
+        "origin": {
+          "country_code": "CN",
+          "city": "Zhongshan",
+          "point": {
+            "lat": 22.52,
+            "lon": 113.39
+          }
+        }
+      },
+      "score": 0.4,
+      "reasons": []
+    }
+  ]
+}
