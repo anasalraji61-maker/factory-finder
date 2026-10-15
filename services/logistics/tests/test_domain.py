@@ -120,3 +120,14 @@ def test_every_known_region_has_handling_and_lanes():
         assert lane["sea_days"][0] < lane["sea_days"][1]
         assert [x[0] for x in lane["air_breaks"]] == sorted(x[0] for x in lane["air_breaks"])
     assert set(DATA.lanes["continents"]) == set(DATA.lanes["regions"])
+
+
+async def test_ecb_stale_cache_labeled_and_bad_rates_ignored(respx_mock):
+    url = "https://example.test/latest2"
+    respx_mock.get(url).respond(json={"date": "2026-10-12", "rates": {"EUR": 0.9, "GBP": 0, "TRY": -3, "JPY": "x"}})
+    ecb = EcbFx(url, ttl=0)
+    r1 = await ecb.usd_rates()
+    assert r1.rates["GBP"] == D("0.79") and r1.rates["TRY"] == D("34.5")  # bad values keep the static default
+    respx_mock.get(url).respond(500)
+    r2 = await ecb.usd_rates()
+    assert r2.source == "ecb-stale" and r2.timestamp == r1.timestamp and r2.rates["EUR"] == D("0.9")

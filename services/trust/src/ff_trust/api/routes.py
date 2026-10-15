@@ -1,6 +1,8 @@
 """Trust endpoints."""
 
-from fastapi import APIRouter, Header, Query, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Header, Path, Query, Request
 
 from ff_trust.adapters.base import AdapterDisabled
 from ff_trust.api.errors import ApiError
@@ -10,6 +12,7 @@ from ff_trust.service import TrustService, report_out
 from ff_trust.store import CapacityReached, RateLimited
 
 router = APIRouter(prefix="/v1/trust")
+SupplierId = Annotated[str, Path(min_length=1, max_length=128)]
 
 
 def _svc(request: Request) -> TrustService:
@@ -17,9 +20,11 @@ def _svc(request: Request) -> TrustService:
 
 
 @router.get("/suppliers:batch", response_model=BatchOut)
-async def batch(request: Request, ids: str = Query(..., description="comma separated supplier ids")) -> BatchOut:
+async def batch(request: Request, ids: str = Query(..., max_length=8000, description="comma separated supplier ids")) -> BatchOut:
     svc = _svc(request)
     id_list = list(dict.fromkeys(i.strip() for i in ids.split(",") if i.strip()))
+    if any(len(i) > 128 for i in id_list):
+        raise ApiError(422, "validation_error", "supplier id too long")
     if not id_list:
         raise ApiError(422, "validation_error", "ids must not be empty")
     if len(id_list) > request.app.state.settings.max_batch:
@@ -36,7 +41,7 @@ async def batch(request: Request, ids: str = Query(..., description="comma separ
 
 
 @router.get("/suppliers/{supplier_id}", response_model=TrustScoreOut)
-async def get_supplier(supplier_id: str, request: Request) -> TrustScoreOut:
+async def get_supplier(supplier_id: SupplierId, request: Request) -> TrustScoreOut:
     try:
         r = await _svc(request).for_supplier(supplier_id)
     except AdapterDisabled as e:
@@ -52,7 +57,7 @@ async def evaluate(signals: SupplierSignals, request: Request) -> TrustScoreOut:
 
 
 @router.get("/suppliers/{supplier_id}/history", response_model=HistoryOut)
-async def history(supplier_id: str, request: Request) -> HistoryOut:
+async def history(supplier_id: SupplierId, request: Request) -> HistoryOut:
     try:
         r = await _svc(request).history(supplier_id)
     except AdapterDisabled as e:
@@ -80,7 +85,7 @@ def _low_trust(request: Request, age: str | None, verified: str | None) -> bool:
 
 @router.post("/suppliers/{supplier_id}/report", response_model=ReportOut, status_code=201)
 async def report(
-    supplier_id: str, body: ReportIn, request: Request,
+    supplier_id: SupplierId, body: ReportIn, request: Request,
     x_user_id: str | None = Header(default=None),
     x_account_age_seconds: str | None = Header(default=None),
     x_email_verified: str | None = Header(default=None),

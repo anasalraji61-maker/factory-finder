@@ -58,12 +58,20 @@ class EcbFx:
                 if self._client is None:
                     await client.aclose()
             rates = dict(fallback.rates)
-            rates.update({k: Decimal(str(v)) for k, v in data["rates"].items()})
+            for k, v in data["rates"].items():
+                try:
+                    d = Decimal(str(v))
+                except ArithmeticError:
+                    continue
+                if d.is_finite() and d > 0:  # never let a zero/negative/NaN rate in (division by zero downstream)
+                    rates[k] = d
             rates["USD"] = Decimal(1)
             res = FxRates("USD", rates, f"{data.get('date', '')}T00:00:00Z", "ecb")
             self._cache = (time.monotonic(), res)
             return res
         except Exception:
+            if self._cache:  # last good live rates beat static ones; labeled so the quote shows they are old
+                return FxRates("USD", self._cache[1].rates, self._cache[1].timestamp, "ecb-stale")
             return FxRates("USD", fallback.rates, fallback.timestamp, "mock-fallback")
 
 

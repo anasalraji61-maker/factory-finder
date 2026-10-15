@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Path, Query, Request
 from pydantic import BaseModel
 
 from ..domain import pricehistory as ph
@@ -23,6 +23,7 @@ from ..service import SourcingService
 from .errors import ApiError
 
 router = APIRouter(prefix="/v1")
+ID = Annotated[str, Path(min_length=1, max_length=128)]
 
 
 def svc(request: Request) -> SourcingService:
@@ -35,11 +36,11 @@ async def search(
     q: str = Query("", max_length=200),
     kind: ListingKind | None = None,
     condition: Literal["new", "used", "refurbished", "any"] = "any",
-    origin_country: str | None = Query(None, min_length=2, max_length=2),
-    category: str | None = None,
-    min_price: Decimal | None = Query(None, ge=0),
-    max_price: Decimal | None = Query(None, ge=0),
-    moq_max: int | None = Query(None, ge=0),
+    origin_country: str | None = Query(None, min_length=2, max_length=2, pattern="^[A-Za-z]{2}$"),
+    category: str | None = Query(None, max_length=100),
+    min_price: Decimal | None = Query(None, ge=0, max_digits=24, decimal_places=8),
+    max_price: Decimal | None = Query(None, ge=0, max_digits=24, decimal_places=8),
+    moq_max: int | None = Query(None, ge=0, le=2_000_000_000),
     verified_only: bool = False,
     sort: Literal["relevance", "price_asc", "price_desc", "trust", "moq"] = "relevance",
     page: int = Query(1, ge=1),
@@ -64,7 +65,7 @@ async def search(
 
 
 @router.get("/listings/{listing_id}", response_model=ListingDetail, response_model_exclude_none=True)
-async def get_listing(listing_id: str, request: Request) -> ListingDetail:
+async def get_listing(listing_id: ID, request: Request) -> ListingDetail:
     item = await svc(request).get_listing(listing_id)
     if item is None:
         raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
@@ -72,7 +73,7 @@ async def get_listing(listing_id: str, request: Request) -> ListingDetail:
 
 
 @router.get("/suppliers/{supplier_id}", response_model=Supplier)
-async def get_supplier(supplier_id: str, request: Request) -> Supplier:
+async def get_supplier(supplier_id: ID, request: Request) -> Supplier:
     sup = await svc(request).get_supplier(supplier_id)
     if sup is None:
         raise ApiError(404, "supplier_not_found", f"Supplier {supplier_id} not found")
@@ -93,7 +94,7 @@ async def sources(request: Request) -> list[dict]:
     "/listings/{listing_id}/price-history", response_model=ph.PriceHistory, response_model_exclude_none=True
 )
 async def price_history(
-    listing_id: str,
+    listing_id: ID,
     request: Request,
     days: int = Query(90, ge=1, le=365),
     bucket: ph.Bucket = "day",
@@ -128,7 +129,7 @@ class RecommendationsResponse(BaseModel):
 
 
 @router.get("/listings/{listing_id}/similar", response_model=SimilarResponse, response_model_exclude_none=True)
-async def similar(listing_id: str, request: Request, limit: int = Query(10, ge=1, le=30)) -> SimilarResponse:
+async def similar(listing_id: ID, request: Request, limit: int = Query(10, ge=1, le=30)) -> SimilarResponse:
     found = await svc(request).similar(listing_id, limit)
     if found is None:
         raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")

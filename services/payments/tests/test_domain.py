@@ -65,3 +65,16 @@ def test_decimal_exactness_no_float_drift():
     assert normalize_amount(Decimal("1.000001"), "USDT") == "1.000001"
     with pytest.raises(Exception, match="decimals"):
         normalize_amount(Decimal("1.005"), "USD")
+
+
+def test_commission_boundaries_and_precision():
+    # exactly at the floor: 25 / 3% = 833.333..; 833.34 -> 25.0002 -> 25.00, not min-fee
+    assert compute_commission(Decimal("833.34"), "USD", ListingKind.PRODUCT).min_fee_applied is False
+    assert compute_commission(Decimal("833.00"), "USD", ListingKind.PRODUCT).min_fee_applied is True
+    # 6-decimal subtotal is rounded half-up once, to cents
+    assert compute_commission(Decimal("1000.166667"), "USD", ListingKind.PRODUCT).amount == Decimal("30.01")
+    big = compute_commission(Decimal("999999999999"), "USD", ListingKind.PRODUCTION_LINE)
+    assert big.amount == Decimal("39999999999.96")
+    # floor in a weak currency rounds up (never under-charges the 25 USD minimum)
+    iqd = compute_commission(Decimal("1"), "IQD", ListingKind.PRODUCT)
+    assert iqd.amount * Decimal("0.00076") >= Decimal("25")

@@ -34,8 +34,8 @@ paths:
     get:
       operationId: listConversations
       parameters:
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
-        - {name: page_size, in: query, schema: {type: integer, minimum: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 10000}}
         - {name: context_type, in: query, schema: {$ref: "#/components/schemas/ContextType"}}
         - {name: context_ref_id, in: query, schema: {type: string}}
         - {name: unread_only, in: query, schema: {type: boolean, default: false}}

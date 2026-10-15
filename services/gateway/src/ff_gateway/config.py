@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     # handshake (compat for old app builds). Set false once clients use ?ticket=.
     ws_allow_token_param: bool = False  # mobile fetches tickets (chat_socket_provider); flip to true only for pre-ticket app builds
     ws_max_connections_per_user: int = 5  # concurrent proxied sockets per user, then close 4429 (0 = off)
+    ws_max_session_seconds: int = 4 * 3600  # proxied socket lifetime, then close 1001 and re-handshake (0 = off)
     ws_ticket_rate_limit_per_minute: int = 30  # POST /v1/ws-ticket per user (0 = off), on top of the HTTP limits
     max_body_bytes: int = 10 * 1024 * 1024  # media uploads (multipart); every other route class is capped by json_max_body_bytes
     json_max_body_bytes: int = 1024 * 1024

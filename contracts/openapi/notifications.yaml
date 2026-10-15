@@ -62,8 +62,8 @@ paths:
       operationId: listAlerts
       parameters:
         - {name: unread_only, in: query, schema: {type: boolean, default: false}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
-        - {name: page_size, in: query, schema: {type: integer, minimum: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 1000000, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 10000}}
       responses:
         "200": {description: Inbox, newest first, content: {application/json: {schema: {$ref: "#/components/schemas/AlertPage"}}}}
         "401": {$ref: "#/components/responses/Error"}

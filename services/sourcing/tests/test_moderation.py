@@ -147,7 +147,7 @@ async def test_report_dedupe_and_no_leak(mc):
     items = (await mc.get(f"{PREFIX}/reports", headers=ADMIN)).json()["items"]
     assert len(items) == 1
     it = items[0]
-    assert "a@b.com" not in str(it) and "4567" not in str(it) and "user_1" not in str(it)
+    assert "a@b.com" not in str(it) and "123 4567" not in str(it) and "0770" not in str(it) and "user_1" not in str(it)
     assert it["reporter_ref"] and it["listing"]["title"] and it["reason"] == "scam_or_fraud"
     # the owner never sees reports
     assert "report" not in str((await mc.get(f"/v1/my/listings/{lid}", headers=A)).json()).lower()

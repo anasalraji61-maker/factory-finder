@@ -78,7 +78,7 @@ class SearchIn(_Body):
     category: str | None = Field(default=None, max_length=64)
     min_price: str | None = Field(default=None, max_length=40)
     max_price: str | None = Field(default=None, max_length=40)
-    moq_max: int | None = Field(default=None, ge=0)
+    moq_max: int | None = Field(default=None, ge=0, le=10**12)
     verified_only: bool | None = None
 
 
@@ -193,6 +193,8 @@ async def add_watch(
             else None
         )
         pct = Decimal(body.drop_threshold_pct) if body.drop_threshold_pct else None
+        if pct is not None and not pct.is_finite():
+            raise ValueError("drop_threshold_pct must be a finite number")
     except (MoneyError, ArithmeticError, ValueError) as exc:
         raise Invalid(f"Invalid number or currency: {exc}", code="invalid_money") from exc
     watch, created = await s.add_watch(
@@ -222,8 +224,8 @@ async def list_alerts(
     user: User,
     s: Service,
     unread_only: bool = False,
-    page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int | None, Query(ge=1)] = None,
+    page: Annotated[int, Query(ge=1, le=1_000_000)] = 1,
+    page_size: Annotated[int | None, Query(ge=1, le=10_000)] = None,
 ) -> dict[str, Any]:
     items, total, unread, size = await s.list_alerts(
         user, unread_only=unread_only, page=page, page_size=page_size

@@ -83,3 +83,26 @@ def test_prune_removes_old_alerts_and_finished_deliveries():
         out = c.portal.call(service.prune)  # type: ignore[union-attr]
         assert out["alerts"] == 1
         assert c.get("/v1/alerts", headers={"X-User-Id": "u1"}).json()["total"] == 0
+
+
+@pytest.mark.parametrize("pct", ["NaN", "sNaN", "Infinity", "-Infinity"])
+def test_non_finite_drop_threshold_is_422_not_500(pct):
+    app = create_app(
+        Settings(database_url="sqlite+aiosqlite:///:memory:"), sourcing=MockSourcingClient()
+    )
+    with TestClient(app, raise_server_exceptions=False) as c:
+        r = c.post("/v1/watchlist", json={"listing_id": "l1", "drop_threshold_pct": pct},
+                   headers={"X-User-Id": "u1"})
+        assert r.status_code == 422
+
+
+def test_huge_page_number_is_rejected_not_500():
+    app = create_app(
+        Settings(database_url="sqlite+aiosqlite:///:memory:"), sourcing=MockSourcingClient()
+    )
+    with TestClient(app, raise_server_exceptions=False) as c:
+        h = {"X-User-Id": "u1"}
+        assert c.get("/v1/alerts?page=99999999999999999999", headers=h).status_code == 422
+        assert c.get("/v1/alerts?page=2000000", headers=h).status_code == 422
+        assert c.post("/v1/watchlist", headers=h,
+                      json={"search": {"q": "a", "moq_max": 10**30}}).status_code == 422

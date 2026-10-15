@@ -1,7 +1,7 @@
 """Input signals about a supplier. Every field is optional; missing means "unknown"."""
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,7 +36,7 @@ class ReviewSummary(BaseModel):
 class SupplierSignals(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    supplier_id: str | None = None
+    supplier_id: str | None = Field(default=None, max_length=128)
     years_in_business: float | None = Field(default=None, ge=0, le=200)
     verified: bool | None = None
     third_party_audit: bool | None = None
@@ -45,7 +45,7 @@ class SupplierSignals(BaseModel):
     rating_avg: float | None = Field(default=None, ge=0, le=5)
     reviews_count: int | None = Field(default=None, ge=0)
     dispute_rate: float | None = Field(default=None, ge=0, le=1)
-    certifications: list[str] | None = None
+    certifications: list[Annotated[str, Field(max_length=64)]] | None = Field(default=None, max_length=200)
     domain_age_years: float | None = Field(default=None, ge=0, le=100)
     has_physical_address: bool | None = None
     contact_consistency: float | None = Field(default=None, ge=0, le=1)
@@ -55,7 +55,7 @@ class SupplierSignals(BaseModel):
 
     # --- v2 signals (all optional, additive) ---
     business_license_status: LicenseStatus | None = Field(default=None, description="registry / business-licence check")
-    certification_records: list[CertificationRecord] | None = None
+    certification_records: list[CertificationRecord] | None = Field(default=None, max_length=200)
     storefront_age_years: float | None = Field(default=None, ge=0, le=100)
     repeat_buyer_rate: float | None = Field(default=None, ge=0, le=1)
     response_time_hours: float | None = Field(default=None, ge=0, le=24 * 365)

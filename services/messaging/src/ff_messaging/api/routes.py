@@ -172,10 +172,10 @@ async def create_conversation(
 async def list_conversations(
     user: User,
     svc: Service,
-    page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int | None, Query(ge=1)] = None,
+    page: Annotated[int, Query(ge=1, le=1_000_000)] = 1,
+    page_size: Annotated[int | None, Query(ge=1, le=10_000)] = None,
     context_type: ContextType | None = None,
-    context_ref_id: str | None = None,
+    context_ref_id: Annotated[str | None, Query(max_length=128)] = None,
     unread_only: bool = False,
     archived: bool = False,
     supplier: Supplier = None,
@@ -213,7 +213,7 @@ async def list_messages(
     svc: Service,
     supplier: Supplier,
     cursor: str | None = None,
-    limit: Annotated[int | None, Query(ge=1)] = None,
+    limit: Annotated[int | None, Query(ge=1, le=10_000)] = None,
 ) -> dict[str, Any]:
     return message_page_json(
         await svc.list_messages(
@@ -286,6 +286,8 @@ async def block_user(
 async def unblock_user(
     blocked_user_id: str, user: User, svc: Service, supplier: Supplier
 ) -> Response:
+    if not is_valid_user_id(blocked_user_id):
+        raise NotFoundError("Route not found")
     await svc.unblock_user(user, blocked_user_id, supplier)
     return Response(status_code=204)
 

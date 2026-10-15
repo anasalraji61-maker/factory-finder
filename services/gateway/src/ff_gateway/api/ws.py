@@ -21,6 +21,7 @@ log = logging.getLogger("ff_gateway")
 
 WS_PREFIX = "/v1/ws/conversations/"
 MAX_FRAME_BYTES = 1 << 20
+MAX_CLIENT_FRAME = 64 * 1024  # chat frames are tiny JSON; the upstream drops anything bigger anyway
 _TICKET = object()
 HANDSHAKE_CODES = {401: 4401, 403: 4403, 429: 4429}
 
@@ -122,10 +123,16 @@ async def _proxy(ws: WebSocket, state, user_id: str, claimed: str | None, full: 
                     msg = await ws.receive()
                     if msg["type"] == "websocket.disconnect":
                         return
-                    if msg.get("text") is not None:
-                        await up.send(msg["text"])
-                    elif msg.get("bytes") is not None:
-                        await up.send(msg["bytes"])
+                    payload = msg.get("text")
+                    if payload is None:
+                        payload = msg.get("bytes")
+                    if payload is None:
+                        continue
+                    if len(payload) > MAX_CLIENT_FRAME:  # never relay oversized client frames
+                        with contextlib.suppress(RuntimeError, WebSocketDisconnect):
+                            await ws.close(code=1009)
+                        return
+                    await up.send(payload)
 
             async def up_to_client() -> None:
                 async for frame in up:
@@ -134,14 +141,20 @@ async def _proxy(ws: WebSocket, state, user_id: str, claimed: str | None, full: 
                     else:
                         await ws.send_text(frame)
 
+            expired = False
             tasks = [asyncio.create_task(client_to_up()), asyncio.create_task(up_to_client())]
             try:
-                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                # bounded lifetime: a revoked / deactivated user cannot keep a socket forever (client reconnects)
+                max_age = state.settings.ws_max_session_seconds
+                await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED, timeout=max_age if max_age > 0 else None
+                )
+                expired = not any(t.done() for t in tasks)  # lifetime elapsed, nobody finished
             finally:
                 for t in tasks:
                     t.cancel()
                 await asyncio.gather(*tasks, return_exceptions=True)
-            code = _close_code(getattr(up, "close_code", None))
+            code = 1001 if expired else _close_code(getattr(up, "close_code", None))
             with contextlib.suppress(Exception):
                 await up.close()
             with contextlib.suppress(RuntimeError, WebSocketDisconnect):

@@ -288,3 +288,35 @@ def test_ticket_issuance_rate_limited(make_client):
     tok = c.post("/v1/auth/register", json={"email": "tr@example.com", "password": "password123", "name": "T"}).json()
     hdr = {"Authorization": f"Bearer {tok['access_token']}"}
     assert [c.post("/v1/ws-ticket", headers=hdr).status_code for _ in range(3)] == [200, 200, 429]
+
+
+def test_oversized_client_frame_not_relayed(client, fake, hdr):
+    with client.websocket_connect("/v1/ws/conversations/c1", headers=hdr) as w:
+        assert w.receive_text() == "hello"
+        w.send_text("x" * (64 * 1024 + 1))
+        with pytest.raises(WebSocketDisconnect) as e:
+            while True:
+                w.receive_text()
+        assert e.value.code == 1009
+    assert all(len(m) <= 64 * 1024 for m in fake["up"].sent)
+
+
+def test_session_lifetime_closes_socket(make_client):
+    c = make_client(ws_max_session_seconds=1)
+    tok = c.post(
+        "/v1/auth/register", json={"email": "life@example.com", "password": "password123", "name": "L"}
+    ).json()
+    box = {}
+
+    def connect(url, additional_headers=None, **kw):
+        box["up"] = FakeUp(url, additional_headers, None)
+        return box["up"]
+
+    c.app.state.ws_connect = connect
+    h = {"Authorization": f"Bearer {tok['access_token']}"}
+    with c.websocket_connect("/v1/ws/conversations/c1", headers=h) as w:
+        assert w.receive_text() == "hello"
+        with pytest.raises(WebSocketDisconnect) as e:
+            while True:
+                w.receive_text()
+        assert e.value.code == 1001

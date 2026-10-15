@@ -82,3 +82,34 @@ def _conv_tok(c, h):
     return c.post("/v1/conversations", headers=h, json={
         "participants": [{"user_id": "sup1", "role": "supplier"}],
         "context": {"type": "listing", "ref_id": "lst_1"}}).json()["id"]
+
+
+def test_paging_and_filter_bounds_and_cross_user_access():
+    with make_client() as c:
+        h = {"X-User-Id": "buyer1"}
+        cid = _conv(c, "buyer1", 1).json()["id"]
+        assert c.get("/v1/conversations?page=99999999999999999999", headers=h).status_code == 422
+        assert c.get("/v1/conversations?context_ref_id=" + "a" * 129, headers=h).status_code == 422
+        assert c.get(f"/v1/conversations/{cid}/messages?limit=100000", headers=h).status_code == 422
+        assert c.delete("/v1/blocks/bad%20id", headers=h).status_code == 404
+        evil = {"X-User-Id": "evil", "X-Supplier-Id": "sup1"}  # unverified spoof without internal token
+        for call in (
+            lambda: c.get(f"/v1/conversations/{cid}", headers={"X-User-Id": "evil"}),
+            lambda: c.get(f"/v1/conversations/{cid}/messages", headers={"X-User-Id": "evil"}),
+            lambda: c.post(f"/v1/conversations/{cid}/read", headers={"X-User-Id": "evil"}),
+            lambda: c.put(f"/v1/conversations/{cid}/preferences", headers={"X-User-Id": "evil"}, json={"muted": True}),
+            lambda: c.post(f"/v1/conversations/{cid}/messages", headers={"X-User-Id": "evil"}, json={"text": "x"}),
+        ):
+            assert call().status_code == 403
+        del evil
+
+
+def test_ws_rejects_non_participant_with_4403():
+    import pytest
+    from starlette.websockets import WebSocketDisconnect
+    with make_client() as c:
+        cid = _conv(c, "buyer1", 1).json()["id"]
+        with pytest.raises(WebSocketDisconnect) as e:
+            with c.websocket_connect(f"/v1/ws/conversations/{cid}", headers={"X-User-Id": "evil"}):
+                pass
+        assert e.value.code == 4403
