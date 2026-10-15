@@ -45,7 +45,8 @@ Future<void> _expandAll(WidgetTester tester) async {
   final title = find.text('تفاصيل الكلفة').hitTestable();
   final n = title.evaluate().length;
   expect(n, greaterThan(0));
-  for (var i = 0; i < n; i++) {
+  // Bottom-up: expanding a lower tile never moves the ones above it.
+  for (var i = n - 1; i >= 0; i--) {
     await tester.tap(title.at(i));
     await settle(tester, frames: 4);
   }
