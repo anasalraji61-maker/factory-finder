@@ -14,6 +14,7 @@ from sqlalchemy import (
     delete,
     func,
     select,
+    update,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
@@ -139,10 +140,23 @@ class ShipmentRepository:
             row = await s.get(ShipmentRow, shipment_id)
             return Shipment.model_validate_json(row.data) if row else None
 
-    async def save(self, sh: Shipment) -> None:
+    async def claim_refresh(self, sh: Shipment, new_marker) -> bool:
+        """Atomic compare-and-set on ``refresh_marker``: only one concurrent worker/request wins a refresh slot.
+        False when another worker already claimed it, or the shipment was deleted meanwhile."""
+        expected = refresh_marker_for(sh)
+        async with self._sessions() as s:
+            res = await s.execute(update(ShipmentRow).where(
+                ShipmentRow.id == sh.id, ShipmentRow.refresh_marker == expected).values(refresh_marker=new_marker))
+            await s.commit()
+            return bool(res.rowcount)
+
+    async def save(self, sh: Shipment, *, create: bool = False) -> bool:
+        """Persist the aggregate. Without ``create`` a missing row (deleted concurrently) is NOT resurrected: returns False."""
         async with self._sessions() as s:
             row = await s.get(ShipmentRow, sh.id)
             if row is None:
+                if not create:
+                    return False
                 row = ShipmentRow(id=sh.id, owner_id=sh.owner_id, reference_type=sh.reference_type.value,
                                   reference=sh.reference, created_at=sh.created_at)
                 s.add(row)
@@ -150,6 +164,7 @@ class ShipmentRepository:
             row.refresh_marker = refresh_marker_for(sh)
             row.data = sh.model_dump_json()
             await s.commit()
+            return True
 
     async def count_for_owner(self, owner_id: str) -> int:
         async with self._sessions() as s:

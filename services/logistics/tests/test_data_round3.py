@@ -69,7 +69,7 @@ def test_origin_surcharge_and_ranges_carry_through_duty_rule():
     r = duty_rule(DATA.duties, "MX", "8501", None, "CN")
     assert r.duty_rate_pct == D(5) + D(15) and r.duty_range_pct == (D(0) + 15, D(35) + 15)
     assert r.as_of == "2026-10" and r.confidence == "low"
-    assert duty_rule(DATA.duties, "TR", "8501", None).duty_range_pct is None  # legacy entries unchanged
+    assert duty_rule(DATA.duties, "TR", "8501", None).duty_range_pct == (D(0), D(18))  # labelled estimate range
     assert duty_rule(DATA.duties, "IQ", "8501", None).duty_range_pct == (D(0), D(30))
 
 

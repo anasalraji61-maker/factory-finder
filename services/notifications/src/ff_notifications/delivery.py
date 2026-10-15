@@ -29,6 +29,7 @@ from ff_notifications.domain.delivery import (
 from ff_notifications.domain.models import Alert, Device, Locale
 from ff_notifications.persistence.store import Store
 
+LEASE = timedelta(minutes=5)  # a claimed delivery is retried after this if the worker died
 DIGEST_HOUR = 8  # local time after which the daily digest may go out
 
 
@@ -49,6 +50,7 @@ class DeliveryPipeline:
         self.store, self.push, self.email = store, push, email
         self.settings, self.clock = settings, clock
         self._lock = asyncio.Lock()
+        self._enqueue_lock = asyncio.Lock()  # makes cap check + insert atomic
 
     # ------------------------------------------------------------ enqueue
 
@@ -60,6 +62,10 @@ class DeliveryPipeline:
         wanted = sorted(a.id for a in alerts if prefs.allows(a.rule.value, PUSH))
         if not wanted:
             return 0
+        async with self._enqueue_lock:
+            return await self._enqueue_push(owner_id, wanted)
+
+    async def _enqueue_push(self, owner_id: str, wanted: list[str]) -> int:
         now, created = self.clock(), 0
         for device in await self.store.list_devices(owner_id):
             if not device.active:
@@ -131,6 +137,8 @@ class DeliveryPipeline:
         sent = 0
         async with self._lock:
             for d in await self.store.due_deliveries(self.clock()):
+                if not await self.store.claim_delivery(d, self.clock() + LEASE):
+                    continue  # another worker/replica took it
                 try:
                     sent += int(await self._attempt(d))
                 except Exception as exc:  # a bad row must not stop the queue

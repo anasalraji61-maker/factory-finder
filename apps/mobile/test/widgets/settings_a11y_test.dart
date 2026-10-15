@@ -188,14 +188,14 @@ void main() {
       );
       expect(find.textContaining('البصرة'), findsOneWidget);
 
-      final chip = find.widgetWithText(ChoiceChip, 'EUR');
+      final chip = find.byKey(const ValueKey<String>('calc_display_cur_EUR'));
       await tester.scrollUntilVisible(
         chip,
         300,
         scrollable: find.byType(Scrollable).first,
       );
       expect(tester.widget<ChoiceChip>(chip).selected, isTrue);
-      expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'USD')).selected, isFalse);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey<String>('calc_display_cur_USD'))).selected, isFalse);
       expect(tester.takeException(), isNull);
       await disposeApp(tester);
     });

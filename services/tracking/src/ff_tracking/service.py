@@ -75,7 +75,7 @@ class ShipmentService:
                       label=label, created_at=now, updated_at=now)
         await self._fetch(sh, now, anchor=now)
         try:
-            await self.repo.save(sh)
+            await self.repo.save(sh, create=True)
         except IntegrityError as exc:  # concurrent create of the same reference (unique owner/type/reference)
             raise Conflict("This reference is already tracked", code="duplicate_shipment") from exc
         return sh
@@ -83,13 +83,16 @@ class ShipmentService:
     async def refresh_system(self, sh: Shipment) -> int:
         """Background refresh (no per-user throttle; the job enforces its own interval). Returns outbox rows added."""
         now = self.clock()
+        if not await self.repo.claim_refresh(sh, now):  # another worker took it, or it was deleted
+            return 0
         sh.last_refresh_attempt_at = now
         try:
             changes = await self._fetch(sh, now, anchor=sh.created_at)
         except Exception:  # ProviderFailed or an unexpected bug
             await self.repo.save(sh)  # remember the attempt so we do not hammer a failing provider
             raise
-        await self.repo.save(sh)
+        if not await self.repo.save(sh):  # deleted while fetching: no resurrection, no notification
+            return 0
         return await self._emit(sh, changes, now)
 
     async def _fetch(self, sh: Shipment, now: datetime, anchor: datetime) -> list[dict]:
@@ -143,9 +146,14 @@ class ShipmentService:
         if last is not None and now - last < self.min_interval:
             wait = int((self.min_interval - (now - last)).total_seconds()) + 1
             raise RefreshThrottled(wait)
+        if not await self.repo.claim_refresh(sh, now):
+            if await self.repo.get(shipment_id) is None:
+                raise NotFound("Shipment not found")
+            raise RefreshThrottled(int(self.min_interval.total_seconds()) + 1)  # a concurrent refresh won the slot
         sh.last_refresh_attempt_at = now
         changes = await self._fetch(sh, now, anchor=sh.created_at)
-        await self.repo.save(sh)
+        if not await self.repo.save(sh):
+            raise NotFound("Shipment not found")
         await self._emit(sh, changes, now)
         return sh
 

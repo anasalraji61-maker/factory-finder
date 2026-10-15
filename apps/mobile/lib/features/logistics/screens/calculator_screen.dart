@@ -468,6 +468,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
               children: [
                 for (final c in kUsdRates.keys)
                   ChoiceChip(
+                    key: ValueKey<String>('calc_display_cur_$c'),
                     label: Text(c),
                     selected: _currency == c,
                     onSelected: (_) => setState(() => _currency = c),

@@ -27,7 +27,7 @@ class _TrackingDetailScreenState extends ConsumerState<TrackingDetailScreen> {
 
   void _snack(String text) {
     ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
+      ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(text)));
   }
 

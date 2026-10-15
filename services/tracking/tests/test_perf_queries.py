@@ -23,7 +23,7 @@ async def _repo(n=1500):
                       created_at=NOW - timedelta(minutes=i), updated_at=NOW)
         if i % 10 == 9:
             sh.status = "delivered"
-        await repo.save(sh)
+        await repo.save(sh, create=True)
     return e, repo
 
 

@@ -574,6 +574,23 @@ class Store:
             )
         return [serde.delivery_from_row(r) for r in rows]
 
+    async def claim_delivery(self, d: Delivery, lease_until: datetime) -> bool:
+        """Compare-and-set lease: one worker/replica attempts a due delivery.
+
+        Pushes ``next_attempt_at`` to ``lease_until``; the attempt's own save then overwrites it,
+        and a crashed worker's delivery becomes due again after the lease."""
+        async with self._lock, self.engine.begin() as conn:
+            res = await conn.execute(
+                update(deliveries)
+                .where(
+                    deliveries.c.id == d.id,
+                    deliveries.c.status == DeliveryStatus.PENDING.value,
+                    deliveries.c.next_attempt_at == serde.ts(d.next_attempt_at),
+                )
+                .values(next_attempt_at=serde.ts(lease_until))
+            )
+            return bool(res.rowcount)
+
     async def save_delivery(self, d: Delivery) -> None:
         async with self._lock, self.engine.begin() as conn:
             await conn.execute(

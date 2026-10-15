@@ -128,6 +128,7 @@ services:
     environment:
       PORT: '8102'
       FF_ENV: ${FF_ENV:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_LOGISTICS_KILL_SWITCH: ${FF_LOGISTICS_KILL_SWITCH:-}
       FF_LOGISTICS_FREIGHT_DISABLED: ${FF_LOGISTICS_FREIGHT_DISABLED:-}
       FF_LOGISTICS_FX_PROVIDER: ${FF_LOGISTICS_FX_PROVIDER:-mock}
@@ -161,6 +162,7 @@ services:
     environment:
       PORT: '8103'
       FF_ENV: ${FF_ENV:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
     restart: unless-stopped
     healthcheck:
       test:
@@ -184,6 +186,7 @@ services:
     environment:
       PORT: '8104'
       FF_ENV: ${FF_ENV:-}
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:-}
       FF_TRUST_ADMIN_TOKEN: ${FF_TRUST_ADMIN_TOKEN:-}
       FF_TRUST_DATABASE_URL: ${FF_TRUST_DATABASE_URL:-}
       FF_TRUST_DB_AUTO_CREATE: ${FF_TRUST_DB_AUTO_CREATE:-}
