@@ -21,6 +21,27 @@ ASSUMPTION_TABLE = "Rates, duties and fees come from an approximate table, verif
 SPREAD = {"origin_inland": "0.20", "origin_handling": "0.15", "main_leg": "0.15", "insurance": "0.10",
           "destination_handling": "0.20", "duties": "0.25", "taxes": "0.25", "clearance": "0.25",
           "destination_inland": "0.20", "goods": "0"}
+# Main-leg (table-based) half-range by mode family: sea/air are far more volatile than road. Lanes touching
+# disrupted corridors (Red Sea / Gulf / Hormuz, CN->US tariff pull-forwards) get a further +5 points.
+MODE_SPREAD = {"sea": "0.25", "air": "0.20", "rail": "0.18", "road": "0.12"}
+VOLATILE_COUNTRIES = {"IQ", "KW", "SA", "AE", "QA", "BH", "OM", "IR", "EG", "JO", "YE", "SD", "SY", "LB", "LY"}
+LANE_EXTRA = Decimal("0.05")
+
+
+def freight_volatility(mode: str, oc: str, dc: str) -> tuple[Decimal, str, str]:
+    """(half-range fraction, label, note) for a table-based main leg."""
+    fam = family(mode)
+    frac = D(MODE_SPREAD[fam])
+    lane_hot = fam in ("sea", "air") and (bool({oc, dc} & VOLATILE_COUNTRIES) or (oc == "CN" and dc == "US"))
+    if lane_hot:
+        frac += LANE_EXTRA
+    label = "high" if frac >= D("0.25") else "medium" if frac >= D("0.18") else "low"
+    note = (f"Freight volatility ({fam}, {oc}->{dc}): {label}; main leg shown as +-{frac * 100:.0f}% around a static "
+            "table rate" + ("; lane exposed to Red Sea / Gulf / tariff disruption" if lane_hot else "")
+            + ". Spot rates can move +-50% within a year.")
+    return frac, label, note
+
+
 INS_RATE = {"sea": "0.003", "air": "0.002", "road": "0.0035", "rail": "0.003"}
 W_COST, W_TIME = Decimal("0.6"), Decimal("0.4")  # recommendation weights
 
@@ -150,6 +171,11 @@ class Engine:
         if dc not in DATA.duties["countries"]:
             assumptions.append(f"No duty/VAT table for destination {dc}: a generic 10% duty and 0% VAT were "
                                "assumed, so duties and taxes are a placeholder (low confidence).")
+        else:
+            cr = DATA.duties["countries"][dc]
+            assumptions.append(
+                f"Duty/VAT table confidence for {dc}: {cr.get('confidence', 'low')} (as of {cr.get('as_of', 'unknown')}); "
+                "indicative, simplified by 2-digit HS chapter, not verified against live tariff lines.")
         for label, cc in (("origin", oc), ("destination", dc)):
             if cc not in DATA.lanes["regions"]:
                 assumptions.append(f"Country {cc} ({label}) is not in the region table: Europe-region handling "
@@ -211,6 +237,9 @@ class Engine:
         if dmw:
             quote_warn.append(dmw)
         assumptions.extend(dict.fromkeys(self.freight_notes))
+        assumptions.extend(dict.fromkeys(
+            freight_volatility(d.mode, oc, dc)[2] for d in drafts
+            if not any(ln.stage == "main_leg" and ln.spread is not None for ln in d.lines)))
         assumptions.append(f"FX: {table.source} rates as of {table.timestamp}; 1 USD = {usd_rate:.6g} {disp}.")
         return {"id": "qte_" + uuid.uuid4().hex, "currency": disp, "origin": req.origin.model_dump(exclude_none=True),
                 "destination": req.destination.model_dump(exclude_none=True), "options": options,
@@ -549,9 +578,15 @@ class Engine:
         for ln in raw:
             amt = quantize(ln.usd * rate, disp)
             total += amt
-            frac = ln.spread if ln.spread is not None else D(SPREAD[ln.stage])
+            vol_note = None
+            if ln.stage == "main_leg" and ln.spread is None:
+                frac, vol_label, vol_note = freight_volatility(d.mode, self.ctx["oc"], self.ctx["dc"])
+            else:
+                frac, vol_label = ln.spread if ln.spread is not None else D(SPREAD[ln.stage]), None
+            half = Decimal(0)
             if ln.estimate:
-                spread += max(quantize(amt * frac, disp), quantize(ln.min_spread_usd * rate, disp))
+                half = max(quantize(amt * frac, disp), quantize(ln.min_spread_usd * rate, disp))
+                spread += half
             if ln.stage == "main_leg":
                 freight_amt, freight_frac = amt, frac
             elif ln.stage == "goods":
@@ -559,7 +594,11 @@ class Engine:
             entry = {"stage": ln.stage, "description": ln.description, "amount": money(amt, disp),
                      "original_amount": money(ln.usd, "USD"), "fx_rate": f"{rate:.8g}",
                      "source": f"{ln.source}; priced {self.ctx['priced_at']}; FX {self.ctx['fx']}",
-                     "estimate": ln.estimate}
+                     "estimate": ln.estimate, "as_of": self.ctx["priced_at"]}
+            if ln.estimate:
+                entry["range"] = {"min": money(max(amt - half, Decimal(0)), disp), "max": money(amt + half, disp)}
+            if vol_label:
+                entry["source"] += f"; volatility {vol_label} (+-{frac * 100:.0f}%)"
             if ln.stage == "goods":
                 entry["original_amount"] = money(goods_val.amount, goods_val.currency)
             lines_out.append(entry)

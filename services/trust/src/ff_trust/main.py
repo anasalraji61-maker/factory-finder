@@ -68,7 +68,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
     app.state.service = TrustService(
         adapter or _adapter(settings.adapter), ScoringConfig(),
         TTLCache(settings.cache_ttl_seconds, settings.cache_max_entries),
-        reports=ReportStore(settings.report_rate_limit, settings.report_rate_window_seconds, max_reports=settings.report_max_total, db=db, retention_days=settings.report_retention_days),
+        reports=ReportStore(settings.report_rate_limit, settings.report_rate_window_seconds, max_reports=settings.report_max_total, db=db, retention_days=settings.report_retention_days, max_low_trust=settings.report_max_low_trust),
         snapshots=SnapshotStore(db, settings.snapshot_max_per_supplier, settings.snapshot_max_total, settings.snapshot_retention_days),
         history_months=settings.history_months, reviews=reviews or _reviews(settings),
         verification=VerificationStore(

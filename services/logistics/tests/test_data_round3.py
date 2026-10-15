@@ -136,9 +136,10 @@ def test_sensitivity_exact_labelled_and_consistent(client, disp):
             assert low <= b == base <= high, (disp, key)
         main = next(ln for ln in o["lines"] if ln["stage"] == "main_leg")
         f = s["freight"]
-        assert money_exact(f["high"], disp) - base == (D(main["amount"]["amount"]) * D(eng.SPREAD["main_leg"]))\
+        frac = eng.freight_volatility(o["mode"], "CN", "IQ")[0]
+        assert money_exact(f["high"], disp) - base == (D(main["amount"]["amount"]) * frac)\
             .quantize(D(1) if disp in ZERO_DECIMAL else D("0.01"), rounding="ROUND_HALF_UP")
-        assert D(f["shock_pct"]) == D("15")
+        assert D(f["shock_pct"]) == frac * 100
         fx_d = money_exact(s["fx"]["high"], disp) - base
         fr_d = money_exact(f["high"], disp) - base
         assert money_exact(s["combined"]["high"], disp) - base == fx_d + fr_d

@@ -102,8 +102,8 @@ class TrustService:
         points.sort(key=lambda p: p.at)
         return HistoryOut(supplier_id=supplier_id, points=points)
 
-    async def add_report(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
-        return await self.reports.add(supplier_id, user_id, rtype, text)
+    async def add_report(self, supplier_id: str, user_id: str, rtype: str, text: str, low_trust: bool = False) -> Report:
+        return await self.reports.add(supplier_id, user_id, rtype, text, low_trust)
 
     def invalidate(self, supplier_id: str) -> None:
         self.cache.delete(supplier_id)

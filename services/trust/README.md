@@ -32,6 +32,7 @@ SQLAlchemy 2 async, same pattern as feed/rfq. `FF_TRUST_DATABASE_URL` (default `
 - Audit log: append-only. No update/delete API, and database triggers reject UPDATE/DELETE (SQLite and PostgreSQL). No cap and no purge: archive in the database if it grows.
 - Transitions: one transaction = conditional `UPDATE ... WHERE id=? AND status=<read status>` (rowcount checked) + audit insert, so concurrent approve/approve or approve/withdraw cannot both win (409 `invalid_transition`). SQLite takes the write lock at `BEGIN`; PostgreSQL serialises submissions per supplier / reports per user with an advisory lock. A partial unique index (`supplier_id, number_fingerprint` where live) backs the duplicate check.
 - Rate limits are derived from stored rows (audit `submit` rows, `reports` rows), so they survive restarts.
+- Report buckets: the gateway adds `X-Account-Age-Seconds` / `X-Email-Verified` (own user record; client values stripped). Reports from accounts younger than `FF_TRUST_REPORT_MIN_ACCOUNT_AGE_SECONDS` (259200) or unverified (or malformed headers) go to a `low_trust` bucket capped at `FF_TRUST_REPORT_MAX_LOW_TRUST` (2000); it is evicted first and never evicts established reports. No headers = normal bucket. Migration `0002_reports_low_trust` (SQLite dev DBs are altered in place).
 - Bounds: `FF_TRUST_VERIFICATION_MAX_TOTAL_DOCS` (only closed docs are evicted, else 503), `FF_TRUST_REPORT_MAX_TOTAL` (20000; evicts rejected, then pending; accepted never, else 503), `FF_TRUST_REPORT_RETENTION_DAYS` (365; rejected and stale pending purged, accepted kept), `FF_TRUST_SNAPSHOT_MAX_PER_SUPPLIER` (500), `FF_TRUST_SNAPSHOT_MAX_TOTAL` (200000), `FF_TRUST_SNAPSHOT_RETENTION_DAYS` (730). Purge runs at startup and at most hourly on writes.
 - Startup stores a check value of the hash key; a different key later aborts startup in production (warns elsewhere), because old fingerprints would silently stop matching.
 - Tests set `FF_TRUST_DATABASE_URL=sqlite+aiosqlite:///:memory:` (`tests/conftest.py`). Decisions: `docs/decisions/trust-persistence.md`.
@@ -49,6 +50,8 @@ Every setting in `src/ff_trust/config.py` (`Settings`, case-insensitive env name
 | `FF_TRUST_MAX_BATCH` | 50 |
 | `FF_TRUST_REPORT_RATE_LIMIT` | 5 |
 | `FF_TRUST_REPORT_RATE_WINDOW_SECONDS` | 3600 |
+| `FF_TRUST_REPORT_MIN_ACCOUNT_AGE_SECONDS` | 259200 |
+| `FF_TRUST_REPORT_MAX_LOW_TRUST` | 2000 |
 | `FF_TRUST_HISTORY_MONTHS` | 12 |
 | `FF_TRUST_REVIEWS_SOURCE` | off |
 | `FF_TRUST_REVIEWS_BASE_URL` | http://rfq:8105 |

@@ -41,6 +41,7 @@ class Report:
     created_at: datetime
     status: str = "pending_review"
     reviewed_at: datetime | None = None
+    low_trust: bool = False
 
 
 class RateLimited(Exception):
@@ -101,14 +102,14 @@ class SnapshotStore:
 class ReportStore:
     def __init__(
         self, limit: int = 5, window_seconds: int = 3600, clock: Callable[[], datetime] = _now, max_reports: int = 20000,
-        *, db: Database | None = None, retention_days: int = 365,
+        *, db: Database | None = None, retention_days: int = 365, max_low_trust: int = 2000,
     ):  # fmt: skip
         self.db = db or _default_db()
         self.limit, self.window, self.clock, self.max_reports = limit, window_seconds, clock, max_reports
-        self.retention_days = retention_days
+        self.retention_days, self.max_low_trust = retention_days, max_low_trust
         self._last_purge: datetime | None = None
 
-    async def add(self, supplier_id: str, user_id: str, rtype: str, text: str) -> Report:
+    async def add(self, supplier_id: str, user_id: str, rtype: str, text: str, low_trust: bool = False) -> Report:
         """Store a report as pending_review. Raises RateLimited when the user exceeded the window quota."""
         t = reports
         async with self.db.begin() as conn:
@@ -118,23 +119,37 @@ class ReportStore:
             if n >= self.limit:
                 raise RateLimited(max(1, int(self.window - (now - first).total_seconds())))
             total = (await conn.execute(select(func.count()).select_from(t))).scalar_one()
-            if total >= self.max_reports:  # make room: oldest rejected first, then oldest pending; accepted rows stay
-                for status in ("rejected", "pending_review"):
-                    victim = (await conn.execute(select(t.c.id).where(t.c.status == status).order_by(t.c.created_at).limit(1))).scalar()
-                    if victim:
-                        await conn.execute(delete(t).where(t.c.id == victim))
-                        break
-                else:
+            low_n = (await conn.execute(select(func.count()).select_from(t).where(t.c.low_trust.is_(True)))).scalar_one() if low_trust else 0
+            if low_trust and low_n >= self.max_low_trust:
+                # the fresh/unverified bucket is full: it only ever recycles its own rows
+                if not await self._evict(conn, low_only=True):
                     raise CapacityReached
-            r = Report(uuid.uuid4().hex, supplier_id, user_id, rtype, text, now)
-            await conn.execute(insert(t).values(id=r.id, supplier_id=supplier_id, reporter_id=user_id, type=rtype, text=text, status=r.status, created_at=now))
+            elif total >= self.max_reports and not await self._evict(conn, low_only=low_trust):
+                # make room: low-trust rows first (rejected, then pending), then established rejected / pending; accepted
+                # stay. A low-trust report never evicts an established account's report.
+                raise CapacityReached
+            r = Report(uuid.uuid4().hex, supplier_id, user_id, rtype, text, now, low_trust=low_trust)
+            await conn.execute(insert(t).values(id=r.id, supplier_id=supplier_id, reporter_id=user_id, type=rtype, text=text, status=r.status, created_at=now, low_trust=low_trust))
         await self._maybe_purge()
         return r
 
     @staticmethod
+    async def _evict(conn, *, low_only: bool) -> bool:
+        """Delete one victim: oldest rejected then oldest pending, low-trust bucket first. Accepted rows are never touched."""
+        t = reports
+        tiers = [True] if low_only else [True, False]
+        for low in tiers:
+            for status in ("rejected", "pending_review"):
+                victim = (await conn.execute(select(t.c.id).where(t.c.status == status, t.c.low_trust.is_(low)).order_by(t.c.created_at).limit(1))).scalar()
+                if victim:
+                    await conn.execute(delete(t).where(t.c.id == victim))
+                    return True
+        return False
+
+    @staticmethod
     def _report(row) -> Report:
         m = row._mapping
-        return Report(m["id"], m["supplier_id"], m["reporter_id"], m["type"], m["text"], m["created_at"], m["status"], m["reviewed_at"])
+        return Report(m["id"], m["supplier_id"], m["reporter_id"], m["type"], m["text"], m["created_at"], m["status"], m["reviewed_at"], bool(m.get("low_trust", False)))
 
     async def get(self, report_id: str) -> Report | None:
         async with self.db.begin() as conn:

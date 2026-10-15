@@ -29,6 +29,7 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     event,
+    false,
     text,
 )
 from sqlalchemy.engine import make_url
@@ -120,6 +121,7 @@ reports = Table(
     Column("status", String(16), nullable=False, server_default="pending_review"),
     Column("created_at", UTCDateTime, nullable=False),
     Column("reviewed_at", UTCDateTime, nullable=True),
+    Column("low_trust", Boolean, nullable=False, server_default=false()),  # fresh / unverified reporter: separate, smaller bucket
     CheckConstraint("status IN ('pending_review','accepted','rejected')", name="ck_reports_status"),
     Index("ix_reports_supplier_status", "supplier_id", "status"),
     Index("ix_reports_reporter_created", "reporter_id", "created_at"),
@@ -225,6 +227,10 @@ class Database:
             os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         async with self.engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
+            if self.is_sqlite:  # dev databases created before 0002: add the column in place (PostgreSQL uses Alembic)
+                cols = {r[1] for r in (await conn.exec_driver_sql("PRAGMA table_info(reports)")).all()}
+                if "low_trust" not in cols:
+                    await conn.exec_driver_sql("ALTER TABLE reports ADD COLUMN low_trust BOOLEAN NOT NULL DEFAULT 0")
         self._ready = True
 
     async def ensure(self) -> None:

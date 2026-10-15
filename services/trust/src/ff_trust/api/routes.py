@@ -62,10 +62,28 @@ async def history(supplier_id: str, request: Request) -> HistoryOut:
     return r
 
 
+def _low_trust(request: Request, age: str | None, verified: str | None) -> bool:
+    """Gateway-supplied account signals (X-Account-Age-Seconds / X-Email-Verified). Absent headers = unknown = normal
+    behaviour (direct use, tests). Present but malformed fails closed to the low-trust bucket. Only the gateway can set
+    them: with FF_INTERNAL_TOKEN set every request must carry the token, and the gateway strips client-supplied values."""
+    if age is None and verified is None:
+        return False
+    if verified is not None and verified.strip().lower() not in ("1", "true"):
+        return True
+    if age is not None:
+        try:
+            return int(age.strip()) < request.app.state.settings.report_min_account_age_seconds
+        except ValueError:
+            return True
+    return False
+
+
 @router.post("/suppliers/{supplier_id}/report", response_model=ReportOut, status_code=201)
 async def report(
     supplier_id: str, body: ReportIn, request: Request,
     x_user_id: str | None = Header(default=None),
+    x_account_age_seconds: str | None = Header(default=None),
+    x_email_verified: str | None = Header(default=None),
 ) -> ReportOut:  # fmt: skip
     """Buyer concern. Stored as pending_review; it never changes the score until a moderator accepts it."""
     uid = (x_user_id or "").strip()
@@ -78,7 +96,7 @@ async def report(
     except AdapterDisabled as e:
         raise ApiError(503, "adapter_disabled", str(e)) from e
     try:
-        return report_out(await svc.add_report(supplier_id, uid, body.type, body.text))
+        return report_out(await svc.add_report(supplier_id, uid, body.type, body.text, _low_trust(request, x_account_age_seconds, x_email_verified)))
     except RateLimited as e:
         raise ApiError(429, "rate_limited", "Too many reports; try again later", {"retry_after_seconds": e.retry_after}, {"Retry-After": str(e.retry_after)}) from e
     except CapacityReached as e:

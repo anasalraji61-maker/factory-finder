@@ -109,7 +109,9 @@
         "original_amount": {"$ref": "#/$defs/Money", "description": "before FX conversion"},
         "fx_rate": {"type": "string"},
         "source": {"type": "string", "description": "rate table / provider used"},
-        "estimate": {"type": "boolean"}
+        "estimate": {"type": "boolean"},
+        "as_of": {"type": "string", "format": "date-time", "description": "optional: when this line was priced (UTC)"},
+        "range": {"$ref": "#/$defs/MoneyRange", "description": "optional: min/max of this line in its currency; present on estimates"}
       }
     },
     "LandedCostOption": {

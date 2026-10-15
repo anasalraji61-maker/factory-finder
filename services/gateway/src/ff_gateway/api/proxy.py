@@ -1,5 +1,6 @@
 """Catch-all reverse proxy by path prefix."""
 
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 import httpx
@@ -100,6 +101,11 @@ def _is_listing_report(path: str) -> bool:
     return len(parts) == 5 and parts[:3] == ["", "v1", "listings"] and parts[4] == "report"
 
 
+def _is_trust_report(method: str, path: str) -> bool:
+    parts = path.rstrip("/").split("/")
+    return method.upper() == "POST" and len(parts) == 6 and parts[:4] == ["", "v1", "trust", "suppliers"] and parts[5] == "report"
+
+
 _ENCODED_TRICKS = ("%2e", "%2f", "%5c")  # double-encoded dot / slash / backslash: decoded again by the upstream
 
 
@@ -164,8 +170,16 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
-    for k in [k for k in headers if k.lower() == "x-client-ip"]:  # never relay a client-supplied value
-        del headers[k]
+    for k in [k for k in headers if k.lower() in ("x-client-ip", "x-account-age-seconds", "x-email-verified")]:
+        del headers[k]  # never relay a client-supplied value
+    if user_id and upstream == "trust" and _is_trust_report(request.method, path):
+        async with request.app.state.sessionmaker() as s:
+            u = await s.get(User, user_id)
+        if u is None:
+            raise InvalidToken("Token refers to an unknown user")
+        created = u.created_at if u.created_at.tzinfo else u.created_at.replace(tzinfo=UTC)
+        headers["X-Account-Age-Seconds"] = str(max(0, int((datetime.now(UTC) - created).total_seconds())))  # created_at is wall-clock
+        headers["X-Email-Verified"] = "1" if (u.email and u.email_verified) else "0"  # from our own user record
     if upstream == "assistant" or (upstream == "sourcing" and is_listing_events(request.method, path)):
         # sourcing: transient input for the daily-salted viewer hash (never stored); assistant: anonymous quota key
         peer = request.client.host if request.client else None

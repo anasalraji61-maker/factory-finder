@@ -5,3 +5,5 @@ Trust only validates the format of `/v1/media/private/<id>.<ext>` references. To
 2. media returns an HMAC-signed `ref` field on private uploads (id + owner), and trust accepts it as an optional additive `file_proofs[]` field.
 
 Also (security-review-2026-10-e item 4): the gateway could forward `X-Account-Age-Days` / `X-Email-Verified` to trust so report eviction/weighting can ignore throwaway accounts. Both are additive; trust continues with its current mitigation meanwhile.
+
+Update 2026-10-15: the report part is DONE with `X-Account-Age-Seconds` (seconds, not days) / `X-Email-Verified` (`1`/`0`), see security-review-2026-10-e item 4. The media-ownership part above remains open.

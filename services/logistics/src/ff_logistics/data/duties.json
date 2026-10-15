@@ -1,5 +1,5 @@
 {
- "note": "approximate table, verify with a customs broker. Entries added in data round 3 carry duty_range_pct, vat_range_pct, source, as_of, confidence and (where known) de_minimis; they are simplified by HS chapter and not verified against live tariff lines.",
+ "note": "approximate table, verify with a customs broker. All entries carry as_of and confidence ('low'/'medium', never verified); round-3 entries also carry duty_range_pct, vat_range_pct, source, as_of, confidence and (where known) de_minimis; they are simplified by HS chapter and not verified against live tariff lines.",
  "category_chapters": {
   "electronics": "85",
   "machinery": "84",
@@ -43,7 +43,10 @@
     "94": 20
    },
    "vat_pct": 0,
-   "clearance_fee_usd": 250
+   "clearance_fee_usd": 250,
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "TR": {
    "default_duty_pct": 8,
@@ -60,7 +63,10 @@
     "94": 3
    },
    "vat_pct": 20,
-   "clearance_fee_usd": 200
+   "clearance_fee_usd": 200,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "IR": {
    "default_duty_pct": 20,
@@ -77,7 +83,10 @@
     "94": 40
    },
    "vat_pct": 10,
-   "clearance_fee_usd": 300
+   "clearance_fee_usd": 300,
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "JO": {
    "default_duty_pct": 15,
@@ -94,7 +103,10 @@
     "94": 25
    },
    "vat_pct": 16,
-   "clearance_fee_usd": 150
+   "clearance_fee_usd": 150,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "SA": {
    "default_duty_pct": 5,
@@ -119,7 +131,10 @@
     "status": "in_force",
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "AE": {
    "default_duty_pct": 5,
@@ -145,7 +160,10 @@
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "VAT 5% still applies"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "KW": {
    "default_duty_pct": 5,
@@ -162,7 +180,10 @@
     "94": 5
    },
    "vat_pct": 0,
-   "clearance_fee_usd": 120
+   "clearance_fee_usd": 120,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "EG": {
    "default_duty_pct": 15,
@@ -179,7 +200,10 @@
     "94": 30
    },
    "vat_pct": 14,
-   "clearance_fee_usd": 200
+   "clearance_fee_usd": 200,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "US": {
    "default_duty_pct": 3,
@@ -208,7 +232,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Section 321 de minimis suspended for all origins from 2025-08-29; statutory repeal scheduled 2027"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "DE": {
    "default_duty_pct": 4,
@@ -234,7 +261,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "FR": {
    "default_duty_pct": 4,
@@ -260,7 +290,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "GB": {
    "default_duty_pct": 4,
@@ -286,7 +319,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "VAT is collected at point of sale for consignments up to GBP 135; low-value relief planned to end by 2029"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "IT": {
    "default_duty_pct": 4,
@@ -312,7 +348,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "IN": {
    "default_duty_pct": 10,
@@ -329,7 +368,10 @@
     "94": 25
    },
    "vat_pct": 18,
-   "clearance_fee_usd": 100
+   "clearance_fee_usd": 100,
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "RU": {
    "default_duty_pct": 10,
@@ -355,7 +397,10 @@
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Threshold lowered in 2024-25; sanctions rules apply"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "SY": {
    "default_duty_pct": 10,
@@ -373,7 +418,10 @@
    },
    "vat_pct": 0,
    "clearance_fee_usd": 250,
-   "note": "Sanctions and conflict-zone restrictions apply; rates indicative only."
+   "note": "Sanctions and conflict-zone restrictions apply; rates indicative only.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "LB": {
    "default_duty_pct": 5,
@@ -390,7 +438,10 @@
     "94": 5
    },
    "vat_pct": 11,
-   "clearance_fee_usd": 200
+   "clearance_fee_usd": 200,
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "LY": {
    "default_duty_pct": 5,
@@ -408,7 +459,10 @@
    },
    "vat_pct": 0,
    "clearance_fee_usd": 250,
-   "note": "Customs practice varies by port authority; rates indicative only."
+   "note": "Customs practice varies by port authority; rates indicative only.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "DZ": {
    "default_duty_pct": 15,
@@ -425,7 +479,10 @@
     "94": 30
    },
    "vat_pct": 19,
-   "clearance_fee_usd": 200
+   "clearance_fee_usd": 200,
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "MA": {
    "default_duty_pct": 17.5,
@@ -442,7 +499,10 @@
     "94": 25
    },
    "vat_pct": 20,
-   "clearance_fee_usd": 150
+   "clearance_fee_usd": 150,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "TN": {
    "default_duty_pct": 15,
@@ -459,7 +519,10 @@
     "94": 36
    },
    "vat_pct": 19,
-   "clearance_fee_usd": 150
+   "clearance_fee_usd": 150,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "PK": {
    "default_duty_pct": 16,
@@ -477,7 +540,10 @@
    },
    "vat_pct": 18,
    "clearance_fee_usd": 200,
-   "note": "Additional and regulatory duties not modelled."
+   "note": "Additional and regulatory duties not modelled.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "BD": {
    "default_duty_pct": 20,
@@ -495,7 +561,10 @@
    },
    "vat_pct": 15,
    "clearance_fee_usd": 180,
-   "note": "Supplementary duties and advance taxes not modelled; vehicles can be far higher."
+   "note": "Supplementary duties and advance taxes not modelled; vehicles can be far higher.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "NG": {
    "default_duty_pct": 15,
@@ -513,7 +582,10 @@
    },
    "vat_pct": 7.5,
    "clearance_fee_usd": 250,
-   "note": "Levies such as CISS not modelled."
+   "note": "Levies such as CISS not modelled.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "KE": {
    "default_duty_pct": 25,
@@ -531,7 +603,10 @@
    },
    "vat_pct": 16,
    "clearance_fee_usd": 180,
-   "note": "EAC common external tariff; rates vary by goods category."
+   "note": "EAC common external tariff; rates vary by goods category.",
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "ZA": {
    "default_duty_pct": 10,
@@ -557,7 +632,10 @@
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Rules for some origins changed in 2024-25; VAT still applies"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "BR": {
    "default_duty_pct": 14,
@@ -584,7 +662,10 @@
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Remessa Conforme: flat federal rate on B2C parcels up to USD 50; ICMS still applies"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "low",
+   "label": "indicative, verify with broker"
   },
   "PL": {
    "default_duty_pct": 4,
@@ -610,7 +691,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "ES": {
    "default_duty_pct": 4,
@@ -636,7 +720,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "NL": {
    "default_duty_pct": 4,
@@ -662,7 +749,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "EU duty waiver under EUR 150 is being replaced by a flat per-item duty from mid-2026; VAT has no threshold since 2021"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "CA": {
    "default_duty_pct": 5,
@@ -689,7 +779,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "CAD 150 duty-and-tax relief for CUSMA-origin goods"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "AU": {
    "default_duty_pct": 5,
@@ -715,7 +808,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "GST on low-value goods is collected by sellers/platforms"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "QA": {
    "default_duty_pct": 5,
@@ -732,7 +828,10 @@
     "94": 5
    },
    "vat_pct": 0,
-   "clearance_fee_usd": 100
+   "clearance_fee_usd": 100,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "OM": {
    "default_duty_pct": 5,
@@ -749,7 +848,10 @@
     "94": 5
    },
    "vat_pct": 5,
-   "clearance_fee_usd": 100
+   "clearance_fee_usd": 100,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "BH": {
    "default_duty_pct": 5,
@@ -766,7 +868,10 @@
     "94": 5
    },
    "vat_pct": 10,
-   "clearance_fee_usd": 100
+   "clearance_fee_usd": 100,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "VN": {
    "default_duty_pct": 10,
@@ -783,7 +888,10 @@
     "94": 20
    },
    "vat_pct": 10,
-   "clearance_fee_usd": 150
+   "clearance_fee_usd": 150,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "ID": {
    "default_duty_pct": 10,
@@ -809,7 +917,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Lowered from USD 75 in 2023"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "MY": {
    "default_duty_pct": 5,
@@ -835,7 +946,10 @@
     "confidence": "low",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Low-value goods sales tax regime applies to B2C"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "TH": {
    "default_duty_pct": 10,
@@ -852,7 +966,10 @@
     "94": 20
    },
    "vat_pct": 7,
-   "clearance_fee_usd": 150
+   "clearance_fee_usd": 150,
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "KR": {
    "default_duty_pct": 8,
@@ -878,7 +995,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "USD 200 for US-origin goods"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "JP": {
    "default_duty_pct": 3,
@@ -904,7 +1024,10 @@
     "confidence": "medium",
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Not available for some goods (e.g. leather, textiles/footwear up to a higher threshold)"
-   }
+   },
+   "as_of": "2026-10",
+   "confidence": "medium",
+   "label": "indicative, verify with broker"
   },
   "KZ": {
    "default_duty_pct": 10,

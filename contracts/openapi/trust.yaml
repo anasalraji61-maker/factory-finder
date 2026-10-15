@@ -70,6 +70,8 @@ paths:
       parameters:
         - {name: supplier_id, in: path, required: true, schema: {type: string}}
         - {name: X-User-Id, in: header, required: true, schema: {type: string, maxLength: 128}}
+        - {name: X-Account-Age-Seconds, in: header, required: false, description: "Gateway-supplied (internal only, client values stripped). Accounts younger than FF_TRUST_REPORT_MIN_ACCOUNT_AGE_SECONDS use the low-trust report bucket.", schema: {type: integer, minimum: 0}}
+        - {name: X-Email-Verified, in: header, required: false, description: "Gateway-supplied (internal only): 1 when the account email is verified, 0 otherwise (0 = low-trust bucket).", schema: {type: string, enum: ["0", "1"]}}
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierReportIn"}}}}
       responses:
         "201": {description: Stored, content: {application/json: {schema: {$ref: "#/components/schemas/SupplierReport"}}}}

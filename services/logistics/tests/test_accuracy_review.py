@@ -142,3 +142,49 @@ async def test_tiny_and_large_cargo_never_zero_or_crash(engine, m3, kg):
     for o in q["options"]:
         assert D(o["total"]["min"]["amount"]) > 0
         assert amt(o, "main_leg") > 0
+
+
+# ---- confidence labels, mode/lane-dependent freight ranges, per-line range/as_of
+def test_every_duty_entry_is_labelled_and_never_claims_verification():
+    from ff_logistics.domain.duties import load_json
+    for cc, c in load_json("duties.json")["countries"].items():
+        assert c["confidence"] in ("low", "medium", "high"), cc
+        assert c["as_of"] == "2026-10", cc
+        assert c.get("label", "indicative, verify with broker").startswith("indicative")
+
+
+def test_freight_volatility_depends_on_mode_and_lane():
+    from decimal import Decimal
+
+    from ff_logistics.domain.engine import freight_volatility
+    sea, label, note = freight_volatility("sea_fcl_40", "CN", "DE")
+    assert sea >= Decimal("0.25") and label == "high" and "volatility" in note.lower()
+    assert freight_volatility("sea_fcl_40", "CN", "IQ")[0] > sea
+    assert freight_volatility("air", "CN", "DE")[0] > freight_volatility("road", "TR", "IQ")[0]
+    assert freight_volatility("road", "TR", "DE")[0] < sea
+
+
+def test_quote_surfaces_confidence_volatility_and_line_ranges():
+    import asyncio
+    from decimal import Decimal as D
+
+    from ff_logistics.adapters.fx import FxService, MockFx
+    from ff_logistics.clients.geo import MockGeo
+    from ff_logistics.domain.engine import Engine
+    from ff_logistics.schemas import LandedCostRequest
+    req = LandedCostRequest.model_validate({
+        "goods": {"description": "x", "total_value": {"amount": "5000", "currency": "USD"},
+                  "total_weight_kg": "2000", "total_volume_m3": "5", "hs_code": "8501"},
+        "origin": {"country_code": "CN", "city": "Shenzhen"}, "destination": {"country_code": "IQ", "city": "Basra"},
+        "modes": ["sea_fcl_20"]})
+    q = asyncio.run(Engine(MockGeo(), FxService(MockFx())).quote(req))
+    text = " | ".join(q["assumptions"])
+    assert "Duty/VAT table confidence for IQ" in text and "Freight volatility (sea" in text
+    o = q["options"][0]
+    ml = next(ln for ln in o["lines"] if ln["stage"] == "main_leg")
+    base, hi = D(ml["amount"]["amount"]), D(ml["range"]["max"]["amount"])
+    assert (hi - base) / base >= D("0.25") - D("0.01") and "volatility" in ml["source"]
+    assert all("as_of" in ln for ln in o["lines"])
+    assert "range" not in o["lines"][0]  # goods: exact, not an estimate
+    tot = sum(D(ln["amount"]["amount"]) for ln in o["lines"])
+    assert D(o["total"]["min"]["amount"]) < tot < D(o["total"]["max"]["amount"])

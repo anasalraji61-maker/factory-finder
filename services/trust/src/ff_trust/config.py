@@ -92,6 +92,8 @@ class Settings(BaseSettings):
     verification_max_total_docs: int = 20000
     verification_hash_key: str | None = None  # HMAC key for document-number fingerprints; REQUIRED when FF_ENV=production
     report_max_total: int = 20000  # stored buyer reports (accepted ones are never evicted)
+    report_min_account_age_seconds: int = 259200  # reporter accounts younger than this (or with an unverified email) use the low-trust bucket; needs gateway headers
+    report_max_low_trust: int = 2000  # size of that bucket (evicted first, never evicts established reports)
     report_retention_days: int = 365  # rejected / stale pending reports are purged after this; accepted are kept
     snapshot_max_per_supplier: int = 500
     snapshot_max_total: int = 200000
