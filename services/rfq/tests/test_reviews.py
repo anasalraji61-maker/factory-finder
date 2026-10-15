@@ -213,17 +213,21 @@ def test_report_flags_never_hides_and_is_rate_limited(client, clock):
     assert client.post(f"/v1/reviews/{rid}/report", json={}).status_code == 401
 
 
-def test_summary_math_and_histogram(client):
+def test_summary_math_and_histogram(client, clock):
     empty = client.get(f"/v1/suppliers/{SUP_REF}/review-summary")
     assert empty.status_code == 200 and empty.json() == {
         "supplier_ref": SUP_REF, "count": 0, "average": None, "histogram": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0},
-        "sub_ratings": {"quality": None, "communication": None, "shipping": None}, "completed_deals": 0}
+        "sub_ratings": {"quality": None, "communication": None, "shipping": None}, "completed_deals": 0,
+        "first_review_at": None, "last_review_at": None}
     ratings = [5, 5, 4, 4, 4, 1, 3]  # sum 26 / 7 = 3.714... -> 3.71
     for i, rt in enumerate(ratings):
         d = make_deal(client, status="completed" if i < 5 else "paid")
         subs = {"quality": rt} if i < 3 else None
         assert post_review(client, d["id"], rating=rt, sub_ratings=subs).status_code == 201
+        if i == 0:
+            clock.advance(hours=2)
     s = client.get(f"/v1/suppliers/{SUP_REF}/review-summary").json()
+    assert s["first_review_at"] < s["last_review_at"] and s["first_review_at"].endswith("Z")
     assert s["count"] == 7 and s["average"] == "3.71"
     assert s["histogram"] == {"1": 1, "2": 0, "3": 1, "4": 3, "5": 2}
     assert s["sub_ratings"] == {"quality": "4.67", "communication": None, "shipping": None}

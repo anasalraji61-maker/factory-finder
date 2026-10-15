@@ -11,8 +11,8 @@ gateway :8000, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifi
 
 - gateway: auth (refresh rotation, logout, logout-all, token versioning, password reset/change, email verification), supplier claims (admin approval), per-upstream circuit breaker, rate limits (optional Redis), WebSocket tickets, `FF_ENV=production` fail-closed guard, admin passthroughs.
 - sourcing: mock + native (supplier-published, bulk import up to 100) + licensed-provider skeleton; bilingual search, facets, recommendations/similar, price history, moderation and reports, HS code finder (~690 indicative codes).
-- logistics: landed cost for sea/air/road, duties/VAT (41 countries), FX, carriers, compliance advisor (documents, certificates, incoterms), forwarder quote as a cost override.
-- geo (66 countries, ~200 hubs, sea graph), trust (score v2, verification documents with private files, reviews signal), rfq (requests/offers, invite-only requests, deals, deal lifecycle, verified-deal reviews), messaging (REST + WebSocket, attachments, block/mute/archive), tracking (providers skeletons, outbox relay), notifications (alerts, digests, delivery adapters off by default), assistant (rules + cards, optional LLM), demand (public-reply drafts, compliance guards, opt-outs, human approval), payments (mock + USDT-TRC20 skeleton, ledger, signed webhooks), media (re-encoded images, private files with signed URLs), feed (posts, follow, likes, comments), freight (forwarder marketplace: quotes, comparison, award, ratings).
+- logistics: landed cost for sea/air/road, duties/VAT (41 countries), FX, carriers, compliance advisor (documents, certificates, incoterms), forwarder quote as a cost override (main-leg line is exact, `estimate=false`, extra flag `quoted: true`).
+- geo (66 countries, 249 hubs of which 159 sea, 174-node sea lane graph; `GET /v1/distance?avoid=` excludes chokepoints suez, bab_el_mandeb, hormuz, malacca, panama, gibraltar, bosphorus; lane data labelled `confidence: low`, `as_of: 2026-10`, port coordinates `medium`), trust (score v2, verification documents with private files, reviews signal; the review summary may carry optional `first_review_at`/`last_review_at` UTC timestamps, parsed and passed through, not a scoring input), rfq (requests/offers, invite-only requests, deals, deal lifecycle, verified-deal reviews), messaging (REST + WebSocket, attachments, block/mute/archive), tracking (providers skeletons, outbox relay; reference validation with typo `suggestions`, `carrier_suggestion` from an offline directory of 45 ocean carriers and 69 airlines, indicative, `as_of` 2026-10, ocean rows high/medium/low confidence; provider status mapped by data table `status_map.json`), notifications (alerts, digests, delivery adapters off by default), assistant (rules + cards, optional LLM), demand (public-reply drafts, compliance guards, opt-outs, human approval), payments (mock + USDT-TRC20 skeleton, ledger, signed webhooks), media (re-encoded images, private files with signed URLs), feed (posts, follow, likes, comments), freight (forwarder marketplace: quotes, comparison, award, ratings).
 
 **Admin console** (`apps/admin`, served by the gateway when `FF_GATEWAY_SERVE_ADMIN=true`): supplier claims, moderation, demand drafts, payment events, verification documents (incl. private file viewing), forwarders, feed moderation.
 
@@ -31,7 +31,7 @@ gateway :8000, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifi
 | Flutter app | Never compiled locally (no SDK here). CI only compiles/analyzes/tests and builds a debug APK. `android/` and `ios/` platform folders are not committed (`flutter create .` needed); no real-device run yet. |
 | Docker images / compose | `docker compose config` validated only; images never built here. |
 | Real providers | Alibaba, freight rates, tracking, TronGrid, FCM/SMTP: skeletons, off by default, wire shapes UNVERIFIED. |
-| Supply chain | `docs/fixes/supply-chain-review-2026-10.md`: no secrets in tree, pip-audit clean after raising floors, Docker hardening, workflow permissions. |
+| Supply chain | `docs/fixes/supply-chain-review-2026-10.md`: no secrets in tree, pip-audit clean after raising floors, Docker hardening, workflow permissions. `.github/dependabot.yml` (weekly: actions, pip per service, docker, pub); `make audit` runs pip-audit per module (non-fatal, skipped if not installed). Actions are not yet SHA-pinned (`docs/requests/infra-pin-actions.md`). |
 
 ## 3. Security reviews
 
@@ -75,9 +75,9 @@ Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `paymen
 - Payments: reconciliation report for unmatched transfers, `amount` required on confirmed webhooks in v2, `TRUNCATE` revoke on audit tables (deploy docs).
 - Logistics: batch geo lookups for cold quotes; JSON blob columns need write-time caps.
 - Notifications: price alerts are same-currency only (no FX, no absolute threshold).
-- Geo: sea waypoints for Japan, SE Asia, Africa, Black Sea, South America, Australia (`docs/requests/data-geo-sea-nodes.md`).
+- Geo: sea network added (done, `docs/requests/data-geo-sea-nodes.md`); remaining: expert check of lane graph and port coordinates; avoiding hormuz/bosphorus makes Gulf/Black Sea ports unreachable (422 `sea_route_unavailable`).
 - Seed data for live mobile tests: approved forwarder, review, analytics events (`docs/requests/mobile-live-seed.md`).
-- Supply chain: pin base images by digest and actions by SHA, lock file with hashes, scheduled `pip-audit`, commit `pubspec.lock`, `read_only` containers once on Postgres.
+- Supply chain: pin base images by digest and actions by SHA (third-party actions still on tags, list in `docs/requests/infra-pin-actions.md`), lock file with hashes, scheduled `pip-audit` in CI (only local `make audit` exists today), commit `pubspec.lock`, `read_only` containers once on Postgres.
 - Cosmetic/ops: gateway sends `X-RateLimit-*` only on 429; no data-consent endpoint beyond export/delete.
 
 ## ملخص اليوم (15 أكتوبر)
@@ -90,5 +90,8 @@ Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `paymen
 - **الامتثال**: ضوابط مطابقة الطلب العام (demand): مسودات فقط، موافقة بشرية، قوائم رفض، لا رسائل خاصة.
 - **الوسائط**: تشديد أمن الصور والملفات الخاصة (إعادة ترميز، روابط موقّعة، إزالة البيانات الوصفية).
 - **قاعدة البيانات**: تم التحقق من PostgreSQL 16 فعلياً (ترحيلات + كل الاختبارات) وأُصلح خطأ واحد في الإشعارات.
-- **سلسلة التوريد**: فحص أسرار، تدقيق الاعتماديات ورفع الحد الأدنى للإصدارات، تشديد Docker وGitHub Actions.
+- **سلسلة التوريد**: فحص أسرار، تدقيق الاعتماديات (`make audit`) وDependabot أسبوعياً، ورفع الحد الأدنى للإصدارات، تشديد Docker؛ إجراءات GitHub ما زالت على الوسوم وليست مثبّتة بـ SHA (`docs/requests/infra-pin-actions.md`).
+- **الشحن البحري والجغرافيا**: شبكة بحرية (159 ميناءً بحرياً) مع استبعاد نقاط الاختناق (`avoid`)، وبيانات بثقة منخفضة (`low`) بتاريخ 2026-10 وتحتاج مراجعة خبير.
+- **التتبع**: اقتراحات تصحيح للأرقام، واقتراح شركة الشحن من دليل تقريبي (ثقة عالية/متوسطة/منخفضة)، وجدول حالات قابل للتعديل كبيانات.
+- **التكلفة والثقة**: بند الشحن المسعّر من وكيل يحمل علامة `quoted`، وتقييمات الثقة تقبل أوقات أول وآخر تقييم.
 - **ما زال مطلوباً منك**: حساب API مرخّص لبيانات الموردين، مزوّد أسعار شحن، تجربة التطبيق على هاتف حقيقي و`make compose-e2e`، مراجعة مخلّص جمركي للبيانات، أسرار الإنتاج.

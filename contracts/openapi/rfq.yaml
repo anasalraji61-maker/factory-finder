@@ -660,3 +660,5 @@ components:
             communication: {type: [string, "null"]}
             shipping: {type: [string, "null"]}
         completed_deals: {type: integer, description: Deals of this supplier in status completed}
+        first_review_at: {type: [string, "null"], format: date-time, description: "Optional: created_at (UTC) of the oldest published review; null when count = 0"}
+        last_review_at: {type: [string, "null"], format: date-time, description: "Optional: created_at (UTC) of the newest published review; null when count = 0"}

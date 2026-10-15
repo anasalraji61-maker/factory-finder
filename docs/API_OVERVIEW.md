@@ -160,7 +160,7 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 
 | Method | Path | Summary |
 |---|---|---|
-| POST | `/v1/quotes/landed-cost` | Landed cost to the buyer's city, one option per feasible mode (sorted by total, one recommended) |
+| POST | `/v1/quotes/landed-cost` | Landed cost to the buyer's city, one option per feasible mode (sorted by total, one recommended). With a valid `freight_override` the main-leg line is exact (`estimate=false`) and carries the additive flag `quoted: true` |
 
 **probes (direct to service port, not via gateway)**
 
@@ -187,13 +187,13 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 
 | Method | Path | Summary |
 |---|---|---|
-| GET | `/v1/distance` | Distance estimate between two points |
+| GET | `/v1/distance` | Distance estimate between two points. Sea mode accepts `avoid=` (comma-separated chokepoints: suez, bab_el_mandeb, hormuz, malacca, panama, gibraltar, bosphorus; unknown -> 422 `unknown_chokepoint`, no lane -> 422 `sea_route_unavailable`); response adds `avoided`, `confidence` (sea: low) and `as_of` (2026-10) |
 
 **Gateway prefix `/v1/hubs`**
 
 | Method | Path | Summary |
 |---|---|---|
-| GET | `/v1/hubs` | List hubs located in, or serving, a country |
+| GET | `/v1/hubs` | List hubs located in, or serving, a country (hubs carry optional `confidence` and `as_of`; 159 of the 249 bundled hubs are sea) |
 | GET | `/v1/hubs/nearest` | Nearest hubs to a coordinate (straight-line), ascending distance |
 
 **probes (direct to service port, not via gateway)**
@@ -211,7 +211,7 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 |---|---|---|
 | GET | `/v1/trust/suppliers/{supplier_id}` | getSupplierTrust |
 | GET | `/v1/trust/suppliers:batch` | batchSupplierTrust |
-| POST | `/v1/trust/evaluate` | evaluateTrust |
+| POST | `/v1/trust/evaluate` | evaluateTrust (the optional `review_summary` accepts `first_review_at` / `last_review_at`, UTC date-times of the oldest/newest review) |
 | GET | `/v1/trust/suppliers/{supplier_id}/history` | Score over time (oldest first), from stored snapshots plus deterministic mock history |
 | POST | `/v1/trust/suppliers/{supplier_id}/report` | Buyer-submitted concern. Stored as pending_review; affects the score only after moderator acceptance. |
 
@@ -322,7 +322,7 @@ Regenerate by re-reading the contracts if they change; counts below are operatio
 
 | Method | Path | Summary |
 |---|---|---|
-| GET | `/v1/validate/{reference_type}/{reference}` | Validate a reference (ISO 6346 / AWB mod-7 / IMO check digit / basic B/L) and detect the carrier |
+| GET | `/v1/validate/{reference_type}/{reference}` | Validate a reference (ISO 6346 / AWB mod-7 / IMO check digit / basic B/L) and detect the carrier. Invalid input returns up to 3 typo `suggestions`; `carrier_suggestion` is an indicative guess from the bundled directory (`basis`, `confidence` high/medium/low, `as_of`, `indicative`), null when unknown, never overrides a user-chosen carrier |
 
 **/v1/internal (NOT routed by the gateway)**
 

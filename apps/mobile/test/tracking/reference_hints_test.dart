@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/tracking/data/tracking_models.dart';
 import 'package:factory_finder/features/tracking/data/tracking_repository.dart';
 import 'package:factory_finder/features/tracking/screens/add_shipment_sheet.dart';
@@ -71,7 +72,7 @@ void main() {
     await settle(tester, frames: 2);
     await tester.enterText(find.byType(TextField).first, 'MSKU123456S');
     await settle(tester, frames: 2);
-    await tester.tap(find.text('Start tracking'));
+    await tester.tap(find.widgetWithText(PrimaryButton, 'Start tracking'));
     await settle(tester, frames: 4);
     expect(find.text('Did you mean?'), findsOneWidget);
     final chip = find.byWidgetPredicate((w) =>
@@ -86,7 +87,8 @@ void main() {
     await tester.tap(find.byKey(const Key('carrier_suggestion')));
     await settle(tester, frames: 2);
     expect(find.byKey(const Key('carrier_suggestion')), findsNothing);
-    expect(find.text('Maersk'), findsOneWidget);
+    final carrierField = tester.widget<TextField>(find.byType(TextField).last);
+    expect(carrierField.controller!.text, 'Maersk');
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
   });

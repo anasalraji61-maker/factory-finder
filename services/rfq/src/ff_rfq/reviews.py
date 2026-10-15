@@ -193,6 +193,8 @@ class ReviewService:
             hist = {str(i): 0 for i in range(1, 6)}
             for rating, n in rows:
                 hist[str(rating)] = n
+            first, last = (await s.execute(select(func.min(ReviewRow.created_at), func.max(ReviewRow.created_at))
+                                           .where(*cond))).one()
             count = sum(hist.values())
             total = sum(int(k) * v for k, v in hist.items())
             subs: dict[str, str | None] = {}
@@ -204,4 +206,5 @@ class ReviewService:
                 OfferRow, DealRow.offer_id == OfferRow.id).where(
                 OfferRow.supplier_ref == supplier_ref, DealRow.status == DealStatus.COMPLETED.value))).scalar_one()
         return {"supplier_ref": supplier_ref, "count": count, "average": average(total, count),
-                "histogram": hist, "sub_ratings": subs, "completed_deals": done}
+                "histogram": hist, "sub_ratings": subs, "completed_deals": done,
+                "first_review_at": _iso(first) if first else None, "last_review_at": _iso(last) if last else None}
