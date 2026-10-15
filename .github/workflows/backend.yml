@@ -1,7 +1,7 @@
 name: backend
 on:
   push:
-    paths: ["services/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
+    paths: ["services/**", "packages/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
   pull_request:
     paths: ["services/**", "scripts/**", "ruff.toml"]
   workflow_dispatch:
@@ -37,3 +37,14 @@ jobs:
             done
           fi
           exit $code
+
+  py-common:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e packages/py-common[dev] pytest pytest-asyncio ruff || pip install -e packages/py-common pytest pytest-asyncio ruff
+      - run: ruff check packages/py-common
+      - run: python -m pytest -q packages/py-common

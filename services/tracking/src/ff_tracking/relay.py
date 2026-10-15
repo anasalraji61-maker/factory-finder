@@ -101,7 +101,9 @@ def _event(row: OutboxRow) -> dict[str, Any]:
 class OutboxRelay:
     def __init__(self, repo: ShipmentRepository, client: NotifyClient, clock: Callable[[], datetime],
                  batch_size: int = 100, max_attempts: int = 8, backoff_base: float = 30.0,
-                 backoff_max: float = 3600.0) -> None:
+                 backoff_max: float = 3600.0, retention_days: int = 30) -> None:
+        self.retention = timedelta(days=max(1, retention_days))
+        self._purged_at: datetime | None = None
         self.repo, self.client, self.clock = repo, client, clock
         self.batch_size = max(1, min(batch_size, 100))
         self.max_attempts = max(1, max_attempts)
@@ -120,6 +122,12 @@ class OutboxRelay:
 
     async def run_once(self) -> dict[str, int]:
         now = self.clock()
+        if self._purged_at is None or now - self._purged_at >= timedelta(hours=1):
+            self._purged_at = now
+            try:
+                await self.repo.purge_outbox(now - self.retention)
+            except Exception:  # retention must never block delivery
+                log.exception("tracking outbox purge failed")
         stats = {"sent": 0, "delivered": 0, "invalid": 0, "retried": 0, "dead": 0}
         rows = await self.repo.due_outbox(now, self.batch_size)
         if not rows:
@@ -165,4 +173,5 @@ def build_relay(settings, repo: ShipmentRepository, clock: Callable[[], datetime
         client = HttpNotifyClient(settings.notify_base_url, settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"),
                                   settings.notify_timeout_seconds)
     return OutboxRelay(repo, client, clock, settings.notify_batch_size, settings.notify_max_attempts,
-                       settings.notify_backoff_base_seconds, settings.notify_backoff_max_seconds)
+                       settings.notify_backoff_base_seconds, settings.notify_backoff_max_seconds,
+                       settings.outbox_retention_days)

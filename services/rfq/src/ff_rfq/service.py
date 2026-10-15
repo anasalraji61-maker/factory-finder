@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from typing import Any
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from ff_rfq.clients.sourcing import SourcingClient
@@ -16,11 +17,13 @@ from ff_rfq.config import Settings
 from ff_rfq.db import Base, DealRow, OfferRow, RequestRow
 from ff_rfq.domain.commission import DEFAULT_USD_RATES, compute_commission
 from ff_rfq.domain.enums import DealStatus, ListingKind, OfferStatus, RequestStatus
-from ff_rfq.domain.errors import Forbidden, NotFound, ValidationFailed
+from ff_rfq.domain.errors import Conflict, Forbidden, InvalidTransition, NotFound, ValidationFailed
 from ff_rfq.domain.state import offer_transition, request_transition
 from ff_rfq.schemas import OfferCreate, RequestCreate
 
 SWEEP_MAX_AGE = timedelta(seconds=30)
+MAX_ACTIVE_OFFERS_PER_SUPPLIER = 5  # per request
+MAX_OFFERS_PER_REQUEST = 500
 LIVE = (RequestStatus.OPEN.value, RequestStatus.NEGOTIATING.value)
 
 
@@ -62,6 +65,12 @@ def offer_dict(o: OfferRow) -> dict[str, Any]:
     }
 
 
+def _net(subtotal: str, commission: str) -> str:
+    with localcontext() as ctx:
+        ctx.prec = 80  # subtotals can exceed the default 28-digit context
+        return format(Decimal(subtotal) - Decimal(commission), "f")
+
+
 def deal_dict(d: DealRow) -> dict[str, Any]:
     return {
         "id": d.id, "request_id": d.request_id, "offer_id": d.offer_id, "buyer_id": d.buyer_id,
@@ -71,7 +80,7 @@ def deal_dict(d: DealRow) -> dict[str, Any]:
             "rate": d.commission_rate, "amount": _money(d.commission_amount, d.currency),
             "min_fee_applied": d.min_fee_applied, "is_estimate": False,
         },
-        "supplier_net": _money(format(Decimal(d.subtotal) - Decimal(d.commission_amount), "f"), d.currency),
+        "supplier_net": _money(_net(d.subtotal, d.commission_amount), d.currency),
         "status": d.status,
         "payment": {k: ((d.payment_state or {}).get(k) or {}).get("status") for k in ("commission", "deal_payment")},
         "delivered_at": _iso(d.delivered_at), "completed_at": _iso(d.completed_at),
@@ -135,8 +144,12 @@ class RfqService:
         self._next_due = min(d if d.tzinfo else d.replace(tzinfo=UTC) for d in due) if due else None
         self._swept_at, self._dirty = now, False
 
-    async def _request(self, s: AsyncSession, request_id: str) -> RequestRow:
-        r = await s.get(RequestRow, request_id)
+    async def _request(self, s: AsyncSession, request_id: str, lock: bool = False) -> RequestRow:
+        """``lock`` = SELECT ... FOR UPDATE (serialises writers on PostgreSQL; a no-op on SQLite)."""
+        if lock:
+            r = (await s.execute(select(RequestRow).where(RequestRow.id == request_id).with_for_update())).scalar_one_or_none()
+        else:
+            r = await s.get(RequestRow, request_id)
         if r is None:
             raise NotFound("Request not found")
         return r
@@ -222,7 +235,7 @@ class RfqService:
         now = self.clock()
         async with self._sessions() as s, s.begin():
             await self._sweep(s, now)
-            r = await self._request(s, request_id)
+            r = await self._request(s, request_id, lock=True)
             if r.owner_id != user:
                 raise Forbidden("Only the buyer can close this request")
             r.status = request_transition(RequestStatus(r.status), "close", r.id).value
@@ -253,9 +266,15 @@ class RfqService:
             raise ValidationFailed("valid_until must be in the future", code="invalid_valid_until")
         async with self._sessions() as s, s.begin():
             await self._sweep(s, now)
-            r = await self._request(s, request_id)
+            r = await self._request(s, request_id, lock=True)
             if r.owner_id == user:
                 raise Forbidden("You cannot offer on your own request")
+            mine, total = (await s.execute(select(
+                func.count().filter(OfferRow.supplier_user_id == user, OfferRow.status == OfferStatus.ACTIVE.value),
+                func.count()).where(OfferRow.request_id == r.id))).one()
+            if mine >= MAX_ACTIVE_OFFERS_PER_SUPPLIER or total >= MAX_OFFERS_PER_REQUEST:
+                raise Conflict("Too many offers on this request", code="offer_limit_reached",
+                               details={"max_active_per_supplier": MAX_ACTIVE_OFFERS_PER_SUPPLIER})
             r.status = request_transition(RequestStatus(r.status), "receive_offer", r.id).value
             r.updated_at = now
             o = OfferRow(
@@ -288,7 +307,8 @@ class RfqService:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, now)
             o = await self._offer(s, offer_id)
-            r = await self._request(s, o.request_id)
+            r = await self._request(s, o.request_id, lock=True)
+            await s.refresh(o)
             if action == "withdraw" and o.supplier_user_id != user:
                 raise Forbidden("Only the offering supplier can withdraw this offer")
             if action == "reject" and r.owner_id != user:
@@ -309,20 +329,36 @@ class RfqService:
 
     async def accept_offer(self, user: str, offer_id: str) -> dict[str, Any]:
         now = self.clock()
+        try:
+            return await self._accept_offer(user, offer_id, now)
+        except IntegrityError as e:  # concurrent accept on the same request/offer (unique deals.request_id/offer_id)
+            raise Conflict("This request was already awarded", code="already_awarded") from e
+
+    async def _accept_offer(self, user: str, offer_id: str, now: datetime) -> dict[str, Any]:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, now)
             o = await self._offer(s, offer_id)
-            r = await self._request(s, o.request_id)
+            r = await self._request(s, o.request_id, lock=True)
+            await s.refresh(o)  # re-read after the request lock: a concurrent accept/withdraw may have won
             if r.owner_id != user:
                 raise Forbidden("Only the buyer can accept offers")
+            # The sweep is throttled and may not see rows written by other processes: check expiry explicitly.
+            if o.status == OfferStatus.ACTIVE.value:
+                for due, entity in ((o.valid_until, "offer"), (r.deadline, "request")):
+                    if due is not None and (due if due.tzinfo else due.replace(tzinfo=UTC)) <= now:
+                        raise InvalidTransition(entity, "expired", "accept", entity_id=o.id if entity == "offer" else r.id)
             # Validate both machines before mutating anything.
             new_request = request_transition(RequestStatus(r.status), "award", r.id)
             new_offer = offer_transition(OfferStatus(o.status), "accept", o.id)
             kind = ListingKind(r.kind)
-            qty, unit_price = Decimal(r.quantity), Decimal(o.price_amount)
-            subtotal = (qty * unit_price).quantize(Decimal("0.01"))
-            fee = compute_commission(subtotal, o.price_currency, kind, rates=self.rates,
-                                     min_fee_usd=self.settings.min_commission_usd)
+            with localcontext() as ctx:  # qty (18 digits) x price (18 digits) overflows the default 28-digit context
+                ctx.prec = 80
+                qty, unit_price = Decimal(r.quantity), Decimal(o.price_amount)
+                subtotal = (qty * unit_price).quantize(Decimal("0.01"))
+                fee = compute_commission(subtotal, o.price_currency, kind, rates=self.rates,
+                                         min_fee_usd=self.settings.min_commission_usd)
+            if max(len(format(subtotal, "f")), len(format(fee.amount, "f"))) > 32:  # deals.subtotal is String(32)
+                raise ValidationFailed("Deal total is too large", code="amount_too_large")
             others = (await s.execute(select(OfferRow).where(
                 OfferRow.request_id == r.id, OfferRow.id != o.id,
                 OfferRow.status == OfferStatus.ACTIVE.value))).scalars()

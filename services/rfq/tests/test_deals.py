@@ -275,3 +275,52 @@ def test_request_deal_buyer_only(client):
         assert client.get(f"/v1/requests/{req['id']}/deal", headers=h).status_code == 404
     assert client.get("/v1/requests/req_missing/deal", headers=BUYER).status_code == 404
     assert client.get(f"/v1/requests/{req['id']}/deal").status_code == 401
+
+
+# ---- security-review-2026-10-g ----------------------------------------------------------------
+def test_accept_huge_total_is_exact(client):
+    req = new_request(client, quantity="99999999999999.9999")
+    off = new_offer(client, req["id"], SUP_A, "99999999999999.9999")
+    d = client.post(f"/v1/offers/{off['id']}/accept", headers=BUYER)
+    assert d.status_code == 200, d.text  # was decimal.InvalidOperation (28-digit context) -> 500
+    from decimal import Decimal, localcontext
+    with localcontext() as ctx:
+        ctx.prec = 80
+        assert Decimal(d.json()["subtotal"]["amount"]) == (Decimal("99999999999999.9999") ** 2).quantize(Decimal("0.01"))
+    # a large-but-storable total keeps exact cents
+    req = new_request(client, quantity="12345678901.1234")
+    off = new_offer(client, req["id"], SUP_A, "123456789.1234")
+    d = client.post(f"/v1/offers/{off['id']}/accept", headers=BUYER).json()
+    with localcontext() as ctx:
+        ctx.prec = 80
+        assert Decimal(d["subtotal"]["amount"]) == (Decimal("12345678901.1234") * Decimal("123456789.1234")).quantize(Decimal("0.01"))
+        assert Decimal(d["supplier_net"]["amount"]) == Decimal(d["subtotal"]["amount"]) - Decimal(d["commission"]["amount"]["amount"])
+
+
+def test_accept_expired_offer_even_if_sweep_is_stale(client, clock):
+    req = new_request(client)
+    off = new_offer(client, req["id"], SUP_A, valid_until="2026-10-01T13:00:00Z")
+    client.get(f"/v1/requests/{req['id']}", headers=BUYER)  # sweep ran; nothing due yet
+    clock.advance(hours=2)
+    r = client.post(f"/v1/offers/{off['id']}/accept", headers=BUYER)
+    assert r.status_code == 409
+
+
+def test_double_accept_and_accept_after_close(client):
+    req = new_request(client)
+    o1, o2 = new_offer(client, req["id"], SUP_A), new_offer(client, req["id"], SUP_B)
+    assert client.post(f"/v1/offers/{o1['id']}/accept", headers=BUYER).status_code == 200
+    assert client.post(f"/v1/offers/{o1['id']}/accept", headers=BUYER).status_code == 409
+    assert client.post(f"/v1/offers/{o2['id']}/accept", headers=BUYER).status_code == 409
+    assert client.post(f"/v1/requests/{req['id']}/offers", headers=SUP_B, json={
+        "price": {"amount": "1", "currency": "USD"}, "supplier_name": "x"}).status_code == 409
+
+
+def test_offer_cap_per_supplier(client):
+    req = new_request(client)
+    for _ in range(5):
+        new_offer(client, req["id"], SUP_A)
+    r = client.post(f"/v1/requests/{req['id']}/offers", headers=SUP_A, json={
+        "price": {"amount": "1", "currency": "USD"}, "supplier_name": "x"})
+    assert r.status_code == 409 and r.json()["error"]["code"] == "offer_limit_reached"
+    new_offer(client, req["id"], SUP_B)  # other suppliers unaffected

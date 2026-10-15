@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     provider: str = "mock"  # mock (default, no network) | http (licensed APIs below) | <other> = stub
     provider_api_key: str | None = None
     refresh_min_interval_seconds: int = 60
+    max_shipments_per_user: int = 200  # FF_TRACKING_MAX_SHIPMENTS_PER_USER; each create calls the provider
     internal_token: str | None = None  # FF_INTERNAL_TOKEN is also honoured (see main.py)
     # --- real providers (all OFF unless provider=http AND a base URL + key are set; env only) ---
     container_base_url: str = ""
@@ -46,3 +47,4 @@ class Settings(BaseSettings):
     notify_backoff_max_seconds: float = 3600.0
     notify_poll_seconds: float = 30.0
     notify_timeout_seconds: float = 10.0
+    outbox_retention_days: int = 30  # delivered/dead outbox rows older than this are purged by the relay

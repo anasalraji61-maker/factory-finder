@@ -14,6 +14,7 @@ router = APIRouter(prefix="/v1")
 HubTypeParam = Literal["sea", "air", "rail", "land", "land_border", "consolidation"]
 Lat = Annotated[float, Query(ge=-90, le=90)]
 Lon = Annotated[float, Query(ge=-180, le=180)]
+CountryParam = Annotated[str | None, Query(max_length=8)]
 
 
 def _check_country(code: str | None) -> None:
@@ -29,8 +30,8 @@ def countries() -> dict[str, list[Country] | int]:
 
 @router.get("/cities")
 def cities(
-    q: str | None = None,
-    country: str | None = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    country: CountryParam = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
 ) -> dict[str, list[City] | int]:
     _check_country(country)
@@ -39,7 +40,7 @@ def cities(
 
 
 @router.get("/hubs")
-def hubs(country: str | None = None, type: HubTypeParam | None = None) -> dict[str, list[Hub] | int]:
+def hubs(country: CountryParam = None, type: HubTypeParam | None = None) -> dict[str, list[Hub] | int]:
     _check_country(country)
     found = search.filter_hubs(get_dataset(), country, type)
     return {"items": found, "total": len(found)}
@@ -51,7 +52,7 @@ def hubs_nearest(
     lon: Lon,
     type: HubTypeParam | None = None,
     limit: Annotated[int, Query(ge=1, le=20)] = 3,
-    country: str | None = None,
+    country: CountryParam = None,
 ) -> dict[str, list[NearestHub]]:
     _check_country(country)
     return {"items": search.nearest_hubs(get_dataset(), lat, lon, type, limit, country)}
@@ -64,7 +65,7 @@ def distance(
     to_lat: Lat,
     to_lon: Lon,
     mode: Literal["road", "sea", "air"] = "road",
-    country: str | None = None,
+    country: CountryParam = None,
 ) -> DistanceResult:
     _check_country(country)
     return compute_distance(

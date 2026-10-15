@@ -194,3 +194,21 @@ changed nothing.
   switch to `localizedError(context, e)` (follow-up, per-feature lanes).
 - Tests: `test/core/error_messages_test.dart`, additions in `test/reco/*`.
   Nothing compiled (no Flutter SDK).
+
+## Localized errors rollout + a11y tests (2026-10)
+
+- Switched all remaining `describeError(e)` call sites to
+  `localizedError(context, e)`: deal detail, login/register snackbars, alerts,
+  create request, request detail (error states + accept snackbar), notify prefs
+  (load + save error text). Behavior is otherwise identical; unknown codes still
+  show the backend message. Dropped the now-unused `api_client.dart` import in
+  `auth_screens.dart` and `alerts_screen.dart`.
+- New `test/widgets/localized_errors_a11y_test.dart`: request detail
+  (`rating_too_early`, ar) and notify prefs (`conversation_full`, en; unknown
+  code fallback) with fake repositories/provider overrides; Semantics label +
+  200% text-scale overflow tests for `CreateRequestScreen` and `NotifyPrefsScreen`
+  (no prior a11y/scale coverage in `test/requests` or `test/notify_prefs`).
+- Note: reviews and chat use their own key mappers (`reviewErrorKey`,
+  `sendErrorKey`) that do not yet consult `apiErrorKey`, so `rating_too_early` /
+  `conversation_full` do not surface there; follow-up for the reviews/messages
+  lanes. Nothing compiled (no Flutter SDK).

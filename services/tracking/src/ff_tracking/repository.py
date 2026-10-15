@@ -113,6 +113,20 @@ class ShipmentRepository:
             row.data = sh.model_dump_json()
             await s.commit()
 
+    async def count_for_owner(self, owner_id: str) -> int:
+        async with self._sessions() as s:
+            return (await s.execute(select(func.count()).select_from(ShipmentRow).where(
+                ShipmentRow.owner_id == owner_id))).scalar_one()
+
+    async def purge_outbox(self, before) -> int:
+        """Retention: drop delivered or dead rows older than ``before`` (pending rows are never purged)."""
+        async with self._sessions() as s:
+            res = await s.execute(delete(OutboxRow).where(
+                OutboxRow.created_at < before,
+                (OutboxRow.delivered_at.is_not(None)) | (OutboxRow.dead_at.is_not(None))))
+            await s.commit()
+            return int(res.rowcount or 0)
+
     async def delete(self, shipment_id: str) -> None:
         async with self._sessions() as s:
             row = await s.get(ShipmentRow, shipment_id)

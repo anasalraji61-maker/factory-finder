@@ -13,7 +13,9 @@ async def titles(service, **kw):
 async def test_arabic_query_finds_english_title(service):
     res = await titles(service, q="خط انتاج معجنات")
     assert res.total >= 2
-    assert all("Production Line" in i.title for i in res.items)
+    # used bakery lines are production lines too (kind is searchable); explicit "Production Line" titles lead
+    assert all(i.kind == "production_line" for i in res.items)
+    assert all("Production Line" in i.title for i in res.items[:2])
     assert res.sources[0].source == "mock" and res.sources[0].count == res.total
 
 

@@ -149,7 +149,7 @@ class SourcingService:
                 candidates.append((item.model_copy(), m))  # shallow: _enrich only rebinds .supplier
                 n += 1
             sources.append(status.model_copy(update={"count": n}))
-        candidates = engine.dedupe(candidates)
+        candidates = engine.prune_weak(engine.dedupe(candidates))
         await self._enrich([c[0] for c in candidates])
         ranked = engine.rank(candidates, sort)
         page_items = engine.paginate(ranked, page, page_size)

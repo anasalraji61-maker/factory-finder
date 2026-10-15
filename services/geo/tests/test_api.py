@@ -58,3 +58,8 @@ def test_errors(client):
     r = client.get("/v1/hubs", params={"type": "bogus"})
     assert r.status_code == 422
     assert client.get("/v1/nope").json()["error"]["code"] == "not_found"
+
+
+def test_query_params_are_length_capped(client):
+    assert client.get("/v1/cities", params={"q": "a" * 101}).status_code == 422
+    assert client.get("/v1/hubs", params={"country": "X" * 500}).status_code == 422

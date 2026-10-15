@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -67,7 +68,7 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = describeError(e);
+        _loadError = localizedError(context, e);
         _loading = false;
       });
     }
@@ -134,7 +135,7 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
           _saveErrorKey = digestEmailErrorKey(e);
         } else {
           _saveErrorKey = 'notifyprefs.save_failed';
-          _saveErrorText = describeError(e);
+          _saveErrorText = localizedError(context, e);
         }
       });
     }

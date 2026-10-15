@@ -1,4 +1,4 @@
-import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -104,7 +104,7 @@ class AlertsScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const LoadingList(),
         error: (e, _) => ErrorState(
-          message: describeError(e),
+          message: localizedError(context, e),
           onRetry: () => ref.invalidate(alertsProvider),
         ),
         data: (page) {

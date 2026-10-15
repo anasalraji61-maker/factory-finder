@@ -90,7 +90,8 @@ def create_app(
         await repo.engine.dispose()
 
     app = FastAPI(title="Factory Finder - tracking", version=__version__, lifespan=lifespan)
-    app.state.service = ShipmentService(repo, provider, clock, settings.refresh_min_interval_seconds)
+    app.state.service = ShipmentService(repo, provider, clock, settings.refresh_min_interval_seconds,
+                                       settings.max_shipments_per_user)
     app.state.relay = build_relay(settings, repo, clock, notify_client)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 

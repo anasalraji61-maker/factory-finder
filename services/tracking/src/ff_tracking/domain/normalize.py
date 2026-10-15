@@ -123,6 +123,9 @@ def _event_id(source: str, code: str, ts: datetime, hub: str, raw_id: Any) -> st
     return "evt_" + hashlib.sha256(f"{source}|{code}|{ts.isoformat()}|{hub}".encode()).hexdigest()[:20]
 
 
+MAX_EVENTS = 300  # a provider cannot grow the stored aggregate without bound
+
+
 def normalize_events(
     raw_events: Iterable[Mapping[str, Any]], *, source: str, now: datetime,
     destination_hub: str | None = None,
@@ -162,12 +165,12 @@ def normalize_events(
         vessel = VesselRef(name=str(v["name"]), imo=v.get("imo") or None, voyage=v.get("voyage")) \
             if isinstance(v, Mapping) and v.get("name") else None
         flight = FlightRef(number=str(f), carrier_code=str(f)[:2]) if isinstance(f, str) and f else None
-        desc = str(raw.get("description") or "").strip() or DESC_EN[status]
+        desc = str(raw.get("description") or "").strip()[:300] or DESC_EN[status]
         seen[key] = TrackingEvent(
             id=_event_id(source, code, ts, hub_id or "", raw.get("event_id")), status=status,
             description=desc, description_ar=DESC_AR[status], location=loc, timestamp=ts,
             vessel=vessel, flight=flight, source=source)
-    events = sorted(seen.values(), key=lambda e: (e.timestamp, PROGRESS[e.status], e.id))
+    events = sorted(seen.values(), key=lambda e: (e.timestamp, PROGRESS[e.status], e.id))[-MAX_EVENTS:]
     milestones = detect_milestones(events, gate_out)
     return events, eta, milestones, skipped
 

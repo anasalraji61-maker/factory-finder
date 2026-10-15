@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from decimal import Decimal
+from itertools import permutations
 
 from .categories import category_labels, expand_category
 from .models import Listing, SearchQuery
@@ -25,8 +26,20 @@ class Match:
     phrase: bool = False  # whole query appears contiguously in the title
 
 
+# kind/condition are searchable like a category: "used production line" / "خط انتاج مستعمل"
+_KIND_TEXT = {
+    "production_line": "production line خط انتاج خطوط انتاج",
+    "raw_material": "raw material مواد اوليه خام",
+    "product": "product منتج",
+}
+_CONDITION_TEXT = {"used": "used مستعمل", "refurbished": "refurbished مجدد"}
+
+
 def _doc_fields(listing: Listing) -> tuple[tuple[float, tuple[str, ...]], ...]:
-    node_text = f"{category_labels(listing.category)} {(listing.category or '').replace('_', ' ')}"
+    node_text = (
+        f"{category_labels(listing.category)} {(listing.category or '').replace('_', ' ')} "
+        f"{_KIND_TEXT.get(listing.kind, '')} {_CONDITION_TEXT.get(listing.condition, '')}"
+    )
     desc = f"{getattr(listing, 'description', None) or ''} {getattr(listing, 'description_ar', None) or ''}"
     return (
         (F_TITLE, tokens(f"{listing.title} {listing.title_ar or ''}")),
@@ -53,6 +66,35 @@ def _term_score(term: QueryTerm, fields) -> float:
     return 0.0
 
 
+def _spans(term: QueryTerm, doc: tuple[str, ...]) -> list[tuple[int, int]]:
+    out = []
+    for alt in term.alternatives:
+        n = len(alt)
+        out += [(i, i + n) for i in range(len(doc) - n + 1) if doc[i : i + n] == alt]
+    return out
+
+
+def synonym_phrase(terms: list[QueryTerm], doc: tuple[str, ...]) -> bool:
+    """All terms (any synonym) sit side by side in the title, in either order.
+
+    Lets "مضخة ماء" boost "Water Pump" (Arabic noun-adjective order is the reverse of English).
+    """
+    if not 2 <= len(terms) <= 4:
+        return False
+    spans = [_spans(t, doc) for t in terms]
+    if not all(spans):
+        return False
+    for order in permutations(range(len(terms))):
+        frontier = {end for _, end in spans[order[0]]}
+        for k in order[1:]:
+            frontier = {end for start, end in spans[k] if start in frontier}
+            if not frontier:
+                break
+        else:
+            return True
+    return False
+
+
 def match(terms: list[QueryTerm], listing: Listing, phrase: tuple[str, ...] = ()) -> Match | None:
     """Field-weighted relevance; None when any query term is missing (AND semantics)."""
     if not terms:
@@ -69,7 +111,25 @@ def match(terms: list[QueryTerm], listing: Listing, phrase: tuple[str, ...] = ()
         title_ar = tokens(listing.title_ar or "")
         title_en = tokens(listing.title)
         exact_phrase = contains_phrase(title_en, phrase) or contains_phrase(title_ar, phrase)
+    if not exact_phrase and len(terms) > 1:
+        exact_phrase = synonym_phrase(terms, tokens(listing.title)) or synonym_phrase(
+            terms, tokens(listing.title_ar or "")
+        )
     return Match(total / (F_TITLE * len(terms)), exact_phrase)
+
+
+WEAK_RELEVANCE, STRONG_RELEVANCE = 0.4, 0.6
+
+
+def prune_weak(items: list[tuple[Listing, Match]]) -> list[tuple[Listing, Match]]:
+    """Drop supplier/city/description-only single-term hits (relevance < 0.4) when real title/category hits exist.
+
+    "camera" must not return a charger just because its supplier is called "... Camera Co".
+    With no strong hit at all the weak ones are kept (better than an empty page).
+    """
+    if not any(m.relevance >= STRONG_RELEVANCE for _, m in items):
+        return items
+    return [it for it in items if it[1].relevance >= WEAK_RELEVANCE]
 
 
 def relevance(terms: list[QueryTerm], listing: Listing) -> float | None:

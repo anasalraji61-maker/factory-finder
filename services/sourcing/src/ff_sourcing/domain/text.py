@@ -84,6 +84,8 @@ def stem(token: str) -> str:
                 break
         else:
             break
+    if not token.isascii() and len(token) >= 5 and token.endswith("ات"):
+        token = token[:-2] + "ه"  # sound feminine plural == singular after ة->ه (سيارات / سيارة)
     if token.isascii() and len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
         if token.endswith("ies") and len(token) > 4:
             return token[:-3] + "y"
@@ -137,21 +139,31 @@ _SYNONYM_GROUPS: list[list[str]] = [
     ["bottle", "bottling", "قنينه", "قناني", "قنينات", "عبوه", "عبوات", "تعبئه", "瓶", "瓶子"],
     ["water", "ماء", "مياه", "ميه", "ماي", "水"],
     ["juice", "عصير", "عصائر"],
-    ["injection molding", "injection moulding", "حقن بلاستيك", "ماكنه حقن", "注塑机", "注塑"],
+    ["injection molding", "injection moulding", "حقن بلاستيك", "注塑机", "注塑"],
+    ["blow", "blowing", "blow molding", "blow moulding", "نفخ", "吹塑"],
     ["extrusion", "extruder", "بثق", "اكسترودر"],
     ["laser cutting", "laser cutter", "قص ليزر", "ليزر", "激光切割", "激光"],
-    ["concrete block", "block making", "بلوك", "طابوق", "بلوك خرساني"],
+    ["concrete block", "block making", "بلوك", "بلوك خرساني"],
     ["flour mill", "mill", "مطحنه", "طحين", "طحن"],
     ["oil press", "edible oil", "عصر زيت", "معصره", "زيوت"],
     ["tissue paper", "toilet paper", "ورق التواليت", "ورق تواليت", "محارم", "ورق صحي"],
-    ["carton", "corrugated", "cardboard", "كرتون", "كارتون", "مموج"],
+    ["corrugated", "مموج"],
+    ["carton", "cardboard", "box", "كرتون", "كارتون", "كراتين", "علب كرتون"],
     ["used", "second hand", "secondhand", "مستعمل", "مستعمله", "مستخدم", "مستخدمه", "二手"],
     ["granule", "granules", "resin", "chips", "حبيبات", "حبيبه", "بيليت", "راتنج"],
     ["polypropylene", "pp", "بولي بروبيلين", "بولي بروبلين", "بولبروبلين"],
     ["polyethylene", "pe", "hdpe", "ldpe", "بولي ايثيلين", "بولي اثيلين", "بولي ايثلين"],
-    ["pet", "بولي ايثيلين تيريفثالات"],
+    ["pet", "بولي ايثيلين تيريفثالات", "بيت", "بي اي تي", "بت"],
+    ["stainless", "stainless steel", "ستانلس", "ستانلس ستيل", "استانلس", "ستنلس", "ستينلس", "ستيل ستانلس", "فولاذ مقاوم للصدا", "مقاوم للصدا", "不锈钢"],
+    ["coil", "كويل", "لفه", "لفات", "卷"],
+    ["roll", "jumbo roll", "رول", "رولات", "رولة", "جامبو"],
+    ["sheet", "plate", "صفيحه", "صفائح", "شيت", "شيتات", "ورقه معدنيه"],
+    ["denim", "jeans", "دنيم", "جينز", "جنز"],
+    ["tempering", "tempered", "تقسيه", "مقسي", "مقسى", "مقسيه"],
+    ["women", "woman", "ladies", "female", "نسائي", "نسائيه", "نساء", "حريمي", "للنساء"],
+    ["refurbished", "renovated", "reconditioned", "مجدد", "مجدده", "معاد تاهيل"],
     ["steel", "حديد", "صلب", "فولاذ", "ستيل", "钢", "钢材"],
-    ["rebar", "reinforcing bar", "حديد تسليح", "سيخ"],
+    ["rebar", "reinforcing bar", "حديد تسليح", "حديد بناء", "حديد انشائي", "سيخ"],
     ["aluminium", "aluminum", "المنيوم", "المونيوم", "المنيم", "المينيوم", "铝"],
     ["copper", "نحاس", "铜"],
     ["yarn", "thread", "خيوط", "خيط", "غزل"],
@@ -159,7 +171,8 @@ _SYNONYM_GROUPS: list[list[str]] = [
     ["polyester", "بوليستر"],
     ["fabric", "textile", "cloth", "قماش", "اقمشه", "نسيج", "منسوجات", "布", "面料", "纺织"],
     ["paper", "ورق", "اوراق", "纸"],
-    ["wood", "plywood", "timber", "panel", "خشب", "اخشاب", "الواح خشب", "خشب رقائقي", "木", "木材", "胶合板", "خشب", "ابلكاش", "بلايوود"],
+    ["plywood", "خشب رقائقي", "ابلكاش", "ابلاكاش", "بلايوود", "胶合板"],
+    ["wood", "timber", "panel", "plywood", "خشب", "اخشاب", "الواح خشب", "خشب رقائقي", "木", "木材"],
     ["chair", "كرسي", "كراسي", "كرسيه", "كراسيه", "مقعد", "مقاعد", "椅子", "椅"],
     ["table", "طاوله", "طاولات", "طاولة", "ميز", "桌子", "桌"],
     ["furniture", "اثاث", "فرنيتشر", "家具"],
@@ -191,31 +204,45 @@ _SYNONYM_GROUPS: list[list[str]] = [
     ["drill", "مثقاب", "دريل", "دريلات"],
     ["auto part", "car part", "spare part", "قطع غيار", "قطع سيارات", "غيار سيارات"],
     ["brake", "فرامل", "فحمات", "بريك"],
-    ["pump", "مضخه", "مضخات", "مضخة", "طلمبه", "طلمبات", "بمب", "مضخه ماء", "泵", "水泵"],
+    [
+        "water pump",
+        "مضخه ماء",
+        "مضخه مياه",
+        "مضخات مياه",
+        "مضخات ماء",
+        "طلمبه ماء",
+        "طلمبه مياه",
+        "طلمبه ماي",
+        "مضخه ميه",
+        "水泵",
+    ],
+    ["pump", "مضخه", "مضخات", "مضخة", "طلمبه", "طلمبات", "بمب", "泵"],
     ["submersible", "غاطس", "غاطسه"],
     ["air conditioner", "air conditioning", "ac", "split", "مكيف", "مكيفات", "سبلت", "تكييف", "空调"],
-    ["cnc", "machining center", "سي ان سي", "مركز تشغيل", "خراطه", "مخرطه", "数控", "加工中心"],
+    ["lathe", "turning", "turning center", "turning machine", "مخرطه", "مخارط", "خراطه", "مركز خراطه", "车床"],
+    ["cnc", "machining center", "سي ان سي", "مركز تشغيل", "数控", "加工中心"],
     ["printing", "offset", "طباعه", "اوفست", "印刷"],
     ["plastic", "plastics", "بلاستيك", "بلاستك", "بلاستيكي", "塑料"],
-    ["generator", "genset", "مولد", "مولده", "مولدات", "جنريتر", "جنريتر", "发电机"],
+    ["generator", "genset", "مولد", "مولده", "مولدات", "مولد كهرباء", "مولده كهرباء", "مولد كهربائي", "جنريتر", "جنريتر", "发电机"],
     ["battery", "batteries", "بطاريه", "بطاريات", "باطريه", "بطارية", "电池"],
     ["tank", "خزان", "خزانات", "تانكي", "تنكي", "水箱"],
-    ["tile", "بلاط", "كاشي", "瓷砖"],
+    ["tile", "tiles", "بلاط", "كاشي", "تايل", "تايلز", "瓷砖"],
     ["ceramic", "سيراميك", "陶瓷"],
     ["porcelain", "بورسلان", "بورسلين"],
     ["glass", "زجاج", "زجاجي", "زجاجيه", "قزاز", "玻璃"],
     ["sewing", "خياطه", "خياط", "sewing machine", "ماكينه خياطه", "缝纫", "缝纫机"],
     ["printer", "3d printer", "طابعه", "طابعات", "打印机"],
     ["cable", "wire", "cord", "كابل", "كيبل", "سلك", "اسلاك", "电缆"],
-    ["film", "فيلم", "نايلون", "薄膜"],
+    ["film", "فيلم", "فلم", "نايلون", "薄膜"],
     ["leather", "جلد", "جلود", "جلديه", "皮革"],
     ["pipe", "tube", "انبوب", "انابيب", "ماسوره", "مواسير", "بايب", "管"],
     ["packaging", "packing", "wrapping", "تغليف", "تعبئه وتغليف", "تغليف", "包装"],
     ["label", "labeling", "labelling", "sticker", "ملصق", "ملصقات", "ستيكر", "标签"],
-    ["brick", "bricks", "طوب", "اجر", "طابوق طيني", "砖"],
+    ["brick", "bricks", "طوب", "اجر", "طابوق", "طابوق طيني", "砖"],
     ["fertilizer", "fertiliser", "سماد", "اسمده", "سمد", "肥料"],
     ["toy", "toys", "لعبه", "العاب", "دميه", "دمي", "玩具"],
-    ["camera", "cctv", "كاميرا", "كاميرات", "مراقبه", "监控", "摄像头"],
+    ["cctv", "security camera", "surveillance camera", "كاميرا مراقبه", "كاميرات مراقبه", "مراقبه", "监控"],
+    ["camera", "cctv", "security camera", "كاميرا", "كاميرات", "摄像头"],
     ["charger", "charging", "شاحن", "شواحن", "充电器"],
     ["sprayer", "رشاش", "مرشه", "مرش", "喷雾器"],
     ["cigarette", "cigarettes", "سجائر", "سجاير", "جكاير", "جكاره", "سكائر", "香烟"],
@@ -332,6 +359,7 @@ def parse_query(q: str) -> list[QueryTerm]:
     idx, groups, longest = _phrase_index()
     toks = [t for t in tokens(q) if t not in STOPWORDS]
     out: list[QueryTerm] = []
+    seen_groups: set[int] = set()  # two words of one synonym group (مكيف سبلت) are one concept
     i = 0
     while i < len(toks):
         for n in range(min(longest, len(toks) - i), 0, -1):
@@ -341,14 +369,18 @@ def parse_query(q: str) -> list[QueryTerm]:
                 span = (stem(span[0][1:]),)  # conjunction prefix: وكراسي -> كراسي
                 gi = idx.get(span)
             if gi is not None:
-                out.append(QueryTerm(" ".join(span), tuple(groups[gi])))
+                if gi not in seen_groups:
+                    seen_groups.add(gi)
+                    out.append(QueryTerm(" ".join(span), tuple(groups[gi])))
                 i += n
                 break
         else:
             tok = toks[i]
             gi = _correct(tok)
             if gi is not None:  # typo of a known term: expand its group (keep the literal too)
-                out.append(QueryTerm(tok, (*groups[gi], (tok,))))
+                if gi not in seen_groups:
+                    seen_groups.add(gi)
+                    out.append(QueryTerm(tok, (*groups[gi], (tok,))))
             else:
                 out.append(QueryTerm(tok, ((tok,),), fuzzy=tok if _fuzzable(tok) else None))
             i += 1

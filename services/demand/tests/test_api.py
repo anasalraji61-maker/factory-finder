@@ -214,3 +214,22 @@ def test_list_reads_are_capped(env):
     assert len(asyncio.run(st.list_signals(limit=2))) == 2
     assert len(asyncio.run(st.list_drafts(None, limit=1))) <= 1
     assert store_mod.MAX_LIST == 500
+
+
+def test_intent_arabic_spelling_variants():
+    """Tashkeel, hamza forms, ى/ي and Gulf/Levant buy words all count as a buy request."""
+    from ff_demand.intent import extract_intent
+
+    for text in (
+        "أُرِيدُ مَاكِينَةَ حَقْنٍ",
+        "اريد ماكينة حقن",
+        "إريد ماكينة حقن",
+        "ابغى ماكينة حقن",
+        "مَطْلُوب ماكينة حقن",
+    ):
+        got = extract_intent(text)
+        assert got is not None and got.query.endswith("حقن"), text
+    assert extract_intent("اريد ماكينة حقن من الصين").origin_country == "CN"
+    assert extract_intent("اريد ماكينة حقن من الصين").query == "ماكينة حقن"
+    assert extract_intent("أُرِيدُ مَاكِينَةَ حَقْنٍ").query == "ماكينة حقن"
+    assert extract_intent("بيع ماكينة حقن") is None

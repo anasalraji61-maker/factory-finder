@@ -7,6 +7,8 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
+from sqlalchemy.exc import IntegrityError
+
 from ff_tracking.adapters.base import ProviderUnavailable, TrackingProvider
 from ff_tracking.domain.carriers import find_carrier
 from ff_tracking.domain.enums import ReferenceType
@@ -45,7 +47,8 @@ def detect_carrier(reference_type: ReferenceType, prefix: str | None, typed: str
 
 class ShipmentService:
     def __init__(self, repo: ShipmentRepository, provider: TrackingProvider, clock: Callable[[], datetime],
-                 min_interval_seconds: int) -> None:
+                 min_interval_seconds: int, max_per_user: int = 200) -> None:
+        self.max_per_user = max_per_user
         self.repo, self.provider, self.clock = repo, provider, clock
         self.min_interval = timedelta(seconds=min_interval_seconds)
 
@@ -57,12 +60,18 @@ class ShipmentService:
                 "reference": reference, "reason": v.reason})
         if await self.repo.find_by_reference(owner_id, reference_type.value, v.normalized):
             raise Conflict("This reference is already tracked", code="duplicate_shipment")
+        if await self.repo.count_for_owner(owner_id) >= self.max_per_user:
+            raise Conflict("Too many tracked shipments; delete one first", code="shipment_limit_reached",
+                           details={"max": self.max_per_user})
         now = self.clock()
         sh = Shipment(id=f"shp_{uuid.uuid4().hex}", owner_id=owner_id, reference=v.normalized,
                       reference_type=reference_type, carrier=detect_carrier(reference_type, v.prefix, carrier),
                       label=label, created_at=now, updated_at=now)
         await self._fetch(sh, now, anchor=now)
-        await self.repo.save(sh)
+        try:
+            await self.repo.save(sh)
+        except IntegrityError as exc:  # concurrent create of the same reference (unique owner/type/reference)
+            raise Conflict("This reference is already tracked", code="duplicate_shipment") from exc
         return sh
 
     async def refresh_system(self, sh: Shipment) -> int:

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from datetime import datetime
@@ -33,6 +34,16 @@ from ff_tracking.domain.normalize import location_of, normalize_events, parse_ts
 
 GLOBAL_KILL_SWITCH_ENV = "FF_TRACKING_KILL_SWITCH"
 MIN_INTERVAL_FLOOR_S = 3.0
+MAX_CACHE_ENTRIES = 1000
+_FORMAT = {  # defence in depth: never put an unvalidated string into a provider URL
+    "container": re.compile(r"[A-Z]{3}[UJZ][0-9]{7}"), "bl": re.compile(r"[A-Z]{4}[A-Z0-9]{4,16}"),
+    "awb": re.compile(r"[0-9]{3}-[0-9]{8}"), "imo": re.compile(r"[0-9]{7}"),
+}
+
+
+def _check(kind: str, value: str, pid: str) -> None:
+    if not _FORMAT[kind].fullmatch(value or ""):
+        raise ProviderUnavailable(f"{pid}: malformed reference", reason="unsupported")
 USER_AGENT = "FactoryFinderBot/0.1 (+https://github.com/factory-finder; tracking)"
 _TRUTHY = {"1", "true", "yes", "on"}
 
@@ -109,6 +120,10 @@ class _HttpBase:
             except ProviderUnavailable:
                 self._cooldown_until = self._clock() + self.cooldown_s
                 raise
+            if len(self._cache) >= MAX_CACHE_ENTRIES:  # bounded: drop expired, then the oldest
+                self._cache = {k: v for k, v in self._cache.items() if v[0] > now}
+                while len(self._cache) >= MAX_CACHE_ENTRIES:
+                    self._cache.pop(next(iter(self._cache)))
             self._cache[key] = (self._clock() + self.cache_ttl_s, data)
             return data
 
@@ -170,6 +185,7 @@ class HttpContainerProvider(_HttpBase):
                     *, anchor: datetime, now: datetime) -> TrackingSnapshot:
         if reference_type not in (ReferenceType.CONTAINER, ReferenceType.BL):
             raise ProviderUnavailable(f"{self.id}: unsupported reference type", reason="unsupported")
+        _check("container" if reference_type is ReferenceType.CONTAINER else "bl", reference, self.id)
         scac = self.detect_scac(reference, reference_type, carrier)
         if reference_type is ReferenceType.BL and not scac:
             raise ProviderUnavailable(f"{self.id}: B/L needs a carrier", reason="unsupported")
@@ -219,6 +235,7 @@ class HttpAwbProvider(_HttpBase):
                     *, anchor: datetime, now: datetime) -> TrackingSnapshot:
         if reference_type is not ReferenceType.AWB:
             raise ProviderUnavailable(f"{self.id}: unsupported reference type", reason="unsupported")
+        _check("awb", reference, self.id)
         payload = await self._get_json("/v1/awb/" + quote(reference, safe="-"))
         return self.parse(payload, now=now, carrier=carrier, reference=reference)
 
@@ -258,6 +275,7 @@ class HttpVesselPositionProvider(_HttpBase):
     kill_switch_env = "FF_TRACKING_VESSEL_DISABLED"
 
     async def vessel_eta(self, imo: str, *, now: datetime) -> VesselEta | None:
+        _check("imo", imo, self.id)
         payload = await self._get_json(f"/v1/vessels/{quote(imo, safe='')}/position")
         return self.parse(payload, imo=imo, now=now)
 

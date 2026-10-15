@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from ff_tracking.domain.carriers import find_carrier
@@ -78,7 +78,7 @@ async def delete_shipment(shipment_id: str, user: User, svc: Svc) -> Response:
 
 
 @router.get("/validate/{reference_type}/{reference}")
-async def validate(reference_type: ReferenceType, reference: str) -> dict[str, Any]:
+async def validate(reference_type: ReferenceType, reference: Annotated[str, Path(min_length=1, max_length=64)]) -> dict[str, Any]:
     v = validate_reference(reference_type, reference)
     carrier = detect_carrier(reference_type, v.prefix, None) if v.valid else None
     return {

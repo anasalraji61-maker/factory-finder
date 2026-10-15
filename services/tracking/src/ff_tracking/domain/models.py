@@ -155,6 +155,8 @@ class Shipment(BaseModel):
             self.updated_at = now
             return
         events = sorted(snapshot.events, key=lambda e: e.timestamp)
+        if events and self.status == ShipmentStatus.DELIVERED and events[-1].status != ShipmentStatus.DELIVERED:
+            events = []  # a stale/partial provider answer must not reopen a delivered shipment
         if events:
             self.events = events
             self.status = events[-1].status

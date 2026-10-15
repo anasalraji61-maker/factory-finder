@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
@@ -39,7 +40,7 @@ class RequestDetailScreen extends ConsumerWidget {
       body: reqAsync.when(
         loading: () => const LoadingList(itemCount: 3),
         error: (e, _) => ErrorState(
-          message: describeError(e),
+          message: localizedError(context, e),
           onRetry: () => ref.invalidate(rfqDetailProvider(requestId)),
         ),
         data: (r) {
@@ -56,7 +57,7 @@ class RequestDetailScreen extends ConsumerWidget {
                   child: Center(child: CircularProgressIndicator()),
                 ),
                 error: (e, _) => ErrorState(
-                  message: describeError(e),
+                  message: localizedError(context, e),
                   onRetry: () => ref.invalidate(rfqOffersProvider(requestId)),
                 ),
                 data: (offers) {
@@ -149,7 +150,7 @@ class RequestDetailScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(describeError(e))));
+            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
       }
     }
   }

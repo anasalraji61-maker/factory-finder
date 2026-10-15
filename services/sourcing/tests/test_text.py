@@ -1,4 +1,4 @@
-from ff_sourcing.domain.text import english_keywords, normalize, parse_query, stem
+from ff_sourcing.domain.text import english_keywords, normalize, parse_query, stem, tokens
 
 
 def test_normalize_arabic():
@@ -68,3 +68,19 @@ def test_typo_query_term_is_corrected_to_group():
     term = parse_query("injecton")[0]
     assert term.fuzzy == "injecton"  # unknown word: doc-side fuzzy
     assert ("machine",) in parse_query("machin")[0].alternatives  # corrected to known group
+
+
+def test_arabic_sound_plural_matches_singular():
+    assert tokens("سيارات") == tokens("سيارة") and tokens("حبيبات") == tokens("حبيبة")
+    assert stem("ات") == "ات" and stem("ثبات") == "ثبات"  # short words untouched
+
+
+def test_same_group_words_are_one_term():
+    assert len(parse_query("مكيف سبلت")) == 1 and len(parse_query("كاميرا مراقبة")) == 1
+
+
+def test_split_groups_do_not_overmatch():
+    assert ("lathe",) in parse_query("مخرطة")[0].alternatives
+    assert ("cnc",) not in parse_query("مخرطة")[0].alternatives
+    assert ("plywood",) in parse_query("ابلكاش")[0].alternatives
+    assert ("brick",) in parse_query("طابوق")[0].alternatives and ("concrete", "block") not in parse_query("طابوق")[0].alternatives
