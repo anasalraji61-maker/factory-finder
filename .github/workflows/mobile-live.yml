@@ -23,7 +23,7 @@ jobs:
       FF_LIVE_BASE_URL: http://localhost:8000
       FF_LIVE_INFO: ${{ github.workspace }}/ff_stack.json
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-python@v5
