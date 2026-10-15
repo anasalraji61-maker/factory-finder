@@ -81,6 +81,10 @@ void main() {
   group('invite flow', () {
     testWidgets('supplier page opens create form with the supplier invited',
         (tester) async {
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await pumpApp(tester, location: '/supplier/sup_cn_001');
       await settle(tester, frames: 8);
       final cta = find.byKey(const ValueKey<String>('supplier-request-quote'));
@@ -93,6 +97,10 @@ void main() {
     });
 
     testWidgets('chip is removable and invites are sent on submit', (tester) async {
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final backend = MockRfqBackend();
       final repo = RfqRepository(
         ApiClient(baseUrl: 'http://fake', isMock: true),
@@ -116,6 +124,10 @@ void main() {
 
     testWidgets('removing the chip hides the list and sends no invites',
         (tester) async {
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await pumpApp(tester, location: '/requests/new?supplier=sup_cn_001');
       final chip = find.byKey(const ValueKey<String>('req-invite-sup_cn_001'));
       expect(chip, findsOneWidget);
@@ -128,6 +140,10 @@ void main() {
     });
 
     testWidgets('invalid supplier query is ignored', (tester) async {
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await pumpApp(tester, location: '/requests/new?supplier=bad%20id');
       expect(find.byKey(const ValueKey<String>('req-invite-count')), findsNothing);
       await disposeApp(tester);
@@ -135,6 +151,10 @@ void main() {
 
     testWidgets('detail shows the Invite-only pill for invite-only requests',
         (tester) async {
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final backend = MockRfqBackend();
       final created = backend.create(_draft(const ['sup_cn_001']));
       final repo = RfqRepository(

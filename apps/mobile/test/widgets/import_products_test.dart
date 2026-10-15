@@ -1,6 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
-import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/my_products/import/import_models.dart';
 import 'package:factory_finder/features/my_products/my_products_repository.dart';
 import 'package:flutter/material.dart';
