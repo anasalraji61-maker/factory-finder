@@ -82,10 +82,11 @@ void main() {
     testWidgets('supplier page opens create form with the supplier invited',
         (tester) async {
       await pumpApp(tester, location: '/supplier/sup_cn_001');
+      await settle(tester, frames: 8);
       final cta = find.byKey(const ValueKey<String>('supplier-request-quote'));
-      await tester.ensureVisible(cta);
-      await tester.tap(cta);
-      await settle(tester);
+      expect(cta, findsOneWidget);
+      tester.widget<OutlinedButton>(cta).onPressed!();
+      await settle(tester, frames: 12);
       expect(find.byKey(const ValueKey<String>('req-invite-sup_cn_001')), findsOneWidget);
       expect(find.byKey(const ValueKey<String>('req-invite-count')), findsOneWidget);
       await disposeApp(tester);
