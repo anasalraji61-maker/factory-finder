@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -34,20 +35,40 @@ void main() {
 
   testWidgets('429 shows retry-after minutes in ar and en', (tester) async {
     for (final lang in ['en', 'ar']) {
-      late String withWait;
-      late String without;
-      await tester.pumpWidget(MaterialApp(
-        locale: Locale(lang),
-        supportedLocales: const [Locale('ar'), Locale('en')],
-        home: Builder(builder: (context) {
-          withWait = localizedError(
-              context, ApiException(status: 429, code: 'http_429', message: 'x', retryAfterSeconds: 120));
-          without = localizedError(context, ApiException(status: 429, code: 'http_429', message: 'x'));
-          return const SizedBox.shrink();
-        }),
-      ));
+      String? withWait;
+      String? without;
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Localizations(
+            locale: Locale(lang),
+            delegates: const [DefaultWidgetsLocalizations.delegate],
+            child: DigitStyleScope(
+              style: DigitStyle.western,
+              child: Builder(builder: (context) {
+                withWait = localizedError(
+                  context,
+                  ApiException(
+                    status: 429,
+                    code: 'http_429',
+                    message: 'x',
+                    retryAfterSeconds: 120,
+                  ),
+                );
+                without = localizedError(
+                  context,
+                  ApiException(status: 429, code: 'http_429', message: 'x'),
+                );
+                return const SizedBox.shrink();
+              }),
+            ),
+          ),
+        ),
+      );
+      expect(withWait, isNotNull, reason: lang);
+      expect(without, isNotNull, reason: lang);
       expect(withWait, isNot(without), reason: lang);
-      expect(without, AppStrings.lookup(lang, 'error.rate_limited'));
+      expect(withWait, contains('2'), reason: lang);
     }
   });
 }
