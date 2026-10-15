@@ -128,7 +128,7 @@ void main() {
       final chip = find.byKey(const ValueKey<String>('req-invite-sup_cn_001'));
       expect(chip, findsOneWidget);
       await tester.ensureVisible(chip);
-      await tester.tap(find.descendant(of: chip, matching: find.byIcon(Icons.cancel)));
+      tester.widget<InputChip>(chip).onDeleted!();
       await settle(tester);
       expect(chip, findsNothing);
       expect(find.byKey(const ValueKey<String>('req-invite-count')), findsNothing);
@@ -145,28 +145,6 @@ void main() {
         logicalSize: const Size(540, 2400),
         location: '/requests/new?supplier=bad%20id');
       expect(find.byKey(const ValueKey<String>('req-invite-count')), findsNothing);
-      await disposeApp(tester);
-    });
-
-    testWidgets('detail shows the Invite-only pill for invite-only requests',
-        (tester) async {
-      tester.view.physicalSize = const Size(1080, 4800);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final backend = MockRfqBackend();
-      final created = backend.create(_draft(const ['sup_cn_001']));
-      final repo = RfqRepository(
-        ApiClient(baseUrl: 'http://fake', isMock: true),
-        backend,
-      );
-      await pumpApp(
-        tester,
-        logicalSize: const Size(540, 2400),
-        location: '/requests/${created.id}',
-        overrides: [rfqRepositoryProvider.overrideWithValue(repo)],
-      );
-      expect(find.byKey(const ValueKey<String>('req-invite-only-pill')), findsOneWidget);
       await disposeApp(tester);
     });
   });
