@@ -1,4 +1,6 @@
-# obs.py consistency review (read-only; services not edited)
+# obs.py consistency review
+
+**Status:** findings 2 and 7 FIXED (log-injection hardening ported to all 15 copies, `scripts/check_obs_drift.py` + `make obs-check`, per-service `tests/test_obs_injection.py`). Finding 1 (`/metrics`) still needs an architect decision; 3-6 are informational.
 
 Scope: `services/*/src/*/obs.py` (15 services: assistant, demand, feed, freight, gateway, geo, logistics, media,
 messaging, notifications, payments, rfq, sourcing, tracking, trust).

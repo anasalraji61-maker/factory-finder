@@ -61,3 +61,12 @@ Read straight from the environment (not in `Settings`): `FF_LOGISTICS_KILL_SWITC
 
 ## Forwarder quote override (`freight_override`)
 Optional field on `POST /v1/quotes/landed-cost`: `{amount, currency, source: "forwarder_quote", quote_id, valid_until, mode_family?}` (the object returned by freight `GET /v1/freight/quotes/{id}/landed-cost-input`; no service imports the other, the client relays it). When valid and `valid_until` is in the future, the main-leg line of every option (or only the options of `mode_family`) is that exact price: `estimate=false`, no `range`, extra `quoted=true`, source `forwarder_quote <quote_id>`, original amount in the quote currency (converted through the FX adapter; exact when it equals the display currency). Expired, malformed, non-`forwarder_quote` or FX-unknown overrides are ignored (never a 422) with an assumption note "Forwarder freight quote ignored (...)". The quote is not validated against the cargo or lane.
+
+## Chokepoint avoidance (`avoid`)
+Optional `avoid` on `POST /v1/quotes/landed-cost`: any of `suez`, `hormuz`, `bab_el_mandeb`, `panama` (geo's values).
+It is passed to geo `/v1/distance?mode=sea&avoid=...` (HttpGeo; MockGeo adds a deterministic +20% per avoided point;
+CachedGeo keys include `avoid`). The lane tables are not distance based, so the extra sea km versus the unrestricted
+route is priced with the default `sea_fcl_40_per_1000km` rate (scaled for 20'/HC/LCL) and the extra days use
+`sea_km_per_day`. This is an estimate and an assumption note says so. Synthetic lanes already scale with distance.
+If geo has no sea route (422 `sea_route_unavailable`), that option is priced on the unrestricted route and an assumption note says the avoid list was NOT applied (never an error).
+Air, rail and road ignore `avoid`.

@@ -93,6 +93,8 @@ python scripts/contract_validate.py  # response bodies vs schemas; allowlist: sc
 make e2e                           # scripts/e2e.py: boots the stack locally, scenario through the gateway
 make e2e-extended                  # moderation, media, email verify, tracking relay, deals, assistant quota, freight, ...
 make e2e-scenarios                 # five focused edge scenarios
+make compose-check                 # static, offline: compose files, prod secrets vs fail-closed guards, .env.example, Makefile, workflows
+make obs-check                     # if present: offline observability checks (added separately; see Makefile)
 make compose-e2e                   # docker compose up, run e2e against http://localhost:8000, tear down
 FF_E2E_BASE_URL=https://api.example.com make smoke   # read-only post-deploy checks
 ```

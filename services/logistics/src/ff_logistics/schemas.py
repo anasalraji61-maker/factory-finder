@@ -49,6 +49,8 @@ class LandedCostRequest(BaseModel):
     # Optional forwarder quote (from freight GET /v1/freight/quotes/{id}/landed-cost-input). Deliberately
     # untyped: expired or malformed values are ignored with an assumption note, never a 422.
     freight_override: Any = None
+    # Sea chokepoints to route around (affects sea distance, transit time and main-leg cost only).
+    avoid: list[Literal["suez", "hormuz", "bab_el_mandeb", "panama"]] | None = None
 
 
 class ConvertRequest(BaseModel):

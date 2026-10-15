@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     media_body_read_timeout_seconds: float = 120.0
     # Per account (hashed email/phone) failed password attempts per minute before logins for it answer 429, on top of the per-IP limit.
     login_fail_limit_per_minute: int = 10
+    # POST /v1/auth/register attempts per client IP per hour (0 = off); limits account-enumeration via 409 account_exists.
+    register_per_hour: int = 10
     rate_limit_per_minute: int = 300
     # Public image GETs (feeds load many thumbnails) get their own, larger bucket per IP.
     media_rate_limit_per_minute: int = 3000

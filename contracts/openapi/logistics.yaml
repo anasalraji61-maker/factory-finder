@@ -418,6 +418,14 @@ components:
         modes: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}, description: "Filter; also bypasses minimum-size rules for FCL/rail"}
         display_currency: {$ref: "../schemas/common.schema.json#/$defs/CurrencyCode", default: USD}
         insurance: {type: boolean, default: true}
+        avoid:
+          type: array
+          uniqueItems: true
+          items: {type: string, enum: [suez, hormuz, bab_el_mandeb, panama]}
+          description: >
+            Optional sea chokepoints to route around (values accepted by geo `avoid`). Sea distance, transit days and
+            main-leg cost are re-estimated (a distance-based adjustment, labelled an estimate in `assumptions`).
+            If no sea route exists, that option is priced on the unrestricted route with an assumption note saying avoid was not applied (never a failure).
         freight_override:
           description: >
             Optional forwarder quote (the object returned by freight GET /v1/freight/quotes/{id}/landed-cost-input).

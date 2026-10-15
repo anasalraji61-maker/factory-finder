@@ -1,7 +1,7 @@
 # Database migrations (Alembic)
 
 Applies to the services with a database: **sourcing (native listings), rfq, messaging, tracking, notifications, demand, payments, media, feed, freight, trust**
-(`gateway` is handled separately). Each service owns its own Alembic
+(`gateway` has a small Alembic setup for its claim-decision tables). Each service owns its own Alembic
 setup (`services/<svc>/alembic.ini` + `migrations/`) and its **own database**; there is no shared schema.
 
 ## URLs
@@ -47,5 +47,20 @@ score snapshots and `trust_meta`. Replaces the former loose DDL file. In `FF_ENV
 Back up the database together with that key.
 
 ## Gateway account tables
-`users` gained `deletion_scheduled_at` and `deleted_at`; new tables `deletion_jobs` (durable per-service erasure queue, unique per user and service) and `account_events` (audit). The gateway still creates/extends its tables at startup (`create_tables`, no Alembic), so the columns are added by the lightweight migration in `ff_gateway/db`. Services need no schema change: erasure only updates or deletes existing rows.
+`users` gained `deletion_scheduled_at` and `deleted_at`; new tables `deletion_jobs` (durable per-service erasure queue, unique per user and service) and `account_events` (audit). The gateway has Alembic (`services/gateway/alembic.ini`, revision `0001_claim_decisions`), but the account columns/tables above are still created/extended at startup (`create_tables` plus the lightweight migration in `ff_gateway/db`), not by an Alembic revision. Services need no schema change: erasure only updates or deletes existing rows.
 
+## Latest revision per service (verified 2026-10-15 from `services/*/migrations/versions/`)
+| Service | Latest revision |
+|---|---|
+| gateway | 0001_claim_decisions |
+| sourcing | 0006_native_search_indexes |
+| rfq | 0007_sweep_and_review_indexes |
+| messaging | 0004_client_id_index |
+| tracking | 0004_refresh_marker_and_list_indexes |
+| notifications | 0004_list_indexes |
+| demand | 0002_compliance |
+| payments | 0003_race_backstops |
+| media | 0003_owner_created_index |
+| feed | 0001_initial |
+| freight | 0002_one_pending_application |
+| trust | 0004_reports_low_trust_index |

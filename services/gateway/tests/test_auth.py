@@ -183,3 +183,18 @@ def test_refresh_stores_only_hashed_jti(client, auth):
 
     hashes = asyncio.run(rows())
     assert hashes and jti not in hashes
+
+
+def test_register_per_ip_hourly_throttle(make_client, clock):
+    c = make_client(register_per_hour=3)
+    for i in range(3):
+        assert c.post("/v1/auth/register", json={**REG, "email": f"u{i}@example.com"}).status_code == 201
+    r = c.post("/v1/auth/register", json={**REG, "email": "u0@example.com"})  # existing identifiers count too
+    assert r.status_code == 429 and r.json()["error"]["code"] == "rate_limited" and "Retry-After" in r.headers
+
+
+def test_register_throttle_off_and_409_kept(make_client):
+    c = make_client(register_per_hour=0)
+    for i in range(12):
+        c.post("/v1/auth/register", json={**REG, "email": f"v{i}@example.com"})
+    assert c.post("/v1/auth/register", json={**REG, "email": "v0@example.com"}).status_code == 409

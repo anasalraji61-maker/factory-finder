@@ -30,6 +30,12 @@ STATUS_TEXT: dict[str, tuple[str, str]] = {
     "customs_cleared": ("customs cleared", "تم التخليص الجمركي"),
     "out_for_delivery": ("out for delivery", "خرجت للتسليم"),
     "delivered": ("delivered", "تم التسليم"),
+    "gate_in": ("gated in at the terminal", "دخلت المحطة"),
+    "loaded": ("loaded on the vessel", "تم التحميل"),
+    "transshipment": ("in transshipment", "قيد إعادة الشحن"),
+    "discharged": ("discharged at port", "تم التفريغ في الميناء"),
+    "customs_hold": ("on customs hold", "محتجزة لدى الجمارك"),
+    "released": ("released by customs", "تم الإفراج الجمركي"),
     "exception": ("has an exception", "حدثت مشكلة"),
     "delayed": ("delayed", "متأخرة"),
 }

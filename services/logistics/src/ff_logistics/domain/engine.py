@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 
 from ..adapters.freight import FreightRateProvider, FreightRequest, FreightUnavailable
 from ..adapters.fx import FxService, utcnow_iso
-from ..clients.geo import GeoClient, Hub, Point
+from ..clients.geo import GeoClient, Hub, Point, SeaRouteUnavailable
 from ..errors import ApiError
 from ..schemas import ALL_MODES, LandedCostRequest, MoneyIn
 from . import cargo
@@ -228,11 +228,16 @@ class Engine:
         self.override: FreightOverride | None = None
         self._dist: dict = {}
         self.ctx: dict = {}
+        self.avoid: tuple[str, ...] = ()
+        self.avoid_notes: list[str] = []
 
-    async def dist(self, a: Point, b: Point, mode: str = "road") -> Decimal:
-        key = (a, b, mode)
+    async def dist(self, a: Point, b: Point, mode: str = "road", avoid: tuple[str, ...] = ()) -> Decimal:
+        key = (a, b, mode, avoid)
         if key not in self._dist:
-            self._dist[key] = await self.geo.distance_km(a, b, mode)
+            if avoid:
+                self._dist[key] = await self.geo.distance_km(a, b, mode, avoid=avoid)
+            else:
+                self._dist[key] = await self.geo.distance_km(a, b, mode)
         return self._dist[key]
 
     # ------------------------------------------------------------ public
@@ -269,6 +274,7 @@ class Engine:
             m3 = max(kg / D(250), D("0.01"))
             assumptions.append("Volume not given: estimated from weight at 250 kg/m3.")
 
+        self.avoid = tuple(sorted(set(req.avoid or ())))
         await self._prepare_override(req, assumptions)
         o_pt, d_pt = await asyncio.gather(self._resolve(req.origin, "origin"),
                                           self._resolve(req.destination, "destination"))
@@ -300,7 +306,17 @@ class Engine:
                     assumptions.append(f"road not offered: {km:.0f} km is too far for a realistic truck haul "
                                        "(request it explicitly to see an estimate).")
                     continue
-            d = await self._build_mode(mode)
+            try:
+                d = await self._build_mode(mode)
+            except SeaRouteUnavailable:
+                # No sea route around the requested chokepoints: price the unrestricted route and say so.
+                asked, self.avoid = self.avoid, ()
+                try:
+                    d = await self._build_mode(mode)
+                finally:
+                    self.avoid = asked
+                assumptions.append(f"{mode}: no sea route exists while avoiding {', '.join(asked)}; the avoid list "
+                                   "was NOT applied to this option (estimate for the unrestricted route).")
             if d is None:
                 assumptions.append(f"{mode} not offered: no usable hub/route found.")
             else:
@@ -320,6 +336,7 @@ class Engine:
         if dmw:
             quote_warn.append(dmw)
         self._override_summary(drafts)
+        assumptions.extend(dict.fromkeys(self.avoid_notes))
         assumptions.extend(dict.fromkeys(self.freight_notes))
         assumptions.extend(dict.fromkeys(
             freight_volatility(d.mode, oc, dc)[2] for d in drafts
@@ -600,7 +617,25 @@ class Engine:
             # main leg
             main_mode = "air" if mode == "air" else "sea"
             main_km = await self.dist(oh.point, alt.hub.point, main_mode if mode != "rail" else "road")
+            extra_km = Decimal(0)
+            if self.avoid and fam == "sea":
+                base_km = main_km
+                main_km = await self.dist(oh.point, alt.hub.point, "sea", self.avoid)
+                extra_km = max(Decimal(0), main_km - base_km)
             lane = find_lane(o_reg, d_reg, main_km)
+            sea_adj = Decimal(0)  # per-40' cost of the avoidance detour (lane tables are not distance based)
+            if extra_km and not lane.get("synthetic"):
+                sea_adj = D(DATA.lanes["default"]["sea_fcl_40_per_1000km"]) * extra_km / 1000
+                lane = dict(lane, sea_days=[lane["sea_days"][0] + math.ceil(float(extra_km) / DATA.lanes["default"]["sea_km_per_day"]),
+                                            lane["sea_days"][1] + math.ceil(float(extra_km) / DATA.lanes["default"]["sea_km_per_day"])])
+                for k, f in (("fcl_20", "0.62"), ("fcl_40", "1"), ("fcl_40hc", "1.06")):
+                    lane[k] = float(D(lane[k]) + sea_adj * D(f))
+                lane["lcl_per_wm"] = float(D(lane["lcl_per_wm"]) + sea_adj * D(DATA.lanes["default"]["lcl_ratio"]))
+            if extra_km:
+                self.avoid_notes.append(
+                    f"Avoiding {', '.join(self.avoid)}: sea legs are rerouted (about +{extra_km:.0f} km on "
+                    f"{oh.name} to {alt.hub.name}); the extra cost and days are a distance-based estimate "
+                    "(default per-1000 km rate and sea speed), not a carrier quote.")
             if mode == "sea_lcl":
                 wm = cargo.lcl_revenue_tons(kg, m3)
                 ml, desc = D(lane["lcl_per_wm"]) * wm, f"LCL {wm:.2f} W/M"

@@ -190,3 +190,14 @@ def test_non_finite_delay_hours_never_crash_build():
         assert "delayed" in msg.body
         if bad != 1e308:
             assert "delay_hours" not in payload.shipment
+
+
+def test_every_tracking_status_has_arabic_text():
+    # tracking's ShipmentStatus vocabulary (contracts/openapi/tracking.yaml); no cross-module import
+    statuses = [
+        "booked", "gate_in", "loaded", "departed", "in_transit", "transshipment", "arrived",
+        "discharged", "customs_hold", "released", "out_for_delivery", "delivered", "exception",
+    ]
+    for s in statuses:
+        en, ar = tracking.status_texts(s)
+        assert ar != en and any("؀" <= ch <= "ۿ" for ch in ar), s

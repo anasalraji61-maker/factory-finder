@@ -44,6 +44,7 @@ paths:
         "201": {description: Created, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/auth/login:
     post:
       operationId: login

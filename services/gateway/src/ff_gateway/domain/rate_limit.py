@@ -151,11 +151,12 @@ def make_redis_client(redis_url: str | None) -> Any:
 
 
 def build_limit_store(
-    clock: Clock, max_keys: int, redis_url: str | None = None, redis_client: Any = None
+    clock: Clock, max_keys: int, redis_url: str | None = None, redis_client: Any = None,
+    window_seconds: int = 60, prefix: str = "ff:gw:rl:",
 ) -> LimitStore:
     """Memory by default. With ``redis_url`` (or an injected client) use Redis, falling back to memory
     (with a warning) if the library is missing or the server is unreachable."""
-    memory = RateLimiter(clock, max_keys=max_keys)
+    memory = RateLimiter(clock, window_seconds=window_seconds, max_keys=max_keys)
     if redis_client is None and not redis_url:
         return memory
     if redis_client is None:
@@ -168,4 +169,4 @@ def build_limit_store(
         except Exception as e:
             log.warning("FF_GATEWAY_REDIS_URL set but Redis is unusable (%s); using in-memory rate limits", type(e).__name__)
             return memory
-    return FallbackLimiter(RedisRateLimiter(redis_client), memory)
+    return FallbackLimiter(RedisRateLimiter(redis_client, window_seconds, prefix), memory)

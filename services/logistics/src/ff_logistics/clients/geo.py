@@ -36,12 +36,20 @@ class CityMatch:
     point: Point
 
 
+AVOID_VALUES = ("suez", "hormuz", "bab_el_mandeb", "panama")  # subset of the geo service's chokepoint ids
+
+
+class SeaRouteUnavailable(Exception):
+    """No sea route exists while avoiding the requested chokepoints (geo: 422 sea_route_unavailable)."""
+
+
 class GeoClient(Protocol):
     async def resolve_city(self, country_code: str, city: str | None) -> Point | None: ...
     async def hubs(self, country_code: str, type: str | None = None) -> list[Hub]: ...
     async def nearest_hubs(self, point: Point, type: str, limit: int = 2,
                            country_code: str | None = None) -> list[Hub]: ...
-    async def distance_km(self, a: Point, b: Point, mode: str = "road") -> Decimal: ...
+    async def distance_km(self, a: Point, b: Point, mode: str = "road",
+                          avoid: tuple[str, ...] = ()) -> Decimal: ...
 
 
 def haversine_km(a: Point, b: Point) -> float:
@@ -147,6 +155,13 @@ AMBIGUOUS = {
 }
 
 
+MOCK_DETOUR = 0.2
+
+
+def _in_gulf(p: Point) -> bool:  # Persian Gulf box: unreachable by sea when Hormuz is avoided
+    return 24 <= p.lat <= 30.5 and 48 <= p.lon <= 57
+
+
 class MockGeo:
     """Deterministic in-memory geo (haversine x factor). Default in tests."""
 
@@ -179,8 +194,13 @@ class MockGeo:
         pool = [h for h in self._hubs if h.type == type and country_code in (None, h.country_code)]
         return sorted(pool, key=lambda h: haversine_km(point, h.point))[:limit]
 
-    async def distance_km(self, a, b, mode="road"):
-        return Decimal(str(round(haversine_km(a, b) * ROAD_FACTOR.get(mode, 1.3), 1)))
+    async def distance_km(self, a, b, mode="road", avoid=()):
+        factor = ROAD_FACTOR.get(mode, 1.3)
+        if avoid and mode == "sea":
+            if "hormuz" in avoid and (_in_gulf(a) or _in_gulf(b)):
+                raise SeaRouteUnavailable("no sea route avoiding hormuz")
+            factor *= 1 + MOCK_DETOUR * len(set(avoid))  # deterministic detour: +20% per avoided chokepoint
+        return Decimal(str(round(haversine_km(a, b) * factor, 1)))
 
 
 # ---------------------------------------------------------------- http
@@ -242,9 +262,15 @@ class HttpGeo:
             hubs = [h for h in hubs if h.country_code == country_code]
         return hubs[:limit]
 
-    async def distance_km(self, a, b, mode="road"):
-        d = await self._get("/v1/distance", from_lat=a.lat, from_lon=a.lon, to_lat=b.lat,
-                            to_lon=b.lon, mode=mode)
+    async def distance_km(self, a, b, mode="road", avoid=()):
+        extra = {"avoid": ",".join(avoid)} if avoid and mode == "sea" else {}
+        try:
+            d = await self._get("/v1/distance", from_lat=a.lat, from_lon=a.lon, to_lat=b.lat,
+                                to_lon=b.lon, mode=mode, **extra)
+        except httpx.HTTPStatusError as e:
+            if extra and e.response.status_code == 422:
+                raise SeaRouteUnavailable(str(extra["avoid"])) from e
+            raise
         return Decimal(str(d.get("distance_km", d.get("km"))))
 
 
@@ -319,5 +345,8 @@ class CachedGeo:
         return list(await self._cached(("near", point, type, limit, country_code),
                                        lambda: self.inner.nearest_hubs(point, type, limit, country_code)))
 
-    async def distance_km(self, a, b, mode="road"):
-        return await self._cached(("dist", a, b, mode), lambda: self.inner.distance_km(a, b, mode))
+    async def distance_km(self, a, b, mode="road", avoid=()):
+        if not avoid:  # keep the legacy call shape for geo fakes that predate `avoid`
+            return await self._cached(("dist", a, b, mode, ()), lambda: self.inner.distance_km(a, b, mode))
+        return await self._cached(("dist", a, b, mode, tuple(avoid)),
+                                  lambda: self.inner.distance_km(a, b, mode, avoid=tuple(avoid)))

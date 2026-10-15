@@ -74,8 +74,18 @@ def reviewer_label(raw: str | None) -> str:
     return f"admin:{v}" if _REVIEWER_RE.fullmatch(v) else "admin"
 
 
+_CONFUSABLES = str.maketrans(
+    "АВЕКМНОРСТХІЈЅΑΒΕΖΗΙΚΜΝΟΡΤΥΧ" "٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹",
+    "ABEKMHOPCTXIJSABEZHIKMNOPTYX" "01234567890123456789",
+)
+
+
 def normalise_number(raw: str) -> str:
-    return "".join(ch for ch in raw.upper() if ch.isalnum())
+    """Canonical identity of a document number: NFKC (fullwidth), upper-case, Arabic-Indic digits and Cyrillic/Greek
+    look-alike capitals folded to ASCII, separators dropped. Otherwise a number re-typed with look-alikes dodges the
+    cross-supplier duplicate check."""
+    text = unicodedata.normalize("NFKC", raw).upper().translate(_CONFUSABLES)
+    return "".join(ch for ch in text if ch.isalnum())
 
 
 def mask_number(norm: str) -> str:

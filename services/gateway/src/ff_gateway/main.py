@@ -187,6 +187,9 @@ def create_app(
         clock, settings.rate_limit_max_keys, None, shared_redis
     )
     app.state.limiter = limiter
+    app.state.hour_limiter = build_limit_store(
+        clock, settings.rate_limit_max_keys, None, shared_redis, window_seconds=3600, prefix="ff:gw:rlh:"
+    )
     app.state.mailer = mailer or build_mailer(settings)
     if settings.require_email_verified and not app.state.mailer.enabled:
         log.warning("FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on but mail is off: nobody can verify")

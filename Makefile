@@ -1,5 +1,5 @@
 SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight
-.PHONY: venv test lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check $(addprefix test-,$(SERVICES))
+.PHONY: venv test lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml pillow python-multipart
 test:
@@ -8,6 +8,8 @@ $(addprefix test-,$(SERVICES)): test-%:
 	cd services/$* && ../../.venv/bin/python -m pytest -q
 lint:
 	.venv/bin/ruff check services scripts
+obs-check:  # all services' obs.py identical after normalising the package name
+	.venv/bin/python scripts/check_obs_drift.py
 contract-examples:  # every example/examples in contracts/openapi validates against its schema (offline)
 	.venv/bin/python scripts/contract_examples.py
 dev:

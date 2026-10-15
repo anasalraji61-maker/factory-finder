@@ -46,7 +46,10 @@ class _Formatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         data = getattr(record, "ff", None) or {"msg": record.getMessage()}
         if self.fmt == "text":
-            rest = " ".join(f"{k}={_CTRL.sub(' ', str(v))}" for k, v in data.items() if v is not None)  # no CR/LF injection
+            # strip CR/LF/control chars so a value cannot forge extra log lines
+            rest = " ".join(
+                f"{k}={_CTRL.sub(' ', str(v))}" for k, v in data.items() if v is not None
+            )
             return f"{datetime.now(UTC).isoformat(timespec='seconds')} {record.levelname} {rest}"
         return json.dumps(
             {"ts": datetime.now(UTC).isoformat(timespec="milliseconds"), "level": record.levelname,

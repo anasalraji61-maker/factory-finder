@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -20,6 +21,12 @@ MAX_POST_CHARS = 2000
 MAX_COMMENT_CHARS = 500
 MAX_MEDIA = 5
 MAX_TAGS = 5
+
+
+def _mixed_script(t: str) -> bool:
+    """Latin mixed with Cyrillic/Greek in one tag is a homoglyph spoof ("сnc" with a Cyrillic es)."""
+    scripts = {unicodedata.name(ch, "").split(" ")[0] for ch in t if ch.isalpha()}
+    return "LATIN" in scripts and bool(scripts & {"CYRILLIC", "GREEK"})
 
 
 def _clean(v: str) -> str:
@@ -52,8 +59,8 @@ class PostCreate(_Body):
     def _tags(cls, v: list[str]) -> list[str]:
         out: list[str] = []
         for raw in v:
-            t = raw.strip().lstrip("#").lower()
-            if not TAG_RE.match(t):
+            t = unicodedata.normalize("NFKC", raw).strip().lstrip("#").lower()
+            if not TAG_RE.match(t) or _mixed_script(t):
                 raise ValueError("tags are 1-30 letters, digits, '_' or '-'")
             if t not in out:
                 out.append(t)

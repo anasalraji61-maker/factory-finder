@@ -1,0 +1,3 @@
+# Gateway: register account enumeration
+
+2026-10-15 - Keep `POST /v1/auth/register` returning 409 `account_exists` for used email/phone; add per-IP throttle `FF_GATEWAY_REGISTER_PER_HOUR` (default 10, 0 = off; 429 `rate_limited`) and hash the password before the existence lookup so response time does not reveal existence - why: hiding the 409 (202 `verification_required` or a fake 201) would break the Tokens contract/clients; throttling bounds bulk enumeration additively. Residual risk: a single attempt still reveals existence; a future `/v2` may switch to verify-by-email flow. Window is a fixed hour per IP (behind trusted proxies only via `FF_GATEWAY_TRUSTED_PROXIES`).

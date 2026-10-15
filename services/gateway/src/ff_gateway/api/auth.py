@@ -98,7 +98,13 @@ async def send_verification(request: Request, user: User) -> None:
 
 @router.post("/register", response_model=TokensOut, status_code=201)
 async def register(body: RegisterIn, request: Request) -> TokensOut:
-    sm = request.app.state.sessionmaker
+    app = request.app
+    per_hour = app.state.settings.register_per_hour
+    if per_hour > 0 and (wait := await app.state.hour_limiter.check("register:" + request_ip_key(request), per_hour)) is not None:
+        raise RateLimited(wait, per_hour)
+    sm = app.state.sessionmaker
+    # hash first so "already registered" and "new" cost the same bcrypt time (enumeration via timing)
+    pw_hash = hash_password(body.password, app.state.settings.bcrypt_rounds)
     async with sm() as s:
         if body.email and (await s.scalar(select(User).where(User.email == body.email))):
             raise AccountExists("email")
@@ -106,7 +112,7 @@ async def register(body: RegisterIn, request: Request) -> TokensOut:
             raise AccountExists("phone")
         user = User(
             email=body.email, phone=body.phone, name=body.name.strip(),
-            password_hash=hash_password(body.password, request.app.state.settings.bcrypt_rounds),
+            password_hash=pw_hash,
         )  # fmt: skip
         s.add(user)
         try:
