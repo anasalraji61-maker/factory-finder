@@ -72,4 +72,14 @@ def test_production_guard(monkeypatch, env):
         create_app(Settings(_env_file=None, database_url="sqlite+aiosqlite://"))
     with pytest.raises(RuntimeError, match="FF_GATEWAY_ADMIN_TOKEN"):
         create_app(Settings(_env_file=None, jwt_secret="x" * 40, database_url="sqlite+aiosqlite://"))
-    create_app(Settings(_env_file=None, jwt_secret="x" * 40, admin_token="a", database_url="sqlite+aiosqlite://"))
+    with pytest.raises(RuntimeError, match="FF_INTERNAL_TOKEN"):
+        create_app(Settings(_env_file=None, jwt_secret="x" * 40, admin_token="a", database_url="sqlite+aiosqlite://"))
+    monkeypatch.setenv("FF_INTERNAL_TOKEN", "t")
+    with pytest.raises(RuntimeError, match="CORS"):
+        create_app(Settings(_env_file=None, jwt_secret="x" * 40, admin_token="a", cors_origins=["*"], database_url="sqlite+aiosqlite://"))
+    app = create_app(Settings(_env_file=None, jwt_secret="x" * 40, admin_token="a", database_url="sqlite+aiosqlite://"))
+    from fastapi.testclient import TestClient
+
+    c = TestClient(app)
+    for p in ("/docs", "/redoc", "/openapi.json"):
+        assert c.get(p).status_code == 404

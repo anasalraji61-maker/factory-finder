@@ -43,6 +43,23 @@ def _require_production_token(token: str | None) -> None:
         raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
 
 
+def _require_production_keys(settings: Settings) -> None:
+    """FF_ENV=production: hash keys must be explicit (the reporter default is public in this repo)."""
+    if os.environ.get("FF_ENV", "").strip().lower() != "production":
+        return
+    if not settings.reporter_hash_key or settings.reporter_hash_key == "ff-sourcing-reporter":
+        raise RuntimeError("FF_ENV=production requires FF_SOURCING_REPORTER_HASH_KEY (refusing to start)")
+    if not settings.analytics_hash_key:
+        raise RuntimeError("FF_ENV=production requires FF_SOURCING_ANALYTICS_HASH_KEY (refusing to start)")
+
+
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     registry: AdapterRegistry | None = None,
@@ -50,6 +67,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
+    _require_production_keys(settings)
     registry = registry or build_registry(settings)
     trust = trust or build_trust(settings)
     engine = make_engine(settings.database_url)
@@ -64,7 +82,7 @@ def create_app(
         yield
         await engine.dispose()
 
-    app = FastAPI(title="Factory Finder - sourcing", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder - sourcing", version=__version__, lifespan=lifespan)
     service = SourcingService(
         registry,
         trust,

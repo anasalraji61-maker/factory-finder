@@ -12,7 +12,15 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadTotalProvider).valueOrNull ?? 0;
-    return Scaffold(
+    // Android back: from a non-home tab root go to the home tab first; only
+    // from the home tab root does back leave the app. Pushed pages inside a
+    // branch pop first (go_router asks nested navigators before this).
+    return PopScope(
+      canPop: navigationShell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) navigationShell.goBranch(0);
+      },
+      child: Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
@@ -51,7 +59,7 @@ class AppShell extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   /// Unread count on the Messages tab icon (hidden at zero).

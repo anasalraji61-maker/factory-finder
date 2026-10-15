@@ -34,6 +34,13 @@ def _require_production_token(token: str | None) -> None:
         raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
 
 
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     sourcing: SourcingClient | None = None,
@@ -54,7 +61,7 @@ def create_app(
         yield
         await engine.dispose()
 
-    app = FastAPI(title="Factory Finder - rfq", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder - rfq", version=__version__, lifespan=lifespan)
     app.state.service = service
     app.state.reviews = ReviewService(engine, service.clock)
     app.state.deals = DealService(engine, service.clock, settings.require_both_invoices)

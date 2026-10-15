@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+import os
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -186,6 +187,19 @@ def _error(status: int, code: str, message: str, details: dict | None = None) ->
     )
 
 
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
+def _require_production_token(token: str | None) -> None:
+    """Opt-in fail-closed guard: FF_ENV=production requires FF_INTERNAL_TOKEN (see docs/OPS.md)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not token:
+        raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -194,6 +208,7 @@ def create_app(
     publisher: Publisher | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    _require_production_token(settings.internal_token_value or os.environ.get("FF_INTERNAL_TOKEN"))
     store = Store(settings.database_url)
     if sourcing is None:
         sourcing = (
@@ -215,7 +230,9 @@ def create_app(
             await sourcing.aclose()
         await store.dispose()
 
-    app = FastAPI(title="Factory Finder demand", version=VERSION, lifespan=lifespan)
+    app = FastAPI(
+        **_docs_kwargs(), title="Factory Finder demand", version=VERSION, lifespan=lifespan
+    )
     app.state.settings = settings
     app.state.service = service
 

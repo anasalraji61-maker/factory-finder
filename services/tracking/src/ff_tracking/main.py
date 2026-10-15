@@ -59,6 +59,13 @@ def _require_production_token(token: str | None) -> None:
         raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
 
 
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     provider: TrackingProvider | None = None,
@@ -89,7 +96,7 @@ def create_app(
                 t.cancel()
         await repo.engine.dispose()
 
-    app = FastAPI(title="Factory Finder - tracking", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder - tracking", version=__version__, lifespan=lifespan)
     app.state.service = ShipmentService(repo, provider, clock, settings.refresh_min_interval_seconds,
                                        settings.max_shipments_per_user)
     app.state.relay = build_relay(settings, repo, clock, notify_client)

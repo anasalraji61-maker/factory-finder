@@ -74,6 +74,13 @@ def _error(
     )
 
 
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -89,10 +96,13 @@ def create_app(
             n for n, v in (
                 ("FF_GATEWAY_JWT_SECRET", settings.jwt_secret),
                 ("FF_GATEWAY_ADMIN_TOKEN", settings.admin_token),
+                ("FF_INTERNAL_TOKEN", settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")),
             ) if not v
         ]  # fmt: skip
         if missing:
             raise RuntimeError(f"FF_ENV=production requires {', '.join(missing)} to be set (refusing to start)")
+        if "*" in settings.cors_origins:
+            raise RuntimeError("FF_ENV=production refuses FF_GATEWAY_CORS_ORIGINS containing '*' (refusing to start)")
         if len(settings.jwt_secret or "") < 32:
             raise RuntimeError("FF_ENV=production requires FF_GATEWAY_JWT_SECRET of at least 32 characters (refusing to start)")
     clock = clock or SystemClock()
@@ -128,7 +138,7 @@ def create_app(
         await http.aclose()
         await engine.dispose()
 
-    app = FastAPI(title="Factory Finder gateway", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder gateway", version=__version__, lifespan=lifespan)
     app.state.settings = settings
     app.state.clock = clock
     app.state.ws_tickets, app.state.ws_counter, app.state.ws_local_counter = build_ws_stores(

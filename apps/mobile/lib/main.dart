@@ -1,6 +1,7 @@
 import 'package:factory_finder/app.dart';
 import 'package:factory_finder/core/auth_bootstrap.dart';
 import 'package:factory_finder/core/router/app_router.dart';
+import 'package:factory_finder/core/router/auth_gate.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,10 @@ Future<void> main() async {
     secureStoreProvider.overrideWithValue(secure),
     ...settings.overrides(),
   ]);
-  final router = createAppRouter(showOnboarding: !settings.onboardingDone);
+  final router = createAppRouter(
+    showOnboarding: !settings.onboardingDone,
+    auth: AuthGate.fromContainer(container),
+  );
 
   runApp(UncontrolledProviderScope(
     container: container,

@@ -763,6 +763,13 @@ GUARD_TARGETS = ["ff_gateway.main", "ff_sourcing.main", "ff_rfq.main", "ff_messa
                  "ff_notifications.main", "ff_payments.main", "ff_media.main", "ff_freight.main"]
 
 
+# Extra production-only requirements per service (all values are throwaway test strings).
+PROD_EXTRA: dict[str, dict[str, str]] = {
+    "sourcing": {"FF_SOURCING_REPORTER_HASH_KEY": "r" * 32, "FF_SOURCING_ANALYTICS_HASH_KEY": "a" * 32},
+    "payments": {"FF_PAYMENTS_ADMIN_TOKEN": "p" * 32, "FF_PAYMENTS_PROVIDER": "off"},
+}
+
+
 def prod_guard() -> None:
     tmp = Path(tempfile.mkdtemp(prefix="ff-guard-"))
     try:
@@ -783,9 +790,11 @@ def prod_guard() -> None:
             if name == "gateway":
                 half = run({**env, "FF_GATEWAY_JWT_SECRET": "s" * 40})
                 assert half.returncode != 0 and "FF_GATEWAY_ADMIN_TOKEN" in half.stderr, "gateway accepts missing admin token"
-                good = run({**env, "FF_GATEWAY_JWT_SECRET": "s" * 40, "FF_GATEWAY_ADMIN_TOKEN": "a" * 32})
+                good = run({**env, "FF_GATEWAY_JWT_SECRET": "s" * 40, "FF_GATEWAY_ADMIN_TOKEN": "a" * 32,
+                            "FF_INTERNAL_TOKEN": "t" * 32})
             else:
-                good = run({**env, "FF_INTERNAL_TOKEN": "t" * 32, "FF_PAYMENTS_INTERNAL_TOKEN": "t" * 32, "FF_MEDIA_SIGNING_KEY": "k" * 32})
+                good = run({**env, "FF_INTERNAL_TOKEN": "t" * 32, "FF_PAYMENTS_INTERNAL_TOKEN": "t" * 32,
+                            "FF_MEDIA_SIGNING_KEY": "k" * 32, **PROD_EXTRA.get(name, {})})
             assert good.returncode == 0, f"{name}: refuses to start although secrets are set: {good.stderr[-300:]}"
             assert "t" * 32 not in r.stderr + good.stderr + r.stdout, f"{name}: secret printed"
     finally:

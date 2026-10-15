@@ -37,6 +37,25 @@ def _require_production_token(token: str | None) -> None:
         raise RuntimeError("FF_ENV=production requires FF_INTERNAL_TOKEN (refusing to start)")
 
 
+def _require_production_payments(settings: Settings) -> None:
+    """FF_ENV=production: no mock provider, and the active provider's webhook HMAC secret must be set."""
+    if os.environ.get("FF_ENV", "").strip().lower() != "production":
+        return
+    if settings.provider == "mock":
+        raise RuntimeError("FF_ENV=production refuses FF_PAYMENTS_PROVIDER=mock (refusing to start)")
+    if settings.provider != "off" and not settings.webhook_secret(settings.provider):
+        raise RuntimeError(f"FF_ENV=production requires FF_PAYMENTS_WEBHOOK_SECRET_{settings.provider.upper()} (refusing to start)")
+    if not settings.admin_token:
+        raise RuntimeError("FF_ENV=production requires FF_PAYMENTS_ADMIN_TOKEN (refusing to start)")
+
+
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     provider: PaymentProvider | None = None,
@@ -45,6 +64,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     _require_production_token(settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN"))
+    _require_production_payments(settings)
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
     if provider is None:
         provider = build_provider(settings)
@@ -61,7 +81,7 @@ def create_app(
         yield
         await engine.dispose()
 
-    app = FastAPI(title="Factory Finder - payments", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder - payments", version=__version__, lifespan=lifespan)
     app.state.service = service
 
     @app.middleware("http")

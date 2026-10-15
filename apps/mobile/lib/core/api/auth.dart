@@ -240,6 +240,12 @@ final authRepositoryProvider = Provider<AuthRepository>(
 /// sign-out); the app shows a localized "session expired" message once.
 final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 
+/// True once the launch-time session restore has finished (success, failure
+/// or no stored session). The router waits for it before bouncing a deep link
+/// to a protected screen to /login, so a signed-in user is not sent there
+/// during the restore window.
+final authResolvedProvider = StateProvider<bool>((ref) => false);
+
 /// Current user, or null when signed out.
 class AuthController extends StateNotifier<Me?> {
   AuthController(this._ref) : super(null) {
@@ -302,6 +308,20 @@ class AuthController extends StateNotifier<Me?> {
   /// Loads the stored refresh token and restores the session. Any failure
   /// clears the tokens and leaves the user signed out. Never throws.
   Future<void> restore() async {
+    try {
+      await _restore();
+    } finally {
+      if (mounted) {
+        try {
+          _ref.read(authResolvedProvider.notifier).state = true;
+        } catch (_) {
+          // Provider scope already disposed.
+        }
+      }
+    }
+  }
+
+  Future<void> _restore() async {
     try {
       final tokens = _ref.read(tokenStoreProvider);
       if (tokens.refreshToken == null) {

@@ -75,8 +75,13 @@ def test_dev_key_is_persisted_so_duplicates_survive_restart_without_env_key(tmp_
 
 def test_production_requires_hash_key(monkeypatch, tmp_path):
     monkeypatch.setenv("FF_ENV", "production")
+    monkeypatch.setenv("FF_INTERNAL_TOKEN", "t")
     with pytest.raises(RuntimeError, match="FF_TRUST_VERIFICATION_HASH_KEY"):
         create_app(Settings(database_url=url(tmp_path)))
+    monkeypatch.delenv("FF_INTERNAL_TOKEN")
+    with pytest.raises(RuntimeError, match="FF_INTERNAL_TOKEN"):
+        create_app(Settings(database_url=url(tmp_path), verification_hash_key=KEY))
+    monkeypatch.setenv("FF_INTERNAL_TOKEN", "t")
     app = create_app(Settings(database_url=url(tmp_path), verification_hash_key=KEY))
     with TestClient(app) as c:
         assert c.get("/ready").status_code == 200

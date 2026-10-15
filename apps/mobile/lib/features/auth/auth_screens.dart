@@ -2,12 +2,25 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/router/return_path.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/auth/auth_validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+/// Validated `from` query parameter of the current /login or /register page.
+String? _returnPath(BuildContext context) =>
+    sanitizeReturnPath(GoRouterState.of(context).uri.queryParameters['from']);
+
+/// Same-screen switch (login <-> register) that keeps the return path.
+String _switchTo(BuildContext context, String path) {
+  final from = _returnPath(context);
+  return from == null
+      ? path
+      : Uri(path: path, queryParameters: {'from': from}).toString();
+}
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +51,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _password.text,
           );
       if (!mounted) return;
+      // Redirected from a protected route: return there (validated).
+      final from = _returnPath(context);
+      if (from != null) {
+        context.go(from);
+        return;
+      }
       // Deep-linked /login has nothing to pop; fall back to the home tab.
       if (context.canPop()) {
         context.pop();
@@ -103,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Text(context.tr('auth.forgot_link')),
             ),
             TextButton(
-              onPressed: () => context.pushReplacement('/register'),
+              onPressed: () => context.pushReplacement(_switchTo(context, '/register')),
               child: Text(context.tr('auth.no_account')),
             ),
           ],
@@ -148,6 +167,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _password.text,
           );
       if (!mounted) return;
+      // Redirected from a protected route: return there (validated).
+      final from = _returnPath(context);
+      if (from != null) {
+        context.go(from);
+        return;
+      }
       // Deep-linked /login has nothing to pop; fall back to the home tab.
       if (context.canPop()) {
         context.pop();
@@ -214,7 +239,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: _submit,
             ),
             TextButton(
-              onPressed: () => context.pushReplacement('/login'),
+              onPressed: () => context.pushReplacement(_switchTo(context, '/login')),
               child: Text(context.tr('auth.have_account')),
             ),
           ],

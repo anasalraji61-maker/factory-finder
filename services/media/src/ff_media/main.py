@@ -39,6 +39,13 @@ def _require_production_signing_key(settings: Settings) -> None:
         raise RuntimeError("FF_ENV=production requires FF_MEDIA_SIGNING_KEY (refusing to start)")
 
 
+def _docs_kwargs() -> dict[str, None]:
+    """FF_ENV=production: no /docs, /redoc or /openapi.json (the schema lives in contracts/)."""
+    if os.environ.get("FF_ENV", "").strip().lower() == "production":
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {}
+
+
 def create_app(
     settings: Settings | None = None,
     storage: StorageBackend | None = None,
@@ -59,7 +66,7 @@ def create_app(
         yield
         await engine.dispose()
 
-    app = FastAPI(title="Factory Finder - media", version=__version__, lifespan=lifespan)
+    app = FastAPI(**_docs_kwargs(), title="Factory Finder - media", version=__version__, lifespan=lifespan)
     app.state.service = service
 
     @app.middleware("http")
