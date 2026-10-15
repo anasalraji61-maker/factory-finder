@@ -195,6 +195,15 @@ NODES: dict[str, tuple[float, float]] = {
     "Eastern Pacific": (-2.0, -110.0),
     "Yellow Sea North": (37.6, 124.5),
     "Jeju South": (32.8, 126.5),
+    # --- land-mask QA fixes (tests/test_sea_landmask.py): keep lanes off peninsulas
+    "Phillip Channel": (1.17, 103.55),
+    "Malacca Strait South": (2.5, 101.1),
+    "Cape Comorin Offshore": (7.0, 77.0),
+    "Gulf of Panama South": (6.5, -79.7),
+    "Cabo San Lucas Offshore": (22.2, -110.0),
+    "Baja West Offshore": (26.0, -115.0),
+    "Jutland Offshore": (56.0, 6.5),
+    "Ras al Hadd Offshore": (22.4, 60.6),
 }
 
 EDGES: list[tuple[str, str]] = [
@@ -207,16 +216,20 @@ EDGES: list[tuple[str, str]] = [
     ("South China Sea", "Vietnam South Coast"),
     ("Vietnam South Coast", "Singapore Strait"),
     ("South China Sea", "Singapore Strait"),
-    ("Singapore Strait", "Malacca Strait"),
+    ("Singapore Strait", "Phillip Channel"),
+    ("Phillip Channel", "Malacca Strait South"),
+    ("Malacca Strait South", "Malacca Strait"),
     ("Malacca Strait", "Andaman Sea"),
     ("Andaman Sea", "Sri Lanka South"),
-    ("Sri Lanka South", "Arabian Sea East"),
+    ("Sri Lanka South", "Cape Comorin Offshore"),
+    ("Cape Comorin Offshore", "Arabian Sea East"),
     ("Sri Lanka South", "Arabian Sea"),
     ("Arabian Sea East", "Indian Subcontinent West"),
     ("Arabian Sea East", "Arabian Sea"),
     ("Indian Subcontinent West", "Karachi Approach"),
     ("Karachi Approach", "Arabian Sea"),
-    ("Arabian Sea", "Gulf of Oman"),
+    ("Arabian Sea", "Ras al Hadd Offshore"),
+    ("Ras al Hadd Offshore", "Gulf of Oman"),
     ("Gulf of Oman", "Strait of Hormuz"),
     ("Strait of Hormuz", "Persian Gulf South"),
     ("Persian Gulf South", "Persian Gulf Central"),
@@ -328,9 +341,12 @@ EDGES: list[tuple[str, str]] = [
     ("Panama Pacific", "Guayaquil Approach"),
     ("Guayaquil Approach", "Peru North Offshore"),
     ("Peru North Offshore", "Callao Approach"),
-    ("Panama Pacific", "Central America Pacific"),
+    ("Panama Pacific", "Gulf of Panama South"),
+    ("Gulf of Panama South", "Central America Pacific"),
     ("Central America Pacific", "Mexico Pacific"),
-    ("Mexico Pacific", "US West Coast"),
+    ("Mexico Pacific", "Cabo San Lucas Offshore"),
+    ("Cabo San Lucas Offshore", "Baja West Offshore"),
+    ("Baja West Offshore", "US West Coast"),
     ("Hawaii", "Eastern Pacific"),
     ("Eastern Pacific", "Callao Approach"),
     # Australia / Indonesia
@@ -375,7 +391,8 @@ EDGES: list[tuple[str, str]] = [
     ("Otranto Strait", "Adriatic Central"),
     ("Adriatic Central", "Adriatic North"),
     # Baltic north
-    ("German Bight", "Skagerrak"),
+    ("German Bight", "Jutland Offshore"),
+    ("Jutland Offshore", "Skagerrak"),
     ("Skagerrak", "Kattegat"),
     ("Kattegat", "Oresund"),
     ("Oresund", "Baltic South"),
@@ -390,7 +407,7 @@ EDGES: list[tuple[str, str]] = [
     ("Samsun Approach", "Poti Approach"),
     # Oman
     ("Arabian Sea", "Duqm Approach"),
-    ("Duqm Approach", "Gulf of Oman"),
+    ("Duqm Approach", "Ras al Hadd Offshore"),
     # Cape Horn / Chile
     ("River Plate Approach", "Patagonia Offshore"),
     ("Patagonia Offshore", "Cape Horn"),
@@ -470,7 +487,7 @@ CHOKEPOINTS: dict[str, tuple[tuple[str, str], ...]] = {
     "suez": (("Gulf of Suez", "Port Said"),),
     "bab_el_mandeb": (("Gulf of Aden", "Bab-el-Mandeb"),),
     "hormuz": (("Strait of Hormuz", "Persian Gulf South"),),
-    "malacca": (("Singapore Strait", "Malacca Strait"),),
+    "malacca": (("Malacca Strait South", "Malacca Strait"),),
     "panama": (("Panama Atlantic", "Panama Pacific"),),
     "gibraltar": (("West Mediterranean", "Strait of Gibraltar"),),
     "bosphorus": (("Marmara", "Bosphorus"),),
@@ -523,7 +540,7 @@ def _access(lat: float, lon: float) -> tuple[tuple[float, str], ...]:
 
 @lru_cache(maxsize=4096)
 def _dijkstra(start: str, goal: str, avoid: frozenset[str] = frozenset()) -> tuple[float, tuple[str, ...]]:
-    """Shortest lane path (cached: the graph is static; at most 174^2 x |avoid sets| distinct keys, capped).
+    """Shortest lane path (cached: the graph is static; at most 182^2 x |avoid sets| distinct keys, capped).
     Predecessor map instead of copying a path list per heap push."""
     g = _graph(avoid)
     dist: dict[str, float] = {start: 0.0}
