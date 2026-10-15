@@ -122,7 +122,7 @@ class LogisticsScreen extends ConsumerWidget {
                             ?.copyWith(color: AppColors.textSecondary),
                       )
                     else
-                      const Icon(Icons.chevron_left,
+                      const Icon(Icons.chevron_right,
                           color: AppColors.textSecondary),
                   ],
                 ),

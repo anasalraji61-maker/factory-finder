@@ -323,7 +323,6 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
 
   Widget _imageTile(BuildContext context, int i) {
     final base = ref.read(apiClientProvider).baseUrl;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
     final n = _images.length;
     Widget arrow(String keyId, IconData icon, int delta, String tip) => IconButton(
           key: ValueKey('myp-image-$keyId-$i'),
@@ -375,7 +374,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              arrow('earlier', rtl ? Icons.chevron_right : Icons.chevron_left, -1,
+              arrow('earlier', Icons.chevron_left, -1,
                   context.tr('myp.media.earlier')),
               IconButton(
                 key: ValueKey('myp-image-remove-$i'),
@@ -388,7 +387,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
                   _images = <String>[..._images]..removeAt(i);
                 }),
               ),
-              arrow('later', rtl ? Icons.chevron_left : Icons.chevron_right, 1,
+              arrow('later', Icons.chevron_right, 1,
                   context.tr('myp.media.later')),
             ],
           ),
@@ -441,7 +440,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
   Widget _errorText(String? text) => text == null
       ? const SizedBox.shrink()
       : Padding(
-          padding: const EdgeInsets.only(top: 6, left: 12, right: 12),
+          padding: const EdgeInsetsDirectional.only(top: 6, start: 12, end: 12),
           child: Text(text, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
         );
 

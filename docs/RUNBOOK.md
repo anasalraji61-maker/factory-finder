@@ -1,3 +1,126 @@
+# دليل التشغيل (Runbook) — مُوَرِّد / Factory Finder
+
+> الجزء الأول (عربي) هو الدليل التشغيلي السريع. الجزء الثاني "Reference (English)" هو المرجع التفصيلي الكامل (جداول المفاتيح، مفاتيح الإيقاف، الحوادث الشائعة). أسماء المتغيرات والمسارات بالإنجليزية كما هي في الكود. المستودع عام: لا أسرار هنا، القيم من البيئة فقط.
+
+## 1. Deploy with docker compose (النشر)
+
+1. `cp .env.example .env` ثم عبّئ القيم السرية (توليد: `python -c 'import secrets;print(secrets.token_urlsafe(48))'`).
+2. الحد الأدنى للإنتاج: `FF_ENV=production`، `FF_GATEWAY_JWT_SECRET`، `FF_GATEWAY_ADMIN_TOKEN`، `FF_INTERNAL_TOKEN`، `FF_MEDIA_SIGNING_KEY`، `FF_TRUST_VERIFICATION_HASH_KEY`، `FF_MEDIA_PUBLIC_BASE_URL`، `FF_GATEWAY_CORS_ORIGINS`، `FF_GATEWAY_TRUSTED_PROXIES` (خلف بروكسي).
+3. PostgreSQL (موصى به): `FF_DOCKER_EXTRAS=pg` و`FF_POSTGRES_PASSWORD`، قاعدة لكل خدمة (`FF_<SVC>_DATABASE_URL=postgresql://ff:<pw>@postgres:5432/ff_<svc>`)، ثم `docker compose --profile pg up -d --build`، وبعدها لكل خدمة لها قاعدة: `docker compose run --rm <svc> alembic upgrade head`. إنشاء الجداول التلقائي مُعطّل مع Postgres (انظر `docs/DB.md`).
+4. وضع تجريبي بدون Postgres: `docker compose up -d --build` (SQLite داخل الحاوية، يضيع عند إعادة الإنشاء — للتطوير فقط).
+5. لوحة الإدارة (admin) تُخدَّم من البوابة على `/admin/` عند `FF_GATEWAY_SERVE_ADMIN=true`؛ لا خدمة منفصلة. تحتاج `FF_GATEWAY_ADMIN_TOKEN` (header `X-Admin-Token`). المصدر: `apps/admin`.
+6. تحقق: `docker compose ps` (كلها healthy) ثم `curl -s localhost:8000/ready`.
+
+### الخدمات والمنافذ (Ports)
+المنفذ المنشور على المضيف هو 8000 (gateway) فقط. باقي الخدمات داخل الشبكة الخاصة ولا تُنشر.
+
+| الخدمة | المنفذ الداخلي | الحالة |
+|---|---|---|
+| gateway | 8000 (منشور) | حالة المستخدمين، JWT، الإدارة، الوكيل لباقي الخدمات |
+| sourcing | 8101 | بحث الموردين والإعلانات الأصلية |
+| logistics | 8102 | الكلفة الواصلة (بدون حالة) |
+| geo | 8103 | الأماكن والمسافات (بدون حالة) |
+| trust | 8104 | درجة الثقة والتوثيق |
+| rfq | 8105 | الطلبات والعروض والصفقات |
+| messaging | 8106 | المحادثات (WebSocket عبر البوابة) |
+| tracking | 8107 | تتبع الشحنات |
+| notifications | 8108 | التنبيهات والدفع |
+| assistant | 8109 | المساعد (بدون حالة) |
+| demand | 8110 | مسودات مطابقة الطلب (إدارية فقط) |
+| payments | 8111 | الفواتير والعمولة |
+| media | 8112 | رفع الصور (volume `media-data`) |
+| feed | 8113 | منشورات الموردين |
+| freight | 8114 | سوق شركات الشحن |
+
+(15 خدمة: gateway + 14؛ بالإضافة إلى `postgres` عند ملف `pg`.)
+
+## 2. Health endpoints (الفحص الصحي)
+
+- كل خدمة: `GET /health` (حياة) و`GET /ready` (جاهزية/قاعدة البيانات). البوابة: `/ready` تُظهر `upstreams {name: bool}` وحالة `degraded` إذا سقطت خدمة خلفية؛ تعيد 503 فقط إذا سقطت قاعدة البوابة.
+- من الخارج: `curl -s https://<host>/health` و`/ready`. من الداخل: `docker compose exec <svc> python -c "import urllib.request;print(urllib.request.urlopen('http://localhost:<port>/ready').read())"`.
+- تتبّع الأخطاء عبر `request_id` (تُمرّر البوابة `X-Request-Id`)؛ السجلات JSON (`FF_LOG_FORMAT=text` للقراءة محلياً).
+
+## 3. Environment variables per service (المتغيرات حسب الخدمة)
+
+القائمة الكاملة (مع القيم الفارغة) في `.env.example`: المتغيرات الأساسية مُفعّلة، وعشرات متغيرات الضبط الدقيق (حدود، مهل، تنظيف) موجودة كتعليقات `# FF_...=` لأن القيمة الفارغة قد تُفسد حقول رقمية — فعّل السطر فقط عند الحاجة. المصدر الدقيق لكل خدمة: `services/<svc>/README.md` و`config.py`. أهم المتغيرات:
+
+| الخدمة | متغيرات إلزامية/رئيسية |
+|---|---|
+| كل الخدمات | `FF_ENV`، `FF_LOG_FORMAT`، `FF_INTERNAL_TOKEN` (أو `FF_<SVC>_INTERNAL_TOKEN`) |
+| gateway | `FF_GATEWAY_JWT_SECRET`، `FF_GATEWAY_ADMIN_TOKEN`، `FF_GATEWAY_DATABASE_URL`، `FF_GATEWAY_UPSTREAMS`، `FF_GATEWAY_CORS_ORIGINS`، `FF_GATEWAY_TRUSTED_PROXIES`، `FF_GATEWAY_REDIS_URL`، `FF_GATEWAY_SERVE_ADMIN`، `FF_GATEWAY_MAIL_*`/`FF_GATEWAY_SMTP_*`، `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED`، وتوكنات الإدارة التمريرية (`FF_PAYMENTS_ADMIN_TOKEN`، `FF_SOURCING_ADMIN_TOKEN`، `FF_TRUST_ADMIN_TOKEN`، `FF_FEED_ADMIN_TOKEN`، `FF_FREIGHT_ADMIN_TOKEN`، `FF_MEDIA_ADMIN_TOKEN`) |
+| sourcing | `FF_SOURCING_DATABASE_URL`، `FF_SOURCING_ADAPTERS`، `FF_SOURCING_ENABLED_SOURCES`، `FF_SOURCING_KILL_SWITCH`، `FF_SOURCING_ADMIN_TOKEN`، `FF_SOURCING_TRUST_MODE`/`_BASE_URL`، مفاتيح المزودين `FF_SOURCING_ALIBABA_*`، `FF_SOURCING_ALIEXPRESS_*`، `FF_SOURCING_S1688_*`، `FF_SOURCING_MIC_*`، `FF_SOURCING_ANALYTICS_HASH_KEY`، `FF_SOURCING_REPORTER_HASH_KEY` |
+| logistics | `FF_LOGISTICS_FX_PROVIDER`، `FF_LOGISTICS_FREIGHT_PROVIDER`/`_URL`/`_API_KEY`، `FF_LOGISTICS_GEO_URL`، `FF_LOGISTICS_KILL_SWITCH` |
+| geo | `FF_GEO_INTERNAL_TOKEN`، `FF_GEO_DEFAULT_ROAD_FACTOR` |
+| trust | `FF_TRUST_VERIFICATION_HASH_KEY` (إلزامي بالإنتاج)، `FF_TRUST_DATABASE_URL`، `FF_TRUST_ADMIN_TOKEN`، `FF_TRUST_ADAPTER`، `FF_TRUST_REVIEWS_*`، `FF_TRUST_VERIFICATION_MEDIA_HOSTS` |
+| rfq | `FF_RFQ_DATABASE_URL`، `FF_RFQ_SOURCING_URL`، `FF_RFQ_COMMISSION_*`، `FF_RFQ_MIN_COMMISSION_USD` |
+| messaging | `FF_MESSAGING_DATABASE_URL`، `FF_MESSAGING_REDIS_URL`، `FF_MESSAGING_ABUSE_*`، `FF_MESSAGING_MEDIA_ALLOWED_HOSTS` |
+| tracking | `FF_TRACKING_DATABASE_URL`، `FF_TRACKING_PROVIDER`، `FF_TRACKING_*_BASE_URL`/`_API_KEY`، `FF_TRACKING_KILL_SWITCH`، `FF_TRACKING_NOTIFY_*`، `FF_TRACKING_REFRESH_JOB_*` |
+| notifications | `FF_NOTIFICATIONS_DATABASE_URL`، `FF_NOTIFY_PUSH`/`_FCM_*`، `FF_NOTIFY_EMAIL`/`_SMTP_*`، `FF_NOTIFICATIONS_SCHEDULER_ENABLED`، `FF_NOTIFICATIONS_SOURCING_BASE_URL` |
+| assistant | `FF_ASSISTANT_LLM`/`_API_KEY`/`_MODEL`/`_BASE_URL`، `FF_ASSISTANT_*_URL`، `FF_ASSISTANT_QUOTA_PER_DAY`، `FF_ASSISTANT_REDIS_URL` |
+| demand | `FF_DEMAND_ENABLED` (افتراضي false)، `FF_DEMAND_DAILY_CAP`، `FF_DEMAND_DATABASE_URL`، `FF_DEMAND_PUBLISHER_ENABLED`، `FF_DEMAND_BLOCKED_*` |
+| payments | `FF_PAYMENTS_PROVIDER`، `FF_PAYMENTS_DATABASE_URL`، `FF_PAYMENTS_ADMIN_TOKEN`، `FF_PAYMENTS_WEBHOOK_SECRET_*`، `FF_PAYMENTS_USDT_*`، `FF_PAYMENTS_RFQ_URL`، `FF_PAYMENTS_COMMISSION_*` |
+| media | `FF_MEDIA_SIGNING_KEY` (إلزامي بالإنتاج)، `FF_MEDIA_PUBLIC_BASE_URL`، `FF_MEDIA_ADMIN_TOKEN`، `FF_MEDIA_STORAGE_BACKEND`/`_ROOT`، `FF_MEDIA_S3_*`، `FF_MEDIA_DATABASE_URL` |
+| feed | `FF_FEED_DATABASE_URL`، `FF_FEED_ADMIN_TOKEN`، `FF_FEED_MEDIA_BASE_URL`، `FF_FEED_ANTISPAM_*` |
+| freight | `FF_FREIGHT_DATABASE_URL`، `FF_FREIGHT_ADMIN_TOKEN`، `FF_FREIGHT_RATE_*`، `FF_FREIGHT_WEIGHT_*` |
+
+## 4. Production guards (حراس الإنتاج — fail-closed)
+
+مع `FF_ENV=production` ترفض الخدمة الإقلاع (`RuntimeError: FF_ENV=production requires ...`) إذا نقص سرّ لازم، بدل العمل بإعداد غير آمن:
+- rfq، payments، notifications، sourcing، tracking، messaging، media، feed، freight: تحتاج `FF_INTERNAL_TOKEN`؛ media تحتاج أيضاً `FF_MEDIA_SIGNING_KEY`.
+- trust: `FF_TRUST_VERIFICATION_HASH_KEY`.
+- gateway: `FF_GATEWAY_JWT_SECRET` و`FF_GATEWAY_ADMIN_TOKEN`.
+- demand وassistant وgeo وlogistics: بلا حارس (لكن demand يبقى مغلقاً افتراضياً).
+عند فشل الإقلاع: اقرأ `docker compose logs <svc>`، عبّئ المتغير، ثم `docker compose up -d <svc>`.
+
+## 5. Key rotation (تدوير المفاتيح)
+
+التفاصيل الكاملة في الجدول بالقسم "Token and secret rotation" أدناه. الخلاصة:
+- `FF_GATEWAY_JWT_SECRET`: التدوير يُبطل كل التوكنات (يعيد الجميع لتسجيل الدخول). للتدوير الناعم ضع المفتاح القديم في `FF_GATEWAY_JWT_SECRET_PREVIOUS` (للتحقق فقط) ثم احذفه بعد انتهاء مدة `FF_GATEWAY_REFRESH_TTL_SECONDS`.
+- `FF_INTERNAL_TOKEN`: نفس القيمة على البوابة وكل الخدمات، وغيّرها بأمر `docker compose up -d` واحد.
+- توكنات الإدارة: نفس القيمة على البوابة والخدمة المالكة؛ غير المضبوط = 404.
+- `FF_TRUST_VERIFICATION_HASH_KEY`: لا تُدوَّر عادةً (الخدمة ترفض الإقلاع إذا اختلف عن مفتاح البصمات المخزنة).
+- مفاتيح المزودين: أبطلها لدى المزود أولاً ثم حدّث البيئة وأعد تشغيل الخدمة الواحدة.
+- أي سرّ نُشر علناً يُعتبر مسرَّباً: دوّره (حذفه من تاريخ git لا يكفي).
+
+## 6. Postgres backups (النسخ الاحتياطي)
+
+قاعدة لكل خدمة (gateway، sourcing، rfq، messaging، tracking، notifications، demand، payments، media، feed، freight، trust؛ logistics وgeo وassistant بلا حالة).
+```
+docker compose exec postgres pg_dump -U ff -Fc ff_rfq > backup/ff_rfq-$(date +%F).dump   # كرّر لكل قاعدة، يومياً على الأقل
+docker run --rm -v <project>_media-data:/d -v $PWD/backup:/b alpine tar czf /b/media-$(date +%F).tgz -C /d .
+```
+- خزّن النسخ خارج المضيف، واحتفظ بنسخة من `FF_TRUST_VERIFICATION_HASH_KEY` و`FF_MEDIA_SIGNING_KEY` في مدير أسرار (ليس في git).
+- الاستعادة خطوة بخطوة في القسم "Database restore" أدناه. جرّب استعادة تجريبية على جهاز آخر قبل الإطلاق.
+- لا تعدّل revisions الـ Alembic المطبّقة (`docs/DB.md`).
+
+## 7. Monitoring suggestions (المراقبة)
+
+- مراقبة خارجية (uptime) على `GET /health` و`/ready` للبوابة كل دقيقة؛ تنبيه عند `degraded` أكثر من 5 دقائق أو 503.
+- تنبيهات على السجلات JSON: نسبة `status>=500`، تكرار 401 على `/v1/admin`، 429 المتكررة، و`invalid_internal_token`.
+- صفوف `dead` في payments outbox (تبويب Payments outbox أو `GET /v1/admin/payments/outbox?status=dead`) وفي tracking outbox.
+- مساحة القرص لـ `pgdata` و`media-data`، وعمر آخر نسخة احتياطية.
+- `docker compose ps` لإعادة التشغيل المتكرر (restart loop).
+
+## 8. Incident steps (خطوات الحوادث)
+
+### 8.1 Demand kill switch (إيقاف مطابقة الطلب)
+`FF_DEMAND_ENABLED=false` (الافتراضي) ثم `docker compose up -d demand`: يعيد `approve` و`mark-published` بـ 403؛ والسقف اليومي `FF_DEMAND_DAILY_CAP` (20). أوقف أيضاً `FF_DEMAND_PUBLISHER_ENABLED`. لا تعمل بلا مراجع بشري (قاعدة 7 في CLAUDE.md). مفاتيح إيقاف أخرى (sourcing/logistics/tracking/notifications/payments/assistant) في جدول Kill switches أدناه.
+
+### 8.2 Token revocation (إبطال التوكنات)
+- مستخدم واحد: `POST /v1/auth/logout-all` (بتوكنه) يُلغي كل refresh tokens ويرفع `token_version` فتتوقف كل access tokens الصادرة (حتى الحالي). `POST /v1/auth/logout` يلغي عائلة refresh واحدة؛ إعادة استخدام refresh مستعمل تُلغي العائلة كلها. إعادة تعيين كلمة المرور ترفع `token_version` أيضاً.
+- حساب مخترق بدون تعاون صاحبه: عطّل المستخدم (`is_active=false` في قاعدة البوابة، يسري خلال ~5 ثوانٍ).
+- الجميع: دوّر `FF_GATEWAY_JWT_SECRET` (يُسجَّل خروج كل المستخدمين).
+
+### 8.3 Admin-token routes (مسارات الإدارة)
+كلها خلف `X-Admin-Token` = `FF_GATEWAY_ADMIN_TOKEN` على البوابة، وتعيد 404 إن لم يُضبط التوكن (على البوابة أو الخدمة): `/v1/admin/payments/outbox*`، `/v1/admin/moderation/*` (sourcing)، `/v1/admin/trust/verification/*`، `/v1/admin/freight/*`، `/v1/admin/feed/*`، `/v1/admin/media/files/{id}`، ومسارات demand والمستخدمين. تسرّب التوكن: دوّر `FF_GATEWAY_ADMIN_TOKEN` فوراً (والتوكن الفرعي المعني)، راجع السجلات لـ 401/200 على `/v1/admin`، وراجع موافقات الموردين ومسودات demand. للإيقاف الكامل: أزل `FF_GATEWAY_ADMIN_TOKEN` و`FF_GATEWAY_SERVE_ADMIN=false`.
+
+### 8.4 خدمة متوقفة
+انظر "A service is down" أدناه (ترتيب الفحص، أثر سقوط كل خدمة، إعادة الطابور).
+
+---
+
+# Reference (English)
+
 # Runbook (incidents)
 
 Audience: whoever operates the stack (docker compose). Env names below were verified against the service `config.py` files and adapters. Companion docs: `docs/DEPLOY.md`, `docs/OPS.md`, `docs/DB.md`, `docs/API_OVERVIEW.md`.

@@ -296,7 +296,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
             ),
             if (_deadlineError != null)
               Padding(
-                padding: const EdgeInsets.only(top: 6, left: 12, right: 12),
+                padding: const EdgeInsetsDirectional.only(top: 6, start: 12, end: 12),
                 child: Text(
                   _deadlineError!,
                   style: const TextStyle(color: AppColors.danger, fontSize: 12),
