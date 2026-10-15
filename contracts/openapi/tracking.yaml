@@ -149,6 +149,27 @@ paths:
                   reason: {type: [string, "null"], description: "format... | check_digit"}
                   mode: {type: string, enum: [sea, air]}
                   carrier: {oneOf: [{$ref: "#/components/schemas/Carrier"}, {type: "null"}]}
+                  suggestions:
+                    type: array
+                    items: {type: string}
+                    description: "Valid alternatives when the input looks like a typo (O/0, I/1 ...); max 3, empty when none"
+                  carrier_suggestion:
+                    description: "Indicative carrier guess from the bundled directory (container owner / B/L SCAC / AWB prefix); null when unknown or a leasing company. Never overrides a carrier the user chose."
+                    oneOf:
+                      - type: object
+                        required: [code, name, basis, confidence, as_of, indicative]
+                        properties:
+                          code: {type: string}
+                          name: {type: string}
+                          name_ar: {type: [string, "null"]}
+                          scac: {type: [string, "null"]}
+                          iata_code: {type: [string, "null"]}
+                          awb_prefix: {type: [string, "null"]}
+                          basis: {type: string, enum: [container_owner_prefix, bl_scac_prefix, awb_prefix]}
+                          confidence: {type: string, enum: [high, medium, low]}
+                          as_of: {type: string, description: "Directory vintage, YYYY-MM"}
+                          indicative: {type: boolean}
+                      - type: "null"
         "422": {$ref: "#/components/responses/Error"}
   /v1/internal/users/{user_id}/export:
     post:

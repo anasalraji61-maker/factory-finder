@@ -51,7 +51,7 @@ OCEAN_CARRIERS: tuple[Carrier, ...] = (
     Carrier("hapag_lloyd", "Hapag-Lloyd", "هاباغ لويد", _SEA, "HLCU",
             ("HLXU", "HLCU", "HLBU", "UACU"), ("HLCU",), vessel_prefix="HL"),
     Carrier("evergreen", "Evergreen Line", "إيفرغرين", _SEA, "EGLV",
-            ("EGLV", "EISU", "EMCU", "EGHU", "EGSU", "EITU"), ("EGLV",), vessel_prefix="EVER"),
+            ("EISU", "EMCU", "EGHU", "EGSU", "EITU"), ("EGLV",), vessel_prefix="EVER"),
     Carrier("one", "Ocean Network Express (ONE)", "أوشن نتورك إكسبريس (ONE)", _SEA, "ONEY",
             ("ONEU", "NYKU", "MOLU", "KKFU"), ("ONEY",), vessel_prefix="ONE"),
     Carrier("yang_ming", "Yang Ming", "يانغ مينغ", _SEA, "YMLU",

@@ -4750,5 +4750,225 @@
 "lon": 39.2083
 },
 "industrial": true
+},
+{
+"id": "JM-KINGSTON",
+"name_en": "Kingston",
+"name_ar": "كينغستون",
+"country_code": "JM",
+"point": {
+"lat": 17.9712,
+"lon": -76.7936
+},
+"industrial": true
+},
+{
+"id": "DO-SANTO-DOMINGO",
+"name_en": "Santo Domingo",
+"name_ar": "سانتو دومينغو",
+"country_code": "DO",
+"point": {
+"lat": 18.4861,
+"lon": -69.9312
+},
+"industrial": true
+},
+{
+"id": "PA-PANAMA-CITY",
+"name_en": "Panama City",
+"name_ar": "مدينة بنما",
+"country_code": "PA",
+"point": {
+"lat": 8.9824,
+"lon": -79.5199
+},
+"industrial": true
+},
+{
+"id": "DJ-DJIBOUTI",
+"name_en": "Djibouti",
+"name_ar": "جيبوتي",
+"country_code": "DJ",
+"point": {
+"lat": 11.5721,
+"lon": 43.1456
+},
+"industrial": true
+},
+{
+"id": "SD-PORT-SUDAN",
+"name_en": "Port Sudan",
+"name_ar": "بورتسودان",
+"country_code": "SD",
+"point": {
+"lat": 19.6158,
+"lon": 37.2164
+},
+"industrial": true
+},
+{
+"id": "SD-KHARTOUM",
+"name_en": "Khartoum",
+"name_ar": "الخرطوم",
+"country_code": "SD",
+"point": {
+"lat": 15.5007,
+"lon": 32.5599
+},
+"industrial": true
+},
+{
+"id": "YE-ADEN",
+"name_en": "Aden",
+"name_ar": "عدن",
+"country_code": "YE",
+"point": {
+"lat": 12.7855,
+"lon": 45.0187
+},
+"industrial": true
+},
+{
+"id": "IL-HAIFA",
+"name_en": "Haifa",
+"name_ar": "حيفا",
+"country_code": "IL",
+"point": {
+"lat": 32.794,
+"lon": 34.9896
+},
+"industrial": true
+},
+{
+"id": "IL-TEL-AVIV",
+"name_en": "Tel Aviv",
+"name_ar": "تل أبيب",
+"country_code": "IL",
+"point": {
+"lat": 32.0853,
+"lon": 34.7818
+},
+"industrial": true
+},
+{
+"id": "CI-ABIDJAN",
+"name_en": "Abidjan",
+"name_ar": "أبيدجان",
+"country_code": "CI",
+"point": {
+"lat": 5.36,
+"lon": -4.0083
+},
+"industrial": true
+},
+{
+"id": "TG-LOME",
+"name_en": "Lome",
+"name_ar": "لومي",
+"country_code": "TG",
+"point": {
+"lat": 6.1319,
+"lon": 1.2228
+},
+"industrial": true
+},
+{
+"id": "EC-GUAYAQUIL",
+"name_en": "Guayaquil",
+"name_ar": "غواياكيل",
+"country_code": "EC",
+"point": {
+"lat": -2.171,
+"lon": -79.9224
+},
+"industrial": true
+},
+{
+"id": "UY-MONTEVIDEO",
+"name_en": "Montevideo",
+"name_ar": "مونتيفيديو",
+"country_code": "UY",
+"point": {
+"lat": -34.9011,
+"lon": -56.1645
+},
+"industrial": true
+},
+{
+"id": "NZ-AUCKLAND",
+"name_en": "Auckland",
+"name_ar": "أوكلاند",
+"country_code": "NZ",
+"point": {
+"lat": -36.8485,
+"lon": 174.7633
+},
+"industrial": true
+},
+{
+"id": "MZ-MAPUTO",
+"name_en": "Maputo",
+"name_ar": "مابوتو",
+"country_code": "MZ",
+"point": {
+"lat": -25.9692,
+"lon": 32.5732
+},
+"industrial": true
+},
+{
+"id": "AO-LUANDA",
+"name_en": "Luanda",
+"name_ar": "لواندا",
+"country_code": "AO",
+"point": {
+"lat": -8.839,
+"lon": 13.2894
+},
+"industrial": true
+},
+{
+"id": "MT-VALLETTA",
+"name_en": "Valletta",
+"name_ar": "فاليتا",
+"country_code": "MT",
+"point": {
+"lat": 35.8989,
+"lon": 14.5146
+},
+"industrial": false
+},
+{
+"id": "SI-LJUBLJANA",
+"name_en": "Ljubljana",
+"name_ar": "ليوبليانا",
+"country_code": "SI",
+"point": {
+"lat": 46.0569,
+"lon": 14.5058
+},
+"industrial": true
+},
+{
+"id": "FI-HELSINKI",
+"name_en": "Helsinki",
+"name_ar": "هلسنكي",
+"country_code": "FI",
+"point": {
+"lat": 60.1699,
+"lon": 24.9384
+},
+"industrial": true
+},
+{
+"id": "EE-TALLINN",
+"name_en": "Tallinn",
+"name_ar": "تالين",
+"country_code": "EE",
+"point": {
+"lat": 59.437,
+"lon": 24.7536
+},
+"industrial": true
 }
 ]

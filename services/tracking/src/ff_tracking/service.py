@@ -42,7 +42,13 @@ def detect_carrier(reference_type: ReferenceType, prefix: str | None, typed: str
         ReferenceType.BL: c.carrier_for_bl_prefix,
         ReferenceType.AWB: c.carrier_for_awb_prefix,
     }.get(reference_type, lambda _: None)(prefix)
-    return found.ref() if found else None
+    if found:
+        return found.ref()
+    from ff_tracking.domain.directory import suggest_carrier
+
+    s = suggest_carrier(reference_type, prefix)  # bundled indicative directory (wider than the static table)
+    return CarrierRef(code=s.code, name=s.name, name_ar=s.name_ar, scac=s.scac, iata_code=s.iata_code,
+                      awb_prefix=s.awb_prefix) if s else None
 
 
 class ShipmentService:

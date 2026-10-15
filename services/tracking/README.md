@@ -93,3 +93,8 @@ Every setting in `src/ff_tracking/config.py` (`Settings`, case-insensitive env n
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).
 
 Read straight from the environment (not in `Settings`): kill switches `FF_TRACKING_KILL_SWITCH` (all HTTP adapters) and `FF_TRACKING_HTTP_DISABLED`, `FF_TRACKING_CONTAINER_DISABLED`, `FF_TRACKING_AWB_DISABLED`, `FF_TRACKING_VESSEL_DISABLED` (per adapter).
+
+## Identifiers, carrier directory, status tables (offline)
+- Validators (`domain/validators.py`): ISO 6346 container check digit, AWB mod-7 (separators `- . / space` tolerated), tolerant B/L (strips "B/L No.:" labels; digit-only numbers accepted). Invalid input returns `suggestions` (max 3 valid numbers one typo away: O/0, I/1, S/5, B/8 ...).
+- `data/carrier_directory.json` (+ `domain/directory.py`): ~45 ocean carriers/forwarders (SCAC, BIC owner prefixes, B/L prefixes) and ~69 airlines (3-digit AWB prefix). INDICATIVE, `as_of` 2026-10; `confidence: low` rows are best effort; leasing owner prefixes yield no suggestion. Used for `carrier_suggestion` in `GET /v1/validate/...` and as fallback when a shipment is added without a carrier. Never overrides a carrier the user chose.
+- `data/status_map.json`: provider status -> canonical status, default table + per-carrier overrides + generic DCSA profile. Unknown codes are skipped and never change status; a delivered shipment is never reopened (`resolve_status`). Carrier names are UNVERIFIED.

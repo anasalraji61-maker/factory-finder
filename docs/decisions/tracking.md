@@ -3,3 +3,4 @@
 2026-10-13 | Other users' shipments answer 404 (not 403); duplicates per (user, type, normalized ref) -> 409 | no id leakage
 2026-10-13 | Creation counts as a refresh for throttling (default 60 s, `Retry-After` header) | protects paid provider quotas
 2026-10-13 | `progress_percent` derived from status via fixed milestone table | provider-independent
+2026-10-15 | Carrier directory and status map are bundled JSON (data-driven, indicative as_of 2026-10); validate response gains additive suggestions + carrier_suggestion | offline suggestion without a network lookup

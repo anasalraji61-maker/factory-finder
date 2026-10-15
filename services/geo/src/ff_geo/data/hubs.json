@@ -14,7 +14,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNNGB",
@@ -31,7 +33,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNYTN",
@@ -49,7 +53,9 @@
 "CN",
 "HK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNSZX",
@@ -67,7 +73,9 @@
 "CN",
 "HK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNQIN",
@@ -84,7 +92,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNTXG",
@@ -101,7 +111,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNXMN",
@@ -118,7 +130,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNCAN",
@@ -135,7 +149,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNNSA",
@@ -152,7 +168,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNDLC",
@@ -169,7 +187,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNLYG",
@@ -186,7 +206,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "HKHKG",
@@ -203,7 +225,9 @@
 "serves_countries": [
 "HK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "KRPUS",
@@ -220,7 +244,9 @@
 "serves_countries": [
 "KR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SGSIN",
@@ -237,7 +263,9 @@
 "serves_countries": [
 "SG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "MYPKG",
@@ -254,7 +282,9 @@
 "serves_countries": [
 "MY"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "VNSGN",
@@ -271,7 +301,9 @@
 "serves_countries": [
 "VN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "VNHPH",
@@ -288,7 +320,9 @@
 "serves_countries": [
 "VN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INNSA",
@@ -305,7 +339,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INMUN",
@@ -322,7 +358,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PKKHI",
@@ -339,7 +377,9 @@
 "serves_countries": [
 "PK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IQUQR",
@@ -356,7 +396,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": "Main Iraqi container gateway; then truck/rail to Basra, Baghdad."
+"notes": "Main Iraqi container gateway; then truck/rail to Basra, Baghdad.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IQBSR",
@@ -373,7 +415,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IQFAO",
@@ -390,7 +434,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": "Under construction/ramp-up; capacity may be limited."
+"notes": "Under construction/ramp-up; capacity may be limited.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRMER",
@@ -411,7 +457,9 @@
 "LB",
 "JO"
 ],
-"notes": "Sea to Mersin then truck via Ibrahim Khalil border to Iraq."
+"notes": "Sea to Mersin then truck via Ibrahim Khalil border to Iraq.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRAMR",
@@ -428,7 +476,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRIZM",
@@ -445,7 +495,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRISK",
@@ -464,7 +516,9 @@
 "IQ",
 "SY"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IRBND",
@@ -482,7 +536,9 @@
 "IR",
 "IQ"
 ],
-"notes": "Trade with Iran subject to sanctions checks."
+"notes": "Trade with Iran subject to sanctions checks.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IRIKH",
@@ -500,7 +556,9 @@
 "IR",
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AEJEA",
@@ -523,7 +581,9 @@
 "BH",
 "KW"
 ],
-"notes": "Sea to Jebel Ali then truck via Saudi (Arar) or Kuwait (Safwan) to Iraq."
+"notes": "Sea to Jebel Ali then truck via Saudi (Arar) or Kuwait (Safwan) to Iraq.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SAJED",
@@ -542,7 +602,9 @@
 "JO",
 "EG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SADMM",
@@ -563,7 +625,9 @@
 "BH",
 "QA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "KWSWK",
@@ -581,7 +645,9 @@
 "KW",
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "QAHMD",
@@ -598,7 +664,9 @@
 "serves_countries": [
 "QA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "OMSLL",
@@ -615,7 +683,9 @@
 "serves_countries": [
 "OM"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "OMSOH",
@@ -634,7 +704,9 @@
 "AE",
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JOAQJ",
@@ -653,7 +725,9 @@
 "IQ",
 "SA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "EGALY",
@@ -670,7 +744,9 @@
 "serves_countries": [
 "EG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "EGPSD",
@@ -688,7 +764,9 @@
 "EG",
 "JO"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "EGSOK",
@@ -705,7 +783,9 @@
 "serves_countries": [
 "EG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "LBBEY",
@@ -724,7 +804,9 @@
 "SY",
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SYLTK",
@@ -743,7 +825,9 @@
 "IQ",
 "LB"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "NLRTM",
@@ -763,7 +847,9 @@
 "BE",
 "FR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "DEHAM",
@@ -783,7 +869,9 @@
 "CZ",
 "AT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "BEANR",
@@ -803,7 +891,9 @@
 "FR",
 "DE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ITGOA",
@@ -820,7 +910,9 @@
 "serves_countries": [
 "IT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ITLSP",
@@ -837,7 +929,9 @@
 "serves_countries": [
 "IT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ESVLC",
@@ -854,7 +948,9 @@
 "serves_countries": [
 "ES"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ESBCN",
@@ -871,7 +967,9 @@
 "serves_countries": [
 "ES"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "GRPIR",
@@ -888,7 +986,9 @@
 "serves_countries": [
 "GR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "GBFXT",
@@ -905,7 +1005,9 @@
 "serves_countries": [
 "GB"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "FRLEH",
@@ -922,7 +1024,9 @@
 "serves_countries": [
 "FR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PLGDN",
@@ -939,7 +1043,9 @@
 "serves_countries": [
 "PL"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USLAX",
@@ -956,7 +1062,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USNYC",
@@ -973,7 +1081,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USHOU",
@@ -990,7 +1100,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USSAV",
@@ -1007,7 +1119,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USSEA",
@@ -1024,7 +1138,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USMIA",
@@ -1041,7 +1157,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CAVAN",
@@ -1058,7 +1176,9 @@
 "serves_countries": [
 "CA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "air:PVG",
@@ -1075,7 +1195,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:CAN",
@@ -1092,7 +1214,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:SZX",
@@ -1110,7 +1234,9 @@
 "CN",
 "HK"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:HKG",
@@ -1128,7 +1254,9 @@
 "HK",
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:PEK",
@@ -1145,7 +1273,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:CTU",
@@ -1162,7 +1292,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:HGH",
@@ -1179,7 +1311,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:NGB",
@@ -1196,7 +1330,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:TAO",
@@ -1213,7 +1349,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:BGW",
@@ -1230,7 +1368,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:EBL",
@@ -1247,7 +1387,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:BSR",
@@ -1264,7 +1406,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:NJF",
@@ -1281,7 +1425,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:ISU",
@@ -1298,7 +1444,9 @@
 "serves_countries": [
 "IQ"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:IST",
@@ -1315,7 +1463,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DXB",
@@ -1332,7 +1482,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DWC",
@@ -1349,7 +1501,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DOH",
@@ -1366,7 +1520,9 @@
 "serves_countries": [
 "QA"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:RUH",
@@ -1383,7 +1539,9 @@
 "serves_countries": [
 "SA"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:JED",
@@ -1400,7 +1558,9 @@
 "serves_countries": [
 "SA"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:KWI",
@@ -1417,7 +1577,9 @@
 "serves_countries": [
 "KW"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:AMM",
@@ -1434,7 +1596,9 @@
 "serves_countries": [
 "JO"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:CAI",
@@ -1451,7 +1615,9 @@
 "serves_countries": [
 "EG"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:IKA",
@@ -1468,7 +1634,9 @@
 "serves_countries": [
 "IR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:FRA",
@@ -1485,7 +1653,9 @@
 "serves_countries": [
 "DE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:AMS",
@@ -1502,7 +1672,9 @@
 "serves_countries": [
 "NL"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:LHR",
@@ -1519,7 +1691,9 @@
 "serves_countries": [
 "GB"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:CDG",
@@ -1536,7 +1710,9 @@
 "serves_countries": [
 "FR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:LGG",
@@ -1553,7 +1729,9 @@
 "serves_countries": [
 "BE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:MXP",
@@ -1570,7 +1748,9 @@
 "serves_countries": [
 "IT"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:ORD",
@@ -1587,7 +1767,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:JFK",
@@ -1604,7 +1786,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:LAX",
@@ -1621,7 +1805,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:ATL",
@@ -1638,7 +1824,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:MIA",
@@ -1655,7 +1843,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DFW",
@@ -1672,7 +1862,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:BOM",
@@ -1689,7 +1881,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DEL",
@@ -1706,7 +1900,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:SGN",
@@ -1723,7 +1919,9 @@
 "serves_countries": [
 "VN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:SIN",
@@ -1740,7 +1938,9 @@
 "serves_countries": [
 "SG"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:ICN",
@@ -1757,7 +1957,9 @@
 "serves_countries": [
 "KR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:CQ",
@@ -1774,7 +1976,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "China-Europe Railway Express origin."
+"notes": "China-Europe Railway Express origin.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:YIWU",
@@ -1791,7 +1995,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Yiwu-Madrid / Yiwu-Europe rail services."
+"notes": "Yiwu-Madrid / Yiwu-Europe rail services.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:XIAN",
@@ -1808,7 +2014,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "China-Europe/Central Asia rail."
+"notes": "China-Europe/Central Asia rail.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:ZZ",
@@ -1825,7 +2033,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Zhengzhou-Europe rail."
+"notes": "Zhengzhou-Europe rail.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:CD",
@@ -1842,7 +2052,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Chengdu-Europe rail."
+"notes": "Chengdu-Europe rail.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:ALA",
@@ -1859,7 +2071,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "China-Kazakhstan rail border."
+"notes": "China-Kazakhstan rail border.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:KHO",
@@ -1876,7 +2090,9 @@
 "serves_countries": [
 "KZ"
 ],
-"notes": "China-Kazakhstan rail border (dry port)."
+"notes": "China-Kazakhstan rail border (dry port).",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:DUI",
@@ -1893,7 +2109,9 @@
 "serves_countries": [
 "DE"
 ],
-"notes": "Main China-Europe rail hub in Europe."
+"notes": "Main China-Europe rail hub in Europe.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:MAL",
@@ -1910,7 +2128,9 @@
 "serves_countries": [
 "PL"
 ],
-"notes": "Poland-Belarus rail gauge change hub."
+"notes": "Poland-Belarus rail gauge change hub.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:LOD",
@@ -1927,7 +2147,9 @@
 "serves_countries": [
 "PL"
 ],
-"notes": "Polish rail hub for China-Europe trains."
+"notes": "Polish rail hub for China-Europe trains.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:IBRAHIM_KHALIL",
@@ -1945,7 +2167,9 @@
 "IQ",
 "TR"
 ],
-"notes": "Iraq (Kurdistan) - Turkey (Habur)."
+"notes": "Iraq (Kurdistan) - Turkey (Habur).",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:TREBIL",
@@ -1963,7 +2187,9 @@
 "IQ",
 "JO"
 ],
-"notes": "Iraq - Jordan (Karameh); coordinates approximate."
+"notes": "Iraq - Jordan (Karameh); coordinates approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:SAFWAN",
@@ -1981,7 +2207,9 @@
 "IQ",
 "KW"
 ],
-"notes": "Iraq - Kuwait (Abdali)."
+"notes": "Iraq - Kuwait (Abdali).",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:ARAR",
@@ -1999,7 +2227,9 @@
 "IQ",
 "SA"
 ],
-"notes": "Iraq - Saudi Arabia (Jumaima/Arar); coordinates approximate."
+"notes": "Iraq - Saudi Arabia (Jumaima/Arar); coordinates approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:AL_QAIM",
@@ -2017,7 +2247,9 @@
 "IQ",
 "SY"
 ],
-"notes": "Iraq - Syria (Albu Kamal); operation depends on security situation."
+"notes": "Iraq - Syria (Albu Kamal); operation depends on security situation.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:MUNDHIRIYA",
@@ -2035,7 +2267,9 @@
 "IQ",
 "IR"
 ],
-"notes": "Iraq - Iran (Diyala); coordinates approximate; sanctions checks apply."
+"notes": "Iraq - Iran (Diyala); coordinates approximate; sanctions checks apply.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:ZURBATIYAH",
@@ -2053,7 +2287,9 @@
 "IQ",
 "IR"
 ],
-"notes": "Iraq - Iran (Wasit); coordinates approximate."
+"notes": "Iraq - Iran (Wasit); coordinates approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:SHALAMCHEH",
@@ -2071,7 +2307,9 @@
 "IR",
 "IQ"
 ],
-"notes": "Iran - Iraq (Basra); coordinates approximate."
+"notes": "Iran - Iraq (Basra); coordinates approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:KAPIKULE",
@@ -2089,7 +2327,9 @@
 "TR",
 "BG"
 ],
-"notes": "Turkey - Bulgaria; main road gateway to the EU."
+"notes": "Turkey - Bulgaria; main road gateway to the EU.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:BAZARGAN",
@@ -2107,7 +2347,9 @@
 "IR",
 "TR"
 ],
-"notes": "Iran - Turkey."
+"notes": "Iran - Turkey.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:SARPI",
@@ -2125,7 +2367,9 @@
 "TR",
 "GE"
 ],
-"notes": "Turkey - Georgia."
+"notes": "Turkey - Georgia.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:PINGXIANG",
@@ -2143,7 +2387,9 @@
 "CN",
 "VN"
 ],
-"notes": "China - Vietnam road/rail border."
+"notes": "China - Vietnam road/rail border.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:YIWU",
@@ -2160,7 +2406,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "World's largest small-commodities market; LCL consolidation."
+"notes": "World's largest small-commodities market; LCL consolidation.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:GUANGZHOU",
@@ -2177,7 +2425,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Major LCL consolidation for Pearl River Delta."
+"notes": "Major LCL consolidation for Pearl River Delta.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:SHENZHEN",
@@ -2194,7 +2444,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Electronics LCL consolidation."
+"notes": "Electronics LCL consolidation.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:SHANGHAI",
@@ -2211,7 +2463,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Yangtze Delta LCL consolidation."
+"notes": "Yangtze Delta LCL consolidation.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "CNFOC",
@@ -2228,7 +2482,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNZOS",
@@ -2245,7 +2501,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "Close to Ningbo-Zhoushan; approximate coordinate."
+"notes": "Close to Ningbo-Zhoushan; approximate coordinate.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNYIK",
@@ -2262,7 +2520,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CNYTI",
@@ -2279,7 +2539,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TWKHH",
@@ -2296,7 +2558,9 @@
 "serves_countries": [
 "TW"
 ],
-"notes": "About 440 km from the nearest sea-lane node; distance is approximate."
+"notes": "About 440 km from the nearest sea-lane node; distance is approximate.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TWTXG",
@@ -2313,7 +2577,9 @@
 "serves_countries": [
 "TW"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "KRINC",
@@ -2330,7 +2596,9 @@
 "serves_countries": [
 "KR"
 ],
-"notes": "Yellow Sea; approximate access distance to lane graph."
+"notes": "Yellow Sea; approximate access distance to lane graph.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JPHKT",
@@ -2347,7 +2615,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "VNVUT",
@@ -2364,7 +2634,9 @@
 "serves_countries": [
 "VN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "MYTPP",
@@ -2381,7 +2653,9 @@
 "serves_countries": [
 "MY"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "LKCMB",
@@ -2398,7 +2672,9 @@
 "serves_countries": [
 "LK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INKDL",
@@ -2415,7 +2691,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INPAV",
@@ -2432,7 +2710,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PKBQM",
@@ -2449,7 +2729,9 @@
 "serves_countries": [
 "PK"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AEAUH",
@@ -2466,7 +2748,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AEFJR",
@@ -2483,7 +2767,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": "East coast UAE; avoids Hormuz transit."
+"notes": "East coast UAE; avoids Hormuz transit.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "EGDAM",
@@ -2500,7 +2786,9 @@
 "serves_countries": [
 "EG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SYTTS",
@@ -2517,7 +2805,9 @@
 "serves_countries": [
 "SY"
 ],
-"notes": "Trade subject to sanctions checks."
+"notes": "Trade subject to sanctions checks.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRALI",
@@ -2534,7 +2824,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "MAPTM",
@@ -2551,7 +2843,9 @@
 "serves_countries": [
 "MA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "MACAS",
@@ -2568,7 +2862,9 @@
 "serves_countries": [
 "MA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "DZALG",
@@ -2585,7 +2881,9 @@
 "serves_countries": [
 "DZ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ESALG",
@@ -2602,7 +2900,9 @@
 "serves_countries": [
 "ES"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PTLIS",
@@ -2619,7 +2919,9 @@
 "serves_countries": [
 "PT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "FRMRS",
@@ -2636,7 +2938,9 @@
 "serves_countries": [
 "FR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "GBSOU",
@@ -2653,7 +2957,9 @@
 "serves_countries": [
 "GB"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "BEZEE",
@@ -2670,7 +2976,9 @@
 "serves_countries": [
 "BE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "DEBRV",
@@ -2687,7 +2995,9 @@
 "serves_countries": [
 "DE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "NLAMS",
@@ -2704,7 +3014,9 @@
 "serves_countries": [
 "NL"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PLGDY",
@@ -2721,7 +3033,9 @@
 "serves_countries": [
 "PL"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USCHS",
@@ -2738,7 +3052,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USORF",
@@ -2755,7 +3071,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USLGB",
@@ -2772,7 +3090,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USTIW",
@@ -2789,7 +3109,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "air:TPE",
@@ -2806,7 +3128,9 @@
 "serves_countries": [
 "TW"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:NRT",
@@ -2823,7 +3147,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:BKK",
@@ -2840,7 +3166,9 @@
 "serves_countries": [
 "TH"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:KUL",
@@ -2857,7 +3185,9 @@
 "serves_countries": [
 "MY"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:DAC",
@@ -2874,7 +3204,9 @@
 "serves_countries": [
 "BD"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:KHI",
@@ -2891,7 +3223,9 @@
 "serves_countries": [
 "PK"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:JNB",
@@ -2908,7 +3242,9 @@
 "serves_countries": [
 "ZA"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:LOS",
@@ -2925,7 +3261,9 @@
 "serves_countries": [
 "NG"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:NBO",
@@ -2942,7 +3280,9 @@
 "serves_countries": [
 "KE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:SYD",
@@ -2959,7 +3299,9 @@
 "serves_countries": [
 "AU"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:GRU",
@@ -2976,7 +3318,9 @@
 "serves_countries": [
 "BR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:SVO",
@@ -2993,7 +3337,9 @@
 "serves_countries": [
 "RU"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:MUC",
@@ -3010,7 +3356,9 @@
 "serves_countries": [
 "DE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:AUH",
@@ -3027,7 +3375,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "air:CMN",
@@ -3044,7 +3394,9 @@
 "serves_countries": [
 "MA"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "rail:WUHAN",
@@ -3061,7 +3413,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "China-Europe Railway Express origin; coordinate approximate."
+"notes": "China-Europe Railway Express origin; coordinate approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:HAJI_OMARAN",
@@ -3079,7 +3433,9 @@
 "IQ",
 "IR"
 ],
-"notes": "Iraq (Kurdistan) - Iran (Piranshahr); coordinate uncertain, verify before use."
+"notes": "Iraq (Kurdistan) - Iran (Piranshahr); coordinate uncertain, verify before use.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:MEHRAN",
@@ -3097,7 +3453,9 @@
 "IR",
 "IQ"
 ],
-"notes": "Iran - Iraq (Zurbatiyah); coordinate approximate."
+"notes": "Iran - Iraq (Zurbatiyah); coordinate approximate.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "land:WAGAH",
@@ -3115,7 +3473,9 @@
 "IN",
 "PK"
 ],
-"notes": "India - Pakistan; restricted trade, verify status."
+"notes": "India - Pakistan; restricted trade, verify status.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:NINGBO",
@@ -3132,7 +3492,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": "LCL consolidation for Zhejiang exporters."
+"notes": "LCL consolidation for Zhejiang exporters.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:QINGDAO",
@@ -3149,7 +3511,9 @@
 "serves_countries": [
 "CN"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:ISTANBUL",
@@ -3166,7 +3530,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": null,
+"as_of": null
 },
 {
 "id": "consol:DUBAI",
@@ -3183,7 +3549,9 @@
 "serves_countries": [
 "AE"
 ],
-"notes": "Re-export and LCL consolidation hub."
+"notes": "Re-export and LCL consolidation hub.",
+"confidence": null,
+"as_of": null
 },
 {
 "id": "KEMBA",
@@ -3200,7 +3568,9 @@
 "serves_countries": [
 "KE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ZADUR",
@@ -3217,7 +3587,9 @@
 "serves_countries": [
 "ZA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ZACPT",
@@ -3234,7 +3606,9 @@
 "serves_countries": [
 "ZA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "NGAPP",
@@ -3251,7 +3625,9 @@
 "serves_countries": [
 "NG"
 ],
-"notes": "Lagos main port complex is Apapa (UN/LOCODE NGAPP); Tin Can Island (NGTIN) is adjacent; NGLOS is the city code."
+"notes": "Lagos main port complex is Apapa (UN/LOCODE NGAPP); Tin Can Island (NGTIN) is adjacent; NGLOS is the city code.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "GHTEM",
@@ -3268,7 +3644,9 @@
 "serves_countries": [
 "GH"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SNDKR",
@@ -3285,7 +3663,9 @@
 "serves_countries": [
 "SN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "UAODS",
@@ -3302,7 +3682,9 @@
 "serves_countries": [
 "UA"
 ],
-"notes": "Coordinates approximate (Odesa seaport area). Operations may be disrupted by war; verify availability."
+"notes": "Coordinates approximate (Odesa seaport area). Operations may be disrupted by war; verify availability.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ROCND",
@@ -3319,7 +3701,9 @@
 "serves_countries": [
 "RO"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "RUNVS",
@@ -3336,7 +3720,9 @@
 "serves_countries": [
 "RU"
 ],
-"notes": "Sanctions/compliance screening required for Russian ports."
+"notes": "Sanctions/compliance screening required for Russian ports.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JPYOK",
@@ -3353,7 +3739,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JPOSA",
@@ -3370,7 +3758,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JPUKB",
@@ -3387,7 +3777,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "JPNGO",
@@ -3404,7 +3796,9 @@
 "serves_countries": [
 "JP"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "BRSSZ",
@@ -3421,7 +3815,9 @@
 "serves_countries": [
 "BR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ARBUE",
@@ -3438,7 +3834,9 @@
 "serves_countries": [
 "AR"
 ],
-"notes": "River-port: distance includes up-river access from the River Plate approach node (approximate)."
+"notes": "River-port: distance includes up-river access from the River Plate approach node (approximate).",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PECLL",
@@ -3455,7 +3853,9 @@
 "serves_countries": [
 "PE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "COCTG",
@@ -3472,7 +3872,9 @@
 "serves_countries": [
 "CO"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AUSYD",
@@ -3489,7 +3891,9 @@
 "serves_countries": [
 "AU"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AUMEL",
@@ -3506,7 +3910,9 @@
 "serves_countries": [
 "AU"
 ],
-"notes": "Lane node is at Port Phillip heads; access distance is approximate."
+"notes": "Lane node is at Port Phillip heads; access distance is approximate.",
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "AUFRE",
@@ -3523,7 +3929,9 @@
 "serves_countries": [
 "AU"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INMAA",
@@ -3540,7 +3948,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "INCCU",
@@ -3557,7 +3967,9 @@
 "serves_countries": [
 "IN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "BDCGP",
@@ -3574,7 +3986,9 @@
 "serves_countries": [
 "BD"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IDJKT",
@@ -3591,7 +4005,9 @@
 "serves_countries": [
 "ID"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "IDSUB",
@@ -3608,7 +4024,9 @@
 "serves_countries": [
 "ID"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "THLCH",
@@ -3625,7 +4043,9 @@
 "serves_countries": [
 "TH"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "PHMNL",
@@ -3642,7 +4062,9 @@
 "serves_countries": [
 "PH"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TNRAD",
@@ -3659,7 +4081,9 @@
 "serves_countries": [
 "TN"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "LYMRA",
@@ -3676,7 +4100,9 @@
 "serves_countries": [
 "LY"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "LYTIP",
@@ -3693,7 +4119,9 @@
 "serves_countries": [
 "LY"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ITTRS",
@@ -3710,7 +4138,9 @@
 "serves_countries": [
 "IT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "ITVCE",
@@ -3727,7 +4157,9 @@
 "serves_countries": [
 "IT"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "SEGOT",
@@ -3744,7 +4176,9 @@
 "serves_countries": [
 "SE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "RULED",
@@ -3761,7 +4195,9 @@
 "serves_countries": [
 "RU"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "GEPTI",
@@ -3778,7 +4214,9 @@
 "serves_countries": [
 "GE"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TRSAM",
@@ -3795,7 +4233,9 @@
 "serves_countries": [
 "TR"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "BGVAR",
@@ -3812,7 +4252,9 @@
 "serves_countries": [
 "BG"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "OMDQM",
@@ -3829,7 +4271,9 @@
 "serves_countries": [
 "OM"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "TZDAR",
@@ -3846,7 +4290,9 @@
 "serves_countries": [
 "TZ"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CLVAP",
@@ -3863,7 +4309,9 @@
 "serves_countries": [
 "CL"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "MXZLO",
@@ -3880,7 +4328,9 @@
 "serves_countries": [
 "MX"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USOAK",
@@ -3897,7 +4347,9 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "CAPRR",
@@ -3914,7 +4366,9 @@
 "serves_countries": [
 "CA"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 },
 {
 "id": "USMSY",
@@ -3931,6 +4385,412 @@
 "serves_countries": [
 "US"
 ],
-"notes": null
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "JMKIN",
+"type": "sea",
+"name_en": "Kingston Container Terminal",
+"name_ar": "ميناء كينغستون",
+"country_code": "JM",
+"point": {
+"lat": 17.97,
+"lon": -76.83
+},
+"unlocode": "JMKIN",
+"iata": null,
+"serves_countries": [
+"JM"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "DOCAU",
+"type": "sea",
+"name_en": "Caucedo (DP World)",
+"name_ar": "ميناء كاوسيدو",
+"country_code": "DO",
+"point": {
+"lat": 18.43,
+"lon": -69.63
+},
+"unlocode": "DOCAU",
+"iata": null,
+"serves_countries": [
+"DO"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "PABLB",
+"type": "sea",
+"name_en": "Balboa Port (Pacific)",
+"name_ar": "ميناء بالبوا",
+"country_code": "PA",
+"point": {
+"lat": 8.95,
+"lon": -79.57
+},
+"unlocode": "PABLB",
+"iata": null,
+"serves_countries": [
+"PA"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "PAMIT",
+"type": "sea",
+"name_en": "Manzanillo International Terminal (Colon)",
+"name_ar": "محطة مانزانيلو الدولية",
+"country_code": "PA",
+"point": {
+"lat": 9.36,
+"lon": -79.88
+},
+"unlocode": "PAMIT",
+"iata": null,
+"serves_countries": [
+"PA"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "DJJIB",
+"type": "sea",
+"name_en": "Djibouti Port (Doraleh)",
+"name_ar": "ميناء جيبوتي",
+"country_code": "DJ",
+"point": {
+"lat": 11.6,
+"lon": 43.15
+},
+"unlocode": "DJJIB",
+"iata": null,
+"serves_countries": [
+"DJ",
+"ET"
+],
+"notes": "Main sea gateway for landlocked Ethiopia.",
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "YEADE",
+"type": "sea",
+"name_en": "Aden Port",
+"name_ar": "ميناء عدن",
+"country_code": "YE",
+"point": {
+"lat": 12.78,
+"lon": 45.03
+},
+"unlocode": "YEADE",
+"iata": null,
+"serves_countries": [
+"YE"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "SDPZU",
+"type": "sea",
+"name_en": "Port Sudan",
+"name_ar": "بورتسودان",
+"country_code": "SD",
+"point": {
+"lat": 19.62,
+"lon": 37.22
+},
+"unlocode": "SDPZU",
+"iata": null,
+"serves_countries": [
+"SD"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "ILHFA",
+"type": "sea",
+"name_en": "Haifa Port",
+"name_ar": "ميناء حيفا",
+"country_code": "IL",
+"point": {
+"lat": 32.82,
+"lon": 35.0
+},
+"unlocode": "ILHFA",
+"iata": null,
+"serves_countries": [
+"IL"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "ILASH",
+"type": "sea",
+"name_en": "Ashdod Port",
+"name_ar": "ميناء أسدود",
+"country_code": "IL",
+"point": {
+"lat": 31.82,
+"lon": 34.64
+},
+"unlocode": "ILASH",
+"iata": null,
+"serves_countries": [
+"IL"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "BHKBS",
+"type": "sea",
+"name_en": "Khalifa Bin Salman Port",
+"name_ar": "ميناء خليفة بن سلمان",
+"country_code": "BH",
+"point": {
+"lat": 26.2,
+"lon": 50.66
+},
+"unlocode": "BHKBS",
+"iata": null,
+"serves_countries": [
+"BH"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "CIABJ",
+"type": "sea",
+"name_en": "Abidjan Port",
+"name_ar": "ميناء أبيدجان",
+"country_code": "CI",
+"point": {
+"lat": 5.28,
+"lon": -4.0
+},
+"unlocode": "CIABJ",
+"iata": null,
+"serves_countries": [
+"CI"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "TGLFW",
+"type": "sea",
+"name_en": "Lome Port",
+"name_ar": "ميناء لومي",
+"country_code": "TG",
+"point": {
+"lat": 6.13,
+"lon": 1.28
+},
+"unlocode": "TGLFW",
+"iata": null,
+"serves_countries": [
+"TG"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "AOLAD",
+"type": "sea",
+"name_en": "Luanda Port",
+"name_ar": "ميناء لواندا",
+"country_code": "AO",
+"point": {
+"lat": -8.8,
+"lon": 13.23
+},
+"unlocode": "AOLAD",
+"iata": null,
+"serves_countries": [
+"AO"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "MZMPM",
+"type": "sea",
+"name_en": "Maputo Port",
+"name_ar": "ميناء مابوتو",
+"country_code": "MZ",
+"point": {
+"lat": -25.97,
+"lon": 32.58
+},
+"unlocode": "MZMPM",
+"iata": null,
+"serves_countries": [
+"MZ"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "ECGYE",
+"type": "sea",
+"name_en": "Guayaquil Port",
+"name_ar": "ميناء غواياكيل",
+"country_code": "EC",
+"point": {
+"lat": -2.28,
+"lon": -79.9
+},
+"unlocode": "ECGYE",
+"iata": null,
+"serves_countries": [
+"EC"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "MTMAR",
+"type": "sea",
+"name_en": "Marsaxlokk (Malta Freeport)",
+"name_ar": "ميناء مرسى شلوك",
+"country_code": "MT",
+"point": {
+"lat": 35.84,
+"lon": 14.54
+},
+"unlocode": "MTMAR",
+"iata": null,
+"serves_countries": [
+"MT"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "SIKOP",
+"type": "sea",
+"name_en": "Koper Port",
+"name_ar": "ميناء كوبر",
+"country_code": "SI",
+"point": {
+"lat": 45.55,
+"lon": 13.73
+},
+"unlocode": "SIKOP",
+"iata": null,
+"serves_countries": [
+"SI",
+"AT",
+"HU",
+"SK",
+"CZ"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "FIHEL",
+"type": "sea",
+"name_en": "Helsinki Port",
+"name_ar": "ميناء هلسنكي",
+"country_code": "FI",
+"point": {
+"lat": 60.17,
+"lon": 24.95
+},
+"unlocode": "FIHEL",
+"iata": null,
+"serves_countries": [
+"FI"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "EETLL",
+"type": "sea",
+"name_en": "Tallinn Port",
+"name_ar": "ميناء تالين",
+"country_code": "EE",
+"point": {
+"lat": 59.45,
+"lon": 24.76
+},
+"unlocode": "EETLL",
+"iata": null,
+"serves_countries": [
+"EE"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "NZAKL",
+"type": "sea",
+"name_en": "Port of Auckland",
+"name_ar": "ميناء أوكلاند",
+"country_code": "NZ",
+"point": {
+"lat": -36.84,
+"lon": 174.77
+},
+"unlocode": "NZAKL",
+"iata": null,
+"serves_countries": [
+"NZ"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "AUBNE",
+"type": "sea",
+"name_en": "Port of Brisbane",
+"name_ar": "ميناء بريسبان",
+"country_code": "AU",
+"point": {
+"lat": -27.38,
+"lon": 153.17
+},
+"unlocode": "AUBNE",
+"iata": null,
+"serves_countries": [
+"AU"
+],
+"notes": null,
+"confidence": "medium",
+"as_of": "2026-10"
 }
 ]

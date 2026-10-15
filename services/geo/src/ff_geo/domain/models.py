@@ -39,6 +39,8 @@ class Hub(BaseModel):
     iata: str | None = None
     serves_countries: list[str]
     notes: str | None = None
+    confidence: Literal["low", "medium", "high"] | None = None
+    as_of: str | None = None  # YYYY-MM the coordinates/attributes were last reviewed
 
 
 class NearestHub(Hub):
@@ -54,3 +56,6 @@ class DistanceResult(BaseModel):
     road_factor: float | None = None
     via: list[str] = []
     is_estimate: bool = True
+    avoided: list[str] = []
+    confidence: Literal["low", "medium", "high"] | None = None
+    as_of: str | None = None

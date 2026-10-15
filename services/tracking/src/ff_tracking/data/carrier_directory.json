@@ -1,0 +1,1114 @@
+{
+ "as_of": "2026-10",
+ "indicative": true,
+ "disclaimer": "Indicative directory compiled offline; prefixes can be reassigned or shared. Verify against the BIC registry / IATA before relying on it. confidence=low entries are best effort.",
+ "ocean": [
+  {
+   "code": "msc",
+   "name": "MSC Mediterranean Shipping Company",
+   "name_ar": "إم إس سي",
+   "scac": "MSCU",
+   "container_prefixes": [
+    "MSCU",
+    "MEDU",
+    "MSDU",
+    "MSMU"
+   ],
+   "bl_prefixes": [
+    "MEDU",
+    "MSCU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "maersk",
+   "name": "Maersk",
+   "name_ar": "ميرسك",
+   "scac": "MAEU",
+   "container_prefixes": [
+    "MAEU",
+    "MSKU",
+    "MRKU",
+    "MRSU",
+    "MNBU",
+    "SUDU"
+   ],
+   "bl_prefixes": [
+    "MAEU",
+    "SUDU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "cma_cgm",
+   "name": "CMA CGM",
+   "name_ar": "سي إم إيه سي جي إم",
+   "scac": "CMDU",
+   "container_prefixes": [
+    "CMAU",
+    "CGMU",
+    "ECMU",
+    "APZU",
+    "APHU"
+   ],
+   "bl_prefixes": [
+    "CMDU",
+    "APLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "cosco",
+   "name": "COSCO Shipping Lines",
+   "name_ar": "كوسكو للشحن",
+   "scac": "COSU",
+   "container_prefixes": [
+    "COSU",
+    "CBHU",
+    "CCLU",
+    "CSNU"
+   ],
+   "bl_prefixes": [
+    "COSU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "hapag_lloyd",
+   "name": "Hapag-Lloyd",
+   "name_ar": "هاباغ لويد",
+   "scac": "HLCU",
+   "container_prefixes": [
+    "HLXU",
+    "HLCU",
+    "HLBU",
+    "UACU"
+   ],
+   "bl_prefixes": [
+    "HLCU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "evergreen",
+   "name": "Evergreen Line",
+   "name_ar": "إيفرغرين",
+   "scac": "EGLV",
+   "container_prefixes": [
+    "EISU",
+    "EMCU",
+    "EGHU",
+    "EGSU",
+    "EITU"
+   ],
+   "bl_prefixes": [
+    "EGLV"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "one",
+   "name": "Ocean Network Express (ONE)",
+   "name_ar": "أوشن نتورك إكسبريس (ONE)",
+   "scac": "ONEY",
+   "container_prefixes": [
+    "ONEU",
+    "NYKU",
+    "MOLU",
+    "KKFU"
+   ],
+   "bl_prefixes": [
+    "ONEY"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "yang_ming",
+   "name": "Yang Ming",
+   "name_ar": "يانغ مينغ",
+   "scac": "YMLU",
+   "container_prefixes": [
+    "YMLU",
+    "YMMU"
+   ],
+   "bl_prefixes": [
+    "YMLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "oocl",
+   "name": "OOCL",
+   "name_ar": "أو أو سي إل",
+   "scac": "OOLU",
+   "container_prefixes": [
+    "OOLU",
+    "OOCU"
+   ],
+   "bl_prefixes": [
+    "OOLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "zim",
+   "name": "ZIM",
+   "name_ar": "زيم",
+   "scac": "ZIMU",
+   "container_prefixes": [
+    "ZIMU",
+    "ZCSU"
+   ],
+   "bl_prefixes": [
+    "ZIMU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "hmm",
+   "name": "HMM",
+   "name_ar": "إتش إم إم",
+   "scac": "HDMU",
+   "container_prefixes": [
+    "HDMU",
+    "HMMU"
+   ],
+   "bl_prefixes": [
+    "HDMU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "pil",
+   "name": "Pacific International Lines (PIL)",
+   "name_ar": "باسيفيك إنترناشيونال لاينز",
+   "scac": "PCIU",
+   "container_prefixes": [
+    "PCIU"
+   ],
+   "bl_prefixes": [
+    "PCIU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "wan_hai",
+   "name": "Wan Hai Lines",
+   "name_ar": "وان هاي",
+   "scac": "WHLC",
+   "container_prefixes": [
+    "WHLU",
+    "WHSU"
+   ],
+   "bl_prefixes": [
+    "WHLC"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "sealand",
+   "name": "Sealand",
+   "name_ar": "سيلاند",
+   "scac": "SEJJ",
+   "container_prefixes": [
+    "SEAU",
+    "SEBU"
+   ],
+   "bl_prefixes": [
+    "SEJJ"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "anl",
+   "name": "ANL",
+   "name_ar": "إيه إن إل",
+   "scac": "ANNU",
+   "container_prefixes": [
+    "ANNU",
+    "ANLU"
+   ],
+   "bl_prefixes": [
+    "ANNU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "matson",
+   "name": "Matson",
+   "name_ar": "ماتسون",
+   "scac": "MATS",
+   "container_prefixes": [
+    "MATU"
+   ],
+   "bl_prefixes": [
+    "MATS"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "rcl",
+   "name": "Regional Container Lines (RCL)",
+   "name_ar": "ريجونال كونتينر لاينز",
+   "scac": "RCLU",
+   "container_prefixes": [
+    "RCLU"
+   ],
+   "bl_prefixes": [
+    "RCLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "sitc",
+   "name": "SITC Container Lines",
+   "name_ar": "إس آي تي سي",
+   "scac": "SITC",
+   "container_prefixes": [
+    "SITU"
+   ],
+   "bl_prefixes": [
+    "SITC"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "kmtc",
+   "name": "KMTC",
+   "name_ar": "كي إم تي سي",
+   "scac": "KMTU",
+   "container_prefixes": [
+    "KMTU"
+   ],
+   "bl_prefixes": [
+    "KMTU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "sm_line",
+   "name": "SM Line",
+   "name_ar": "إس إم لاين",
+   "scac": "SMLM",
+   "container_prefixes": [
+    "SMLU"
+   ],
+   "bl_prefixes": [
+    "SMLM"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "ts_lines",
+   "name": "T.S. Lines",
+   "name_ar": "تي إس لاينز",
+   "scac": "TSLU",
+   "container_prefixes": [
+    "TSLU"
+   ],
+   "bl_prefixes": [
+    "TSLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "sinokor",
+   "name": "Sinokor",
+   "name_ar": "سينوكور",
+   "scac": "SKLU",
+   "container_prefixes": [
+    "SKLU"
+   ],
+   "bl_prefixes": [
+    "SKLU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "heung_a",
+   "name": "Heung-A Line",
+   "name_ar": "هيونغ آ",
+   "scac": "HASU",
+   "container_prefixes": [
+    "HASU"
+   ],
+   "bl_prefixes": [
+    "HASU"
+   ],
+   "confidence": "high"
+  },
+  {
+   "code": "apl",
+   "name": "APL",
+   "name_ar": "إيه بي إل",
+   "scac": "APLU",
+   "container_prefixes": [
+    "APLU"
+   ],
+   "bl_prefixes": [
+    "APLU"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "code": "hamburg_sud",
+   "name": "Hamburg Sud",
+   "name_ar": "هامبورغ سود",
+   "scac": "SUDU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "SUDU"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "code": "safmarine",
+   "name": "Safmarine",
+   "name_ar": "سافمارين",
+   "scac": "SAFM",
+   "container_prefixes": [
+    "SAFU"
+   ],
+   "bl_prefixes": [
+    "SAFM"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "code": "arkas",
+   "name": "Arkas Line",
+   "name_ar": "أركاس",
+   "scac": "ARKU",
+   "container_prefixes": [
+    "ARKU"
+   ],
+   "bl_prefixes": [
+    "ARKU"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "code": "turkon",
+   "name": "Turkon Line",
+   "name_ar": "تركون",
+   "scac": "TRKU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "TRKU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "x_press_feeders",
+   "name": "X-Press Feeders",
+   "name_ar": "إكسبريس فيدرز",
+   "scac": "XPFU",
+   "container_prefixes": [
+    "XPFU"
+   ],
+   "bl_prefixes": [
+    "XPFU"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "code": "namsung",
+   "name": "Namsung Shipping",
+   "name_ar": "نامسونغ",
+   "scac": "NSBU",
+   "container_prefixes": [
+    "NSBU"
+   ],
+   "bl_prefixes": [
+    "NSBU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "pan_ocean",
+   "name": "Pan Ocean",
+   "name_ar": "بان أوشن",
+   "scac": "POBU",
+   "container_prefixes": [
+    "POBU"
+   ],
+   "bl_prefixes": [
+    "POBU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "gold_star",
+   "name": "Gold Star Line",
+   "name_ar": "غولد ستار",
+   "scac": "GSLU",
+   "container_prefixes": [
+    "GSLU"
+   ],
+   "bl_prefixes": [
+    "GSLU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "emirates_shipping",
+   "name": "Emirates Shipping Line (ESL)",
+   "name_ar": "الإمارات للخطوط البحرية",
+   "scac": "ESLU",
+   "container_prefixes": [
+    "ESLU"
+   ],
+   "bl_prefixes": [
+    "ESLU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "cnc",
+   "name": "CNC Line",
+   "name_ar": "سي إن سي",
+   "scac": "CNCU",
+   "container_prefixes": [
+    "CNCU"
+   ],
+   "bl_prefixes": [
+    "CNCU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "irisl",
+   "name": "IRISL",
+   "name_ar": "خطوط الشحن الإيرانية",
+   "scac": "IRIU",
+   "container_prefixes": [
+    "IRIU"
+   ],
+   "bl_prefixes": [
+    "IRIU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "unifeeder",
+   "name": "Unifeeder",
+   "name_ar": "يونيفيدر",
+   "scac": "UNFU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "UNFU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "interasia",
+   "name": "Interasia Lines",
+   "name_ar": "إنترآسيا",
+   "scac": "IALU",
+   "container_prefixes": [
+    "IALU"
+   ],
+   "bl_prefixes": [
+    "IALU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "seaboard",
+   "name": "Seaboard Marine",
+   "name_ar": "سيبورد مارين",
+   "scac": "SBLU",
+   "container_prefixes": [
+    "SBLU"
+   ],
+   "bl_prefixes": [
+    "SBLU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "crowley",
+   "name": "Crowley",
+   "name_ar": "كراولي",
+   "scac": "CLNU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "CLNU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "dongjin",
+   "name": "Dongjin Shipping",
+   "name_ar": "دونغجين",
+   "scac": "DJSU",
+   "container_prefixes": [
+    "DJSU"
+   ],
+   "bl_prefixes": [
+    "DJSU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "sinotrans",
+   "name": "Sinotrans Container Lines",
+   "name_ar": "سينوترانس للحاويات",
+   "scac": "SNTU",
+   "container_prefixes": [
+    "SNTU"
+   ],
+   "bl_prefixes": [
+    "SNTU"
+   ],
+   "confidence": "low"
+  },
+  {
+   "code": "dhl_gf",
+   "name": "DHL Global Forwarding (forwarder)",
+   "name_ar": "دي إتش إل لخدمات الشحن",
+   "scac": "DHLU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "DHLU"
+   ],
+   "confidence": "low",
+   "kind": "forwarder"
+  },
+  {
+   "code": "kuehne_nagel",
+   "name": "Kuehne+Nagel (forwarder)",
+   "name_ar": "كون آند ناجل",
+   "scac": "KNLU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "KNLU"
+   ],
+   "confidence": "low",
+   "kind": "forwarder"
+  },
+  {
+   "code": "dsv",
+   "name": "DSV (forwarder)",
+   "name_ar": "دي إس في",
+   "scac": "DSVU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "DSVU"
+   ],
+   "confidence": "low",
+   "kind": "forwarder"
+  },
+  {
+   "code": "db_schenker",
+   "name": "DB Schenker (forwarder)",
+   "name_ar": "دي بي شينكر",
+   "scac": "SCHU",
+   "container_prefixes": [],
+   "bl_prefixes": [
+    "SCHU"
+   ],
+   "confidence": "low",
+   "kind": "forwarder"
+  }
+ ],
+ "airlines": [
+  {
+   "code": "american_airlines",
+   "name": "American Airlines Cargo",
+   "name_ar": "الخطوط الأمريكية للشحن",
+   "iata_code": "AA",
+   "awb_prefix": "001"
+  },
+  {
+   "code": "delta",
+   "name": "Delta Cargo",
+   "name_ar": "دلتا للشحن",
+   "iata_code": "DL",
+   "awb_prefix": "006"
+  },
+  {
+   "code": "united",
+   "name": "United Cargo",
+   "name_ar": "يونايتد للشحن",
+   "iata_code": "UA",
+   "awb_prefix": "016"
+  },
+  {
+   "code": "lufthansa",
+   "name": "Lufthansa Cargo",
+   "name_ar": "لوفتهانزا للشحن",
+   "iata_code": "LH",
+   "awb_prefix": "020"
+  },
+  {
+   "code": "air_france",
+   "name": "Air France Cargo",
+   "name_ar": "الخطوط الفرنسية للشحن",
+   "iata_code": "AF",
+   "awb_prefix": "057"
+  },
+  {
+   "code": "saudia",
+   "name": "Saudia Cargo",
+   "name_ar": "السعودية للشحن",
+   "iata_code": "SV",
+   "awb_prefix": "065"
+  },
+  {
+   "code": "ethiopian",
+   "name": "Ethiopian Cargo",
+   "name_ar": "الإثيوبية للشحن",
+   "iata_code": "ET",
+   "awb_prefix": "071"
+  },
+  {
+   "code": "gulf_air",
+   "name": "Gulf Air Cargo",
+   "name_ar": "طيران الخليج للشحن",
+   "iata_code": "GF",
+   "awb_prefix": "072"
+  },
+  {
+   "code": "iraqi_airways",
+   "name": "Iraqi Airways",
+   "name_ar": "الخطوط الجوية العراقية",
+   "iata_code": "IA",
+   "awb_prefix": "073"
+  },
+  {
+   "code": "klm",
+   "name": "KLM Cargo",
+   "name_ar": "كيه إل إم للشحن",
+   "iata_code": "KL",
+   "awb_prefix": "074"
+  },
+  {
+   "code": "mea",
+   "name": "Middle East Airlines",
+   "name_ar": "طيران الشرق الأوسط",
+   "iata_code": "ME",
+   "awb_prefix": "076"
+  },
+  {
+   "code": "egyptair",
+   "name": "EgyptAir Cargo",
+   "name_ar": "مصر للطيران للشحن",
+   "iata_code": "MS",
+   "awb_prefix": "077"
+  },
+  {
+   "code": "china_cargo",
+   "name": "China Cargo Airlines",
+   "name_ar": "الصين للشحن الجوي",
+   "iata_code": "CK",
+   "awb_prefix": "112"
+  },
+  {
+   "code": "british_airways",
+   "name": "IAG Cargo (British Airways)",
+   "name_ar": "آي إيه جي للشحن (الخطوط البريطانية)",
+   "iata_code": "BA",
+   "awb_prefix": "125"
+  },
+  {
+   "code": "flydubai",
+   "name": "flydubai Cargo",
+   "name_ar": "فلاي دبي للشحن",
+   "iata_code": "FZ",
+   "awb_prefix": "141"
+  },
+  {
+   "code": "qatar_airways",
+   "name": "Qatar Airways Cargo",
+   "name_ar": "القطرية للشحن",
+   "iata_code": "QR",
+   "awb_prefix": "157"
+  },
+  {
+   "code": "cathay",
+   "name": "Cathay Cargo",
+   "name_ar": "كاثي للشحن",
+   "iata_code": "CX",
+   "awb_prefix": "160"
+  },
+  {
+   "code": "cargolux",
+   "name": "Cargolux",
+   "name_ar": "كارغولوكس",
+   "iata_code": "CV",
+   "awb_prefix": "172"
+  },
+  {
+   "code": "emirates",
+   "name": "Emirates SkyCargo",
+   "name_ar": "الإمارات للشحن الجوي",
+   "iata_code": "EK",
+   "awb_prefix": "176"
+  },
+  {
+   "code": "korean_air",
+   "name": "Korean Air Cargo",
+   "name_ar": "الكورية للشحن",
+   "iata_code": "KE",
+   "awb_prefix": "180"
+  },
+  {
+   "code": "kuwait_airways",
+   "name": "Kuwait Airways Cargo",
+   "name_ar": "الخطوط الكويتية للشحن",
+   "iata_code": "KU",
+   "awb_prefix": "229"
+  },
+  {
+   "code": "turkish",
+   "name": "Turkish Cargo",
+   "name_ar": "التركية للشحن",
+   "iata_code": "TK",
+   "awb_prefix": "235"
+  },
+  {
+   "code": "china_airlines",
+   "name": "China Airlines Cargo",
+   "name_ar": "الخطوط الصينية (تايوان) للشحن",
+   "iata_code": "CI",
+   "awb_prefix": "297"
+  },
+  {
+   "code": "royal_jordanian",
+   "name": "Royal Jordanian Cargo",
+   "name_ar": "الملكية الأردنية للشحن",
+   "iata_code": "RJ",
+   "awb_prefix": "512"
+  },
+  {
+   "code": "etihad",
+   "name": "Etihad Cargo",
+   "name_ar": "الاتحاد للشحن",
+   "iata_code": "EY",
+   "awb_prefix": "607"
+  },
+  {
+   "code": "singapore_airlines",
+   "name": "Singapore Airlines Cargo",
+   "name_ar": "السنغافورية للشحن",
+   "iata_code": "SQ",
+   "awb_prefix": "618"
+  },
+  {
+   "code": "eva_air",
+   "name": "EVA Air Cargo",
+   "name_ar": "إيفا للشحن",
+   "iata_code": "BR",
+   "awb_prefix": "695"
+  },
+  {
+   "code": "xiamen_airlines",
+   "name": "Xiamen Airlines",
+   "name_ar": "خطوط شيامن الجوية",
+   "iata_code": "MF",
+   "awb_prefix": "731"
+  },
+  {
+   "code": "china_eastern",
+   "name": "China Eastern Airlines",
+   "name_ar": "الصين الشرقية للطيران",
+   "iata_code": "MU",
+   "awb_prefix": "781"
+  },
+  {
+   "code": "china_southern",
+   "name": "China Southern Cargo",
+   "name_ar": "الصين الجنوبية للشحن",
+   "iata_code": "CZ",
+   "awb_prefix": "784"
+  },
+  {
+   "code": "sichuan_airlines",
+   "name": "Sichuan Airlines",
+   "name_ar": "خطوط سيتشوان الجوية",
+   "iata_code": "3U",
+   "awb_prefix": "876"
+  },
+  {
+   "code": "hainan_airlines",
+   "name": "Hainan Airlines",
+   "name_ar": "خطوط هاينان الجوية",
+   "iata_code": "HU",
+   "awb_prefix": "880"
+  },
+  {
+   "code": "oman_air",
+   "name": "Oman Air Cargo",
+   "name_ar": "الطيران العُماني للشحن",
+   "iata_code": "WY",
+   "awb_prefix": "910"
+  },
+  {
+   "code": "air_china",
+   "name": "Air China Cargo",
+   "name_ar": "طيران الصين للشحن",
+   "iata_code": "CA",
+   "awb_prefix": "999"
+  },
+  {
+   "code": "fedex",
+   "name": "FedEx Express",
+   "name_ar": "فيديكس",
+   "iata_code": "FX",
+   "awb_prefix": "023"
+  },
+  {
+   "code": "ups",
+   "name": "UPS Airlines",
+   "name_ar": "يو بي إس",
+   "iata_code": "5X",
+   "awb_prefix": "406"
+  },
+  {
+   "code": "air_india",
+   "name": "Air India Cargo",
+   "name_ar": "طيران الهند للشحن",
+   "iata_code": "AI",
+   "awb_prefix": "098"
+  },
+  {
+   "code": "atlas_air",
+   "name": "Atlas Air",
+   "name_ar": "أطلس إير",
+   "iata_code": "5Y",
+   "awb_prefix": "369"
+  },
+  {
+   "code": "jal",
+   "name": "Japan Airlines Cargo",
+   "name_ar": "طيران اليابان للشحن",
+   "iata_code": "JL",
+   "awb_prefix": "131"
+  },
+  {
+   "code": "ana",
+   "name": "ANA Cargo",
+   "name_ar": "إيه إن إيه للشحن",
+   "iata_code": "NH",
+   "awb_prefix": "205"
+  },
+  {
+   "code": "thai",
+   "name": "Thai Airways Cargo",
+   "name_ar": "الخطوط التايلاندية للشحن",
+   "iata_code": "TG",
+   "awb_prefix": "217"
+  },
+  {
+   "code": "malaysia",
+   "name": "MASkargo",
+   "name_ar": "ماس كارغو",
+   "iata_code": "MH",
+   "awb_prefix": "232"
+  },
+  {
+   "code": "air_canada",
+   "name": "Air Canada Cargo",
+   "name_ar": "طيران كندا للشحن",
+   "iata_code": "AC",
+   "awb_prefix": "014"
+  },
+  {
+   "code": "pegasus",
+   "name": "Pegasus Cargo",
+   "name_ar": "بيغاسوس للشحن",
+   "iata_code": "PC",
+   "awb_prefix": "624"
+  },
+  {
+   "code": "air_arabia",
+   "name": "Air Arabia Cargo",
+   "name_ar": "العربية للطيران للشحن",
+   "iata_code": "G9",
+   "awb_prefix": "514"
+  },
+  {
+   "code": "aeroflot",
+   "name": "Aeroflot Cargo",
+   "name_ar": "أيروفلوت للشحن",
+   "iata_code": "SU",
+   "awb_prefix": "555"
+  },
+  {
+   "code": "vietnam",
+   "name": "Vietnam Airlines Cargo",
+   "name_ar": "الخطوط الفيتنامية للشحن",
+   "iata_code": "VN",
+   "awb_prefix": "738"
+  },
+  {
+   "code": "asiana",
+   "name": "Asiana Cargo",
+   "name_ar": "آسيانا للشحن",
+   "iata_code": "OZ",
+   "awb_prefix": "988"
+  },
+  {
+   "code": "pia",
+   "name": "PIA Cargo",
+   "name_ar": "الباكستانية للشحن",
+   "iata_code": "PK",
+   "awb_prefix": "214"
+  },
+  {
+   "code": "srilankan",
+   "name": "SriLankan Cargo",
+   "name_ar": "السريلانكية للشحن",
+   "iata_code": "UL",
+   "awb_prefix": "603"
+  },
+  {
+   "code": "swiss",
+   "name": "Swiss WorldCargo",
+   "name_ar": "سويس وورلد كارغو",
+   "iata_code": "LX",
+   "awb_prefix": "724"
+  },
+  {
+   "code": "virgin_atlantic",
+   "name": "Virgin Atlantic Cargo",
+   "name_ar": "فيرجن أتلانتيك للشحن",
+   "iata_code": "VS",
+   "awb_prefix": "932"
+  },
+  {
+   "code": "iberia",
+   "name": "Iberia Cargo",
+   "name_ar": "إيبيريا للشحن",
+   "iata_code": "IB",
+   "awb_prefix": "075"
+  },
+  {
+   "code": "tap",
+   "name": "TAP Air Portugal Cargo",
+   "name_ar": "تاب البرتغالية للشحن",
+   "iata_code": "TP",
+   "awb_prefix": "047"
+  },
+  {
+   "code": "finnair",
+   "name": "Finnair Cargo",
+   "name_ar": "فينير للشحن",
+   "iata_code": "AY",
+   "awb_prefix": "105"
+  },
+  {
+   "code": "qantas",
+   "name": "Qantas Freight",
+   "name_ar": "كانتاس للشحن",
+   "iata_code": "QF",
+   "awb_prefix": "081"
+  },
+  {
+   "code": "kenya_airways",
+   "name": "Kenya Airways Cargo",
+   "name_ar": "الكينية للشحن",
+   "iata_code": "KQ",
+   "awb_prefix": "706"
+  },
+  {
+   "code": "air_hong_kong",
+   "name": "Air Hong Kong",
+   "name_ar": "طيران هونغ كونغ",
+   "iata_code": "LD",
+   "awb_prefix": "288"
+  },
+  {
+   "code": "aerologic",
+   "name": "AeroLogic",
+   "name_ar": "أيرولوجيك",
+   "iata_code": "3S",
+   "awb_prefix": "936"
+  },
+  {
+   "code": "cargojet",
+   "name": "Cargojet",
+   "name_ar": "كارغوجيت",
+   "iata_code": "W8",
+   "awb_prefix": "489"
+  },
+  {
+   "code": "sas",
+   "name": "SAS Cargo",
+   "name_ar": "سكاندنافيان للشحن",
+   "iata_code": "SK",
+   "awb_prefix": "117"
+  },
+  {
+   "code": "royal_air_maroc",
+   "name": "Royal Air Maroc Cargo",
+   "name_ar": "الملكية المغربية للشحن",
+   "iata_code": "AT",
+   "awb_prefix": "147"
+  },
+  {
+   "code": "air_algerie",
+   "name": "Air Algerie Cargo",
+   "name_ar": "الجزائرية للشحن",
+   "iata_code": "AH",
+   "awb_prefix": "124"
+  },
+  {
+   "code": "tunisair",
+   "name": "Tunisair Express Cargo",
+   "name_ar": "التونسية للشحن",
+   "iata_code": "TU",
+   "awb_prefix": "199"
+  },
+  {
+   "code": "philippine",
+   "name": "Philippine Airlines Cargo",
+   "name_ar": "الفلبينية للشحن",
+   "iata_code": "PR",
+   "awb_prefix": "079"
+  },
+  {
+   "code": "garuda",
+   "name": "Garuda Indonesia Cargo",
+   "name_ar": "غارودا للشحن",
+   "iata_code": "GA",
+   "awb_prefix": "126"
+  },
+  {
+   "code": "saa",
+   "name": "South African Airways Cargo",
+   "name_ar": "الجنوب أفريقية للشحن",
+   "iata_code": "SA",
+   "awb_prefix": "083"
+  },
+  {
+   "code": "latam",
+   "name": "LATAM Cargo",
+   "name_ar": "لاتام للشحن",
+   "iata_code": "LA",
+   "awb_prefix": "045"
+  },
+  {
+   "code": "avianca",
+   "name": "Avianca Cargo",
+   "name_ar": "أفيانكا للشحن",
+   "iata_code": "AV",
+   "awb_prefix": "134"
+  }
+ ],
+ "lessor_prefixes": [
+  "BMOU",
+  "CAIU",
+  "CRSU",
+  "FCIU",
+  "FSCU",
+  "GESU",
+  "SEGU",
+  "TCLU",
+  "TCNU",
+  "TEMU",
+  "TGHU",
+  "TRLU"
+ ]
+}

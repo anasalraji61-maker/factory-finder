@@ -8,9 +8,11 @@ All mapping tables below are UNVERIFIED against any live provider; fixtures driv
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from ff_tracking.domain.enums import ShipmentStatus as S
@@ -25,32 +27,42 @@ from ff_tracking.domain.models import (
 from ff_tracking.domain.places import find_place
 from ff_tracking.domain.progress import PROGRESS
 
-# Provider status code (upper snake) -> normalized status. Ocean aggregator codes and IATA
-# Cargo-IMP (air) codes live in one table; they do not collide.
-STATUS_MAP: dict[str, S] = {
-    # ocean
-    "BOOKED": S.BOOKED, "BOOKING_CONFIRMED": S.BOOKED, "EMPTY_GATE_OUT": S.BOOKED,
-    "GATE_OUT_EMPTY": S.BOOKED, "EMPTY_PICKUP": S.BOOKED,
-    "GATE_IN": S.GATE_IN, "GATE_IN_FULL": S.GATE_IN, "FULL_GATE_IN": S.GATE_IN,
-    "LOADED": S.LOADED, "LOAD": S.LOADED, "LOADED_ON_VESSEL": S.LOADED, "LOADED_ON_BOARD": S.LOADED,
-    "DEPARTED": S.DEPARTED, "DEPARTURE": S.DEPARTED, "VESSEL_DEPARTURE": S.DEPARTED, "VESSEL_DEPARTED": S.DEPARTED,
-    "IN_TRANSIT": S.IN_TRANSIT, "UNDER_WAY": S.IN_TRANSIT,
-    "TRANSSHIPMENT": S.TRANSSHIPMENT, "TRANSSHIPMENT_DISCHARGE": S.TRANSSHIPMENT,
-    "TRANSSHIPMENT_LOAD": S.TRANSSHIPMENT, "TS_DISCHARGE": S.TRANSSHIPMENT, "TS_LOAD": S.TRANSSHIPMENT,
-    "ARRIVED": S.ARRIVED, "ARRIVAL": S.ARRIVED, "VESSEL_ARRIVAL": S.ARRIVED, "VESSEL_ARRIVED": S.ARRIVED,
-    "DISCHARGED": S.DISCHARGED, "DISCHARGE": S.DISCHARGED, "UNLOADED": S.DISCHARGED,
-    "CUSTOMS_HOLD": S.CUSTOMS_HOLD, "CUSTOMS_INSPECTION": S.CUSTOMS_HOLD, "HOLD": S.CUSTOMS_HOLD,
-    "RELEASED": S.RELEASED, "CUSTOMS_RELEASED": S.RELEASED, "CUSTOMS_CLEARED": S.RELEASED,
-    # gate-out of the full container is the "gate_out" milestone; status-wise it leaves the terminal
-    "GATE_OUT": S.OUT_FOR_DELIVERY, "GATE_OUT_FULL": S.OUT_FOR_DELIVERY, "FULL_GATE_OUT": S.OUT_FOR_DELIVERY,
-    "OUT_FOR_DELIVERY": S.OUT_FOR_DELIVERY,
-    "DELIVERED": S.DELIVERED, "EMPTY_RETURNED": S.DELIVERED, "EMPTY_RETURN": S.DELIVERED,
-    "EXCEPTION": S.EXCEPTION, "DELAYED": S.EXCEPTION, "DAMAGED": S.EXCEPTION,
-    # air (IATA Cargo-IMP status codes)
-    "BKD": S.BOOKED, "RCS": S.GATE_IN, "MAN": S.LOADED, "DEP": S.DEPARTED, "TFD": S.TRANSSHIPMENT,
-    "RCT": S.TRANSSHIPMENT, "ARR": S.ARRIVED, "RCF": S.DISCHARGED, "AWD": S.CUSTOMS_HOLD,
-    "CCD": S.RELEASED, "NFD": S.RELEASED, "DLV": S.DELIVERED, "DIS": S.EXCEPTION,
-}
+_STATUS_FILE = Path(__file__).resolve().parent.parent / "data" / "status_map.json"
+
+
+def _load_status_tables() -> tuple[dict[str, S], dict[str, dict[str, S]]]:
+    raw = json.loads(_STATUS_FILE.read_text(encoding="utf-8"))
+    default = {k: S(v) for k, v in raw["default"].items()}
+    per_carrier = {c: {k: S(v) for k, v in table.items()} for c, table in raw.get("carriers", {}).items()}
+    return default, per_carrier
+
+
+# Provider status code (upper snake) -> normalized status, data driven (data/status_map.json). Ocean aggregator
+# codes and IATA Cargo-IMP (air) codes live in the default table; they do not collide. Carrier tables override it.
+STATUS_MAP, CARRIER_STATUS_MAPS = _load_status_tables()
+
+
+def map_status(code: Any, carrier_code: str | None = None) -> S | None:
+    """Normalized status for a provider code (carrier table first, then the default table, then the generic DCSA profile); ``None`` = unknown."""
+    key = norm_code(code)
+    if carrier_code and (hit := CARRIER_STATUS_MAPS.get(carrier_code, {}).get(key)) is not None:
+        return hit
+    return STATUS_MAP.get(key) or CARRIER_STATUS_MAPS.get("dcsa", {}).get(key)
+
+
+def resolve_status(code: Any, carrier_code: str | None = None, current: S | None = None) -> S:
+    """Status after applying one provider code to a shipment currently in ``current``.
+
+    Unknown codes never move the shipment (``current``, or ``booked`` when nothing is known yet) and a delivered
+    shipment is never reopened by a different status."""
+    mapped = map_status(code, carrier_code)
+    if current is S.DELIVERED:
+        return S.DELIVERED
+    if mapped is None:
+        return current or S.BOOKED
+    return mapped
+
+
 _GATE_OUT = re.compile(r"^(FULL_)?GATE_OUT(_FULL)?$")
 _LOCODE = re.compile(r"^[A-Z]{2}[A-Z0-9]{3}$")
 _IATA = re.compile(r"^[A-Z]{3}$")
@@ -128,7 +140,7 @@ MAX_EVENTS = 300  # a provider cannot grow the stored aggregate without bound
 
 def normalize_events(
     raw_events: Iterable[Mapping[str, Any]], *, source: str, now: datetime,
-    destination_hub: str | None = None,
+    destination_hub: str | None = None, carrier_code: str | None = None,
 ) -> tuple[list[TrackingEvent], datetime | None, dict[str, datetime], int]:
     """Return ``(events, planned_arrival_eta, milestones, skipped_count)``.
 
@@ -143,7 +155,7 @@ def normalize_events(
     skipped = 0
     for raw in raw_events:
         code = norm_code(raw.get("code"))
-        status = STATUS_MAP.get(code)
+        status = map_status(code, carrier_code)
         ts = parse_ts(raw.get("timestamp"))
         if status is None or ts is None:
             skipped += 1

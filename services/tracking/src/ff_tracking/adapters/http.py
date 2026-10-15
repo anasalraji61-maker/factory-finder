@@ -219,7 +219,8 @@ class HttpContainerProvider(_HttpBase):
                 "lat": (e.get("location") or {}).get("lat"), "lon": (e.get("location") or {}).get("lon"),
             } for e in d["events"]]
             events, planned, milestones, _ = normalize_events(
-                raw, source=self.id, now=now, destination_hub=dest_hub)
+                raw, source=self.id, now=now, destination_hub=dest_hub,
+                carrier_code=carrier.code if carrier else None)
             eta = parse_ts(d.get("eta")) or planned
             vessel = _vessel(d.get("vessel")) or next((e.vessel for e in reversed(events) if e.vessel), None)
             code = (d.get("carrier") or {}).get("scac") or scac

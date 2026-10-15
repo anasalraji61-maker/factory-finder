@@ -7,6 +7,7 @@ from ..domain import search
 from ..domain.data import get_dataset
 from ..domain.distance import compute_distance
 from ..domain.models import City, Country, DistanceResult, Hub, NearestHub
+from ..domain.sea import SeaRouteUnavailable, parse_avoid
 from .errors import ApiError
 
 router = APIRouter(prefix="/v1")
@@ -66,9 +67,17 @@ def distance(
     to_lon: Lon,
     mode: Literal["road", "sea", "air"] = "road",
     country: CountryParam = None,
+    avoid: Annotated[str | None, Query(max_length=200)] = None,
 ) -> DistanceResult:
     _check_country(country)
-    return compute_distance(
-        get_dataset(), from_lat, from_lon, to_lat, to_lon, mode,
-        get_settings().default_road_factor, country,
-    )
+    try:
+        avoided = parse_avoid(avoid)
+    except ValueError as e:
+        raise ApiError(422, "unknown_chokepoint", str(e)) from e
+    try:
+        return compute_distance(
+            get_dataset(), from_lat, from_lon, to_lat, to_lon, mode,
+            get_settings().default_road_factor, country, avoided if mode == "sea" else frozenset(),
+        )
+    except SeaRouteUnavailable as e:
+        raise ApiError(422, "sea_route_unavailable", str(e)) from e

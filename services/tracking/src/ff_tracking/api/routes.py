@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ff_tracking.domain.carriers import find_carrier
+from ff_tracking.domain.directory import suggest_carrier
 from ff_tracking.domain.enums import ReferenceType, ShipmentStatus, TransportMode
 from ff_tracking.domain.errors import Unauthenticated
 from ff_tracking.domain.models import Shipment
@@ -86,11 +87,14 @@ async def delete_shipment(shipment_id: str, user: User, svc: Svc) -> Response:
 async def validate(reference_type: ReferenceType, reference: Annotated[str, Path(min_length=1, max_length=64)]) -> dict[str, Any]:
     v = validate_reference(reference_type, reference)
     carrier = detect_carrier(reference_type, v.prefix, None) if v.valid else None
+    suggestion = suggest_carrier(reference_type, v.prefix) if v.valid else None
     return {
         "reference": reference, "reference_type": reference_type.value, "valid": v.valid,
         "normalized": v.normalized, "reason": v.reason,
         "mode": reference_type.mode.value if isinstance(reference_type.mode, TransportMode) else None,
         "carrier": carrier.model_dump(mode="json") if carrier else None,
+        "suggestions": list(v.suggestions),
+        "carrier_suggestion": suggestion.to_dict() if suggestion else None,
     }
 
 

@@ -132,6 +132,11 @@ paths:
         - {name: to_lon, in: query, required: true, schema: {type: number, minimum: -180, maximum: 180}}
         - {name: mode, in: query, schema: {type: string, enum: [road, sea, air], default: road}}
         - {name: country, in: query, description: Optional override for the road factor, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
+        - name: avoid
+          in: query
+          required: false
+          description: "Sea mode only (ignored otherwise). Comma-separated chokepoints the route must not use. Known: suez, bab_el_mandeb, hormuz, malacca, panama, gibraltar, bosphorus. Unknown id -> 422 `unknown_chokepoint`; no remaining lane (e.g. a Gulf port with hormuz avoided) -> 422 `sea_route_unavailable`."
+          schema: {type: string, maxLength: 200, example: "suez,bab_el_mandeb"}
       responses:
         "200":
           description: Distance
@@ -186,6 +191,8 @@ components:
         iata: {type: [string, "null"]}
         serves_countries: {type: array, items: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
         notes: {type: [string, "null"]}
+        confidence: {type: [string, "null"], enum: [low, medium, high, null], description: "Data-quality label of the coordinates/attributes; never implies verification"}
+        as_of: {type: [string, "null"], description: "YYYY-MM the entry was last reviewed"}
     NearestHub:
       allOf:
         - {$ref: "#/components/schemas/Hub"}
@@ -205,3 +212,6 @@ components:
         road_factor: {type: [number, "null"]}
         via: {type: array, items: {type: string}, description: Sea lane waypoints used}
         is_estimate: {type: boolean}
+        avoided: {type: array, items: {type: string}, description: Chokepoints excluded from the route (echo of `avoid`)}
+        confidence: {type: [string, "null"], enum: [low, medium, high, null], description: "Sea mode: lane graph is approximate (low)"}
+        as_of: {type: [string, "null"], description: "YYYY-MM of the lane-graph data (sea mode)"}

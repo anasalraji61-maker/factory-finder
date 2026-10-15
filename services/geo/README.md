@@ -25,7 +25,7 @@ cd services/geo && ../../.venv/bin/python -m uvicorn ff_geo.main:app --port 8103
 `GET /ready` (unauthenticated, exempt from the internal token): 503 if the bundled dataset fails to load. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
 
 ## Sea graph (data round 3)
-`domain/sea.py` has 150 lane nodes and 138 sea hubs. Access nodes farther than 400 km are ignored (except the nearest) so ports never jump overland. `tests/test_sea_properties.py` checks distance >= great-circle, symmetry and sane detour ratios.
+`domain/sea.py` has 174 lane nodes and 159 sea hubs. Access nodes farther than 400 km are ignored (except the nearest) so ports never jump overland. `tests/test_sea_properties.py` checks distance >= great-circle, symmetry and sane detour ratios.
 
 ## Environment reference (complete)
 Every setting in `src/ff_geo/config.py` (`Settings`, case-insensitive env names). Secrets are never defaulted.
@@ -37,3 +37,5 @@ Every setting in `src/ff_geo/config.py` (`Settings`, case-insensitive env names)
 | `FF_GEO_DEFAULT_ROAD_FACTOR` | 1.3 |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).
+
+Sea `avoid`: comma-separated chokepoints (`suez, bab_el_mandeb, hormuz, malacca, panama, gibraltar, bosphorus`) removed from the lane graph; with `avoid` only each endpoint's nearest lane node is used. Unknown id -> 422 `unknown_chokepoint`; no lane left -> 422 `sea_route_unavailable`. Sea results carry `confidence: low`, `as_of: 2026-10`; hubs carry `confidence`/`as_of` (never "high" = never claimed verified). Network validation: `tests/test_sea_network.py`.

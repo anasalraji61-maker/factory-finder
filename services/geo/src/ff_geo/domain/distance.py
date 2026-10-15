@@ -1,7 +1,7 @@
 from .data import Dataset
 from .geometry import haversine_km
 from .models import DistanceResult
-from .sea import sea_distance_km
+from .sea import DATA_AS_OF, DATA_CONFIDENCE, sea_distance_km
 
 SPEED_KMH = {"road": 55.0, "sea": 26.0, "air": 800.0}
 AIR_OVERHEAD_H = 3.0
@@ -23,6 +23,7 @@ def compute_distance(
     mode: str,
     default_road_factor: float = 1.3,
     country: str | None = None,
+    avoid: frozenset[str] = frozenset(),
 ) -> DistanceResult:
     straight = haversine_km(lat1, lon1, lat2, lon2)
     if mode == "road":
@@ -39,10 +40,10 @@ def compute_distance(
             duration_hours=round(straight / SPEED_KMH["air"] + AIR_OVERHEAD_H, 1),
             method="great-circle",
         )
-    km, via = sea_distance_km(lat1, lon1, lat2, lon2)
+    km, via = sea_distance_km(lat1, lon1, lat2, lon2, avoid)
     km = max(km, straight)
     return DistanceResult(
         mode="sea", distance_km=round(km, 1), straight_line_km=round(straight, 1),
         duration_hours=round(km / SPEED_KMH["sea"], 1), method="shipping-lane waypoint graph",
-        via=via,
+        via=via, avoided=sorted(avoid), confidence=DATA_CONFIDENCE, as_of=DATA_AS_OF,
     )

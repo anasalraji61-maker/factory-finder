@@ -170,6 +170,31 @@ NODES: dict[str, tuple[float, float]] = {
     "Yucatan Channel": (21.8, -85.5),
     "Dardanelles": (40.0, 26.2),
     "Texas Offshore": (28.6, -94.3),
+    # --- data round 4 (docs/requests/data-geo-sea-nodes.md): Caribbean, Red Sea, Africa, Med, Baltic, Oceania ---
+    "Caribbean Passage": (16.5, -67.0),
+    "Caucedo Approach": (17.6, -69.6),
+    "Kingston Approach": (17.4, -76.8),
+    "Guayaquil Approach": (-3.0, -81.0),
+    "Peru North Offshore": (-5.0, -82.5),
+    "Port Sudan Approach": (19.6, 38.5),
+    "Israel Offshore": (32.3, 33.8),
+    "Abidjan Approach": (4.6, -4.0),
+    "Luanda Approach": (-9.0, 12.5),
+    "Maputo Approach": (-26.0, 33.3),
+    "Malta Offshore": (35.6, 14.9),
+    "Baltic Northeast": (59.3, 21.0),
+    "Tasman Sea": (-35.0, 160.0),
+    "Northland Offshore": (-33.5, 174.5),
+    "Auckland Approach": (-36.3, 176.0),
+    "Fiji South": (-23.0, -179.5),
+    "South Pacific Mid": (-15.0, -130.0),
+    "Brisbane Approach": (-27.4, 154.2),
+    "North Atlantic": (47.0, -35.0),
+    "Windward Passage": (19.8, -73.8),
+    "Old Bahama Channel": (23.2, -77.6),
+    "Eastern Pacific": (-2.0, -110.0),
+    "Yellow Sea North": (37.6, 124.5),
+    "Jeju South": (32.8, 126.5),
 }
 
 EDGES: list[tuple[str, str]] = [
@@ -300,11 +325,14 @@ EDGES: list[tuple[str, str]] = [
     ("Anegada Passage", "Florida Straits"),
     ("Cartagena Approach", "Panama Atlantic"),
     ("Panama Atlantic", "Panama Pacific"),
-    ("Panama Pacific", "Callao Approach"),
+    ("Panama Pacific", "Guayaquil Approach"),
+    ("Guayaquil Approach", "Peru North Offshore"),
+    ("Peru North Offshore", "Callao Approach"),
     ("Panama Pacific", "Central America Pacific"),
     ("Central America Pacific", "Mexico Pacific"),
     ("Mexico Pacific", "US West Coast"),
-    ("Hawaii", "Callao Approach"),
+    ("Hawaii", "Eastern Pacific"),
+    ("Eastern Pacific", "Callao Approach"),
     # Australia / Indonesia
     ("Singapore Strait", "Karimata Strait"),
     ("Karimata Strait", "Java Sea"),
@@ -352,7 +380,8 @@ EDGES: list[tuple[str, str]] = [
     ("Kattegat", "Oresund"),
     ("Oresund", "Baltic South"),
     ("Baltic South", "Baltic Central"),
-    ("Baltic Central", "Gulf of Finland"),
+    ("Baltic Central", "Baltic Northeast"),
+    ("Baltic Northeast", "Gulf of Finland"),
     # Black Sea south / east
     ("Bosphorus", "Turkey Black Sea Coast"),
     ("Turkey Black Sea Coast", "Samsun Approach"),
@@ -388,16 +417,96 @@ EDGES: list[tuple[str, str]] = [
     ("Texas Offshore", "Mississippi Passes"),
     ("Gulf of Mexico", "Yucatan Channel"),
     ("Yucatan Channel", "Panama Atlantic"),
+    # data round 4
+    ("Anegada Passage", "Caribbean Passage"),
+    ("Caribbean Passage", "Caucedo Approach"),
+    ("Caucedo Approach", "Kingston Approach"),
+    ("Kingston Approach", "Cartagena Approach"),
+    ("Kingston Approach", "Panama Atlantic"),
+    ("Red Sea South", "Port Sudan Approach"),
+    ("Port Sudan Approach", "Red Sea North"),
+    ("East Mediterranean", "Israel Offshore"),
+    ("Israel Offshore", "Levant Coast"),
+    ("Cape Palmas Offshore", "Abidjan Approach"),
+    ("Abidjan Approach", "Tema Approach"),
+    ("Gulf of Guinea South", "Luanda Approach"),
+    ("Luanda Approach", "Angola Offshore"),
+    ("Durban Approach", "Maputo Approach"),
+    ("Maputo Approach", "Mozambique Channel"),
+    ("Central Mediterranean", "Malta Offshore"),
+    ("Malta Offshore", "Libya Offshore"),
+    ("US East Coast", "North Atlantic"),  # great-circle shortcut New York <-> Channel
+    ("North Atlantic", "English Channel"),
+    ("Dakar Approach", "Mid Atlantic"),
+    ("Gulf of Guinea South", "Brazil Northeast"),
+    ("Cape Palmas Offshore", "Brazil Northeast"),
+    ("Anegada Passage", "US East Coast"),
+    ("Kingston Approach", "Windward Passage"),
+    ("Windward Passage", "Old Bahama Channel"),
+    ("Old Bahama Channel", "Florida Straits"),
+    ("Guayaquil Approach", "Central America Pacific"),
+    ("Sydney Approach", "Northland Offshore"),
+    ("Mid Atlantic", "North Atlantic"),
+    ("Bohai/Yellow Sea", "Yellow Sea North"),  # Incheon / Korean west coast
+    ("Yellow Sea North", "Jeju South"),
+    ("Jeju South", "Korea Strait"),
+    ("Java South", "Indian Ocean Central"),  # Sunda route: the Malacca bypass
+    ("Sydney Approach", "Brisbane Approach"),
+    ("Brisbane Approach", "Coral Sea"),
+    ("Sydney Approach", "Tasman Sea"),
+    ("Bass Strait East", "Tasman Sea"),
+    ("Tasman Sea", "Northland Offshore"),
+    ("Northland Offshore", "Auckland Approach"),
+    ("Auckland Approach", "Fiji South"),
+    ("Fiji South", "Hawaii"),
+    ("Fiji South", "South Pacific Mid"),
+    ("South Pacific Mid", "Callao Approach"),
+    ("South Pacific Mid", "Panama Pacific"),
 ]
+
+# Chokepoints: each one is a set of lane edges that `avoid=` removes. The edge cut sits on the side
+# that keeps ports ON the strait (e.g. Bandar Abbas, Tangier Med, Port Said) reachable from outside.
+CHOKEPOINTS: dict[str, tuple[tuple[str, str], ...]] = {
+    "suez": (("Gulf of Suez", "Port Said"),),
+    "bab_el_mandeb": (("Gulf of Aden", "Bab-el-Mandeb"),),
+    "hormuz": (("Strait of Hormuz", "Persian Gulf South"),),
+    "malacca": (("Singapore Strait", "Malacca Strait"),),
+    "panama": (("Panama Atlantic", "Panama Pacific"),),
+    "gibraltar": (("West Mediterranean", "Strait of Gibraltar"),),
+    "bosphorus": (("Marmara", "Bosphorus"),),
+}
+
+# Quality of this lane graph (approximate shipping-lane waypoints, not charted routing).
+DATA_CONFIDENCE = "low"
+DATA_AS_OF = "2026-10"
 
 MAX_ACCESS_KM = 400.0  # max straight-line from an endpoint to its nearest lane node
 _ACCESS_FACTOR = 1.15
 
 
-@lru_cache(maxsize=1)
-def _graph() -> dict[str, list[tuple[str, float]]]:
+class SeaRouteUnavailable(ValueError):
+    """No sea route exists under the requested `avoid` set."""
+
+
+def parse_avoid(avoid: str | list[str] | tuple[str, ...] | None) -> frozenset[str]:
+    """Normalise a comma-separated string / list of chokepoint ids; unknown ids raise ValueError."""
+    if not avoid:
+        return frozenset()
+    items = avoid.split(",") if isinstance(avoid, str) else list(avoid)
+    ids = frozenset(x.strip().lower().replace("-", "_") for x in items if x.strip())
+    unknown = sorted(ids - CHOKEPOINTS.keys())
+    if unknown:
+        raise ValueError(f"unknown chokepoint(s): {', '.join(unknown)}; known: {', '.join(sorted(CHOKEPOINTS))}")
+    return ids
+
+
+@lru_cache(maxsize=32)
+def _graph(avoid: frozenset[str] = frozenset()) -> dict[str, list[tuple[str, float]]]:
+    blocked = {frozenset(e) for c in avoid for e in CHOKEPOINTS[c]}
     g: dict[str, list[tuple[str, float]]] = {n: [] for n in NODES}
     for a, b in EDGES:
+        if frozenset((a, b)) in blocked:
+            continue
         d = haversine_km(*NODES[a], *NODES[b]) * 1.05
         g[a].append((b, d))
         g[b].append((a, d))
@@ -411,8 +520,8 @@ def _access(lat: float, lon: float) -> list[tuple[float, str]]:
     return [x for i, x in enumerate(near) if i == 0 or x[0] <= MAX_ACCESS_KM]
 
 
-def _dijkstra(start: str, goal: str) -> tuple[float, list[str]]:
-    g = _graph()
+def _dijkstra(start: str, goal: str, avoid: frozenset[str] = frozenset()) -> tuple[float, list[str]]:
+    g = _graph(avoid)
     pq: list[tuple[float, str, list[str]]] = [(0.0, start, [start])]
     seen: set[str] = set()
     while pq:
@@ -425,17 +534,29 @@ def _dijkstra(start: str, goal: str) -> tuple[float, list[str]]:
         for m, w in g[n]:
             if m not in seen:
                 heapq.heappush(pq, (d + w, m, [*path, m]))
-    raise ValueError("no sea route")
+    raise SeaRouteUnavailable("no sea route")
 
 
-def sea_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> tuple[float, list[str]]:
-    """Approximate sea distance (km) and the lane waypoints used."""
+def sea_distance_km(
+    lat1: float, lon1: float, lat2: float, lon2: float, avoid: frozenset[str] = frozenset()
+) -> tuple[float, list[str]]:
+    """Approximate sea distance (km) and the lane waypoints used.
+
+    With `avoid` (chokepoint ids from CHOKEPOINTS) only each endpoint's nearest lane node is used, so a
+    port can never "jump" overland to dodge a closure; raises SeaRouteUnavailable if no lane remains."""
     best: tuple[float, list[str]] | None = None
-    for d1, n1 in _access(lat1, lon1):
-        for d2, n2 in _access(lat2, lon2):
-            core, path = (0.0, [n1]) if n1 == n2 else _dijkstra(n1, n2)
+    starts, goals = _access(lat1, lon1), _access(lat2, lon2)
+    if avoid:
+        starts, goals = starts[:1], goals[:1]
+    for d1, n1 in starts:
+        for d2, n2 in goals:
+            try:
+                core, path = (0.0, [n1]) if n1 == n2 else _dijkstra(n1, n2, avoid)
+            except SeaRouteUnavailable:
+                continue
             total = core + (d1 + d2) * _ACCESS_FACTOR
             if best is None or total < best[0]:
                 best = (total, path)
-    assert best is not None
+    if best is None:
+        raise SeaRouteUnavailable(f"no sea route avoiding {', '.join(sorted(avoid))}")
     return best
