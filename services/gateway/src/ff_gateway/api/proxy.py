@@ -6,7 +6,6 @@ from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter, Request, Response
-from sqlalchemy import select
 
 from ff_gateway.api.deps import bearer_token, current_user_id, internal_headers, require_verified
 from ff_gateway.db import User
@@ -79,6 +78,17 @@ ACTIVE_CACHE_SECONDS = 5.0
 ACTIVE_CACHE_MAX = 10_000
 
 
+async def _load_user(request: Request, user_id: str) -> User | None:
+    """The caller's user row, loaded at most once per request (never cached across requests, so claim and
+    verification state are always current)."""
+    st = request.state
+    if getattr(st, "_proxy_user_id", None) != user_id:
+        async with request.app.state.sessionmaker() as s:
+            st._proxy_user = await s.get(User, user_id)
+        st._proxy_user_id = user_id
+    return st._proxy_user  # type: ignore[no-any-return]
+
+
 async def _ensure_active(request: Request, user_id: str) -> None:
     """Disabled/deleted users (and tokens older than the last password change / logout-all) lose access on proxied
     routes within a few seconds (short cache, fail closed)."""
@@ -89,8 +99,7 @@ async def _ensure_active(request: Request, user_id: str) -> None:
     if hit is not None and hit[0] > now:
         active, version = hit[1], hit[2]
     else:
-        async with state.sessionmaker() as s:
-            u = await s.get(User, user_id)
+        u = await _load_user(request, user_id)
         active = bool(u is not None and u.is_active)
         if u is None:
             cache.pop(user_id, None)
@@ -168,8 +177,7 @@ async def proxy(full_path: str, request: Request) -> Response:
         user_id = current_user_id(request)
 
     if user_id and request.app.state.settings.require_email_verified and _needs_verified(request.method, upstream, path):
-        async with request.app.state.sessionmaker() as s:
-            u = await s.get(User, user_id)
+        u = await _load_user(request, user_id)
         if u is None:  # fail closed: a token for a deleted account must not reach money/listing writes
             raise InvalidToken("Token refers to an unknown user")
         if not u.is_active:
@@ -190,8 +198,7 @@ async def proxy(full_path: str, request: Request) -> Response:
     for k in [k for k in headers if k.lower() in ("x-client-ip", "x-account-age-seconds", "x-email-verified")]:
         del headers[k]  # never relay a client-supplied value
     if user_id and upstream == "trust" and _is_trust_report(request.method, path):
-        async with request.app.state.sessionmaker() as s:
-            u = await s.get(User, user_id)
+        u = await _load_user(request, user_id)
         if u is None:
             raise InvalidToken("Token refers to an unknown user")
         created = u.created_at if u.created_at.tzinfo else u.created_at.replace(tzinfo=UTC)
@@ -205,12 +212,7 @@ async def proxy(full_path: str, request: Request) -> Response:
         user_id
         and (upstream in ("messaging", "rfq", "feed") or trust_verification or (upstream == "sourcing" and (path.startswith("/v1/my") or _is_listing_report(path))))
     ):  # verified claim from our DB, never from the client
-        async with request.app.state.sessionmaker() as s:
-            row = (
-                await s.execute(
-                    select(User.supplier_id, User.supplier_claim_status, User.name).where(User.id == user_id)
-                )
-            ).first()
+        row = await _load_user(request, user_id)  # same row the active check used on a cache miss: one query, not two
         if row and row.supplier_id and row.supplier_claim_status == "verified":
             headers["X-Supplier-Id"] = row.supplier_id
         if trust_verification and "X-Supplier-Id" not in headers:

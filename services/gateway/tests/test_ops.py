@@ -193,3 +193,29 @@ def test_request_id_forwarded_and_logged_without_secrets(mock_upstream, capsys):
     assert (
         next(x for x in lines if x["path"] == "/health").get("user_id") is None
     )  # header spoof ignored
+
+
+def test_limiter_full_of_live_keys_evicts_in_amortized_batches():
+    clock = ManualClock()
+    lim = RateLimiter(clock, max_keys=200)
+    for i in range(200):
+        assert lim.check_sync(f"k{i}", 5) is None
+    lim.check_sync("new1", 5)
+    assert len(lim) == 200 - 2 + 1  # batch (1%) of the oldest evicted, not a table rebuild
+    sizes = []
+    for i in range(50):
+        lim.check_sync(f"n{i}", 5)
+        sizes.append(len(lim))
+        assert len(lim) <= 200
+    assert len(lim) <= 200 and "k199" in lim._hits
+
+
+def test_limiter_expired_prefix_popped_and_live_counts_kept():
+    clock = ManualClock()
+    lim = RateLimiter(clock, max_keys=3)
+    lim.check_sync("a", 1)
+    clock.advance(61)
+    lim.check_sync("b", 1)
+    lim.check_sync("c", 1)
+    lim.check_sync("d", 1)  # full: expired "a" popped, live b/c/d untouched
+    assert "a" not in lim._hits and lim.check_sync("b", 1) is not None

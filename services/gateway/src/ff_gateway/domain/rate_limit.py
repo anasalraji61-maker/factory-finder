@@ -1,6 +1,7 @@
 """Rate-limit storage: a small interface, an in-memory default and an optional Redis backend."""
 
 import logging
+from itertools import islice
 from typing import Any, Protocol
 
 from ff_gateway.domain.clock import Clock
@@ -18,8 +19,8 @@ class LimitStore(Protocol):
 
 
 class RateLimiter:
-    """In-memory store (default). Fixed window per key. Memory is bounded: expired keys are swept at most once per window and,
-    if the table is still at ``max_keys``, the oldest-window keys are evicted (an evicted key just
+    """In-memory store (default). Fixed window per key. Memory is bounded: expired keys are popped from the front when room is needed and,
+    if the table is still at ``max_keys``, a batch (1%) of the oldest-window keys is evicted (an evicted key just
     gets a fresh window - the limiter fails open for it rather than growing without bound)."""
 
     def __init__(self, clock: Clock, window_seconds: int = 60, max_keys: int = 50_000) -> None:
@@ -31,11 +32,19 @@ class RateLimiter:
         return len(self._hits)
 
     def _make_room(self, now: float) -> None:
-        if now - self._last_sweep >= self._window or len(self._hits) >= self._max:
-            self._hits = {k: v for k, v in self._hits.items() if now - v[0] < self._window}
-            self._last_sweep = now
-        while len(self._hits) >= self._max:
-            del self._hits[next(iter(self._hits))]
+        """Amortized O(1): ``_hits`` is ordered by window start, so expired keys are a prefix that is popped
+        (each key is popped once). If the table is still full of live keys, evict a small batch of the oldest so
+        the next hits do not each pay for eviction."""
+        hits = self._hits
+        while hits:
+            oldest = next(iter(hits))
+            if now - hits[oldest][0] < self._window:
+                break
+            del hits[oldest]
+        self._last_sweep = now
+        if len(hits) >= self._max:
+            for k in list(islice(hits, max(1, self._max // 100))):
+                del hits[k]
 
     def check_sync(self, key: str, limit: int) -> int | None:
         """Count a hit. Returns None if allowed, else seconds to wait."""

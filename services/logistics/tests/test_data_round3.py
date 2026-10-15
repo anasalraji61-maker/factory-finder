@@ -69,7 +69,8 @@ def test_origin_surcharge_and_ranges_carry_through_duty_rule():
     r = duty_rule(DATA.duties, "MX", "8501", None, "CN")
     assert r.duty_rate_pct == D(5) + D(15) and r.duty_range_pct == (D(0) + 15, D(35) + 15)
     assert r.as_of == "2026-10" and r.confidence == "low"
-    assert duty_rule(DATA.duties, "IQ", "8501", None).duty_range_pct is None  # legacy entries unchanged
+    assert duty_rule(DATA.duties, "TR", "8501", None).duty_range_pct is None  # legacy entries unchanged
+    assert duty_rule(DATA.duties, "IQ", "8501", None).duty_range_pct == (D(0), D(30))
 
 
 @pytest.mark.parametrize(("dc", "city"), [("GH", "Accra"), ("PE", "Lima"), ("MX", "Mexico City"), ("LK", "Colombo"),
@@ -217,3 +218,12 @@ def test_quote_longer_distance_never_has_shorter_transit_for_same_destination(cl
                     key=lambda c: haversine_km(Point(*CITIES[("CN", c)]), Point(*dest)))
     days = [post(client, req(origin=("CN", c), modes=["road"]))["options"][0]["transit_days"]["max"] for c in cities]
     assert days == sorted(days), (cities, days)
+
+
+def test_no_unverified_row_is_high_and_fallback_is_labelled():
+    for cc, c in DATA.duties["countries"].items():
+        assert c["confidence"] in ("low", "medium"), cc
+        assert c["as_of"], cc
+        assert 0 <= c["vat_pct"] <= 30 and 0 <= c["default_duty_pct"] <= 150, cc
+    r = duty_rule(DATA.duties, "IL", "8501", None)
+    assert r.confidence == "low" and r.as_of and r.duty_range_pct

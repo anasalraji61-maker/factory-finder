@@ -156,3 +156,31 @@ def test_migration_adds_column_to_old_db():
         return v
 
     assert asyncio.run(go()) == 0
+
+
+def test_proxy_loads_user_row_once_per_request_and_still_honours_revocation(client, mock_upstream, monkeypatch):
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    tok = _reg(client)
+    uid = client.get("/v1/me", headers=_h(tok)).json()["id"]
+    base = client.app.state.settings.upstream_map()["rfq"].rstrip("/")
+    mock_upstream.get(base + "/v1/requests").respond(200, json={})
+    calls = {"n": 0}
+    orig_get, orig_exec = AsyncSession.get, AsyncSession.execute
+
+    async def get(self, *a, **k):
+        calls["n"] += 1
+        return await orig_get(self, *a, **k)
+
+    async def execute(self, *a, **k):
+        calls["n"] += 1
+        return await orig_exec(self, *a, **k)
+
+    monkeypatch.setattr(AsyncSession, "get", get)
+    monkeypatch.setattr(AsyncSession, "execute", execute)
+    assert client.get("/v1/requests", headers=_h(tok)).status_code == 200
+    assert calls["n"] == 1  # active check + claim headers share one query
+    monkeypatch.undo()
+    _set_version(client, uid, 5)
+    client.app.state.clock.advance(10)  # past the 5 s active cache
+    assert client.get("/v1/requests", headers=_h(tok)).status_code == 401

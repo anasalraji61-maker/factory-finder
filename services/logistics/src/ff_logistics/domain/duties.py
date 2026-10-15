@@ -37,7 +37,8 @@ def duty_rule(table: dict, country: str, hs_code: str | None, category: str | No
               origin_country: str | None = None) -> DutyEstimate:
     c = table["countries"].get(country)
     if c is None:
-        return DutyEstimate(D(10), D(0), D(150), f"{country}: no table; generic 10% duty, no VAT")
+        return DutyEstimate(D(10), D(0), D(150), f"{country}: no table; generic 10% duty, no VAT (placeholder)",
+                            (D(0), D(30)), (D(0), D(25)), "2026-10", "low")
     chap = hs_chapter(hs_code, category, table)
     rate = D(c["chapters"].get(chap, c["default_duty_pct"])) if chap else D(c["default_duty_pct"])
     rule = f"{country} chapter {chap}: {rate}%" if chap in c["chapters"] else \

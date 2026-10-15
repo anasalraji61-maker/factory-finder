@@ -46,7 +46,16 @@
    "clearance_fee_usd": 250,
    "as_of": "2026-10",
    "confidence": "low",
-   "label": "indicative, verify with broker"
+   "label": "indicative, verify with broker",
+   "duty_range_pct": [
+    0,
+    30
+   ],
+   "vat_range_pct": [
+    0,
+    0
+   ],
+   "note": "Iraq raised customs tariffs in Jan 2026 (reported brackets 5-30%, ~16,400 lines) and cut ASYCUDA reference values by 25% (Feb 2026); chapter rates here are unverified, so treat 5% as a floor. Additional fees (reconstruction/other levies, port fees) are not modelled beyond the clearance fee."
   },
   "TR": {
    "default_duty_pct": 8,
@@ -1909,7 +1918,7 @@
    ],
    "source": "Hong Kong is a free port; excise only on liquor, tobacco, fuel, methanol",
    "as_of": "2026-10",
-   "confidence": "high",
+   "confidence": "medium",
    "label": "indicative, verify with broker"
   },
   "SG": {
@@ -1939,7 +1948,7 @@
    ],
    "source": "Singapore Customs: duty-free except alcohol, tobacco, motor vehicles; GST 9%",
    "as_of": "2026-10",
-   "confidence": "high",
+   "confidence": "medium",
    "label": "indicative, verify with broker",
    "de_minimis": {
     "threshold": 400,

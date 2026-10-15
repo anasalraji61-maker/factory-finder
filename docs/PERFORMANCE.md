@@ -37,3 +37,7 @@ Run-to-run noise is about +-1 ms; the end-to-end differences are mostly noise. T
 - gateway `RateLimiter._make_room` rebuilds the whole table on every new key once at `max_keys` with all keys live (O(n) per hit under a key flood).
 - gateway proxy does up to 2 separate user-row queries per request for rfq/messaging/feed (active check plus supplier claim); could be merged.
 - logistics `CachedGeo` has no in-flight de-duplication for concurrent identical misses.
+
+
+## Update 2026-10-15
+Gateway `RateLimiter._make_room` is now amortized (expired prefix pop + 1% batch eviction) and the proxy loads the user row at most once per request. `CachedGeo` in-flight de-duplication remains open.
