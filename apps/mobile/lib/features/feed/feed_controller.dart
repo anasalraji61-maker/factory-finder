@@ -433,7 +433,7 @@ Future<Set<String>> fetchAllMutes(FeedRepository repo) async {
 /// Suppliers the viewer muted (optimistic; the server is the source of truth
 /// for what its lists contain). Loaded once after sign-in, reset when the user
 /// changes. A failed load leaves the set empty; the management screen retries.
-final mutedSuppliersProvider = StateProvider<Set<String>>((ref) {
+final StateProvider<Set<String>> mutedSuppliersProvider = StateProvider<Set<String>>((ref) {
   final signedIn = ref.watch(authProvider.select((m) => m?.id)) != null;
   if (signedIn) {
     var alive = true;
