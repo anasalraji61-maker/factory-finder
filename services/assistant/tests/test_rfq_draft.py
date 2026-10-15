@@ -68,3 +68,18 @@ def test_no_downstream_calls():
 def test_message_still_blocked():
     res = run("send a message to the supplier about my request for 100 chairs")
     assert res.intent.value == "help" and "private_message_blocked" in res.warnings
+
+
+def test_prefill_structured_iraqi_cities():
+    for city_ar, city_en in (("بغداد", "Baghdad"), ("البصرة", "Basra"), ("اربيل", "Erbil")):
+        refs = run(f"انشر طلب شراء ٥ اطنان قماش قطن الى {city_ar}").cards[0].refs
+        assert refs["prefill_destination_cc"] == "IQ" and refs["prefill_destination_city"] == city_en
+        assert refs["prefill_unit"] == "ton"
+
+
+def test_prefill_structured_english_and_absent():
+    refs = run("post a purchase request for 2000 kg of cotton delivered to Basra").cards[0].refs
+    assert refs["prefill_destination_cc"] == "IQ" and refs["prefill_destination_city"] == "Basra"
+    assert refs["prefill_unit"] == "kg"
+    refs = run("انشر طلب شراء قماش").cards[0].refs
+    assert not {"prefill_destination_cc", "prefill_destination_city", "prefill_unit"} & refs.keys()

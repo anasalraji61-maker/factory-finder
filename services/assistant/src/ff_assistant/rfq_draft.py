@@ -23,6 +23,10 @@ def _plain(d: Decimal) -> str:
     return s if "." not in s else s.rstrip("0").rstrip(".")
 
 
+_UNIT_CANON = {"piece": "piece", "pcs": "piece", "kg": "kg", "ton": "ton", "set": "set", "m": "m", "meter": "m",
+               "metre": "m", "line": "line", "container": "container", "liter": "liter", "litre": "liter"}
+
+
 def build_rfq_draft(p: ParsedQuery, gaz: Gazetteer) -> ToolOutput:
     L = p.language
     product = p.query or None
@@ -41,6 +45,16 @@ def build_rfq_draft(p: ParsedQuery, gaz: Gazetteer) -> ToolOutput:
     rows = [row(k, LABELS[k][0], LABELS[k][1], v[0], v[1]) for k, v in values.items()]
     refs = {"deep_link": DEEP_LINK, "draft": "true", "missing": ",".join(missing)}
     refs.update({f"prefill_{k}": v[0] for k, v in values.items() if v[0] is not None})
+    if p.destination:
+        refs["prefill_destination_cc"] = p.destination.country_code.upper()
+        city = gaz.city_for_location(p.destination) if p.destination.city else None
+        if city is not None:
+            refs["prefill_destination_city"] = city.en
+        elif p.destination.city:
+            refs["prefill_destination_city"] = p.destination.city
+    unit = _UNIT_CANON.get((p.unit or "").lower())
+    if unit:
+        refs["prefill_unit"] = unit
     card = Card(
         type=CardType.RFQ_DRAFT, title="Purchase request draft", title_ar="مسودة طلب شراء",
         severity="warning" if missing else "info", rows=rows, refs=refs,

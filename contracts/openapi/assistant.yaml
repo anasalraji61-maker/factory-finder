@@ -212,6 +212,6 @@ components:
         severity: {type: string, enum: [info, ok, warning, error]}
         rows: {type: array, items: {$ref: "#/components/schemas/CardRow"}}
         columns: {type: [array, "null"], items: {$ref: "#/components/schemas/CardColumn"}}
-        refs: {type: object, additionalProperties: {type: string}, description: "Ids for deep links (shipment_id, deal_id, listing_a/listing_b, hs_code); rfq_draft cards carry deep_link=/requests/new, draft=true, missing (comma-separated required field keys) and prefill_<field> values taken only from the user's text - the assistant never creates the request; or a notice code (auth_required_*, *_not_found, *_unavailable)"}
+        refs: {type: object, additionalProperties: {type: string}, description: "Ids for deep links (shipment_id, deal_id, listing_a/listing_b, hs_code); rfq_draft cards carry deep_link=/requests/new, draft=true, missing (comma-separated required field keys) and prefill_<field> values taken only from the user's text - the assistant never creates the request; also prefill_destination_cc (ISO alpha-2), prefill_destination_city (English city name, when resolvable offline) and prefill_unit (normalized: piece|kg|ton|set|m|line|container|liter), each present only when known; or a notice code (auth_required_*, *_not_found, *_unavailable)"}
         footnote: {type: [string, "null"]}
         footnote_ar: {type: [string, "null"]}
