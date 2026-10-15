@@ -1,5 +1,5 @@
 SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight
-.PHONY: venv test lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check $(addprefix test-,$(SERVICES))
+.PHONY: venv test lint contract-lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check secrets-scan $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml pillow python-multipart
 test:
@@ -10,6 +10,8 @@ lint:
 	.venv/bin/ruff check services scripts
 obs-check:  # all services' obs.py identical after normalising the package name
 	.venv/bin/python scripts/check_obs_drift.py
+contract-lint:  # structural lint of contracts/openapi (writes nothing; see docs/fixes/contract-lint.md)
+	.venv/bin/python scripts/contract_lint.py
 contract-examples:  # every example/examples in contracts/openapi validates against its schema (offline)
 	.venv/bin/python scripts/contract_examples.py
 dev:
@@ -34,3 +36,6 @@ audit:  # dependency vulnerability scan; non-fatal and skipped if pip-audit is n
 	for d in packages/py-common $(addprefix services/,$(SERVICES)); do echo "== $$d"; timeout 60 $$PA --progress-spinner off $$d || echo "audit: findings or offline for $$d (non-fatal)"; done; exit 0
 compose-check:  # static, offline: compose files, prod secrets vs fail-closed guards, .env.example, Makefile, workflows
 	.venv/bin/python scripts/check_compose.py
+
+secrets-scan:  # offline regex scan of tracked files for secrets/PII/local paths
+	.venv/bin/python scripts/scan_secrets.py

@@ -111,6 +111,7 @@ Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env na
 | `FF_GATEWAY_RATE_LIMIT_MAX_KEYS` | 50000 |
 | `FF_GATEWAY_TRUSTED_PROXIES` | unset |
 | `FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE` | 30 |
+| `FF_GATEWAY_ADMIN_FAIL_LIMIT_PER_MINUTE` | 20 (failed `/v1/admin/*` token attempts per IP before 429) |
 | `FF_GATEWAY_CORS_ORIGINS` | [] |
 | `FF_GATEWAY_ADMIN_TOKEN` | unset |
 | `FF_GATEWAY_SERVE_ADMIN` | False |

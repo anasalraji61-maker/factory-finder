@@ -213,7 +213,11 @@ def dedupe(items: list[tuple[Listing, Match]]) -> list[tuple[Listing, Match]]:
         if listing.source == "native":  # a supplier's own distinct listings are never merged
             key = (*key, listing.id)
         cur = best.get(key)
-        if cur is None or listing.price.min.amount < cur[0].price.min.amount:
+        if cur is None or (listing.price.min.amount, listing.source, listing.id) < (
+            cur[0].price.min.amount,
+            cur[0].source,
+            cur[0].id,
+        ):  # full tie-break: the survivor must not depend on adapter completion order
             best[key] = (listing, m)
     seen: set[tuple[str, str]] = set()
     out = []

@@ -7,7 +7,7 @@ D = "http://localhost:8110"
 
 @pytest.fixture
 def admin(make_client):
-    return make_client(admin_token="adm-secret", internal_token="int-secret")
+    return make_client(admin_token="adm-secret", internal_token="int-secret", admin_fail_limit_per_minute=1000)
 
 
 CASES = [

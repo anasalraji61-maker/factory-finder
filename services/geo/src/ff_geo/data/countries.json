@@ -688,6 +688,14 @@
 "road_factor": 1.2
 },
 {
+"iso2": "SK",
+"name_en": "Slovakia",
+"name_ar": "سلوفاكيا",
+"currency": "EUR",
+"region": "Europe",
+"road_factor": 1.25
+},
+{
 "iso2": "SI",
 "name_en": "Slovenia",
 "name_ar": "سلوفينيا",

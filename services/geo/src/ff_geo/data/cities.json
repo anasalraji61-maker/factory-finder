@@ -10228,5 +10228,27 @@
 "lon": -99.1411
 },
 "industrial": false
+},
+{
+"id": "SK-BRATISLAVA",
+"name_en": "Bratislava",
+"name_ar": "براتيسلافا",
+"country_code": "SK",
+"point": {
+"lat": 48.1486,
+"lon": 17.1077
+},
+"industrial": true
+},
+{
+"id": "SK-KOSICE",
+"name_en": "Kosice",
+"name_ar": "كوشيتسه",
+"country_code": "SK",
+"point": {
+"lat": 48.7164,
+"lon": 21.2611
+},
+"industrial": true
 }
 ]

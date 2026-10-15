@@ -105,6 +105,7 @@ const Map<String, String> _currencySymbols = {
   'GBP': '£',
 };
 const Set<String> _zeroDecimalCurrencies = {'IQD', 'JPY', 'KRW', 'VND'};
+const Set<String> _threeDecimalCurrencies = {'KWD', 'BHD', 'OMR', 'JOD', 'TND'};
 
 class Money {
   const Money({required this.amount, required this.currency});
@@ -116,10 +117,15 @@ class Money {
   double get value => double.tryParse(amount) ?? 0;
 
   String format() {
-    final digits = _zeroDecimalCurrencies.contains(currency) ? 0 : 2;
-    final n = formatDecimalString(amount, fractionDigits: digits);
+    final digits = _zeroDecimalCurrencies.contains(currency)
+        ? 0
+        : (_threeDecimalCurrencies.contains(currency) ? 3 : 2);
+    var n = formatDecimalString(amount, fractionDigits: digits);
+    // Keep the sign in front of the symbol: "-$5.00", not "$-5.00".
+    final sign = n.startsWith('-') ? '-' : '';
+    if (sign.isNotEmpty) n = n.substring(1);
     final sym = _currencySymbols[currency];
-    return sym != null ? '$sym$n' : '$currency $n';
+    return sym != null ? '$sign$sym$n' : '$currency $sign$n';
   }
 
   /// [format] wrapped in an LTR isolate, for embedding in translated (RTL)

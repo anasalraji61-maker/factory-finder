@@ -2,7 +2,7 @@ import httpx
 
 
 def test_admin_token_is_never_forwarded_and_admin_paths_are_rate_limited(make_client, mock_upstream):
-    c = make_client(admin_token="adm", auth_rate_limit_per_minute=5)
+    c = make_client(admin_token="adm", admin_fail_limit_per_minute=5)
     tok = c.post("/v1/auth/register", json={"email": "q@example.com", "password": "password123", "name": "Q"}).json()
     base = c.app.state.settings.upstream_map()["payments"].rstrip("/")
     route = mock_upstream.post(f"{base}/v1/payments/sweep").mock(return_value=httpx.Response(403, json={}))
@@ -56,3 +56,32 @@ def test_path_tricks_are_refused(client, hdr):
     ):
         assert _raw(client, "POST", p, h) == 400, p
     assert _raw(client, "GET", "/v1/media/files/", h) != 400  # one trailing slash stays legal
+
+
+def test_admin_failed_attempts_throttled_at_20_per_minute_by_default(make_client):
+    c = make_client(admin_token="adm")
+    codes = [c.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": f"bad{i}"}).status_code for i in range(22)]
+    assert codes[:20] == [401] * 20 and codes[20] == 429
+    r = c.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": "adm"})
+    assert r.status_code == 429  # blocked even for the right token until the window passes
+    assert r.headers["cache-control"] == "no-store"
+
+
+def test_admin_responses_are_no_store_and_404_when_unset(make_client):
+    off = make_client()
+    r = off.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": "x"})
+    assert r.status_code == 404 and r.headers["cache-control"] == "no-store"
+    on = make_client(admin_token="adm")
+    for h in ({}, {"X-Admin-Token": "nope"}, {"X-Admin-Token": "adm"}):
+        r = on.get("/v1/admin/supplier-claims", headers=h)
+        assert r.headers["cache-control"] == "no-store"
+
+
+def test_admin_token_never_logged(make_client, caplog):
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+    c = make_client(admin_token="s3cret-admin-value")
+    c.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": "wrong-guess-zzz", "X-Reviewer": "a@b.c\nx"})
+    c.get("/v1/admin/supplier-claims", headers={"X-Admin-Token": "s3cret-admin-value"})
+    assert "s3cret-admin-value" not in caplog.text and "wrong-guess-zzz" not in caplog.text

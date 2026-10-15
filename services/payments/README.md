@@ -30,6 +30,7 @@ append-only double-entry ledger, provider webhooks. Internal only (reached throu
 | `FF_PAYMENTS_ADMIN_TOKEN` | unset (admin disabled) |
 | `FF_PAYMENTS_WEBHOOK_SECRET_MOCK` / `_USDT_TRON` | unset (webhooks answer 503) |
 | `FF_PAYMENTS_WEBHOOK_TOLERANCE_SECONDS` | `300` |
+| `FF_PAYMENTS_REQUIRE_WEBHOOK_AMOUNT` | `false` (true: `payment.confirmed` without `amount` goes to review, never settles) |
 | `FF_PAYMENTS_INVOICE_TTL_MINUTES` | `60` |
 | `FF_PAYMENTS_RFQ_URL` / `_DEAL_CLIENT` | `http://localhost:8105` / `http` (or `mock`) |
 | `FF_PAYMENTS_COMMISSION_PRODUCT` / `_RAW_MATERIAL` / `_PRODUCTION_LINE` | `0.03` / `0.02` / `0.04` |

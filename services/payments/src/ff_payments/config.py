@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     webhook_secret_mock: SecretStr | None = None
     webhook_secret_usdt_tron: SecretStr | None = None
     webhook_tolerance_seconds: int = 300
+    # when true, a non-on-chain `payment.confirmed` webhook without `amount` goes to review instead of settling
+    require_webhook_amount: bool = False
 
     invoice_ttl_minutes: int = 60
     rfq_url: str = "http://localhost:8105"

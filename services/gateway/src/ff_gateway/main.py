@@ -39,7 +39,7 @@ from ff_gateway.domain.circuit_breaker import BreakerRegistry
 from ff_gateway.domain.client_ip import client_ip, rate_key
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
-from ff_gateway.domain.http_guard import HttpGuardMiddleware
+from ff_gateway.domain.http_guard import NO_STORE_PREFIXES, HttpGuardMiddleware
 from ff_gateway.domain.mail import build_mailer
 from ff_gateway.domain.rate_limit import build_limit_store, make_redis_client
 from ff_gateway.domain.security import TokenService
@@ -227,6 +227,12 @@ def create_app(
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
+        resp = await _rate_limit(request, call_next)
+        if request.url.path.startswith(NO_STORE_PREFIXES) and "cache-control" not in resp.headers:
+            resp.headers["Cache-Control"] = "no-store"  # 429s built here sit outside HttpGuardMiddleware
+        return resp
+
+    async def _rate_limit(request: Request, call_next):
         path = request.url.path
         if path != "/health" and request.method != "OPTIONS":
             auth_route = path.startswith("/v1/auth")
@@ -261,12 +267,12 @@ def create_app(
                         return _error(e.status_code, e.code, e.message, e.details, e.headers)
             if path.startswith("/v1/admin"):  # admin-token guessing: throttle by failed attempts per IP
                 fkey = f"adminfail:{ip}"
-                if (wait := await limiter.blocked(fkey, 2 * settings.auth_rate_limit_per_minute)) is not None:
-                    e = RateLimited(wait, settings.auth_rate_limit_per_minute)
+                if (wait := await limiter.blocked(fkey, settings.admin_fail_limit_per_minute)) is not None:
+                    e = RateLimited(wait, settings.admin_fail_limit_per_minute)
                     return _error(e.status_code, e.code, e.message, e.details, e.headers)
                 resp = await call_next(request)
                 if resp.status_code == 401:
-                    await limiter.check(fkey, 2 * settings.auth_rate_limit_per_minute)
+                    await limiter.check(fkey, settings.admin_fail_limit_per_minute)
                 resp.headers["X-RateLimit-Limit"] = str(limit)
                 return resp
             resp = await call_next(request)

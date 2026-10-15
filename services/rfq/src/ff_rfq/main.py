@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import logging
 import os
 from collections.abc import Callable
 from contextlib import asynccontextmanager
@@ -21,6 +22,14 @@ from ff_rfq.domain.errors import DomainError
 from ff_rfq.obs import db_ready, install_observability, ready_response
 from ff_rfq.reviews import ReviewService
 from ff_rfq.service import RfqService
+
+log = logging.getLogger("ff_rfq")
+
+
+def _warn_single_invoice_settlement(require_both: bool) -> None:
+    if os.environ.get("FF_ENV", "").strip().lower() == "production" and not require_both:
+        log.warning("FF_ENV=production with FF_RFQ_REQUIRE_BOTH_INVOICES=false: one paid invoice settles the deal. "
+                    "Set it to true (see docs/decisions/rfq-require-both-invoices.md)")
 
 
 def _err(status: int, code: str, message: str, details: dict | None = None) -> JSONResponse:
@@ -51,6 +60,7 @@ def create_app(
     if sourcing is None:
         sourcing = (MockSourcingClient() if settings.sourcing_client == "mock"
                     else HttpSourcingClient(settings.sourcing_url))
+    _warn_single_invoice_settlement(settings.require_both_invoices)
     engine = make_engine(settings.database_url)
     service = RfqService(engine, settings, sourcing, clock or (lambda: datetime.now(UTC)))
 

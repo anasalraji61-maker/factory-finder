@@ -23,7 +23,7 @@ from .domain.models import (
     Supplier,
 )
 from .domain.pricehistory import Obs
-from .domain.text import english_keywords, parse_query, query_phrase
+from .domain.text import english_keywords, extract_quantity, parse_query, query_phrase
 
 log = logging.getLogger(__name__)
 
@@ -130,9 +130,13 @@ class SourcingService:
         page_size: int = 20,
         sort: str = "relevance",
     ) -> SearchResponse:
-        terms = parse_query(query.q)
-        phrase = query_phrase(query.q)
-        query = query.model_copy(update={"keywords_en": english_keywords(query.q)})
+        text_q, qty, _unit = extract_quantity(query.q)  # "1000 قطعة" is an order size, not words to match
+        terms = parse_query(text_q)
+        phrase = query_phrase(text_q)
+        update: dict[str, Any] = {"keywords_en": english_keywords(text_q)}
+        if qty is not None:  # a buyer ordering N units can use any listing whose minimum order is <= N
+            update["moq_max"] = qty if query.moq_max is None else min(qty, query.moq_max)
+        query = query.model_copy(update=update)
         outcomes = await asyncio.gather(
             *(self._query_adapter(a, query) for a in self.registry.enabled())
         )

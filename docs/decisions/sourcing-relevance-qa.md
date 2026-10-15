@@ -37,3 +37,4 @@ spelling-variant equivalence).
 ## Remaining limitations
 - No numeric-range/magnitude awareness (`250 طن` still matches the literal 250 plus unit token, not "about 250").
 - Existing test `test_arabic_query_finds_english_title` relaxed: used bakery lines are legitimately production lines now.
+2026-10-15 | sourcing-qa4: order quantity ('1000 قطعة', count units pc/set/pair/dozen only) is stripped from text terms and becomes moq<=N filter; kg/ton/m/L stay literal (capacity specs); 'ال' stripped from 2-letter stems (الخط); dedupe tie-break (price, source, id) | fixes 0-result queries and order-dependent dedupe

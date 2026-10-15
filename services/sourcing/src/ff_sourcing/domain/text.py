@@ -77,9 +77,9 @@ _AR_PREFIXES = ("وال", "بال", "فال", "كال", "لل", "ال")
 
 def stem(token: str) -> str:
     """Strip Arabic definite article/clitic prefixes and English plural endings."""
-    while len(token) > 4:
+    while len(token) > 3:
         for p in _AR_PREFIXES:
-            if token.startswith(p) and len(token) - len(p) >= 3:
+            if token.startswith(p) and len(token) - len(p) >= 2:  # الخط / والخط / للخط -> خط
                 token = token[len(p) :]
                 break
         else:
@@ -127,9 +127,40 @@ def tokens(text: str) -> tuple[str, ...]:
     return tuple(out)
 
 
+# count units only: "250 kg"/"100 طن" is as often a machine capacity or a spec as an order size, so it stays literal
+_QTY_UNITS = frozenset({"pc", "set", "pair", "dozen"})
+_DIGITS = re.compile(r"^\d{1,9}$")
+
+
+def extract_quantity(q: str) -> tuple[str, int | None, str | None]:
+    """Split a trailing/inline order quantity ("قماش قطن 1000 قطعة", "steel 500 kg") from the product words.
+
+    Returns (rest, quantity, canonical unit). The quantity is only taken when a plain integer is directly followed by a
+    unit word and something else remains to search for; otherwise (q, None, None). Weight/length/volume units are never quantities.
+    """
+    raw = normalize(q).split()
+    for i, tok in enumerate(raw):
+        num = unit_raw = None
+        m = _NUM_UNIT.match(tok)
+        if m:
+            num, unit_raw = m.group(1), m.group(2)
+        elif _DIGITS.match(tok) and i + 1 < len(raw):
+            num, unit_raw = tok, raw[i + 1]
+        if num is None or unit_raw is None or len(unit_raw) < 2 or not _DIGITS.match(num):
+            continue
+        unit = _UNIT.get(unit_raw) or _UNIT.get(stem(unit_raw))
+        if unit not in _QTY_UNITS:
+            continue
+        rest = raw[:i] + raw[i + (1 if m else 2) :]
+        if not any(t not in STOPWORDS and not t.isdigit() for t in rest):
+            return q, None, None
+        return " ".join(rest), int(num), unit
+    return q, None, None
+
+
 # Equivalence groups; first item is the canonical English keyword for remote APIs.
 _SYNONYM_GROUPS: list[list[str]] = [
-    ["production line", "خط انتاج", "خطوط انتاج", "خط تصنيع", "مصنع جاهز", "assembly line", "خط انتاج", "生产线", "流水线"],
+    ["production line", "خط انتاج", "خطوط انتاج", "خط تصنيع", "خط انتاجي", "خطوط انتاجيه", "خط انتاجيه", "خطوط تصنيع", "مصنع جاهز", "assembly line", "خط انتاج", "生产线", "流水线"],
     [
         "machine",
         "machinery",

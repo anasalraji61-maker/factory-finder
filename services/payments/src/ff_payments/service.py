@@ -693,6 +693,10 @@ class PaymentsService:
         if r.provider == "usdt_tron" and target in (S.CONFIRMING, S.PAID):
             return "ignored"  # on-chain settlement is proven only by our own explorer poll, never by a callback
         cur = S(r.status)
+        if (target == S.PAID and ev.amount is None and self.settings.require_webhook_amount
+                and cur in (S.PENDING, S.AWAITING_PAYMENT, S.CONFIRMING)):
+            self._flag_review(r, REVIEW_AMOUNT, None, None)  # hardened mode: no amount, no settlement
+            return "review"
         if target == S.PAID and ev.amount is not None:
             want = Decimal(r.pay_amount or r.amount)
             if ev.amount.value != want or ev.amount.currency != (r.pay_currency or r.currency):

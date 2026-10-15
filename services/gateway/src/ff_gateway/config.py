@@ -88,6 +88,7 @@ class Settings(BaseSettings):
     # X-Forwarded-For is honoured (only when the direct peer is in this list). Empty = never.
     trusted_proxies: str = ""
     auth_rate_limit_per_minute: int = 30
+    admin_fail_limit_per_minute: int = 20  # failed /v1/admin/* token attempts per IP per minute before 429
     cors_origins: list[str] = Field(
         default_factory=list
     )  # empty = no cross-origin access (native app needs none)
