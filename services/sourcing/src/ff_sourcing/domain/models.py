@@ -126,6 +126,7 @@ class SearchResponse(BaseModel):
     page_size: int
     sources: list[SourceStatus]
     facets: Facets = Facets()
+    warning: str | None = None  # additive: partial_results when a source failed/timed out or mock was substituted
 
 
 class CategoryNode(BaseModel):

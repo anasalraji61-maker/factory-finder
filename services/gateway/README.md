@@ -69,6 +69,10 @@ Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env na
 | `FF_GATEWAY_WS_TICKET_MAX` | 10000 |
 | `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` | True |
 | `FF_GATEWAY_MAX_BODY_BYTES` | 10485760 |
+| `FF_GATEWAY_JSON_MAX_BODY_BYTES` | 1048576 (cap for every non-media route; MAX_BODY_BYTES applies to `/v1/media`) |
+| `FF_GATEWAY_BODY_READ_TIMEOUT_SECONDS` | 30 (whole body must arrive; media: `FF_GATEWAY_MEDIA_BODY_READ_TIMEOUT_SECONDS` 120) |
+| `FF_GATEWAY_LOGIN_FAIL_LIMIT_PER_MINUTE` | 10 (failed passwords per account per minute, then 429) |
+| `FF_GATEWAY_JWT_SECRET_PREVIOUS` | unset (verify-only key during rotation) |
 | `FF_GATEWAY_RATE_LIMIT_PER_MINUTE` | 300 |
 | `FF_GATEWAY_MEDIA_RATE_LIMIT_PER_MINUTE` | 3000 |
 | `FF_GATEWAY_USER_WRITE_RATE_LIMIT_PER_MINUTE` | 120 |

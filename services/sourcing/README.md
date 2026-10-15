@@ -81,7 +81,7 @@ Env: `ADMIN_TOKEN`, `REPORT_RATE_PER_HOUR`, `REPORT_REVIEW_THRESHOLD`, `REPORTER
 limit, cache TTL, honest UA, ToS note, kill-switch env) + `HttpProviderAdapter`. `alibaba_openapi.py` is the
 Alibaba Open Platform skeleton (assumed shape, replace `tests/fixtures/*.json` with real recordings).
 Enable with `FF_SOURCING_ADAPTERS=alibaba_openapi`; extra env: `ALIBABA_ACCESS_TOKEN`, `ALIBABA_OPENAPI_DISABLED`,
-`KILL_SWITCH` (all real adapters). A failing real adapter yields mock results plus `sources[].warning`.
+`KILL_SWITCH` (all real adapters). A failing real adapter yields mock results plus `sources[].warning`. Search also sets a top-level `warning` (`partial_results: ...`) when any source failed/timed out. `GET /v1/listings/{id}` answers 503 `upstream_timeout` (never cached) when no source returned it and one failed; 404 only on a definite absence.
 
 
 ## Ops (logging / readiness)

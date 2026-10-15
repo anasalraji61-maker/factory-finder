@@ -73,6 +73,7 @@ paths:
                   - type: object
                     required: [sources]
                     properties:
+                      warning: {type: [string, "null"], description: "Optional; set (e.g. partial_results: ...) when any source failed/timed out or mock results were substituted, so the page may be incomplete. Per-source detail stays in sources[]."}
                       facets:
                         type: object
                         description: Counts over the full matched set (all pages), each list ordered by count desc then value
@@ -106,7 +107,12 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/ListingDetail"}
-        "404": {$ref: "#/components/responses/Error"}
+        "404":
+          description: Definite absence (every source answered not found, or the listing is delisted/hidden/pending review). Code `listing_not_found`.
+          content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
+        "503":
+          description: No source returned the listing and at least one failed/timed out, so absence is unknown (code `upstream_timeout`). Retry; do not treat as delisted.
+          content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}
   /v1/listings/{id}/price-history:
     get:
       summary: Price history of a listing (headline min unit price) with min/max/avg and trend

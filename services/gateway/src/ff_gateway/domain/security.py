@@ -28,6 +28,19 @@ def hash_jti(jti: str) -> str:
     return hashlib.sha256(jti.encode()).hexdigest()
 
 
+ISSUER = "ff-gateway"
+AUDIENCE = "ff-api"
+
+
+def _check_iss_aud(c: dict[str, Any]) -> None:
+    """Tokens minted before iss/aud existed are still accepted (they expire within the refresh TTL); any other value is not."""
+    if c.get("iss", ISSUER) != ISSUER:
+        raise InvalidToken()
+    aud = c.get("aud", AUDIENCE)
+    if aud != AUDIENCE and not (isinstance(aud, list) and AUDIENCE in aud):
+        raise InvalidToken()
+
+
 class RefreshClaims:
     __slots__ = ("user_id", "jti", "family", "expires_at")
 
@@ -37,15 +50,21 @@ class RefreshClaims:
 
 class TokenService:
     def __init__(
-        self, secret: str, clock: Clock, access_ttl: int, refresh_ttl: int, algorithm: str = "HS256"
+        self, secret: str, clock: Clock, access_ttl: int, refresh_ttl: int, algorithm: str = "HS256",
+        previous_secret: str | None = None,
     ):
+        if algorithm not in ("HS256", "HS384", "HS512"):
+            raise ValueError("unsupported JWT algorithm")
         self._secret, self._clock, self._alg = secret, clock, algorithm
+        self._verify_keys = [secret, *([previous_secret] if previous_secret else [])]
         self.access_ttl, self.refresh_ttl = access_ttl, refresh_ttl
 
     def _encode(self, user_id: str, typ: str, ttl: int) -> str:
         now = self._clock.now()
         claims = {
             "sub": user_id,
+            "iss": ISSUER,
+            "aud": AUDIENCE,
             "typ": typ,
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(seconds=ttl)).timestamp()),
@@ -62,6 +81,8 @@ class TokenService:
         exp = int((now + timedelta(seconds=self.refresh_ttl)).timestamp())
         claims = {
             "sub": user_id,
+            "iss": ISSUER,
+            "aud": AUDIENCE,
             "typ": "refresh",
             "iat": int(now.timestamp()),
             "exp": exp,
@@ -72,14 +93,30 @@ class TokenService:
             user_id, jti, fam, exp
         )
 
+    def _decode(self, token: str, required: list[str]) -> dict[str, Any]:
+        err: Exception | None = None
+        for key in self._verify_keys:
+            try:
+                c: dict[str, Any] = jwt.decode(
+                    token, key, algorithms=[self._alg],
+                    options={"verify_exp": False, "verify_aud": False, "require": required},
+                )
+            except jwt.InvalidSignatureError as e:  # maybe signed with the other key
+                err = e
+                continue
+            except jwt.PyJWTError as e:
+                raise InvalidToken() from e
+            _check_iss_aud(c)
+            if isinstance(c["exp"], bool) or not isinstance(c["exp"], int | float) or not isinstance(c["sub"], str):
+                raise InvalidToken()  # a malformed (but correctly signed) claim must be a 401, never a 500
+            nbf = c.get("nbf")
+            if nbf is not None and (not isinstance(nbf, int | float) or self._clock.now().timestamp() < nbf):
+                raise InvalidToken()
+            return c
+        raise InvalidToken() from err
+
     def decode_refresh(self, token: str, check_exp: bool = True) -> RefreshClaims:
-        try:
-            c: dict[str, Any] = jwt.decode(
-                token, self._secret, algorithms=[self._alg],
-                options={"verify_exp": False, "require": ["sub", "exp", "typ", "jti", "fam"]},
-            )  # fmt: skip
-        except jwt.PyJWTError as e:
-            raise InvalidToken() from e
+        c = self._decode(token, ["sub", "exp", "typ", "jti", "fam"])
         if c.get("typ") != "refresh":
             raise InvalidToken("Expected a refresh token")
         if check_exp and self._clock.now().timestamp() >= c["exp"]:
@@ -88,15 +125,7 @@ class TokenService:
 
     def decode(self, token: str, expected_type: str) -> str:
         """Return the user id or raise TokenExpired / InvalidToken. Expiry uses our clock."""
-        try:
-            claims: dict[str, Any] = jwt.decode(
-                token,
-                self._secret,
-                algorithms=[self._alg],
-                options={"verify_exp": False, "require": ["sub", "exp", "typ"]},
-            )
-        except jwt.PyJWTError as e:
-            raise InvalidToken() from e
+        claims = self._decode(token, ["sub", "exp", "typ"])
         if claims.get("typ") != expected_type:
             raise InvalidToken(f"Expected a {expected_type} token")
         if self._clock.now().timestamp() >= claims["exp"]:

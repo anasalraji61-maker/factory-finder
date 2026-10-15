@@ -38,3 +38,14 @@ def client_ip(peer: str | None, xff: str | None, trusted: Sequence[Network]) -> 
         if not _trusted(ip, trusted):
             return str(ip)
     return str(_ip(hops[0]) or peer)  # every hop is a trusted proxy: leftmost is the origin
+
+
+def rate_key(ip: str) -> str:
+    """Rate-limit bucket for an address: IPv6 clients are bucketed per /64 (one subscriber owns a whole /64, so
+    rotating the low 64 bits must not give a fresh bucket). IPv4 and non-addresses are returned unchanged."""
+    a = _ip(ip)
+    if a is None or a.version != 6:
+        return ip
+    if a.ipv4_mapped is not None:
+        return str(a.ipv4_mapped)
+    return str(ipaddress.ip_network(f"{a}/64", strict=False))

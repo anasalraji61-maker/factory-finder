@@ -8,6 +8,10 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 
 Role = Literal["buyer", "supplier", "both"]
 Language = Literal["ar", "en"]
+_COMMON_PASSWORDS = frozenset({
+    "password", "passw0rd", "12345678", "123456789", "1234567890", "11111111", "00000000", "qwertyui", "qwerty123",
+    "abcd1234", "iloveyou", "letmein1", "admin123", "welcome1", "87654321", "password1",
+})  # deliberately tiny: blocks the worst offenders without a dictionary dependency (NIST 800-63B spirit)
 _PHONE = re.compile(r"^\+?\d{7,15}$")
 
 
@@ -50,6 +54,15 @@ class RegisterIn(BaseModel):
     def _one_contact(self) -> "RegisterIn":
         if not self.email and not self.phone:
             raise ValueError("either email or phone is required")
+        low = self.password.lower()
+        local = (self.email or "").split("@")[0]
+        if (
+            low in _COMMON_PASSWORDS
+            or len(set(low)) < 3
+            or low == (self.email or "") or (len(local) >= 6 and low == local)
+            or (self.phone and low.lstrip("+") == self.phone.lstrip("+"))
+        ):
+            raise ValueError("password is too easy to guess")
         return self
 
 
@@ -58,6 +71,11 @@ class LoginIn(BaseModel):
     email: EmailStr | None = None
     phone: str | None = None
     password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str | None) -> str | None:
+        return v.lower() if v else None  # registration stores lowercase; "Bob@X.com" must find "bob@x.com"
 
     @field_validator("phone")
     @classmethod

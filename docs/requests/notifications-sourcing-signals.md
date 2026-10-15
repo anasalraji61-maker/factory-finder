@@ -1,5 +1,7 @@
 # notifications -> sourcing: signals needed for reliable alerts
 
+Status: items 1 and 2 DONE (sourcing). `GET /v1/listings/{id}` (and `/price-history`) answer `503 upstream_timeout` when no adapter returned the listing and at least one failed/timed out (404 `listing_not_found` only when every adapter answered not found); failures are never cached (also not in the reco detail cache). `/v1/search` has an optional top-level `warning` (`partial_results: <sources> failed or timed out; ...`) when any `sources[].status != ok` or `sources[].warning` is set; per-source reporting is unchanged. Item 3 still not requested.
+
 From: notifications QA. Additive only.
 
 1. `GET /v1/listings/{id}` answers 404 both for "delisted / hidden / pending_review" and when every adapter timed out (`_first` swallows errors). Notifications reads 404 as delisted and later raises a `back_in_stock` alert when the listing returns, so a transient adapter outage yields a false alert. Please answer `503 upstream_timeout` when adapters failed/timed out and keep 404 for a definite absence (notifications already treats 5xx as "sourcing unavailable": no state change, no alert).

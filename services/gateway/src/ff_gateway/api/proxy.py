@@ -1,5 +1,6 @@
 """Catch-all reverse proxy by path prefix."""
 
+import json
 from datetime import UTC, datetime
 from urllib.parse import quote
 
@@ -94,6 +95,14 @@ async def _ensure_active(request: Request, user_id: str) -> None:
         cache[user_id] = (now + ACTIVE_CACHE_SECONDS, active)
     if not active:
         raise AccountDisabled()
+
+
+def _is_error_envelope(content: bytes) -> bool:
+    try:
+        data = json.loads(content)
+    except ValueError:
+        return False
+    return isinstance(data, dict) and isinstance(data.get("error"), dict)
 
 
 def _is_listing_report(path: str) -> bool:
@@ -214,4 +223,10 @@ async def proxy(full_path: str, request: Request) -> Response:
     except httpx.HTTPError as e:
         raise UpstreamUnavailable(upstream) from e
     out = {k: v for k, v in resp.headers.items() if k.lower() in FORWARD_RESPONSE_HEADERS}
+    if resp.status_code >= 500 and not _is_error_envelope(resp.content):
+        # a crashing upstream (framework debug page, stack trace, plain text) must not leak through the gateway
+        return Response(
+            '{"error":{"code":"upstream_error","message":"Upstream service error","details":{}}}',
+            status_code=resp.status_code, media_type="application/json",
+        )  # fmt: skip
     return Response(content=resp.content, status_code=resp.status_code, headers=out)

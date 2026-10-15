@@ -35,9 +35,10 @@ from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
 from ff_gateway.domain import privacy
-from ff_gateway.domain.client_ip import client_ip
+from ff_gateway.domain.client_ip import client_ip, rate_key
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
+from ff_gateway.domain.http_guard import HttpGuardMiddleware
 from ff_gateway.domain.mail import build_mailer
 from ff_gateway.domain.rate_limit import build_limit_store
 from ff_gateway.domain.security import TokenService
@@ -91,6 +92,8 @@ def create_app(
         ]  # fmt: skip
         if missing:
             raise RuntimeError(f"FF_ENV=production requires {', '.join(missing)} to be set (refusing to start)")
+        if len(settings.jwt_secret or "") < 32:
+            raise RuntimeError("FF_ENV=production requires FF_GATEWAY_JWT_SECRET of at least 32 characters (refusing to start)")
     clock = clock or SystemClock()
     engine = make_engine(settings.database_url)
     http = http_client or httpx.AsyncClient(timeout=settings.upstream_timeout_seconds)
@@ -121,7 +124,8 @@ def create_app(
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.http = http
     app.state.tokens = TokenService(
-        settings.resolved_secret(), clock, settings.access_ttl_seconds, settings.refresh_ttl_seconds, settings.jwt_algorithm
+        settings.resolved_secret(), clock, settings.access_ttl_seconds, settings.refresh_ttl_seconds, settings.jwt_algorithm,
+        settings.jwt_secret_previous,
     )  # fmt: skip
     app.state.home_client = home_client or (
         MockHomeClient()
@@ -161,6 +165,11 @@ def create_app(
         log.exception("unhandled error")
         return _error(500, "internal_error", "Internal server error")
 
+    app.add_middleware(
+        HttpGuardMiddleware, max_body_bytes=settings.max_body_bytes, json_max_body_bytes=settings.json_max_body_bytes,
+        body_read_timeout=settings.body_read_timeout_seconds, media_body_read_timeout=settings.media_body_read_timeout_seconds,
+    )  # inside the rate limiter, outside the routes
+
     @app.middleware("http")
     async def rate_limit(request: Request, call_next):
         path = request.url.path
@@ -175,7 +184,7 @@ def create_app(
                 else settings.rate_limit_per_minute
             )
             peer = request.client.host if request.client else None
-            ip = client_ip(peer, request.headers.get("x-forwarded-for"), trusted_nets)
+            ip = rate_key(client_ip(peer, request.headers.get("x-forwarded-for"), trusted_nets))
             wait = await limiter.check(
                 f"{'auth' if auth_route else 'media' if media_read else 'api'}:{ip}", limit
             )

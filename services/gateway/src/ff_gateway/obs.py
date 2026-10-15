@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 
 _ID_RE = re.compile(r"^[A-Za-z0-9._\-]{1,64}$")
 LOGGER_NAME = "ff.request"
+_CTRL = re.compile(r"[\x00-\x1f\x7f\u2028\u2029]")
 
 
 def sanitize_id(value: str | None) -> str | None:
@@ -45,7 +46,7 @@ class _Formatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         data = getattr(record, "ff", None) or {"msg": record.getMessage()}
         if self.fmt == "text":
-            rest = " ".join(f"{k}={v}" for k, v in data.items() if v is not None)
+            rest = " ".join(f"{k}={_CTRL.sub(' ', str(v))}" for k, v in data.items() if v is not None)  # no CR/LF injection
             return f"{datetime.now(UTC).isoformat(timespec='seconds')} {record.levelname} {rest}"
         return json.dumps(
             {"ts": datetime.now(UTC).isoformat(timespec="milliseconds"), "level": record.levelname,

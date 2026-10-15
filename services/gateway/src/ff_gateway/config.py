@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -32,7 +33,9 @@ class Settings(BaseSettings):
     )
 
     jwt_secret: str | None = None
-    jwt_algorithm: str = "HS256"
+    jwt_algorithm: Literal["HS256", "HS384", "HS512"] = "HS256"  # symmetric only: never "none", never asymmetric-confusable
+    # Key rotation: tokens signed with the previous secret still verify (never used to sign). Drop it after the longest TTL.
+    jwt_secret_previous: str | None = None
     access_ttl_seconds: int = 15 * 60
     refresh_ttl_seconds: int = 30 * 24 * 3600
     database_url: str = "sqlite+aiosqlite:///./gateway.db"
@@ -56,7 +59,12 @@ class Settings(BaseSettings):
     # Keep accepting the access token in the ?token= query / Authorization header at the websocket
     # handshake (compat for old app builds). Set false once clients use ?ticket=.
     ws_allow_token_param: bool = True
-    max_body_bytes: int = 10 * 1024 * 1024
+    max_body_bytes: int = 10 * 1024 * 1024  # media uploads (multipart); every other route class is capped by json_max_body_bytes
+    json_max_body_bytes: int = 1024 * 1024
+    body_read_timeout_seconds: float = 30.0  # whole request body must arrive within this (media: media_body_read_timeout_seconds)
+    media_body_read_timeout_seconds: float = 120.0
+    # Per account (hashed email/phone) failed password attempts per minute before logins for it answer 429, on top of the per-IP limit.
+    login_fail_limit_per_minute: int = 10
     rate_limit_per_minute: int = 300
     # Public image GETs (feeds load many thumbnails) get their own, larger bucket per IP.
     media_rate_limit_per_minute: int = 3000

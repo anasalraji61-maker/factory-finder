@@ -154,6 +154,7 @@ class SourcingService:
         ranked = engine.rank(candidates, sort)
         page_items = engine.paginate(ranked, page, page_size)
         await self._observe(page_items)
+        degraded = [x.source for x in sources if x.status != "ok" or x.warning]
         return SearchResponse(
             items=page_items,
             total=len(ranked),
@@ -161,23 +162,42 @@ class SourcingService:
             page_size=page_size,
             sources=sources,
             facets=Facets(**engine.facets(ranked)),
+            warning=(
+                f"partial_results: {', '.join(degraded)} failed or timed out; results may be incomplete"
+                if degraded
+                else None
+            ),
         )
 
     # ---- detail ---------------------------------------------------------
-    async def _first(self, call):
+    async def _probe(self, call) -> tuple[Any, int]:
+        """Ask every enabled adapter; returns (first hit or None, number of adapters that failed/timed out)."""
+        failed = 0
+
         async def one(a: SourceAdapter):
+            nonlocal failed
             try:
                 return await asyncio.wait_for(call(a), timeout=self.timeout)
             except Exception:
+                failed += 1
                 return None
 
         for res in await asyncio.gather(*(one(a) for a in self.registry.enabled())):
             if res is not None:
-                return res
-        return None
+                return res, failed
+        return None, failed
+
+    async def _first(self, call):
+        return (await self._probe(call))[0]
 
     async def get_listing(self, listing_id: str) -> ListingDetail | None:
-        item = await self._first(lambda a: a.get_listing(listing_id))
+        """None = definite absence (every adapter answered 'not found'). Raises 503 upstream_timeout when nothing
+        was found and at least one adapter failed/timed out (absence cannot be asserted)."""
+        item, failed = await self._probe(lambda a: a.get_listing(listing_id))
+        if item is None and failed:
+            raise ApiError(
+                503, "upstream_timeout", "A listing source failed or timed out; try again", {"failed_sources": failed}
+            )
         if item is not None:
             await self._enrich([item])
             await self._observe([item])
@@ -257,15 +277,13 @@ class SourcingService:
         if hit is not LRUTTLCache.MISS:
             return hit
 
-        async def one(a: SourceAdapter):
+        async def call(a: SourceAdapter):
             async with self._sem:
-                try:
-                    return await asyncio.wait_for(a.get_listing(listing_id), timeout=self.timeout)
-                except Exception:
-                    return None
+                return await a.get_listing(listing_id)
 
-        item = next((r for r in await asyncio.gather(*(one(a) for a in self.registry.enabled())) if r is not None), None)
-        self._details.set(listing_id, item)
+        item, failed = await self._probe(call)
+        if item is not None or not failed:  # definite answers only: a transient failure is never cached
+            self._details.set(listing_id, item)
         return item
 
     async def _pool_part(self, adapter: SourceAdapter, kind: str | None) -> list[ListingDetail]:

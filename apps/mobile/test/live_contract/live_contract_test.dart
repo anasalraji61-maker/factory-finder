@@ -1,4 +1,6 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/features/analytics/analytics_repository.dart';
 import 'package:factory_finder/features/assistant/assistant_repository.dart';
 import 'package:factory_finder/features/deals/deals_repository.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
@@ -8,10 +10,13 @@ import 'package:factory_finder/features/freight/data/freight_repository.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
 import 'package:factory_finder/features/messages/data/messages_repository.dart';
+import 'package:factory_finder/features/my_products/import/import_logic.dart';
+import 'package:factory_finder/features/my_products/my_products_repository.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_repository.dart';
 import 'package:factory_finder/features/privacy/privacy_repository.dart';
 import 'package:factory_finder/features/reco/reco_repository.dart';
 import 'package:factory_finder/features/requests/data/mock_rfq.dart';
+import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:factory_finder/features/reviews/reviews_repository.dart';
 import 'package:factory_finder/features/tracking/data/tracking_repository.dart';
@@ -259,6 +264,157 @@ Future<void> _suite(ContractReport r, String mode, String baseUrl, LiveInfo info
     for (final i in rec.items) {
       c.need(i.listing.id, 'recommendation.listing.id');
     }
+  });
+
+  await r.check(mode, 'freight: comparison of the seeded request (no quotes yet)', (c) async {
+    if (!c.seeded(info.freightRequestId, 'freight_request_id')) return;
+    final repo = LiveFreightRepository(buyer);
+    final cmp = await repo.compare(info.freightRequestId!);
+    c.need(cmp.requestId, 'comparison.request_id');
+    c.need(cmp.requestStatus, 'comparison.request_status');
+    c.need(cmp.currency, 'comparison.currency');
+    final byPrice = await repo.compare(info.freightRequestId!, sort: 'price');
+    c.need(byPrice.requestId, 'comparison(sort=price).request_id');
+    // a buyer is not a forwarder: the whoami must say so without failing
+    final who = await repo.whoami();
+    c.need(who.userId, 'whoami.user_id');
+    if (who.forwarderId != null) c.need(null, 'buyer is not a forwarder (got ${who.forwarderId})');
+  });
+
+  await r.check(mode, 'feed: seeded post is in the supplier feed and readable', (c) async {
+    final postId = info.str('feed_post_id');
+    if (!c.seeded(postId, 'feed_post_id')) return;
+    final repo = LiveFeedRepository(buyer);
+    final post = await repo.getPost(postId!);
+    c.need(post.id, 'post.id');
+    c.need(post.supplierId, 'post.supplier_id');
+    c.need(post.body, 'post.body');
+    final home = await LiveFeedRepository(supplier).home();
+    c.need(home.items, 'feed home (supplier)');
+    final next = home.nextCursor;
+    if (next != null && next.isNotEmpty) {
+      await repo.home(cursor: next);
+    }
+  });
+
+  await r.check(mode, 'deals: supplier view + any-role page of the seeded deal', (c) async {
+    if (!c.seeded(info.dealId, 'deal_id')) return;
+    final sellerPage = await LiveDealsRepository(supplier).listDeals(role: 'supplier');
+    if (!sellerPage.items.any((d) => d.id == info.dealId)) {
+      c.need(null, 'seeded deal in /v1/deals?role=supplier');
+    }
+    final buyerPage = await LiveDealsRepository(buyer).listDeals(pageSize: 5);
+    c.need(buyerPage.items, 'deals (buyer, any role)');
+    for (final d in buyerPage.items) {
+      c.need(d.id, 'deal.id');
+      c.need(d.status, 'deal.status');
+    }
+  });
+
+  await r.check(mode, 'reco: similar/recommended pages incl. optional warning', (c) async {
+    if (!c.seeded(info.listingId, 'listing_id')) return;
+    final repo = LiveRecoRepository(buyer);
+    final sim = await repo.similar(info.listingId!, limit: 5);
+    c.need(sim.total, 'similar.total');
+    // `warning` is optional; when present it must be a non-empty string.
+    final sw = sim.warning;
+    if (sw != null && sw.isEmpty) c.need(null, 'similar.warning (empty string)');
+    if (sim.isPartial && sw == null) c.need(null, 'similar.isPartial implies warning');
+    for (final i in sim.items) {
+      c.need(i.listing.id, 'similar.listing.id');
+      c.need(i.listing.supplier.id, 'similar.listing.supplier.id');
+    }
+    final anon = await repo.recommendations(limit: 5);
+    c.need(anon.total, 'recommendations.total (no refs)');
+    final rw = anon.warning;
+    if (rw != null && rw.isEmpty) c.need(null, 'recommendations.warning (empty string)');
+    if (anon.isPartial && rw == null) c.need(null, 'recommendations.isPartial implies warning');
+    final byCountry = await repo.recommendations(refs: [info.listingId!], country: 'cn', limit: 5);
+    c.need(byCountry.total, 'recommendations.total (refs+country)');
+    for (final i in byCountry.items) {
+      c.need(i.listing.id, 'recommendation.listing.id');
+    }
+  });
+
+  await r.check(mode, 'analytics: my analytics (supplier) and 403 for a buyer', (c) async {
+    if (!c.seeded(info.claimedSupplierId, 'claimed_supplier_id')) return;
+    final repo = AnalyticsRepository(supplier);
+    for (final days in [7, 30, 90]) {
+      final a = await repo.fetch(days: days);
+      c.need(a.period.days, 'analytics.period.days ($days)');
+      c.need(a.totals, 'analytics.totals ($days)');
+      c.need(a.previousTotals, 'analytics.previous_totals ($days)');
+    }
+    final nativeId = info.nativeListingId;
+    if (nativeId != null) {
+      final one = await repo.fetch(days: 30, listingId: nativeId);
+      c.need(one.period.days, 'analytics(listing).period.days');
+    }
+    await expectLater(AnalyticsRepository(buyer).fetch(days: 30), throwsA(isA<ApiException>()));
+  });
+
+  await r.check(mode, 'import: bulk dry-run through the repository', (c) async {
+    if (!c.seeded(info.claimedSupplierId, 'claimed_supplier_id')) return;
+    final repo = MyListingsRepository(supplier);
+    const csv = 'external_ref,title,category,price_min,country\n'
+        'live-dry-1,Live dry run planter,furniture,2.50,IQ\n'
+        'live-dry-2,Live dry run basket,furniture,1.75,IQ\n';
+    final parsed = parseListingCsv(csv);
+    c.need(parsed.validRows, 'parsed valid rows (client-side CSV parse)');
+    if (parsed.validRows.isEmpty) return;
+    final before = await repo.list(pageSize: 1);
+    final resp = await repo.importListings(
+      [for (final row in parsed.validRows) row.body!],
+      dryRun: true,
+    );
+    if (!resp.dryRun) c.need(null, 'import response dry_run == true');
+    c.need(resp.results, 'import results');
+    for (final res in resp.results) {
+      c.need(res.action, 'import result.action');
+    }
+    if (resp.created + resp.updated + resp.rejected != resp.results.length) {
+      c.need(null, 'import counts sum to results.length');
+    }
+    final after = await repo.list(pageSize: 1);
+    if (after.total != before.total) {
+      c.need(null, 'dry run must not persist (total ${before.total} -> ${after.total})');
+    }
+  });
+
+  await r.check(mode, 'rfq: create with invited_supplier_ids', (c) async {
+    if (!c.seeded(info.supplierId, 'external_supplier_id')) return;
+    final inviteId = info.supplierId!;
+    if (!isValidInviteId(inviteId)) {
+      c.need(null, 'external_supplier_id matches the invite id pattern ($inviteId)');
+      return;
+    }
+    final rfq = RfqRepository(buyer);
+    final created = await rfq.create(RfqDraft(
+      kind: ListingKind.product,
+      title: 'Live contract invite-only request',
+      quantity: '120',
+      unit: 'piece',
+      destination: const Location(countryCode: 'IQ', city: 'Basra'),
+      targetPrice: const Money(amount: '4.20', currency: 'USD'),
+      invitedSupplierIds: [inviteId],
+    ));
+    c.need(created.id, 'created.id');
+    if (!created.invitedSupplierIds.contains(inviteId)) {
+      c.need(null, 'created.invited_supplier_ids echoes the invite');
+    }
+    final again = await rfq.get(created.id);
+    if (!again.invitedSupplierIds.contains(inviteId)) {
+      c.need(null, 'GET request echoes invited_supplier_ids to its owner');
+    }
+  });
+
+  await r.check(mode, 'reviews: summary of the claimed supplier', (c) async {
+    if (!c.seeded(info.claimedSupplierId, 'claimed_supplier_id')) return;
+    final repo = LiveReviewsRepository(buyer);
+    final s = await repo.summary(info.claimedSupplierId!);
+    c.need(s.supplierRef, 'summary.supplier_ref');
+    c.need(s.count, 'summary.count');
+    c.need(s.completedDeals, 'summary.completed_deals');
   });
 
   await r.check(mode, 'assistant: reply cards', (c) async {

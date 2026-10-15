@@ -1,0 +1,41 @@
+# Security review 2026-10-h (gateway)
+
+Scope: services/gateway after WS tickets, X-Client-Ip, trust report signal headers, admin passthroughs, account deletion/export, email verification, refresh rotation. Rounds a..g not repeated. Tests: `tests/test_security_review_h.py` (+ a teardown-flake fix in `test_security_review.py`).
+
+## Fixed in place (with tests)
+
+- Body size: `request.body()` buffered the whole body before the 10 MiB check, and gateway-native routes (register/login/...) had no cap. New pure-ASGI `HttpGuardMiddleware` (`domain/http_guard.py`) rejects declared Content-Length up front and counts chunked bodies. Class limits: `/v1/media` = `FF_GATEWAY_MAX_BODY_BYTES` (10 MiB), everything else = `FF_GATEWAY_JSON_MAX_BODY_BYTES` (1 MiB). Negative / non-numeric Content-Length -> 400.
+- Slowloris-style trickle uploads: whole body must arrive within `FF_GATEWAY_BODY_READ_TIMEOUT_SECONDS` (30; media `..MEDIA_BODY_READ_TIMEOUT_SECONDS` 120) else 408. Only enforced while the body is incomplete (disconnect polling untouched).
+- Response headers: gateway-owned responses get `X-Content-Type-Options: nosniff`; `/v1/auth`, `/v1/me*`, `/v1/ws-ticket`, `/v1/admin` get `Cache-Control: no-store` (only if not already set, proxied headers still allow-listed).
+- Upstream 5xx that is not a JSON `{"error":{...}}` envelope (stack trace, debug page, plain text) is replaced by `upstream_error` (status kept).
+- JWT: `jwt_algorithm` restricted to HS256/384/512 (no `none`); tokens now carry `iss`/`aud` and mismatches are rejected (tokens without them still accepted until they expire, so no forced logout); `nbf` honoured; non-numeric `exp` / non-string `sub` give 401 not 500; verify-only `FF_GATEWAY_JWT_SECRET_PREVIOUS` for key rotation; `FF_ENV=production` now also requires a secret of at least 32 chars.
+- Login: per-account failed-password throttle (`FF_GATEWAY_LOGIN_FAIL_LIMIT_PER_MINUTE`, default 10, hash of the identifier, unknown accounts throttled identically, XFF-independent) in addition to the per-IP limit. Login email is now lowercased (registration stores lowercase, so `Bob@x.com` could not log in).
+- Password policy: tiny deny-list (password, 12345678, ...), fewer than 3 distinct characters, password equal to the email / phone refused at registration (422). `password123` style test passwords remain legal.
+- Rate-limit bypass: IPv6 clients are bucketed per /64 (`rate_key`), IPv4-mapped IPv6 as IPv4. With `FF_GATEWAY_TRUSTED_PROXIES` empty, X-Forwarded-For is never read (test added); X-Client-Ip towards upstreams is derived the same way and client-sent copies are never relayed.
+- Log injection: structured logs are JSON-escaped, path is the route template, request ids are sanitised; the text log format (`FF_LOG_FORMAT=text`) now strips control chars / U+2028/9 from values.
+- Test flake: `test_path_tricks_are_refused` errored at teardown ("Event loop is closed", about 1 run in 4) because `_raw` used `asyncio.run` on an app whose pooled SQLite connections belong to the TestClient loop. It now uses `client.portal.call`; 6/6 isolated and 3/3 full runs clean afterwards.
+
+## Reviewed, no change needed
+
+- Hop-by-hop / smuggling: request and response headers are strict allow-lists (no Connection, TE, Upgrade, Host, X-Forwarded-*, Cookie forwarded); duplicate headers collapse to one value; path tricks already refused (round e); httpx does not follow redirects, upstream `Location` is passed through unchanged (no gateway-generated redirects, so no open redirect).
+- CORS: default `cors_origins=[]`, `allow_credentials=False`.
+- Refresh rotation: atomic single-use claim, replay revokes the whole family, deletion/finalize deletes all refresh and verification tokens, logout is oracle-free.
+- Enumeration: resend-verification and verify-email are uniform; login is uniform (dummy bcrypt).
+- IDOR: `/v1/me`, `/v1/me/export`, `DELETE /v1/me`, ws-ticket all act only on the token's user id; deletion jobs are keyed by that id; admin job listing is admin-token only; admin passthroughs are allow-listed, id/query validated, tokens injected gateway-side.
+- Verification token: 256-bit random, only SHA-256 stored, single use, bound to the email it was issued for (changing email invalidates it).
+
+## Open (not fixed here)
+
+1. Register answers 409 `account_exists` for a known email/phone (enumeration). Closing it needs "always 201 + email says account exists" which only works with mail on; product decision.
+2. No upstream circuit breaker: each request waits up to `FF_GATEWAY_UPSTREAM_TIMEOUT_SECONDS` (15 s) against a dead service and httpx's default pool (100 connections) can be exhausted by slow upstreams. Per-upstream breaker + pool limits/timeouts (connect 3 s) deserve their own task with a design note.
+3. bcrypt truncates at 72 bytes; passwords up to 128 chars collide after the 72nd byte. Fixing needs a pre-hash with a hash-version marker (migration of existing hashes at next login).
+4. No password change / reset endpoint exists; email change on `PATCH /v1/me` needs no re-authentication (stolen access token can re-point the account email, though there is no reset flow to abuse yet). Add re-auth when a reset flow is built.
+5. WebSocket handshakes bypass the HTTP rate-limit middleware and there is no per-user concurrent socket cap (tickets are rate limited through `POST /v1/ws-ticket`; `?token=` fallback still on by default: set `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=false` once clients use tickets). Ticket store is per process (breaks behind more than one replica without sticky routing).
+6. Per-account lockout is a 60 s soft block, so an attacker can keep a victim's login at 429 with 10 bad attempts per minute; accepted trade-off (the per-IP limit and mobile client retry make it a nuisance, not takeover). Consider CAPTCHA-free step-up (email link) later.
+7. Admin auth is a single static shared token (`X-Admin-Token`), no per-admin identity or rotation; audit actor is fixed `admin`. Needs a product decision (SSO / per-admin tokens).
+8. `Server: uvicorn` header is added by uvicorn itself: run with `--no-server-header` (deploy/infra lane; see docs/requests/gateway-uvicorn-flags.md). Also set `--proxy-headers` off (the gateway does its own XFF handling) and a `--timeout-keep-alive` of about 5 s.
+9. `iss`/`aud` are accepted when absent for the rolling deploy; after one refresh TTL (30 d) make them required (one-line change in `_check_iss_aud`).
+
+## scripts/e2e.py environment (script not edited)
+
+Read by the script: `FF_E2E_BASE_URL`, `FF_E2E_ADMIN_TOKEN`; refuses to run when `FF_ENV` is production/prod/staging/stage or `FF_PRODUCTION` is set. It sets for the stack it launches: `FF_GATEWAY_JWT_SECRET`, `FF_GATEWAY_ADMIN_TOKEN`, `FF_GATEWAY_BCRYPT_ROUNDS`, `FF_GATEWAY_RATE_LIMIT_PER_MINUTE`, `FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE`, `FF_INTERNAL_TOKEN`, `FF_{MEDIA,PAYMENTS,FEED,FREIGHT}_ADMIN_TOKEN`, `FF_PAYMENTS_INTERNAL_TOKEN`, `FF_PAYMENTS_PROVIDER`, `FF_PAYMENTS_WEBHOOK_SECRET_MOCK`, `FF_LOGISTICS_FX_PROVIDER`, `FF_MEDIA_STORAGE_ROOT`, `FF_MEDIA_PUBLIC_BASE_URL`, `FF_SOURCING_TRUST_BASE_URL`, `FF_SOURCING_TRUST_MODE`, `FF_DEMAND_*`, `FF_FEED_REPORT_MIN_ACCOUNT_AGE_SECONDS`, `FF_FREIGHT_*`, `FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS`. No new variable is required by this round; its passwords (`Passw0rd!x`) pass the new policy and its JWT secret (`test-secret`) is fine because the 32-char rule only applies under `FF_ENV=production`, which the script refuses anyway. New optional gateway vars: `FF_GATEWAY_JSON_MAX_BODY_BYTES`, `..BODY_READ_TIMEOUT_SECONDS`, `..MEDIA_BODY_READ_TIMEOUT_SECONDS`, `..LOGIN_FAIL_LIMIT_PER_MINUTE`, `..JWT_SECRET_PREVIOUS`.

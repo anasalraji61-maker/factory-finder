@@ -17,6 +17,7 @@ from ff_gateway.domain.errors import (
     InvalidCredentials,
     InvalidToken,
     InvalidVerificationToken,
+    RateLimited,
 )
 from ff_gateway.domain.mail import Mail
 from ff_gateway.domain.security import hash_jti, hash_password, verify_password
@@ -110,6 +111,13 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
         conds.append(User.email == body.email)
     if body.phone:
         conds.append(User.phone == body.phone)
+    # per-account throttle (on top of the per-IP limit): a botnet guessing one account's password is slowed down; keyed on a
+    # hash of the identifier so it is also applied to unknown accounts (no enumeration) and holds no PII
+    app = request.app
+    fkey = "loginfail:" + hashlib.sha256((body.email or body.phone or "").encode()).hexdigest()[:32]
+    fail_limit = app.state.settings.login_fail_limit_per_minute
+    if fail_limit > 0 and (wait := await app.state.limiter.blocked(fkey, fail_limit)) is not None:
+        raise RateLimited(wait, fail_limit)
     async with request.app.state.sessionmaker() as s:
         user = await s.scalar(select(User).where(or_(*conds)))
     # always run a bcrypt check so unknown accounts are not distinguishable by response time
@@ -118,6 +126,8 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
         and user is not None
     )
     if not ok or user is None:
+        if fail_limit > 0:
+            await app.state.limiter.check(fkey, fail_limit)
         raise InvalidCredentials()
     if not user.is_active:
         # grace period after DELETE /v1/me: the right password cancels the deletion (never for admin-disabled or finalized accounts)

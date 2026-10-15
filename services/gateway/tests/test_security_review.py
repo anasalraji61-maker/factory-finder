@@ -12,11 +12,9 @@ def test_admin_token_is_never_forwarded_and_admin_paths_are_rate_limited(make_cl
     assert 429 in codes  # admin-token guessing is throttled like auth
 
 
-def _raw(app, method, path, headers=()):
+def _raw(client, method, path, headers=()):
     """Send a request whose path is NOT normalised by a client (like curl --path-as-is)."""
-    import asyncio
-
-    out = {}
+    app, out = client.app, {}
 
     async def run():
         scope = {
@@ -39,7 +37,7 @@ def _raw(app, method, path, headers=()):
 
         await app(scope, receive, send)
 
-    asyncio.run(run())
+    client.portal.call(run)  # the app's own event loop: a fresh asyncio.run() loop left pooled DB connections on a closed loop (teardown flake)
     return out["status"]
 
 
@@ -47,7 +45,7 @@ def test_dot_segments_cannot_sidestep_path_policies(client, hdr):
     """httpx collapses '/./' upstream, so '/v1/alerts/./evaluate' used to skip the exact-match internal-only block."""
     h = [("authorization", hdr["Authorization"])]
     for p in ("/v1/alerts/./evaluate", "/v1/feed/./posts", "/v1/trust/./verification/documents", "/v1/alerts/../alerts/evaluate"):
-        assert _raw(client.app, "POST", p, h) == 400, p
+        assert _raw(client, "POST", p, h) == 400, p
 
 def test_path_tricks_are_refused(client, hdr):
     """Review e: empty segments, backslashes and still-encoded dots/slashes could be normalised differently upstream."""
@@ -56,5 +54,5 @@ def test_path_tricks_are_refused(client, hdr):
         "/v1/alerts//evaluate", "//v1/alerts/evaluate", "/v1/alerts/%2e/evaluate", "/v1/alerts/%2E%2e/evaluate",
         "/v1/alerts%2fevaluate", "/v1/alerts\\evaluate", "/v1/media/files/%5c..%5cprivate",
     ):
-        assert _raw(client.app, "POST", p, h) == 400, p
-    assert _raw(client.app, "GET", "/v1/media/files/", h) != 400  # one trailing slash stays legal
+        assert _raw(client, "POST", p, h) == 400, p
+    assert _raw(client, "GET", "/v1/media/files/", h) != 400  # one trailing slash stays legal
