@@ -28,6 +28,14 @@ class Hub:
         return Point(self.lat, self.lon)
 
 
+@dataclass(frozen=True)
+class CityMatch:
+    id: str
+    name: str
+    country_code: str
+    point: Point
+
+
 class GeoClient(Protocol):
     async def resolve_city(self, country_code: str, city: str | None) -> Point | None: ...
     async def hubs(self, country_code: str, type: str | None = None) -> list[Hub]: ...
@@ -70,6 +78,9 @@ CITIES = {  # (country, lowercase name) -> (lat, lon)
     ("DE", "munich"): (48.14, 11.58), ("DE", "duisburg"): (51.43, 6.76),
     ("US", "chicago"): (41.88, -87.63), ("US", "houston"): (29.76, -95.37), ("US", "savannah"): (32.08, -81.09),
     ("US", "atlanta"): (33.75, -84.39),
+    ("AT", "vienna"): (48.21, 16.37), ("AF", "kabul"): (34.53, 69.17), ("ET", "addis ababa"): (9.03, 38.74),
+    ("UG", "kampala"): (0.35, 32.58), ("PK", "karachi"): (24.86, 67.01), ("KE", "nairobi"): (-1.29, 36.82),
+    ("DJ", "djibouti"): (11.59, 43.15),
 }
 HUBS = [  # id, name, type, country, lat, lon
     ("CNSHA", "Shanghai", "sea", "CN", 31.23, 121.47), ("CNNGB", "Ningbo-Zhoushan", "sea", "CN", 29.87, 121.85),
@@ -121,8 +132,19 @@ HUBS = [  # id, name, type, country, lat, lon
     ("USHOU", "Houston", "sea", "US", 29.73, -95.0), ("USSAV", "Savannah", "sea", "US", 32.08, -81.09),
     ("IAH", "Houston Intl", "air", "US", 29.98, -95.34), ("ORD", "Chicago O'Hare", "air", "US", 41.98, -87.9),
     ("ATL", "Atlanta Intl", "air", "US", 33.64, -84.43),
+    ("PKKHI", "Karachi", "sea", "PK", 24.84, 66.98), ("KHI", "Karachi Jinnah", "air", "PK", 24.91, 67.16),
+    ("PKTOR", "Torkham", "land", "PK", 34.11, 71.09),
+    ("KEMBA", "Mombasa", "sea", "KE", -4.05, 39.67), ("NBO", "Nairobi JKIA", "air", "KE", -1.32, 36.93),
+    ("DJJIB", "Djibouti", "sea", "DJ", 11.6, 43.13),
+    ("KBL", "Kabul Intl", "air", "AF", 34.57, 69.21), ("ADD", "Addis Ababa Bole", "air", "ET", 8.98, 38.8),
+    ("EBB", "Entebbe", "air", "UG", 0.04, 32.44), ("VIE", "Vienna Intl", "air", "AT", 48.11, 16.57),
 ]
 ROAD_FACTOR = {"road": 1.3, "sea": 1.25, "air": 1.0}
+# Same-country homonyms: (country, lowercase name) -> [(id, lat, lon)]. The first one is what resolve_city returns.
+AMBIGUOUS = {
+    ("US", "springfield"): [("US-SPRINGFIELD_IL", 39.78, -89.65), ("US-SPRINGFIELD_MO", 37.21, -93.29),
+                            ("US-SPRINGFIELD_MA", 42.10, -72.59)],
+}
 
 
 class MockGeo:
@@ -131,9 +153,19 @@ class MockGeo:
     def __init__(self):
         self._hubs = [Hub(*h) for h in HUBS]
 
+    async def city_candidates(self, country_code, city):
+        key = (country_code, (city or "").strip().lower())
+        if key in AMBIGUOUS:
+            return [CityMatch(i, city.strip(), country_code, Point(la, lo)) for i, la, lo in AMBIGUOUS[key]]
+        hit = CITIES.get(key)
+        return [CityMatch(f"{country_code}-{key[1].upper()}", city.strip(), country_code, Point(*hit))] if hit else []
+
     async def resolve_city(self, country_code, city):
         if city:
-            hit = CITIES.get((country_code, city.strip().lower()))
+            key = (country_code, city.strip().lower())
+            if key in AMBIGUOUS:
+                return Point(*AMBIGUOUS[key][0][1:])
+            hit = CITIES.get(key)
             return Point(*hit) if hit else None
         for (cc, _), ll in CITIES.items():
             if cc == country_code:
@@ -186,6 +218,17 @@ class HttpGeo:
             if p := _pt(it):
                 return p
         return None
+
+    async def city_candidates(self, country_code, city):
+        """Cities of the country whose name is exactly `city` (case-insensitive); >1 means the name is ambiguous."""
+        want = (city or "").strip().casefold()
+        out = []
+        for it in _items(await self._get("/v1/cities", country=country_code, q=city)):
+            names = {str(it.get(k, "")).strip().casefold() for k in ("name_en", "name_ar", "name")}
+            if want and want in names and (p := _pt(it)):
+                out.append(CityMatch(str(it.get("id", "")), str(it.get("name_en") or it.get("name") or city),
+                                     it.get("country_code", country_code), p))
+        return out
 
     async def hubs(self, country_code, type=None):
         return [h for it in _items(await self._get("/v1/hubs", country=country_code, type=type))
@@ -262,6 +305,12 @@ class CachedGeo:
 
     async def resolve_city(self, country_code, city):
         return await self._cached(("city", country_code, city), lambda: self.inner.resolve_city(country_code, city))
+
+    async def city_candidates(self, country_code, city):
+        fn = getattr(self.inner, "city_candidates", None)
+        if fn is None:
+            return []
+        return list(await self._cached(("cands", country_code, city), lambda: fn(country_code, city)))
 
     async def hubs(self, country_code, type=None):
         return list(await self._cached(("hubs", country_code, type), lambda: self.inner.hubs(country_code, type)))

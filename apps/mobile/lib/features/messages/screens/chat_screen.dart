@@ -592,18 +592,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
                     PositionedDirectional(
                       top: 0,
                       end: 0,
-                      child: InkWell(
+                      child: InkResponse(
                         key: ValueKey('chat-attach-remove-$i'),
                         onTap: () => setState(() => _attached.removeAt(i)),
                         child: Tooltip(
                           message: context.tr('messages.attach.remove'),
-                          child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Align(
+                              alignment: AlignmentDirectional.topEnd,
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close, size: 14, color: Colors.white),
+                              ),
                             ),
-                            child: const Icon(Icons.close, size: 14, color: Colors.white),
                           ),
                         ),
                       ),

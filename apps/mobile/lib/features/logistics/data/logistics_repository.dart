@@ -57,14 +57,17 @@ final Map<String, ListingPrefill> mockPrefills = {
 };
 
 class LogisticsRepository {
-  LogisticsRepository(this._api);
+  LogisticsRepository(this._api, {DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
 
   final ApiClient _api;
+
+  /// Clock used by the mock generator to judge freight-override validity.
+  final DateTime Function() _clock;
 
   Future<LandedCostQuote> calculate(QuoteRequest r, {String lang = 'ar'}) async {
     if (_api.isMock) {
       await mockDelay(700);
-      return MockQuoteGenerator.generate(r, lang: lang);
+      return MockQuoteGenerator.generate(r, lang: lang, now: _clock());
     }
     final json = await _api.post('/v1/quotes/landed-cost', body: r.toJson());
     return LandedCostQuote.fromJson(Map<String, dynamic>.from(json as Map));

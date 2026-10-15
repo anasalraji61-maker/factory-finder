@@ -10118,5 +10118,115 @@
 "lon": -100.98
 },
 "industrial": true
+},
+{
+"id": "AF-KABUL",
+"name_en": "Kabul",
+"name_ar": "كابل",
+"country_code": "AF",
+"point": {
+"lat": 34.5553,
+"lon": 69.2075
+},
+"industrial": false
+},
+{
+"id": "ET-ADDIS_ABABA",
+"name_en": "Addis Ababa",
+"name_ar": "أديس أبابا",
+"country_code": "ET",
+"point": {
+"lat": 9.03,
+"lon": 38.74
+},
+"industrial": true
+},
+{
+"id": "UG-KAMPALA",
+"name_en": "Kampala",
+"name_ar": "كمبالا",
+"country_code": "UG",
+"point": {
+"lat": 0.3476,
+"lon": 32.5825
+},
+"industrial": true
+},
+{
+"id": "US-SPRINGFIELD_IL",
+"name_en": "Springfield",
+"name_ar": "سبرينغفيلد",
+"country_code": "US",
+"point": {
+"lat": 39.7817,
+"lon": -89.6501
+},
+"industrial": false
+},
+{
+"id": "US-SPRINGFIELD_MO",
+"name_en": "Springfield",
+"name_ar": "سبرينغفيلد",
+"country_code": "US",
+"point": {
+"lat": 37.209,
+"lon": -93.2923
+},
+"industrial": false
+},
+{
+"id": "US-SPRINGFIELD_MA",
+"name_en": "Springfield",
+"name_ar": "سبرينغفيلد",
+"country_code": "US",
+"point": {
+"lat": 42.1015,
+"lon": -72.5898
+},
+"industrial": false
+},
+{
+"id": "US-ALEXANDRIA_VA",
+"name_en": "Alexandria",
+"name_ar": "الإسكندرية",
+"country_code": "US",
+"point": {
+"lat": 38.8048,
+"lon": -77.0469
+},
+"industrial": false
+},
+{
+"id": "RO-ALEXANDRIA",
+"name_en": "Alexandria",
+"name_ar": "ألكسندريا",
+"country_code": "RO",
+"point": {
+"lat": 43.9692,
+"lon": 25.3333
+},
+"industrial": false
+},
+{
+"id": "CA-VICTORIA",
+"name_en": "Victoria",
+"name_ar": "فيكتوريا",
+"country_code": "CA",
+"point": {
+"lat": 48.4284,
+"lon": -123.3656
+},
+"industrial": false
+},
+{
+"id": "MX-CIUDAD_VICTORIA",
+"name_en": "Ciudad Victoria",
+"name_ar": "سيوداد فيكتوريا",
+"country_code": "MX",
+"point": {
+"lat": 23.7369,
+"lon": -99.1411
+},
+"industrial": false
 }
 ]

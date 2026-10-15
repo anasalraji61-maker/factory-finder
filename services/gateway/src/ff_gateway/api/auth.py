@@ -6,7 +6,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import and_, delete, select, update
 from sqlalchemy.exc import IntegrityError
 
 from ff_gateway.api.deps import current_user, request_ip_key, to_me
@@ -119,7 +119,7 @@ async def register(body: RegisterIn, request: Request) -> TokensOut:
 
 @router.post("/login", response_model=TokensOut)
 async def login(body: LoginIn, request: Request) -> TokensOut:
-    conds = []
+    conds = []  # both given -> both must match the same account (never an OR that lets one identifier ride along)
     if body.email:
         conds.append(User.email == body.email)
     if body.phone:
@@ -127,12 +127,14 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
     # per-account throttle (on top of the per-IP limit): a botnet guessing one account's password is slowed down; keyed on a
     # hash of the identifier so it is also applied to unknown accounts (no enumeration) and holds no PII
     app = request.app
-    fkey = "loginfail:" + hashlib.sha256((body.email or body.phone or "").encode()).hexdigest()[:32]
+    fkeys = ["loginfail:" + hashlib.sha256(i.encode()).hexdigest()[:32] for i in (body.email, body.phone) if i]
     fail_limit = app.state.settings.login_fail_limit_per_minute
-    if fail_limit > 0 and (wait := await app.state.limiter.blocked(fkey, fail_limit)) is not None:
-        raise RateLimited(wait, fail_limit)
+    if fail_limit > 0:
+        for fkey in fkeys:  # every identifier supplied has its own bucket: pairing a victim's phone with random emails does not dodge it
+            if (wait := await app.state.limiter.blocked(fkey, fail_limit)) is not None:
+                raise RateLimited(wait, fail_limit)
     async with request.app.state.sessionmaker() as s:
-        user = await s.scalar(select(User).where(or_(*conds)))
+        user = await s.scalar(select(User).where(and_(*conds)))
     # always run a bcrypt check so unknown accounts are not distinguishable by response time
     ok = (
         verify_password(body.password, user.password_hash if user else _DUMMY_HASH)
@@ -140,7 +142,8 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
     )
     if not ok or user is None:
         if fail_limit > 0:
-            await app.state.limiter.check(fkey, fail_limit)
+            for fkey in fkeys:
+                await app.state.limiter.check(fkey, fail_limit)
         raise InvalidCredentials()
     if not user.is_active:
         # grace period after DELETE /v1/me: the right password cancels the deletion (never for admin-disabled or finalized accounts)

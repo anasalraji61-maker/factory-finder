@@ -11,25 +11,29 @@ class RfqRepository {
   final ApiClient _api;
   final MockRfqBackend _mock;
 
-  Future<PageResult<RfqRequest>> list(RfqFilter f) async {
+  /// One page of requests. Pass the previous page's [RfqPage.nextCursor] as
+  /// [cursor] to continue (keyset); without it the first page is returned.
+  Future<RfqPage> list(RfqFilter f, {String? cursor, int pageSize = 50}) async {
+    final hasCursor = cursor != null && cursor.isNotEmpty;
     if (_api.isMock) {
       await mockDelay(300);
-      final items = filterRequests(_mock.requests, f);
-      return PageResult<RfqRequest>(
-        items: items,
-        total: items.length,
-        page: 1,
-        pageSize: 50,
-      );
+      return _mock.listPage(f, cursor: hasCursor ? cursor : null, pageSize: pageSize);
     }
     final json = await _api.get('/v1/requests', query: {
       'scope': f.mine ? 'mine' : 'public',
       if (f.mine && f.status != null) 'status': f.status!.json,
       if (f.kind != null) 'kind': f.kind!.json,
       'page': 1,
-      'page_size': 50,
+      'page_size': pageSize,
+      if (hasCursor) 'cursor': cursor,
     });
-    return _page(json, RfqRequest.fromJson);
+    if (json is List) {
+      final items = json
+          .map((e) => RfqRequest.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      return RfqPage(items: items, total: items.length, page: 1, pageSize: items.length);
+    }
+    return RfqPage.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   Future<RfqRequest> get(String id) async {
@@ -90,7 +94,7 @@ final rfqRepositoryProvider = Provider<RfqRepository>(
 );
 
 final rfqListProvider =
-    FutureProvider.autoDispose.family<PageResult<RfqRequest>, RfqFilter>(
+    FutureProvider.autoDispose.family<RfqPage, RfqFilter>(
   (ref, f) => ref.watch(rfqRepositoryProvider).list(f),
 );
 

@@ -49,6 +49,32 @@ from ff_gateway.obs import db_ready, install_observability, ready_response
 log = logging.getLogger("ff_gateway")
 
 
+class _CatchAllMiddleware:
+    """Innermost ASGI layer: an unhandled route error becomes the standard envelope *inside* the request-id and CORS
+    layers (Starlette's own 500 handler sits outside them, so its response would lack X-Request-Id and CORS headers)."""
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        started = False
+
+        async def tracked(message):
+            nonlocal started
+            started = started or message["type"] == "http.response.start"
+            await send(message)
+
+        try:
+            await self.app(scope, receive, tracked)
+        except Exception:
+            if started:
+                raise
+            log.exception("unhandled error")
+            await _error(500, "internal_error", "Internal server error")(scope, receive, send)
+
+
 class _RedactToken(logging.Filter):
     """The WebSocket client may pass ?token=<jwt>; keep it out of uvicorn access logs."""
 
@@ -101,8 +127,8 @@ def create_app(
         ]  # fmt: skip
         if missing:
             raise RuntimeError(f"FF_ENV=production requires {', '.join(missing)} to be set (refusing to start)")
-        if "*" in settings.cors_origins:
-            raise RuntimeError("FF_ENV=production refuses FF_GATEWAY_CORS_ORIGINS containing '*' (refusing to start)")
+        if any(o.strip() in ("*", "null") for o in settings.cors_origins):
+            raise RuntimeError("FF_ENV=production refuses FF_GATEWAY_CORS_ORIGINS containing '*' or 'null' (CORS; refusing to start)")
         if len(settings.jwt_secret or "") < 32:
             raise RuntimeError("FF_ENV=production requires FF_GATEWAY_JWT_SECRET of at least 32 characters (refusing to start)")
     clock = clock or SystemClock()
@@ -139,6 +165,7 @@ def create_app(
         await engine.dispose()
 
     app = FastAPI(**_docs_kwargs(), title="Factory Finder gateway", version=__version__, lifespan=lifespan)
+    app.add_middleware(_CatchAllMiddleware)  # first added = innermost
     app.state.settings = settings
     app.state.clock = clock
     app.state.ws_tickets, app.state.ws_counter, app.state.ws_local_counter = build_ws_stores(

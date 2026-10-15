@@ -2,6 +2,34 @@ import 'package:factory_finder/core/models/models.dart';
 
 /// Reverse-marketplace models (hand-written JSON, see ARCHITECTURE §4 rfq).
 
+/// A page of requests plus the keyset cursor for the next one
+/// (`next_cursor` of GET /v1/requests; null on the last page).
+class RfqPage extends PageResult<RfqRequest> {
+  const RfqPage({
+    required super.items,
+    required super.total,
+    required super.page,
+    required super.pageSize,
+    this.nextCursor,
+  });
+
+  final String? nextCursor;
+
+  bool get hasMore => nextCursor != null && nextCursor!.isNotEmpty;
+
+  static RfqPage fromJson(Map<String, dynamic> j) {
+    final base = PageResult.fromJson<RfqRequest>(j, RfqRequest.fromJson);
+    final c = j['next_cursor'];
+    return RfqPage(
+      items: base.items,
+      total: base.total,
+      page: base.page,
+      pageSize: base.pageSize,
+      nextCursor: c is String && c.isNotEmpty ? c : null,
+    );
+  }
+}
+
 enum RfqStatus {
   open('open'),
   negotiating('negotiating'),

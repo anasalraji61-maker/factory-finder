@@ -49,6 +49,7 @@ watches = Table(
     Column("version", Integer, nullable=False, default=1),
     Column("doc", JSON, nullable=False),
     Index("ix_watch_owner_identity", "owner_id", "identity"),
+    Index("ix_watch_owner_id", "owner_id", "id"),
 )
 alerts = Table(
     "alerts",
@@ -62,6 +63,9 @@ alerts = Table(
     Column("read", Boolean, nullable=False, default=False),
     Column("doc", JSON, nullable=False),
     Index("uq_alert_event", "watch_id", "rule", "fingerprint", unique=True),
+    Index("ix_alert_owner_created", "owner_id", "created_at", "id"),
+    Index("ix_alert_owner_read", "owner_id", "read"),
+    Index("ix_alert_created", "created_at"),
 )
 devices = Table(
     "devices",
@@ -92,6 +96,7 @@ deliveries = Table(
     Column("next_attempt_at", String(32), nullable=False),
     Column("doc", JSON, nullable=False),
     Index("ix_delivery_due", "status", "next_attempt_at"),
+    Index("ix_delivery_owner_id", "owner_id", "id"),
 )
 
 

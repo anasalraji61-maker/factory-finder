@@ -272,6 +272,7 @@ class Engine:
         await self._prepare_override(req, assumptions)
         o_pt, d_pt = await asyncio.gather(self._resolve(req.origin, "origin"),
                                           self._resolve(req.destination, "destination"))
+        assumptions.extend(await self._ambiguity_notes(req))
         self.ctx = {"req": req, "kg": kg, "m3": m3, "goods_usd": goods_usd, "o_pt": o_pt, "d_pt": d_pt,
                     "oc": oc, "dc": dc, "stages": BUYER_STAGES[req.supplier_incoterm],
                     "priced_at": priced_at, "fx": f"{table.source} {table.timestamp}"}
@@ -386,6 +387,23 @@ class Engine:
                 "Indicative, verify with broker.")
 
     # ------------------------------------------------------------ helpers
+    async def _ambiguity_notes(self, req: LandedCostRequest) -> list[str]:
+        """Same-country homonyms (Springfield, Victoria...): say which one was priced. Never fails the quote."""
+        notes = []
+        for label, loc in (("origin", req.origin), ("destination", req.destination)):
+            fn = getattr(self.geo, "city_candidates", None)
+            if loc.point or not loc.city or fn is None:
+                continue
+            try:
+                found = await fn(loc.country_code, loc.city)
+            except Exception:  # noqa: BLE001 - optional hint only
+                continue
+            if len(found) > 1:
+                notes.append(f"Ambiguous {label} city '{loc.city}' in {loc.country_code}: {len(found)} places match "
+                             f"({', '.join(m.id for m in found)}); the first ({found[0].id}) was priced. "
+                             f"Send {label}.point to choose another.")
+        return notes
+
     async def _resolve(self, loc, label: str) -> Point:
         if loc.point:
             return Point(loc.point.lat, loc.point.lon)

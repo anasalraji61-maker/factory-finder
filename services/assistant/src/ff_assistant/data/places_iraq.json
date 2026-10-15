@@ -2,7 +2,7 @@
   "_doc": "Iraqi governorate capitals, major towns, ports and provinces. names: matched anywhere. strict_names: ambiguous words (كوت=coat, رمادي=grey, حلة=pot, عمارة=building...) matched only right after a direction marker (الى/لـ/بـ/من/يوصل/to/from/in). Provinces resolve to their capital city.",
   "places": [
     {"id": "IQ-BGW", "type": "city", "cc": "IQ", "en": "Baghdad", "ar": "بغداد", "names": ["بغداد", "بغداد العاصمة", "Baghdad", "Bagdad"]},
-    {"id": "IQ-BSR", "type": "city", "cc": "IQ", "en": "Basra", "ar": "البصرة", "names": ["البصرة", "بصرة", "البصره الفيحاء", "Basra", "Basrah", "Al Basrah", "Al-Basra"]},
+    {"id": "IQ-BSR", "type": "city", "cc": "IQ", "en": "Basra", "ar": "البصرة", "names": ["البصرة", "بصرة", "بەسڕە", "بصره", "البصره الفيحاء", "Basra", "Basrah", "Al Basrah", "Al-Basra"]},
     {"id": "IQ-EBL", "type": "city", "cc": "IQ", "en": "Erbil", "ar": "أربيل", "names": ["أربيل", "اربيل", "إربيل", "أربل", "اربل", "هولير", "هه ولير", "Erbil", "Arbil", "Irbil", "Hawler", "Hewler"]},
     {"id": "IQ-MSL", "type": "city", "cc": "IQ", "en": "Mosul", "ar": "الموصل", "names": ["الموصل", "موصل الحدباء", "Mosul", "Al Mawsil"]},
     {"id": "IQ-NJF", "type": "city", "cc": "IQ", "en": "Najaf", "ar": "النجف", "names": ["النجف", "النجف الأشرف", "نجف", "Najaf", "An Najaf", "Al Najaf"]},

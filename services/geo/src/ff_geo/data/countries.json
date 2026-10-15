@@ -710,5 +710,29 @@
 "currency": "EUR",
 "region": "Europe",
 "road_factor": 1.25
+},
+{
+"iso2": "AF",
+"name_en": "Afghanistan",
+"name_ar": "أفغانستان",
+"currency": "AFN",
+"region": "Central Asia",
+"road_factor": 1.5
+},
+{
+"iso2": "ET",
+"name_en": "Ethiopia",
+"name_ar": "إثيوبيا",
+"currency": "ETB",
+"region": "Africa",
+"road_factor": 1.4
+},
+{
+"iso2": "UG",
+"name_en": "Uganda",
+"name_ar": "أوغندا",
+"currency": "UGX",
+"region": "Africa",
+"road_factor": 1.4
 }
 ]

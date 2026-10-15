@@ -1,6 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 
-ZERO_DECIMAL = {"IQD", "IRR", "JPY", "KRW", "VND"}
+ZERO_DECIMAL = {"IQD", "IRR", "JPY", "KRW", "VND", "CLP", "ISK", "UGX", "XOF", "XAF"}  # IQD: project convention
+THREE_DECIMAL = {"KWD", "BHD", "OMR", "JOD", "TND", "LYD"}  # ISO 4217 minor unit 1/1000
 
 
 def D(x) -> Decimal:
@@ -8,7 +9,7 @@ def D(x) -> Decimal:
 
 
 def quantize(amount: Decimal, currency: str) -> Decimal:
-    exp = Decimal(1) if currency in ZERO_DECIMAL else Decimal("0.01")
+    exp = Decimal(1) if currency in ZERO_DECIMAL else Decimal("0.001") if currency in THREE_DECIMAL else Decimal("0.01")
     return D(amount).quantize(exp, rounding=ROUND_HALF_UP)
 
 

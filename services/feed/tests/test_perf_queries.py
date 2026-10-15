@@ -101,3 +101,38 @@ def test_home_following_uses_index_and_fixed_query_count():
         assert page["source"] == "following" and n[0] == 2  # page + liked-set, no per-post queries
 
     asyncio.run(go())
+
+
+def test_listings_are_n_plus_one_free_at_200_posts():
+    """supplier listing, home, trending and comments: query count does not grow with page size."""
+
+    async def go():
+        e, *_ = await _seed(200)
+        async with e.begin() as c:
+            await c.execute(insert(follows), [dict(user_id="b", supplier_id=f"s{k}", created_at=NOW) for k in range(30)])
+        svc = FeedService(e, Settings(database_url="sqlite+aiosqlite:///:memory:"), clock=lambda: NOW)
+        n = [0]
+        event.listen(e.sync_engine, "before_cursor_execute", lambda *a: n.__setitem__(0, n[0] + 1))
+        for small, big in ((5, 50),):
+            counts = []
+            for lim in (small, big):
+                n[0] = 0
+                page = await svc.supplier_posts("b", "s3", None, lim)
+                counts.append(n[0])
+                assert page["items"]
+            assert counts[0] == counts[1] <= 2, counts
+            counts = []
+            for lim in (small, big):
+                n[0] = 0
+                await svc.home("b", None, lim)
+                counts.append(n[0])
+            assert counts[0] == counts[1] <= 2, counts
+        n[0] = 0
+        await svc.list_comments("p00000", None, 50, user="b")
+        assert n[0] <= 3, n[0]
+        plan_sql = ("EXPLAIN QUERY PLAN SELECT * FROM posts WHERE supplier_id='s3' ORDER BY created_at DESC, id DESC LIMIT 20")
+        async with e.connect() as c:
+            plan = " ".join(str(r) for r in (await c.execute(text(plan_sql))).all())
+        assert "ix_posts_supplier_created" in plan and "TEMP B-TREE" not in plan
+
+    asyncio.run(go())

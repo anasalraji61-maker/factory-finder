@@ -375,7 +375,8 @@
 "unlocode": "PKKHI",
 "iata": null,
 "serves_countries": [
-"PK"
+"PK",
+"AF"
 ],
 "notes": null,
 "confidence": "medium",
@@ -2727,7 +2728,8 @@
 "unlocode": "PKBQM",
 "iata": null,
 "serves_countries": [
-"PK"
+"PK",
+"AF"
 ],
 "notes": null,
 "confidence": "medium",
@@ -3566,7 +3568,8 @@
 "unlocode": "KEMBA",
 "iata": null,
 "serves_countries": [
-"KE"
+"KE",
+"UG"
 ],
 "notes": null,
 "confidence": "medium",
@@ -4791,6 +4794,63 @@
 ],
 "notes": null,
 "confidence": "medium",
+"as_of": "2026-10"
+},
+{
+"id": "air:KBL",
+"type": "air",
+"name_en": "Kabul International Airport",
+"name_ar": "مطار كابل الدولي",
+"country_code": "AF",
+"point": {
+"lat": 34.5659,
+"lon": 69.2123
+},
+"unlocode": null,
+"iata": "KBL",
+"serves_countries": [
+"AF"
+],
+"notes": null,
+"confidence": "low",
+"as_of": "2026-10"
+},
+{
+"id": "air:ADD",
+"type": "air",
+"name_en": "Addis Ababa Bole International Airport",
+"name_ar": "مطار بولي الدولي أديس أبابا",
+"country_code": "ET",
+"point": {
+"lat": 8.9779,
+"lon": 38.7993
+},
+"unlocode": null,
+"iata": "ADD",
+"serves_countries": [
+"ET"
+],
+"notes": null,
+"confidence": "low",
+"as_of": "2026-10"
+},
+{
+"id": "air:EBB",
+"type": "air",
+"name_en": "Entebbe International Airport",
+"name_ar": "مطار عنتيبي الدولي",
+"country_code": "UG",
+"point": {
+"lat": 0.0424,
+"lon": 32.4435
+},
+"unlocode": null,
+"iata": "EBB",
+"serves_countries": [
+"UG"
+],
+"notes": null,
+"confidence": "low",
 "as_of": "2026-10"
 }
 ]

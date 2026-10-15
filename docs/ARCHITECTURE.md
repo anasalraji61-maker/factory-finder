@@ -119,6 +119,8 @@ Every external source or provider is an adapter with a deterministic mock; tests
 
 ## 7. Security model (summary)
 
+Full write-up with test pointers: `docs/SECURITY.md`; open findings: `docs/fixes/INDEX.md`.
+
 - Only the gateway is public. Services trust `X-User-Id` only with a valid `X-Internal-Token` (when `FF_INTERNAL_TOKEN` is set; required in production). `/v1/internal/*` routes have no gateway route.
 - Service admin routes need the service admin token, which only the gateway holds; the gateway's own admin routes need `X-Admin-Token` and 404 when it is unset. Admin passthroughs are allow-listed by method and path regex, with a query allow-list.
 - Secrets come from environment variables only (repo is public); `.env.example` has empty values. Never log keys or full PII.

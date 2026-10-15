@@ -103,7 +103,7 @@ class Settings(BaseSettings):
     attachment_allowed_mime_types: StrList = Field(
         default_factory=lambda: list(DEFAULT_ATTACHMENT_MIME_TYPES)
     )
-    attachment_allowed_hosts: StrList = Field(default_factory=list)  # empty = any https host
+    attachment_allowed_hosts: StrList = Field(default_factory=list)  # legacy single attachment: hosts (plus media_allowed_hosts); empty = refused
     attachment_allow_http: bool = False
 
     # --- media attachments (attachments[]: URLs of files held by the media service) ------------

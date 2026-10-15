@@ -295,7 +295,8 @@ def check_attachment(attachment: Attachment, rules: AttachmentRules) -> Attachme
         raise url_error from exc
     if parts.scheme.lower() not in schemes or not host or has_credentials:
         raise url_error
-    if rules.allowed_hosts and not _host_allowed(host.lower(), rules.allowed_hosts):
+    # media-service hosts only: an empty allow-list means no absolute URL is acceptable
+    if not rules.allowed_hosts or not _host_allowed(host.lower(), rules.allowed_hosts):
         raise url_error
 
     mime = attachment.mime.split(";", 1)[0].strip().lower()

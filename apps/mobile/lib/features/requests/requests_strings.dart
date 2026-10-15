@@ -6,6 +6,7 @@ const Map<String, (String, String)> _pairs = {
   'req.title': ('الطلبات والعروض', 'Requests & offers'),
   'req.tab.mine': ('طلباتي', 'My requests'),
   'req.tab.open': ('طلبات مفتوحة', 'Open requests'),
+  'req.load_more': ('عرض المزيد', 'Load more'),
   'req.new': ('طلب جديد', 'New request'),
   'req.empty.mine_title': ('لا توجد طلبات بعد', 'No requests yet'),
   'req.empty.mine_msg': ('انشر طلباً وسيصلك عروض من الموردين.', 'Post a request and suppliers will send you offers.'),

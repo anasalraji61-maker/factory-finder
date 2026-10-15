@@ -494,6 +494,7 @@ class _FreightRateCardState extends ConsumerState<FreightRateCard> {
                   key: ValueKey<String>('freight_star_$i'),
                   tooltip: context.tr('freight.rate.star', {'n': '$i'}),
                   onPressed: _busy ? null : () => setState(() => _stars = i),
+                  isSelected: i == _stars,
                   icon: Icon(
                     i <= _stars ? Icons.star_rounded : Icons.star_border_rounded,
                     color: AppColors.warning,

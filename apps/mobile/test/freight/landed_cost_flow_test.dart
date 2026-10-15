@@ -1,4 +1,5 @@
 import 'package:factory_finder/app.dart';
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/router/app_router.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
@@ -54,10 +55,15 @@ void main() {
   setUpWidgetTests();
 
   testWidgets('awarded quote -> calculator prefilled -> quoted pill on result', (tester) async {
-    // Real clock: the quote generator checks override validity against now.
-    final repo = MockFreightRepository(clock: () => DateTime.now().toUtc());
+    // One shared clock: the quote generator checks override validity against
+    // the same instant the freight mock seeds its validity from.
+    DateTime clock() => DateTime.now().toUtc();
+    final repo = MockFreightRepository(clock: clock);
     await _pump(tester, '/logistics/freight/requests/fr_102', [
       freightRepositoryProvider.overrideWithValue(repo),
+      logisticsRepositoryProvider.overrideWith(
+        (ref) => LogisticsRepository(ref.watch(apiClientProvider), clock: clock),
+      ),
     ]);
 
     await tester.ensureVisible(find.byKey(k('freight_use_landed_fq_102_1')));
@@ -78,6 +84,8 @@ void main() {
 
     expect(find.text('نتائج التسعير'), findsOneWidget);
     await _expandAll(tester);
+    // Clearer failure: an expired override shows this assumption instead.
+    expect(find.text('انتهت صلاحية عرض شركة الشحن فتم تجاهله؛ الشحن الرئيسي تقديري.'), findsNothing);
     expect(find.byKey(k('quoted_pill')), findsOneWidget);
     expect(find.byKey(k('quoted_note')), findsOneWidget);
     expect(find.text('عرض شركة الشحن'), findsOneWidget);

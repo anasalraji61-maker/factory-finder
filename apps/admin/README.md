@@ -13,5 +13,12 @@ It talks only to the gateway: `/v1/admin/supplier-claims*`, `/v1/admin/demand/*`
 - All rendered text uses `textContent`; no `innerHTML`. CSP meta tag: scripts/styles from self only. Post URLs are shown as text, never as links.
 - Serve over HTTPS outside localhost; the admin token is a shared secret.
 
+## Accessibility, session, export
+- Tabs use `tablist`/`tab`/`tabpanel` with roving tabindex; Arrow keys (RTL-aware), Home and End move between tabs and focus follows the active tab. Status and errors are mirrored into a persistent `aria-live` region.
+- Layout uses CSS logical properties (RTL-correct); dark mode follows `prefers-color-scheme`.
+- Session token stays in `sessionStorage` only and is cleared after 30 minutes without input (shows an "inactivity" notice).
+- A banner shows env and build (`env`, `build` in `config.js`; production is highlighted) and the gateway URL.
+- "Export CSV" downloads the first table of the current tab via Blob. Cells are read with `textContent`; cells starting with `= + - @` (or tab/CR) get a `'` prefix.
+
 ## Tests
-`node --test apps/admin/tests/lib.test.js` (path builders, body validation, `safeDoc` number redaction) (Node 18+, no dependencies, no network): path builders, reason validation, action gating, and static checks (no innerHTML/localStorage/console, CSP intact).
+`cd apps/admin && node --test tests/lib.test.js tests/static.test.js tests/a11y.test.js` (path builders, body validation, `safeDoc` number redaction) (Node 18+, no dependencies, no network): path builders, reason validation, action gating, and static checks (no innerHTML/localStorage/console, CSP intact).

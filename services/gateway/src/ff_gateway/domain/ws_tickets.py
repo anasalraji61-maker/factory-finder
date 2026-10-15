@@ -49,6 +49,13 @@ class WsTicketStore:
         user_id, exp = item
         return user_id if exp > self._clock.monotonic() else None
 
+    def purge_user(self, user_id: str) -> int:
+        """Drop every outstanding ticket of one user (account deletion / deactivation)."""
+        dead = [t for t, (u, _) in self._items.items() if u == user_id]
+        for t in dead:
+            self._items.pop(t, None)
+        return len(dead)
+
     async def issue(self, user_id: str) -> tuple[str, int]:
         return self.issue_sync(user_id)
 
@@ -86,6 +93,9 @@ class FallbackTicketStore:
         if not self._degraded:
             log.warning("ws-ticket backend unavailable (%s); using in-memory tickets", type(e).__name__)
         self._degraded = True
+
+    def purge_user(self, user_id: str) -> int:
+        return self._fallback.purge_user(user_id)
 
     async def issue(self, user_id: str) -> tuple[str, int]:
         try:

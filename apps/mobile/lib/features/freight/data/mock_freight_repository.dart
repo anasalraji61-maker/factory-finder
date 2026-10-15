@@ -613,11 +613,16 @@ class MockFreightRepository implements FreightRepository {
     if (!q.isAccepted || r.awardedQuoteId != quoteId) {
       throw _err(409, 'quote_not_awarded');
     }
+    // Always at least a day beyond the repository clock, so a consumer using a
+    // slightly different clock never sees an already-expired override.
+    final now = _clock();
+    final floor = now.add(const Duration(days: 1));
+    final until = q.validUntil ?? now.add(const Duration(days: 30));
     return FreightOverride(
       amount: q.amount,
       currency: q.currency,
       quoteId: q.id,
-      validUntil: q.validUntil ?? _clock().add(const Duration(days: 30)),
+      validUntil: until.isAfter(floor) ? until : floor,
       modeFamily: r.mode,
     );
   }

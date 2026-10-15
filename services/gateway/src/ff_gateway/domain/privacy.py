@@ -21,7 +21,14 @@ import httpx
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
-from ff_gateway.db import AccountEvent, DeletionJob, EmailVerificationToken, RefreshToken, User
+from ff_gateway.db import (
+    AccountEvent,
+    DeletionJob,
+    EmailVerificationToken,
+    PasswordResetToken,
+    RefreshToken,
+    User,
+)
 from ff_gateway.obs import LOGGER_NAME, configure_logging
 
 log = logging.getLogger(LOGGER_NAME)
@@ -160,14 +167,25 @@ async def request_deletion(app, user_id: str, request_id: str | None) -> dict[st
             u.token_version = (u.token_version or 0) + 1  # access tokens die with the deactivation
             u.deletion_scheduled_at = now + timedelta(days=grace)
             await s.execute(delete(RefreshToken).where(RefreshToken.user_id == user_id))  # every session ends now
+            await s.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user_id))
             await s.commit()
     drop_active_cache(app, user_id)
+    _revoke_ws_tickets(app, user_id)
     if not already:
         await record_event(app, user_id, "deletion_requested", request_id, f"grace_days={grace}")
     if grace == 0:
         await finalize_deletion(app, user_id, request_id)
         await run_jobs(app, user_id=user_id, request_id=request_id)
     return await deletion_status(app, user_id)
+
+
+def _revoke_ws_tickets(app, user_id: str) -> None:
+    """Burn the user's outstanding ws tickets (in-process stores; a Redis ticket lives <= its short TTL and the handshake
+    also requires an active account)."""
+    store = getattr(app.state, "ws_tickets", None)
+    purge = getattr(store, "purge_user", None)
+    if purge is not None:
+        purge(user_id)
 
 
 def drop_active_cache(app, user_id: str) -> None:
@@ -191,6 +209,7 @@ async def finalize_deletion(app, user_id: str, request_id: str | None = None) ->
         u.token_version = (u.token_version or 0) + 1
         await s.execute(delete(RefreshToken).where(RefreshToken.user_id == user_id))
         await s.execute(delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user_id))
+        await s.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user_id))
         for svc in PRIVACY_SERVICES:
             s.add(DeletionJob(
                 user_id=user_id, service=svc, status="pending", attempts=0, next_attempt_at=now,
@@ -202,6 +221,7 @@ async def finalize_deletion(app, user_id: str, request_id: str | None = None) ->
             await s.rollback()
             return False
     drop_active_cache(app, user_id)
+    _revoke_ws_tickets(app, user_id)
     await record_event(app, user_id, "deletion_finalized", request_id, f"services={len(PRIVACY_SERVICES)}")
     return True
 

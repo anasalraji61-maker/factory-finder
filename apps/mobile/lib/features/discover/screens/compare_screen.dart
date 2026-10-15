@@ -274,15 +274,10 @@ class CompareScreen extends ConsumerWidget {
               ),
             ),
           ),
-          InkWell(
-            onTap: () => ref.read(compareProvider.notifier).remove(l.id),
-            child: Tooltip(
-              message: context.tr('compare.remove'),
-              child: const Padding(
-                padding: EdgeInsets.all(2),
-                child: Icon(Icons.close, size: 18),
-              ),
-            ),
+          IconButton(
+            onPressed: () => ref.read(compareProvider.notifier).remove(l.id),
+            tooltip: context.tr('compare.remove'),
+            icon: const Icon(Icons.close, size: 18),
           ),
         ],
       ),
@@ -312,15 +307,10 @@ class CompareScreen extends ConsumerWidget {
               style: const TextStyle(color: AppColors.danger),
             ),
           ),
-          InkWell(
-            onTap: () => ref.invalidate(compareLandedProvider(l.id)),
-            child: Tooltip(
-              message: context.tr('common.retry'),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.refresh, size: 18),
-              ),
-            ),
+          IconButton(
+            onPressed: () => ref.invalidate(compareLandedProvider(l.id)),
+            tooltip: context.tr('common.retry'),
+            icon: const Icon(Icons.refresh, size: 18),
           ),
         ],
       ),

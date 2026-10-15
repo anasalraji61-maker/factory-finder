@@ -59,7 +59,7 @@ def build_service(settings: Settings, db: Database, hub: ConversationHub) -> Mes
             max_bytes=settings.attachment_max_bytes,
             allowed_mime_types=tuple(settings.attachment_allowed_mime_types),
             allow_http=settings.attachment_allow_http,
-            allowed_hosts=tuple(settings.attachment_allowed_hosts),
+            allowed_hosts=tuple([*settings.attachment_allowed_hosts, *settings.media_allowed_hosts]),
         ),
         media_rules=MediaRules(
             path_prefixes=tuple(settings.media_path_prefixes),

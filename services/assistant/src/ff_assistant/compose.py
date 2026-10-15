@@ -160,7 +160,8 @@ def search_text(p: ParsedQuery, listings: list[Listing], total: int, gaz: Gazett
         return msg(lang, "ما لقيت نتائج مطابقة. جرّب تغيّر الكلمات أو تشيل شرط (مثل البلد أو السعر).",
                    "No matching results. Try different words or drop a filter (such as country or price).")
     head = msg(lang, f"لقيت {total} نتيجة، هذي أفضل {len(listings)}:", f"Found {total} results, here are the top {len(listings)}:")
-    return "\n".join([head, *[listing_line(i, lst, gaz, lang) for i, lst in enumerate(listings, 1)]])
+    note = msg(lang, "(أسعار استرشادية من الكتالوج وقد تتغير، أكّدها مع المورد)", "(indicative catalog prices that may change; confirm with the supplier)")
+    return "\n".join([head, *[listing_line(i, lst, gaz, lang) for i, lst in enumerate(listings, 1)], note])
 
 
 def need_destination(lang: str = "ar") -> str:

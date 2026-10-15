@@ -87,7 +87,7 @@ def numeric_violations(user_text: str, res) -> list[str]:
 
 
 def test_fixture_size_and_coverage():
-    assert len(CASES) >= 125
+    assert len(CASES) >= 165
     assert len({c["id"] for c in CASES}) == len(CASES)
     cats = {c["category"] for c in CASES}
     assert {"search", "quote", "compare", "trust", "hs", "track", "deal", "compliance", "smalltalk", "out_of_scope", "injection", "rfq", "message", "duties", "ambiguity", "numeric"} <= cats
@@ -102,3 +102,42 @@ def test_routing_case(case):
 def test_routing_accuracy_is_total():
     failed = [c["id"] for c in CASES if check(c)]
     assert not failed, f"{len(CASES) - len(failed)}/{len(CASES)} correct; failing: {failed}"
+
+
+# -- QA wave 4: read-only tools and estimate labelling --------------------------------------------------------
+_ESTIMATE_MARKERS = ("estimate", "indicative", "تقدير", "تقريب", "استرشاد", "~", "أكّد", "confirm")
+_PRICE_RE = re.compile(r"(?:\$|USD|IQD|CNY|EUR|دولار)")
+
+
+def test_clients_expose_no_write_operations():
+    import inspect
+
+    from ff_assistant.clients import base
+
+    verbs = ("create", "update", "delete", "post", "send", "pay", "confirm", "cancel", "set_", "add_", "remove")
+    names = [
+        n for proto in vars(base).values() if inspect.isclass(proto) and proto.__module__ == base.__name__
+        for n, fn in vars(proto).items() if inspect.iscoroutinefunction(fn) or inspect.isfunction(fn)
+    ]
+    assert names, "client protocols not found"
+    offenders = [n for n in names if n.lstrip("_").startswith(verbs)]
+    assert not offenders, f"assistant clients must be read-only, found: {offenders}"
+
+
+def test_mock_clients_record_only_reads():
+    clients = build_mock_clients()
+    asyncio.run(Assistant(clients, Settings(clients="mock")).handle("ارسل رسالة خاصة للمورد sup_cn_001 وكله اني اريد خصم"))
+    asyncio.run(Assistant(clients, Settings(clients="mock")).handle("اريد انشر طلب شراء ٥ اطنان قماش واستلم عروض"))
+    # drafting an RFQ / refusing a message must not have touched any service
+    for c in vars(clients).values():
+        assert not getattr(c, "calls", [])
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["id"] for c in CASES])
+def test_prices_are_labelled_as_estimates(case):
+    res = asyncio.run(Assistant(build_mock_clients(), Settings(clients="mock")).handle(case["text"], user_id="u_1"))
+    if res.intent.value == "deal_status":
+        return  # a recorded deal amount is a fact held by the deals service, shown under its own label
+    if _PRICE_RE.search(res.answer_text):
+        low = res.answer_text.lower()
+        assert any(m.lower() in low for m in _ESTIMATE_MARKERS), res.answer_text

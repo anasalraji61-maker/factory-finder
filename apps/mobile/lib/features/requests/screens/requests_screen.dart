@@ -62,6 +62,34 @@ class RequestsScreen extends ConsumerStatefulWidget {
 class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   bool _mine = true;
 
+  // Pages appended after the provider's first page via next_cursor.
+  RfqPage? _base;
+  RfqFilter? _baseFilter;
+  List<RfqRequest> _extra = const <RfqRequest>[];
+  String? _cursor;
+  bool _loadingMore = false;
+
+  Future<void> _loadMore(RfqFilter filter) async {
+    final cursor = _cursor;
+    if (cursor == null || _loadingMore) return;
+    final base = _base;
+    setState(() => _loadingMore = true);
+    try {
+      final next =
+          await ref.read(rfqRepositoryProvider).list(filter, cursor: cursor);
+      // Ignore results for a list that was refreshed / switched meanwhile.
+      if (!mounted || !identical(base, _base)) return;
+      setState(() {
+        _extra = [..._extra, ...next.items];
+        _cursor = next.nextCursor;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted || !identical(base, _base)) return;
+      setState(() => _loadingMore = false); // button reappears to retry
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filter = RfqFilter(mine: _mine);
@@ -103,7 +131,15 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                 onRetry: () => ref.invalidate(rfqListProvider(filter)),
               ),
               data: (page) {
-                if (page.items.isEmpty) {
+                if (!identical(page, _base) || _baseFilter != filter) {
+                  _base = page;
+                  _baseFilter = filter;
+                  _extra = const <RfqRequest>[];
+                  _cursor = page.nextCursor;
+                  _loadingMore = false;
+                }
+                final items = [...page.items, ..._extra];
+                if (items.isEmpty) {
                   return EmptyState(
                     icon: Icons.request_quote_outlined,
                     title: context.tr(
@@ -126,9 +162,23 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                       AppSpacing.lg,
                       96,
                     ),
-                    itemCount: page.items.length,
+                    itemCount: items.length + (_cursor != null ? 1 : 0),
                     separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, i) => RequestCard(request: page.items[i]),
+                    itemBuilder: (context, i) {
+                      if (i < items.length) return RequestCard(request: items[i]);
+                      return Center(
+                        child: _loadingMore
+                            ? const Padding(
+                                padding: EdgeInsets.all(AppSpacing.md),
+                                child: CircularProgressIndicator(),
+                              )
+                            : OutlinedButton(
+                                key: const ValueKey<String>('req-load-more'),
+                                onPressed: () => _loadMore(filter),
+                                child: Text(context.tr('req.load_more')),
+                              ),
+                      );
+                    },
                   ),
                 );
               },

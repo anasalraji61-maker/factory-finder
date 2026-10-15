@@ -232,6 +232,60 @@ Defaults and the exact scope are in `docs/OPS.md` (Retention and limits). Short 
 - **Payment received but deal not marked paid**: look at the payments outbox for `pending`/`dead` events and requeue (section 2, step 6); check `docker compose logs rfq`.
 - **Security finding follow-up**: open items are tracked in `docs/fixes/*.md` (blocks a phase until fixed).
 
+## 6b. Incident playbooks
+
+Each playbook: symptom, check, act, verify. Env names and defaults come from the service `config.py` files; all commands run from the compose project directory. Admin routes need `X-Admin-Token` (`FF_GATEWAY_ADMIN_TOKEN`) and the service token set on the gateway too (unset = 404).
+
+### 6b.1 Payments webhook failures
+Webhook route: `POST /v1/payments/webhooks/{provider}` (`mock` or `usdt_tron`), reached only through the dedicated ingress described in `docs/DEPLOY.md` (never through the gateway). Auth is the HMAC header `X-FF-Signature: t=<unix>,v1=<hex>` over `"<t>.<raw body>"`, tolerance `FF_PAYMENTS_WEBHOOK_TOLERANCE_SECONDS` (300), body cap 64 KiB.
+1. Read the status the provider got (`docker compose logs --tail=200 payments`, correlate `request_id`):
+   - 503: the secret for that provider is unset (`FF_PAYMENTS_WEBHOOK_SECRET_MOCK` / `FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON`) or `FF_PAYMENTS_PROVIDER=off`. Set it, `docker compose up -d payments`.
+   - 401 `invalid_signature`: wrong secret on one side (after a rotation, update the sender in the same step; section 4) or the body was altered by the proxy (the signature covers the raw bytes). 401 `stale_timestamp`: sender clock off by more than 300 s; fix NTP, do not widen the tolerance.
+   - 422 `payload_too_large`: body over 64 KiB; the ingress must not rewrite or batch events.
+   - 404 `invoice_not_found`: the event arrived before the invoice exists or for an unknown reference. It is NOT recorded, so the provider may retry. 404 `unknown_provider`: wrong path segment.
+2. Duplicates are safe: an already-seen `event_id` answers `status: duplicate`; a transition refused by a unique index is recorded as `ignored`. Replaying the same signed event is the correct recovery.
+3. Invoice stuck in `awaiting_payment` / `confirming` for `usdt_tron`: run the poller once, `POST /v1/payments/sweep` (admin, inside the network: `docker compose exec payments ...` with the payments admin token); it re-polls up to 200 open invoices and reverts a confirming invoice whose transaction vanished from the chain. Money that arrives after the invoice TTL goes to review, never auto-settles: `GET /v1/payments/review` (admin).
+4. Paid in payments but not in rfq: the settlement is an outbox row written in the same transaction. Admin console "Payments outbox" tab or `GET /v1/admin/payments/outbox?status=dead`, then `POST /v1/admin/payments/outbox/{id}/requeue` (section 2, step 6); check `docker compose logs rfq` and that `FF_PAYMENTS_RFQ_URL` and `FF_INTERNAL_TOKEN` match.
+5. Stop the bleeding: `FF_PAYMENTS_PROVIDER=off` (invoice creation answers 503, existing invoices and ledger untouched).
+6. Verify: replay one signed test event for a mock invoice (`status: applied` then `duplicate`), outbox shows no `pending`/`dead` rows.
+
+### 6b.2 Tracking provider outage
+Default provider is `mock` (no network). With `FF_TRACKING_PROVIDER=http`, container / AWB / vessel providers are separate adapters (`FF_TRACKING_*_BASE_URL`, `*_API_KEY`).
+1. Symptom: responses carry `warning: provider_unavailable:<reason>` (`cooldown`, `kill_switch`, `timeout`, `upstream_error`, `bad_payload`) and mock data when `FF_TRACKING_FALLBACK_TO_MOCK=true` (default). With the fallback off, creating or refreshing a shipment fails with `provider_unavailable`.
+2. A failing provider enters a cooldown (60 s) after errors and is rate-limited to one request per host per 3 s with a 1 h cache, so retrying by hand does not help; do not lower these.
+3. Check the provider status page and your key (401/403/429 from the provider count as failures). If the outage is long, turn the one provider off: `FF_TRACKING_CONTAINER_DISABLED=1` (or `_AWB_`, `_VESSEL_`, `_HTTP_`) or everything with `FF_TRACKING_KILL_SWITCH=1`, then `docker compose up -d tracking`.
+4. Pause background polling so the outage does not burn quota: `FF_TRACKING_REFRESH_JOB_ENABLED=false` (default).
+5. Alerts to users: the outbox relay (`FF_TRACKING_NOTIFY_RELAY=on`) retries failed pushes to notifications with backoff (30 s doubling, cap 3600 s) and marks rows dead after `FF_TRACKING_NOTIFY_MAX_ATTEMPTS` (8); an invalid row is dead at once. This is independent of the provider outage; if notifications is also down, see 6b.3.
+6. Recovery: remove the switch, restart tracking, refresh one shipment (`POST /v1/shipments/{id}/refresh`; `FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS` 60 applies) and confirm the `warning` is gone. Data served during the outage is mock data; tell affected users if it was shown as real.
+
+### 6b.3 Notifications backlog
+Pipeline: alerts are committed first, then queued as deliveries; a delivery is retried with backoff (30 s doubling, cap 3600 s) up to `FF_NOTIFICATIONS_DELIVERY_MAX_ATTEMPTS` (5), then `dead`. Push is capped at `FF_NOTIFICATIONS_PUSH_DAILY_CAP_PER_USER` (20 per device per 24 h). Delivery is off unless `FF_NOTIFY_PUSH` / `FF_NOTIFY_EMAIL` is `mock`, `fcm` or `smtp`.
+1. Confirm what is stuck: `docker compose logs --tail=200 notifications` (look for provider errors), and `GET /ready` on the service. Users still see in-app alerts (inbox) even when push/email are failing.
+2. Provider down (FCM/SMTP): fix credentials or wait; rows stay `pending` with `next_attempt_at` and retry by themselves. To stop pressure, set `FF_NOTIFY_PUSH=off` / `FF_NOTIFY_EMAIL=off` and restart; pending rows are kept.
+3. Nothing is being processed: queued deliveries are drained when the scheduler runs (`FF_NOTIFICATIONS_SCHEDULER_ENABLED=true`, every `FF_NOTIFICATIONS_SCHEDULER_INTERVAL_SECONDS`, 900) or when `POST /v1/alerts/evaluate` is called (internal only, with `X-Internal-Token`, from inside the network). With the scheduler off (default) call it from a cron job.
+4. Upstream dependency: price checks call sourcing (`FF_NOTIFICATIONS_SOURCING_BASE_URL`, timeout 5 s); a sourcing outage makes evaluation skip watches, not lose them. Tracking alerts arrive through `POST /v1/internal/tracking-events`; if they are missing, check the tracking relay (6b.2, step 5).
+5. Inbox growth is bounded: 1000 alerts per user (newest kept), alerts pruned after 180 days, non-pending deliveries after 30 days (scheduler only).
+6. Verify: a test watch produces an alert, `pending` deliveries drain, no growth in `dead`.
+
+### 6b.4 Gateway rate-limit lockouts
+Limits (per minute, `FF_GATEWAY_*`): `RATE_LIMIT_PER_MINUTE` 300 per IP, `AUTH_RATE_LIMIT_PER_MINUTE` 30, `USER_WRITE_RATE_LIMIT_PER_MINUTE` 120, `MEDIA_RATE_LIMIT_PER_MINUTE` 3000, `WS_TICKET_RATE_LIMIT_PER_MINUTE` 30, `PRIVACY_RATE_LIMIT_PER_MINUTE` 3 (export/delete), `LOGIN_FAIL_LIMIT_PER_MINUTE` 10 per account. A refusal is `429 rate_limited` with `Retry-After` and `details.retry_after_seconds`.
+1. Many unrelated users blocked at once: all clients look like one IP. Set `FF_GATEWAY_TRUSTED_PROXIES` to the reverse-proxy CIDRs (the gateway reads `X-Forwarded-For` only from them) and recreate the gateway. With several replicas also set `FF_GATEWAY_REDIS_URL`, otherwise each replica counts separately.
+2. One user locked out of login: the per-account limiter is a soft 60 s window keyed on a hash of the email/phone; it clears itself after `Retry-After`. It can be abused to annoy a victim (accepted trade-off, `docs/fixes/security-review-2026-10-h.md`). Do not disable it; if an attack is under way, block the source IP at the proxy.
+3. Admin token attempts are throttled per IP after failed 401s on `/v1/admin`; wait, and rotate `FF_GATEWAY_ADMIN_TOKEN` if guessing is suspected.
+4. WebSocket: close code 4429 means the ticket or socket cap was hit (`FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER` 5, ticket TTL 30 s, single use).
+5. Clear counters in an emergency: in-memory limiter: `docker compose restart gateway` (also drops live WebSockets); Redis limiter: wait for the window or delete the affected keys. Raising a limit means setting the env var on the gateway (not forwarded by compose, see the note at the top) and recreating it.
+6. A different 503 `upstream_unavailable` with `Retry-After` is the per-upstream circuit breaker (`FF_GATEWAY_BREAKER_FAILURE_THRESHOLD` 5 failures), not rate limiting: fix the service (section 2).
+
+### 6b.5 Database migration rollback
+Alembic exists per service (`services/<svc>/alembic.ini`, one database per service; gateway has only `0001_claim_decisions`, the rest of its tables come from `create_tables`). Rules and workflow: `docs/DB.md`. Round trips (`upgrade head`, `downgrade base`, `upgrade head`, `alembic check`) were verified on PostgreSQL 16 in `docs/fixes/postgres-verification-2026-10.md`; restoring a backup was never rehearsed here.
+1. Before every migration: take a `pg_dump -Fc` of that service's database (section 3). A downgrade can drop data in the columns or tables it removes; the dump is the real rollback.
+2. If `alembic upgrade head` failed midway: PostgreSQL DDL is transactional, so a failed revision normally leaves the previous version. Check `docker compose run --rm <svc> alembic current`; do not edit the applied revision files, add a new revision.
+3. Roll back one step: stop writers (`docker compose stop <svc>`; also the gateway if user-facing), then `docker compose run --rm <svc> alembic downgrade -1` (or to a named revision), deploy the previous image tag, `docker compose up -d <svc>`. The old code must match the old schema: roll back image and schema together.
+4. If the downgrade is lossy or fails, restore the dump instead (section 3, including the `alembic upgrade head` step to reach the revision the code expects).
+5. Services created with `FF_<SVC>_DB_AUTO_CREATE=true` (SQLite default) have no migration history to roll back; PostgreSQL deployments default it to false.
+6. trust: the `verification_audit` table rejects UPDATE/DELETE by trigger; a downgrade touching it needs the DBA role, and `FF_TRUST_VERIFICATION_HASH_KEY` must be the same key as the one that created the data.
+7. Verify: `alembic current` equals the expected head of the deployed image, `GET /ready` is 200, and smoke the main flow (login, open a request).
+
 ## Container hardening notes (infra)
 
 - Every service starts with `uvicorn ... --no-server-header --timeout-keep-alive 5 --no-proxy-headers` (Dockerfile.service, via `exec` so SIGTERM is graceful). `--no-proxy-headers` is deliberate: the gateway resolves `X-Forwarded-For` itself (`FF_GATEWAY_TRUSTED_PROXIES`); internal services only see the gateway.

@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
@@ -156,6 +157,34 @@ class MockRfqBackend {
   final List<RfqRequest> requests;
   final Map<String, List<Offer>> offers;
   int _seq = 100;
+
+  /// Keyset-style paging over [filterRequests]. Cursor format `o:<offset>`
+  /// (opaque to callers); malformed -> 422 `invalid_cursor` like the server.
+  RfqPage listPage(RfqFilter f, {String? cursor, int pageSize = 50}) {
+    final all = filterRequests(requests, f);
+    var start = 0;
+    if (cursor != null) {
+      final parts = cursor.split(':');
+      final n = parts.length == 2 && parts[0] == 'o' ? int.tryParse(parts[1]) : null;
+      if (n == null || n < 0) {
+        throw ApiException(
+          status: 422,
+          code: 'invalid_cursor',
+          message: 'Malformed cursor',
+        );
+      }
+      start = n > all.length ? all.length : n;
+    }
+    final size = pageSize < 1 ? 1 : pageSize;
+    final end = start + size > all.length ? all.length : start + size;
+    return RfqPage(
+      items: all.sublist(start, end),
+      total: all.length,
+      page: 1,
+      pageSize: size,
+      nextCursor: end < all.length ? 'o:$end' : null,
+    );
+  }
 
   RfqRequest create(RfqDraft d, {String buyerId = kMockUserId}) {
     _seq++;

@@ -187,7 +187,12 @@ def test_abuse_flag_mask_reject():
         assert r.status_code == 422 and r.json()["error"]["code"] == "message_rejected"
 
 
-def test_validation(client):
+def test_validation():
+    with make_client(attachment_allowed_hosts=["cdn.example.com"]) as client:
+        _validation(client)
+
+
+def _validation(client):
     cid = new_conv(client)["id"]
     assert (
         client.post(

@@ -35,6 +35,8 @@ class Location(BaseModel):
 
 def check_password_policy(password: str, email: str | None = None, phone: str | None = None) -> None:
     """Shared password policy (registration, reset, change). Raises ValueError when too easy to guess."""
+    if len(password.encode()) > 72:  # bcrypt ignores everything past 72 bytes: refuse rather than silently truncate
+        raise ValueError("password must be at most 72 bytes (UTF-8)")
     low = password.lower()
     local = (email or "").split("@")[0].lower()
     email = (email or "").lower()
