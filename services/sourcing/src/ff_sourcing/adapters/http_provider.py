@@ -29,7 +29,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ..domain.cache import TTLCache
 from ..domain.models import ListingDetail, SearchQuery, Supplier
@@ -45,6 +45,8 @@ from .http_base import (
 )
 
 log = logging.getLogger(__name__)
+for _noisy in ("httpx", "httpcore"):  # request URLs (signed query / api keys) must not reach logs
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 
 GLOBAL_KILL_SWITCH_ENV = "FF_SOURCING_KILL_SWITCH"
 MIN_INTERVAL_FLOOR_S = 3.0
@@ -82,6 +84,19 @@ class ProviderConfig(BaseModel):
     timeout_s: float = 8.0
     user_agent: str = "FactoryFinderBot/0.1 (+https://github.com/factory-finder; sourcing)"
     tos_note: str = ""
+
+    @field_validator("user_agent")
+    @classmethod
+    def _honest_ua(cls, v: str) -> str:
+        from .http_base import validate_user_agent
+
+        return validate_user_agent(v)
+
+    @model_validator(mode="after")
+    def _default_kill_switch(self) -> ProviderConfig:
+        if not self.kill_switch_env:  # every provider gets its own switch, never just the global one
+            self.kill_switch_env = f"FF_SOURCING_{self.id.upper()}_DISABLED"
+        return self
 
 
 def get_path(obj: Any, path: str) -> Any:
@@ -205,7 +220,8 @@ class HttpProviderAdapter(SourceAdapter):
             try:
                 # streamed with a hard size cap: a hostile/misconfigured provider cannot exhaust memory
                 async with client.stream(
-                    self.config.method, url, params=params, headers=self.build_headers()
+                    self.config.method, url, params=params, headers=self.build_headers(),
+                    follow_redirects=False,  # a redirect may lead to a login/paywall: never follow
                 ) as r:
                     if r.status_code == 429:  # Retry-After honoured: no calls to this host until then
                         secs = cooldown_seconds(r.headers.get("retry-after"))

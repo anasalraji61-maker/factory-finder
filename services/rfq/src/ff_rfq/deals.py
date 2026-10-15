@@ -39,6 +39,14 @@ def settled(state: dict[str, dict], require_both: bool = False) -> bool:
     return bool(state) and all(v.get("status") == "paid" for v in state.values())
 
 
+async def _lock_deal(s: AsyncSession, deal_id: str) -> DealRow | None:
+    """SELECT ... FOR UPDATE; SQLite ignores it, so take its write lock with a no-op UPDATE first (otherwise two
+    connections both read the old status and both apply the transition)."""
+    if s.bind is not None and s.bind.dialect.name == "sqlite":
+        await s.execute(update(DealRow).where(DealRow.id == deal_id).values(id=DealRow.id))
+    return (await s.execute(select(DealRow).where(DealRow.id == deal_id).with_for_update())).scalar_one_or_none()
+
+
 def event_dict(e: DealEventRow, deal: DealRow) -> dict[str, Any]:
     role = "system" if e.actor == SYSTEM else "buyer" if e.actor == deal.buyer_id else "supplier"
     return {"seq": e.seq, "action": e.action, "actor_role": role, "from_status": e.from_status,
@@ -65,7 +73,7 @@ class DealService:
         now = self.clock()
         try:
             async with self._sessions() as s, s.begin():
-                deal = (await s.execute(select(DealRow).where(DealRow.id == deal_id).with_for_update())).scalar_one_or_none()
+                deal = await _lock_deal(s, deal_id)
                 if deal is None:
                     raise NotFound("Deal not found")
                 if await s.scalar(select(DealEventRow.id).where(DealEventRow.event_id == body.event_id)):
@@ -142,7 +150,7 @@ class DealService:
 
     # ---- user transitions ----------------------------------------------------------------
     async def _party(self, s: AsyncSession, user: str, deal_id: str) -> DealRow:
-        deal = (await s.execute(select(DealRow).where(DealRow.id == deal_id).with_for_update())).scalar_one_or_none()
+        deal = await _lock_deal(s, deal_id)
         if deal is None or user not in (deal.buyer_id, deal.supplier_user_id):
             raise NotFound("Deal not found")  # same answer for unknown and foreign deals (no IDOR probing)
         return deal

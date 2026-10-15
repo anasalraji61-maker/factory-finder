@@ -745,8 +745,9 @@ class FreightService:
             self._check_quote_money(r, body)
             if q.status == "withdrawn" and r.quote_count >= self.s.max_quotes_per_request:
                 raise Conflict("This request reached its quote limit", code="quote_limit_reached")
-            await c.execute(
-                update(quotes).where(quotes.c.id == qid).values(
+            res = await c.execute(  # CAS on the revision/status read above
+                update(quotes).where(quotes.c.id == qid, quotes.c.status == q.status, quotes.c.revision == q.revision)
+                .values(
                     amount=_money(body.amount), currency=body.currency, transit_days=body.transit_days,
                     valid_until=t + timedelta(days=body.valid_days), inclusions=body.inclusions,
                     exclusions=body.exclusions,
@@ -754,6 +755,8 @@ class FreightService:
                     terms=body.terms, status="submitted", revision=q.revision + 1, updated_at=t,
                 )  # fmt: skip
             )
+            if not res.rowcount:
+                raise Conflict("This quote can no longer be changed", code="quote_final")
             await self._recount(c, q.request_id)
             q = (await c.execute(select(quotes).where(quotes.c.id == qid))).one()
         return self._quote(q, f)
@@ -767,7 +770,12 @@ class FreightService:
                 return self._quote(q, f)
             if q.status != "submitted":
                 raise Conflict("This quote can no longer be withdrawn", code="quote_final", details={"status": q.status})
-            await c.execute(update(quotes).where(quotes.c.id == qid).values(status="withdrawn", updated_at=t))
+            res = await c.execute(  # CAS: a concurrent accept (READ COMMITTED) must not be overwritten
+                update(quotes).where(quotes.c.id == qid, quotes.c.status == "submitted").values(
+                    status="withdrawn", updated_at=t)
+            )
+            if not res.rowcount:
+                raise Conflict("This quote can no longer be withdrawn", code="quote_final")
             await self._recount(c, q.request_id)
             q = (await c.execute(select(quotes).where(quotes.c.id == qid))).one()
         return self._quote(q, f)

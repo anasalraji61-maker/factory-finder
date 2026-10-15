@@ -322,7 +322,9 @@ class VerificationStore:
         reason = clean_reason(reason) or "claim released"
         async with self.db.begin() as conn:
             await self.db.lock(conn, f"verification:{supplier_id}")
-            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id, _D.c.released_at.is_(None)).order_by(_D.c.created_at, _D.c.id))).all()
+            # FOR UPDATE: a concurrent approve/withdraw of one of these rows (PostgreSQL; decide() does not take the
+            # supplier lock) waits for this commit instead of making a mid-release _move fail on its status check
+            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id, _D.c.released_at.is_(None)).order_by(_D.c.created_at, _D.c.id).with_for_update())).all()
             withdrawn = 0
             for d in map(_doc, rows):
                 if d.status in ACTIVE:

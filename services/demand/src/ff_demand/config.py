@@ -1,6 +1,6 @@
 """Service configuration. Prefix ``FF_DEMAND_``; the kill-switch is ``FF_DEMAND_ENABLED``."""
 
-from pydantic import AliasChoices, Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ff_demand.dburl import resolve_auto_create
@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     publisher_enabled: bool = False  # real publisher adapter: OFF unless explicitly enabled
     min_host_interval_seconds: float = Field(default=3.0, ge=3.0)  # >= 1 req / 3 s per host
     user_agent: str = "FactoryFinderBot/0.1 (+https://factoryfinder.example/bot; sourcing platform)"
+
+    @field_validator("user_agent")
+    @classmethod
+    def _honest_ua(cls, v: str) -> str:
+        from ff_demand.polite import validate_user_agent
+
+        return validate_user_agent(v)
 
     @property
     def blocked_domain_set(self) -> set[str]:

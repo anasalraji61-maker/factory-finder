@@ -29,6 +29,15 @@ class SourcePolicy:
     robots_disallowed: bool = False
 
 
+def validate_user_agent(ua: str) -> str:
+    """Honest identification: must name a bot; never impersonate a browser/search engine."""
+    low = ua.strip().lower()
+    impersonated = ("mozilla", "chrome", "safari", "googlebot", "bingbot")
+    if "bot" not in low or any(w in low for w in impersonated):
+        raise ValueError("User-Agent must identify the bot honestly")
+    return ua
+
+
 def check_source(policy: SourcePolicy | None, blocked: set[str] | None = None) -> None:
     if policy is None or not policy.automated_access_allowed or policy.robots_disallowed:
         raise Forbidden("Source disallows automated access", code="source_disallowed")
@@ -47,8 +56,7 @@ class PoliteClient:
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ):
-        if "bot" not in user_agent.casefold() or not user_agent.strip():
-            raise ValueError("User-Agent must identify the bot honestly")
+        validate_user_agent(user_agent)
         self.policy, self.user_agent, self.client = policy, user_agent, client
         self.min_interval = max(min_interval, MIN_INTERVAL)
         self._clock, self._sleep = clock, sleep

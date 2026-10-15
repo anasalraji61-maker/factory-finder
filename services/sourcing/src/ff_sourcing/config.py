@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .dburl import resolve_auto_create
@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     s1688_app_key: str = Field(default="", repr=False)
     s1688_app_secret: str = Field(default="", repr=False)
     s1688_api_base: str = "https://gw.open.1688.com/openapi"
+
+    @field_validator("user_agent")
+    @classmethod
+    def _honest_ua(cls, v: str) -> str:
+        from .adapters.http_base import validate_user_agent
+
+        return validate_user_agent(v)
 
     @property
     def auto_create_tables(self) -> bool:

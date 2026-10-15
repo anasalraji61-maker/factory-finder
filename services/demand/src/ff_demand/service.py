@@ -407,6 +407,8 @@ class DemandService:
         prev = d["status"]
         if prev not in ("draft", "approved"):
             raise Conflict(f"Cannot reject a {prev} draft")
+        if d.get("publish_claimed_by"):
+            raise Conflict("Draft is being published")
         d["status"] = "rejected"
         _audit(d, {"at": _iso(self.clock()), "actor": actor, "action": "rejected", "note": reason})
         if not await self.store.save_draft(d, prev):

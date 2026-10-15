@@ -135,7 +135,8 @@ class PushRegistrationController {
         await _unregisterServerSide();
         return perm;
       }
-      await _refreshSub?.cancel();
+      final prev = _refreshSub;
+      if (prev != null) unawaited(prev.cancel().catchError((Object _) {}));
       _refreshSub = _source.onTokenRefresh.listen((t) {
         unawaited(_register(t, locale, gen));
       });
@@ -196,7 +197,10 @@ class PushRegistrationController {
     _generation++;
     final sub = _refreshSub;
     _refreshSub = null;
-    await sub?.cancel();
+    // Not awaited: nothing depends on the cancel finishing, and awaiting the
+    // already-completed root-zone future of a done stream stalls under
+    // FakeAsync (widget tests), starving the 5s-bounded logout.
+    if (sub != null) unawaited(sub.cancel().catchError((Object _) {}));
     try {
       await _unregisterServerSide();
     } catch (_) {

@@ -31,11 +31,22 @@ from ..domain.models import ListingDetail, SearchQuery, Supplier
 from .base import Health, SourceAdapter
 
 log = logging.getLogger(__name__)
+# httpx logs every request URL at INFO, including signed query strings / api keys: keep it quiet.
+for _noisy in ("httpx", "httpcore"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 _VOLATILE = {"timestamp", "sign", "_aop_signature"}  # excluded from cache keys
 MIN_INTERVAL_FLOOR_S = 3.0  # CLAUDE.md rule 6: never configurable below this
 GLOBAL_KILL_SWITCH_ENV = "FF_SOURCING_KILL_SWITCH"
 MAX_RESPONSE_BYTES = 5_000_000
 _TRUTHY = {"1", "true", "yes", "on"}
+
+
+def validate_user_agent(ua: str) -> str:
+    """Honest identification (rule 6): must name a bot, never impersonate a browser/search engine."""
+    low = ua.strip().lower()
+    if "bot" not in low or any(w in low for w in ("mozilla", "chrome", "safari", "googlebot", "bingbot")):
+        raise ValueError("user_agent must identify this bot honestly (e.g. FactoryFinderBot/0.1 (+url))")
+    return ua
 
 
 class SourceNotConfigured(RuntimeError):

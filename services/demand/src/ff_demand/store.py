@@ -163,6 +163,14 @@ class Store:
                 doc, expected_status, approved_at, cap, day_start, day_end
             )
 
+    @staticmethod
+    async def _claim_unchanged(c, doc: dict) -> bool:
+        """False when the stored draft carries a publish claim the caller's (possibly stale) copy
+        does not know about: a human action decided on a pre-claim read must not overwrite a send
+        that is in flight."""
+        row = (await c.execute(select(drafts.c.doc).where(drafts.c.id == doc["id"]))).first()
+        return row is not None and row[0].get("publish_claimed_by") == doc.get("publish_claimed_by")
+
     async def _save_draft(
         self,
         doc: dict,
@@ -184,6 +192,8 @@ class Store:
                 ).scalar_one()
                 if n >= cap:
                     return False
+            if not await self._claim_unchanged(c, doc):
+                return False
             vals = {"status": doc["status"], "doc": doc, "version": drafts.c.version + 1}
             if approved_at is not None:
                 vals["approved_at"] = approved_at
@@ -292,6 +302,8 @@ class Store:
     async def reset_approval(self, doc: dict, expected_status: str) -> bool:
         """approved|draft -> draft with approved_at cleared (an edit voids the approval)."""
         async with self._cap_lock, self.engine.begin() as c:
+            if not await self._claim_unchanged(c, doc):
+                return False
             res = await c.execute(
                 update(drafts)
                 .where(drafts.c.id == doc["id"], drafts.c.status == expected_status)
