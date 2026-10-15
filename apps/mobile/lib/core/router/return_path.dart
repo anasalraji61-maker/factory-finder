@@ -9,6 +9,8 @@ String? sanitizeReturnPath(String? raw) {
   if (raw == null || raw.isEmpty || raw.length > 2048) return null;
   if (!raw.startsWith('/') || raw.startsWith('//')) return null;
   if (RegExp(r'[\\\s\x00-\x1f\x7f]').hasMatch(raw)) return null;
+  // A '%' must start a valid percent-escape (two hex digits).
+  if (RegExp(r'%(?![0-9A-Fa-f]{2})').hasMatch(raw)) return null;
   final uri = Uri.tryParse(raw);
   if (uri == null || uri.hasScheme || uri.hasAuthority) return null;
   String decoded;
