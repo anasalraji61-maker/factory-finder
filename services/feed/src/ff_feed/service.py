@@ -411,8 +411,7 @@ class FeedService:
     async def unlike(self, user: str, post_id: str) -> dict:
         await self._rate(user, "likes")
         async with self.engine.begin() as c:
-            if (await c.scalar(select(func.count()).select_from(posts).where(posts.c.id == post_id))) == 0:
-                raise NotFound("Post not found")
+            await self._visible_post(c, post_id)  # hidden / held posts answer 404 (no like_count leak)
             res = await c.execute(delete(likes).where(likes.c.post_id == post_id, likes.c.user_id == user))
             if res.rowcount:
                 await c.execute(

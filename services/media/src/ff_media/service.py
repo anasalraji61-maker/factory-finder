@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import secrets
+import weakref
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
@@ -30,6 +31,7 @@ class MediaService:
         self.engine, self.settings, self.storage = engine, settings, storage
         self.clock = clock or (lambda: datetime.now(UTC))
         self.sessions = async_sessionmaker(engine, expire_on_commit=False)
+        self._owner_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
         self._cpu = asyncio.Semaphore(max(1, settings.max_concurrent_processing))
         sk = settings.signing_key.get_secret_value() if settings.signing_key else ""
         self.signing_key: bytes = sk.encode() if sk else secrets.token_bytes(32)  # random per process when unset (dev)
@@ -68,6 +70,15 @@ class MediaService:
             await s.commit()
 
     async def store(self, owner: str, kind: str, data: bytes, visibility: str = "public") -> tuple[MediaImage, bool]:
+        # per-owner serialisation: the count/bytes quota checks are check-then-insert, so concurrent uploads by one
+        # user must not interleave (in-process; across replicas the quota stays best-effort)
+        lock = self._owner_locks.get(owner)
+        if lock is None:
+            lock = self._owner_locks[owner] = asyncio.Lock()
+        async with lock:
+            return await self._store(owner, kind, data, visibility)
+
+    async def _store(self, owner: str, kind: str, data: bytes, visibility: str) -> tuple[MediaImage, bool]:
         s_ = self.settings
         async with self._cpu:  # bounded: a 40 MP decode can take several hundred MB
             proc: Processed = await asyncio.to_thread(

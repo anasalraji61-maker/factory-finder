@@ -33,3 +33,14 @@ The server was stopped afterwards.
 - Gateway migrations (none exist), docker-compose `pg` profile, and `FF_DOCKER_EXTRAS=pg` image build.
 - Data-migrating changes (e.g. a future move of rfq money strings to `Numeric`), large-volume index/query plans, and `pg_dump` restore.
 - Production-mode settings (`FF_ENV=production`, TLS `sslmode`, asyncpg URL query options such as `?sslmode=` which asyncpg does not accept as-is).
+
+---
+
+## Re-verification (2026-10-15, later; PostgreSQL 16, throwaway cluster on port 5441, stopped and removed afterwards)
+New/changed migrations covered: payments 0003, freight 0002, trust 0002, demand 0002, messaging 0003, sourcing 0005, rfq 0006 (plus notifications 0003, tracking 0003).
+- **Alembic**: `upgrade head` from empty -> `downgrade base` -> `upgrade head` -> `alembic check` ("No new upgrade operations") OK for all 11 services; no migration defects found.
+- **Suites on PG** (Mode A, `create_all`, harness plugin as before, now also forcing `db_auto_create` and running the schema reset in `pytest_runtest_setup`): payments, freight, rfq, trust, sourcing, messaging fully green;
+  demand green except `tests/test_compliance_qa.py` (autouse `no_network` fixture blocks sockets, so the PG connection itself is refused: harness artefact, not a service defect).
+- **Partial unique indexes on PG** (schema built by Alembic, 8 concurrent writers via asyncpg pool): payments `uq_invoices_live_deal_kind_payer`, `uq_invoices_provider_tx_ref`, `uq_invoices_provider_pay_amount`: exactly 1 insert wins, the rest raise `sqlalchemy.exc.IntegrityError` (sqlstate 23505, asyncpg `UniqueViolationError`); non-live (expired) duplicates still allowed.
+  freight `uq_applications_one_pending` through `FreightService.apply`: 1 ok, the rest map to `Conflict` (`application_pending`) (the one remaining outcome was the per-user rate limiter, expected).
+- Still unverified: unchanged from the list above (psycopg driver not installed; only asyncpg exercised).

@@ -356,6 +356,11 @@ async def conversation_socket(
             elif kind == "typing":
                 is_typing = bool(frame.get("is_typing", True))
                 if app.state.typing.should_broadcast(f"{conversation_id}:{uid}", is_typing):
+                    try:  # access (and blocks) can change while the socket is open
+                        await svc.check_access(uid, conversation_id, sup)
+                    except MessagingError:
+                        await websocket.close(code=4403)
+                        return
                     hub.publish(
                         TypingChanged(
                             conversation_id, uid, is_typing, settings.typing_ttl_seconds, utc_now()

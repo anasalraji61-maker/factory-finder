@@ -84,6 +84,8 @@ class Tools:
             return ToolOutput(
                 compose.msg(L, f"ما لقيت {p.reference} ضمن شحناتك. أضفه من تبويب الشحنات حتى أتابعه.", f"I could not find {p.reference} among your shipments. Add it from the Shipments tab to follow it."),
                 [notice("shipment_not_found", "Shipment not found", "الشحنة غير موجودة بين شحناتك", "info")])
+        ship = ship.model_copy(update={"id": san.ident(ship.id), "reference": san.text(ship.reference, 40), "status": san.text(ship.status, 30),
+                                       "eta": san.opt(ship.eta, 32)})
         card = self._shipment_card(ship, san)
         return ToolOutput(self._shipment_text(ship, card, L, san), [card])
 
@@ -143,6 +145,8 @@ class Tools:
         if deal is None or user_id not in (deal.buyer_id, deal.supplier_user_id):  # fail closed on missing party ids
             return ToolOutput(compose.msg(L, f"ما لقيت الصفقة {p.deal_id} ضمن صفقاتك.", f"I could not find deal {p.deal_id} among your deals."),
                               [notice("deal_not_found", "Deal not found", "الصفقة غير موجودة بين صفقاتك")])
+        deal = deal.model_copy(update={"id": san.ident(deal.id), "status": san.text(deal.status, 30),
+                                       "payment": {k: san.text(str(v), 20) if v is not None else None for k, v in (deal.payment or {}).items()}})
         card = self._deal_card(deal, user_id)
         return ToolOutput(self._deal_text(deal, L), [card])
 
@@ -282,6 +286,7 @@ class Tools:
             return ToolOutput(compose.msg(L, "ما لقيت رمز جمركي مطابق. جرّب وصف أبسط للمنتج.", "No matching HS code found. Try a simpler product description."),
                               [notice("hs_not_found", "No HS match", "لا يوجد رمز مطابق")])
         rows = []
+        items = [it.model_copy(update={"code": san.ident(it.code)}) for it in items]
         for i, it in enumerate(items, 1):
             duty = f"~{it.typical_duty_percent_hint:g}%" if it.typical_duty_percent_hint is not None else "-"
             rows.append(CardRow(key=f"hs_{i}", label=it.code, label_ar=it.code, value=f"{san.text(it.description_en, 120)} | duty {duty}",

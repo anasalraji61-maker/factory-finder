@@ -33,6 +33,7 @@ _INJECT = re.compile(
 )
 
 
+_IDENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}")
 _INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad\u0640\u064b-\u065f]")
 
 
@@ -73,15 +74,39 @@ class Sanitizer:
     def opt(self, value: str | None, max_len: int = 120) -> str | None:
         return self.text(value, max_len) if value else None
 
+    def ident(self, value: str | None) -> str:
+        """Identifiers from downstream (listing / supplier / deal ids, HS codes) must look like ids; anything else is dropped."""
+        if value and _IDENT.fullmatch(value):
+            return value
+        self.hit = self.hit or bool(value)
+        return "invalid-id"
+
+    def url(self, value: str | None) -> str | None:
+        """Only plain http(s) URLs without whitespace/control characters are passed on to the client."""
+        if value and re.fullmatch(r"https?://[^\s<>\"'`\\]{1,500}", value) and not _CTRL.search(value):
+            return value
+        self.hit = self.hit or bool(value)
+        return None
+
+    def loc(self, loc):
+        if loc is None or not loc.city:
+            return loc
+        return loc.model_copy(update={"city": self.text(loc.city, 60)})
+
     def listing(self, lst: Listing) -> Listing:
-        sup = lst.supplier.model_copy(update={"name": self.text(lst.supplier.name, 80)})
+        sup = lst.supplier.model_copy(update={"id": self.ident(lst.supplier.id), "name": self.text(lst.supplier.name, 80),
+                                              "location": self.loc(lst.supplier.location)})
         extras = {k: self.text(v, 300) for k, v in (lst.model_extra or {}).items() if isinstance(v, str) and k != "source_url"}
-        update = {"title": self.text(lst.title, 160), "title_ar": self.opt(lst.title_ar, 160), "supplier": sup,
+        update = {"id": self.ident(lst.id), "source": self.text(lst.source, 40), "unit": self.opt(lst.unit, 30),
+                  "hs_code": self.ident(lst.hs_code) if lst.hs_code else None, "origin": self.loc(lst.origin),
+                  "source_url": self.url(lst.source_url),
+                  "images": [u for u in (self.url(i) for i in lst.images) if u] if lst.images is not None else None,
+                  "title": self.text(lst.title, 160), "title_ar": self.opt(lst.title_ar, 160), "supplier": sup,
                   "category": self.opt(lst.category, 60), **extras}
         return lst.model_copy(update=update)
 
     def trust(self, t: TrustScore) -> TrustScore:
-        factors = [f.model_copy(update={"explanation": self.text(f.explanation, 160), "explanation_ar": self.opt(f.explanation_ar, 160)})
+        factors = [f.model_copy(update={"key": self.text(f.key, 40), "explanation": self.text(f.explanation, 160), "explanation_ar": self.opt(f.explanation_ar, 160)})
                    for f in t.factors]
-        return t.model_copy(update={"factors": factors})
+        return t.model_copy(update={"supplier_id": self.ident(t.supplier_id), "factors": factors})
 
