@@ -405,5 +405,23 @@ class MessagingService:
     ) -> Conversation:
         return await self.get_conversation(caller, conversation_id, supplier_id)
 
+    async def check_can_signal(
+        self, caller: str, conversation_id: str, supplier_id: str | None = None
+    ) -> None:
+        """Like check_access, but also neutral-404s when another participant blocked the caller
+        (same rule as send_message), so ephemeral frames such as typing never reach the blocker."""
+        async with self.db.read() as conn:
+            repo = Repository(conn)
+            conv = await self._require_access(repo, caller, conversation_id, supplier_id=supplier_id)
+            acting = self._acting_id(conv, caller, supplier_id)
+            if conv.is_direct:
+                for p in conv.participants:
+                    if (
+                        p.user_id != acting
+                        and p.user_id not in self.settings.platform_ids
+                        and await repo.has_blocked([p.user_id], acting)
+                    ):
+                        raise NotFoundError("Conversation not found", code="conversation_not_found")
+
 
 __all__ = ["MessagingService", "MessageType"]

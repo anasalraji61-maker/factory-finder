@@ -357,7 +357,7 @@ async def conversation_socket(
                 is_typing = bool(frame.get("is_typing", True))
                 if app.state.typing.should_broadcast(f"{conversation_id}:{uid}", is_typing):
                     try:  # access (and blocks) can change while the socket is open
-                        await svc.check_access(uid, conversation_id, sup)
+                        await svc.check_can_signal(uid, conversation_id, sup)
                     except MessagingError:
                         await websocket.close(code=4403)
                         return

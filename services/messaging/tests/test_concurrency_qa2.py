@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 from sqlalchemy import func, select
 
 from ff_messaging.config import Settings
@@ -123,5 +124,11 @@ def test_typing_frames_stop_after_block(tmp_path):
                 assert sup_ws.receive_json()["type"] == "typing"
                 assert c.put("/v1/blocks/buyer1", headers=h("sup1")).status_code == 204
                 buyer_ws.send_json({"type": "typing"})  # blocked: must not reach the blocker
+                # wait for the server to finish its access check and close the socket; leaving the
+                # `with` while the handler is mid-DB-call cancels it and can hang aiosqlite teardown
+                with pytest.raises(WebSocketDisconnect) as closed:
+                    for _ in range(5):  # the buyer first sees its own earlier typing echo
+                        buyer_ws.receive_json()
+                assert closed.value.code == 4403
                 sup_ws.send_json({"type": "ping"})
                 assert sup_ws.receive_json()["type"] == "pong"
