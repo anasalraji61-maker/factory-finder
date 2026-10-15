@@ -4227,6 +4227,27 @@
      "挂锁"
     ]
    }
+  },
+  {
+   "hs6": "520812",
+   "description_en": "Woven cotton fabric, plain weave, unbleached (over 100 g/m2, up to 200 g/m2)",
+   "description_ar": "أقمشة قطنية منسوجة، نسج سادة، غير مقصورة",
+   "keywords": {
+    "en": [
+     "cotton fabric",
+     "woven cotton",
+     "cotton cloth"
+    ],
+    "ar": [
+     "قماش قطن",
+     "قماش قطني",
+     "أقمشة قطنية"
+    ],
+    "zh": [
+     "棉布",
+     "纯棉面料"
+    ]
+   }
   }
  ]
 }

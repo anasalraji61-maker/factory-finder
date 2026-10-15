@@ -208,6 +208,22 @@ class MuteState {
   }
 }
 
+/// Entry of GET /v1/feed/mutes.
+class MutedSupplier {
+  const MutedSupplier({required this.supplierId, this.mutedAt});
+
+  final String supplierId;
+  final DateTime? mutedAt;
+
+  factory MutedSupplier.fromJson(Object? json) {
+    final m = json is Map ? json : const <String, dynamic>{};
+    return MutedSupplier(
+      supplierId: (m['supplier_id'] ?? '').toString(),
+      mutedAt: _date(m['muted_at']),
+    );
+  }
+}
+
 /// Entry of GET /v1/feed/following.
 class FollowedSupplier {
   const FollowedSupplier({required this.supplierId, this.followedAt});

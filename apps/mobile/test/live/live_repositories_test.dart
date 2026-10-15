@@ -3,14 +3,18 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
+import 'package:factory_finder/features/feed/feed_repository.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart';
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
 import 'package:factory_finder/features/requests/data/mock_rfq.dart';
+import 'package:factory_finder/features/tracking/data/tracking_models.dart';
+import 'package:factory_finder/features/tracking/data/tracking_repository.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -404,6 +408,188 @@ void main() {
       expect(deal.commission.amount, '267.00');
       expect(deal.commissionRate, '0.03');
       expect(deal.supplierNet, isNull);
+    });
+  });
+
+  group('contract-shape live tests', () {
+    test('logistics suggestHs: /v1/hs/suggest, q+limit, parses items[]', () async {
+      final adapter = _FakeAdapter((o) => _json({
+            'items': [
+              {
+                'hs6': '940540',
+                'description_en': 'Electric lamps and lighting fittings',
+                'description_ar': 'مصابيح وتجهيزات إنارة كهربائية',
+                'confidence': 'medium',
+                'note': 'Indicative only, not an official classification',
+              },
+              {
+                'hs6': '853950',
+                'description_en': 'LED lamps',
+                'description_ar': 'مصابيح ليد',
+                'confidence': 'low',
+                'note': 'Indicative only',
+              },
+            ],
+            'total': 2,
+            'indicative': true,
+            'disclaimer': 'Indicative suggestions',
+          }));
+      final repo = LogisticsRepository(_client(adapter));
+      final out = await repo.suggestHs('led lights', limit: 1);
+      final call = adapter.calls.single;
+      expect(call.method, 'GET');
+      expect(call.path, '/v1/hs/suggest');
+      expect(call.queryParameters['q'], 'led lights');
+      expect(call.queryParameters['limit'], 1);
+      expect(out.length, 1);
+      expect(out.first.hs6, '940540');
+      expect(out.first.confidence, 'medium');
+      expect(out.first.description('ar'), 'مصابيح وتجهيزات إنارة كهربائية');
+      expect(out.first.description('en'), 'Electric lamps and lighting fittings');
+    });
+
+    test('logistics suggestHs: empty items yields empty list', () async {
+      final adapter = _FakeAdapter((o) => _json({
+            'items': [],
+            'total': 0,
+            'indicative': true,
+            'disclaimer': 'x',
+          }));
+      final out = await LogisticsRepository(_client(adapter)).suggestHs('zzz');
+      expect(out, isEmpty);
+      expect(adapter.calls.single.queryParameters['limit'], 5);
+    });
+
+    test('tracking detect: /v1/references/detect with q (truncated to 64) and candidates[]', () async {
+      final adapter = _FakeAdapter((o) => _json({
+            'candidates': [
+              {
+                'type': 'container',
+                'confidence': 'high',
+                'normalized': 'MSKU1234565',
+                'note': 'ISO 6346 check digit ok',
+              },
+              {'type': 'vessel_imo', 'confidence': 'low', 'normalized': '9074729', 'note': ''},
+              {'type': 'unknown_kind', 'confidence': 'high', 'normalized': 'x', 'note': ''},
+            ],
+          }));
+      final repo = LiveTrackingRepository(_client(adapter));
+      final out = await repo.detect('msku 123456 5');
+      expect(adapter.calls.single.path, '/v1/references/detect');
+      expect(adapter.calls.single.queryParameters['q'], 'msku 123456 5');
+      expect(out.length, 2, reason: 'unknown types are dropped');
+      expect(out.first.type, ReferenceType.container);
+      expect(out.first.confidence, DetectConfidence.high);
+      expect(out.first.normalized, 'MSKU1234565');
+      expect(out.last.type, ReferenceType.vesselImo);
+
+      await repo.detect('A' * 100);
+      expect((adapter.calls.last.queryParameters['q'] as String).length, 64);
+    });
+
+    test('feed mute is PUT and unmute is DELETE on /v1/feed/mutes/{id}', () async {
+      final adapter = _FakeAdapter((o) => _json({
+            'supplier_id': 'sup_1',
+            'muted': o.method == 'PUT',
+          }));
+      final repo = LiveFeedRepository(_client(adapter));
+      final m = await repo.muteSupplier('sup_1');
+      expect(adapter.calls.last.method, 'PUT');
+      expect(adapter.calls.last.path, '/v1/feed/mutes/sup_1');
+      expect(m.muted, isTrue);
+      expect(m.supplierId, 'sup_1');
+      final u = await repo.unmuteSupplier('sup_1');
+      expect(adapter.calls.last.method, 'DELETE');
+      expect(adapter.calls.last.path, '/v1/feed/mutes/sup_1');
+      expect(u.muted, isFalse);
+    });
+
+    test('feed mute: self-mute 422 surfaces the contract code', () async {
+      final adapter = _FakeAdapter((o) => _json({
+            'error': {'code': 'cannot_mute_self', 'message': 'no'},
+          }, 422));
+      final repo = LiveFeedRepository(_client(adapter));
+      await expectLater(
+        repo.muteSupplier('sup_me'),
+        throwsA(isA<ApiException>()
+            .having((e) => e.status, 'status', 422)
+            .having((e) => e.code, 'code', 'cannot_mute_self')),
+      );
+    });
+
+    test('rfq list: cursor param is sent and next_cursor parsed (market_page example)', () async {
+      const next =
+          'WyIyMDI2LTEwLTAxVDEyOjAwOjAwKzAwOjAwIiwicmVxXzNjY2FjOGVkZmEyNDQ5NTBhM2FkYWJkMWRlMjJhZGU3Il0';
+      Map<String, dynamic> item(String id, String title) => {
+            'id': id,
+            'owner_id': 'buyer1',
+            'kind': 'product',
+            'title': title,
+            'description': null,
+            'quantity': '1000',
+            'unit': 'piece',
+            'condition': 'any',
+            'target_price': {'amount': '9.50', 'currency': 'USD'},
+            'destination': {'country_code': 'IQ', 'city': 'Baghdad'},
+            'deadline': null,
+            'attachments': [],
+            'visibility': 'public',
+            'status': 'open',
+            'offers_count': 0,
+            'created_at': '2026-10-01T12:00:00Z',
+            'updated_at': '2026-10-01T12:00:00Z',
+          };
+      final adapter = _FakeAdapter((o) {
+        final last = o.queryParameters['cursor'] == next;
+        return _json({
+          'items': last
+              ? [item('req_last', 'Last one')]
+              : [
+                  item('req_0aad9dff8e624042944674e45853ca4d', 'LED panel lights'),
+                  item('req_3ccac8edfa244950a3adabd1de22ade7', 'Plastic chairs'),
+                ],
+          'total': 3,
+          'page': 1,
+          'page_size': 2,
+          'next_cursor': last ? null : next,
+        });
+      });
+      final repo = RfqRepository(_client(adapter));
+      final p1 = await repo.list(const RfqFilter(mine: false), pageSize: 2);
+      expect(adapter.calls.first.queryParameters.containsKey('cursor'), isFalse);
+      expect(adapter.calls.first.queryParameters['page_size'], 2);
+      expect(p1.items.length, 2);
+      expect(p1.nextCursor, next);
+      expect(p1.hasMore, isTrue);
+      final p2 = await repo.list(const RfqFilter(mine: false), cursor: p1.nextCursor, pageSize: 2);
+      expect(adapter.calls.last.queryParameters['cursor'], next);
+      expect(p2.items.single.id, 'req_last');
+      expect(p2.nextCursor, isNull);
+      expect(p2.hasMore, isFalse);
+    });
+
+    test('auth register: 429 keeps Retry-After seconds and code', () async {
+      final adapter = _FakeAdapter((o) => ResponseBody.fromString(
+            jsonEncode({
+              'error': {'code': 'rate_limited', 'message': 'slow down'},
+            }),
+            429,
+            headers: {
+              Headers.contentTypeHeader: [Headers.jsonContentType],
+              'retry-after': ['42'],
+            },
+          ));
+      final repo = AuthRepository(_client(adapter));
+      await expectLater(
+        repo.register(email: 'a@b.co', password: 'password123', name: 'A'),
+        throwsA(isA<ApiException>()
+            .having((e) => e.status, 'status', 429)
+            .having((e) => e.code, 'code', 'rate_limited')
+            .having((e) => e.retryAfterSeconds, 'retryAfter', 42)),
+      );
+      final call = adapter.calls.single;
+      expect(call.path, '/v1/auth/register');
+      expect(call.method, 'POST');
     });
   });
 }

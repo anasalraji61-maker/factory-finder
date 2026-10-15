@@ -41,6 +41,7 @@ async def search(
     min_price: Decimal | None = Query(None, ge=0, max_digits=24, decimal_places=8),
     max_price: Decimal | None = Query(None, ge=0, max_digits=24, decimal_places=8),
     moq_max: int | None = Query(None, ge=0, le=2_000_000_000),
+    moq_min: int | None = Query(None, ge=0, le=10**9),
     verified_only: bool = False,
     sort: Literal["relevance", "price_asc", "price_desc", "trust", "moq"] = "relevance",
     page: int = Query(1, ge=1),
@@ -57,6 +58,7 @@ async def search(
         min_price=min_price,
         max_price=max_price,
         moq_max=moq_max,
+        moq_min=moq_min,
         verified_only=verified_only,
     )
     res = await svc(request).search(query, page, page_size, sort)

@@ -14,6 +14,7 @@ transfer has ``min_confirmations`` blocks on top. Explorer shape assumed (TronGr
 from __future__ import annotations
 
 import hashlib
+import time
 from decimal import Decimal
 
 import httpx
@@ -70,19 +71,39 @@ class ExplorerClient:
         headers = {"TRON-PRO-API-KEY": api_key} if api_key else {}
         self._c = httpx.AsyncClient(base_url=base_url.rstrip("/"), timeout=timeout, headers=headers,
                                     transport=transport)
+        self._cooldown_until = 0.0  # monotonic; set after 429/503 so a sweep never hammers a throttling explorer
+
+    def _check_cooldown(self) -> None:
+        if time.monotonic() < self._cooldown_until:
+            raise UpstreamUnavailable("Chain explorer rate-limited; backing off")
+
+    def _note_throttle(self, r: httpx.Response) -> None:
+        if r.status_code in (429, 503):
+            try:
+                wait = float(r.headers.get("Retry-After", ""))
+            except ValueError:
+                wait = 30.0
+            self._cooldown_until = time.monotonic() + min(max(wait, 1.0), 300.0)
 
     async def incoming_trc20(self, address: str, contract: str, since_ms: int) -> list[dict]:
+        self._check_cooldown()
         try:
             r = await self._c.get(f"/v1/accounts/{address}/transactions/trc20", params={
                 "only_to": "true", "contract_address": contract, "min_timestamp": since_ms, "limit": 200})
+            self._note_throttle(r)
             r.raise_for_status()
-            return list(r.json()["data"])
-        except (httpx.HTTPError, KeyError, ValueError) as exc:
+            data = r.json()["data"]
+            if not isinstance(data, list):
+                raise ValueError("data is not a list")
+            return data
+        except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
             raise UpstreamUnavailable("Chain explorer unavailable") from exc
 
     async def latest_block(self) -> int:
+        self._check_cooldown()
         try:
             r = await self._c.get("/v1/blocks/latest")
+            self._note_throttle(r)
             r.raise_for_status()
             return int(r.json()["data"][0]["block_number"])
         except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError) as exc:
@@ -114,6 +135,8 @@ class UsdtTronProvider:
 
     async def poll(self, inv: TrackedInvoice) -> Observation | None:
         if not (self.address and self.contract and self.explorer and inv.pay_amount is not None):
+            return None
+        if inv.pay_address and inv.pay_address != self.address:  # address was rotated: never match old invoices
             return None
         txs = await self.explorer.incoming_trc20(self.address, self.contract, inv.created_ts_ms)
         best: tuple[dict, int] | None = None

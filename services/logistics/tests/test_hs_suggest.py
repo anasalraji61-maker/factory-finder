@@ -68,3 +68,34 @@ def test_endpoint_bounds(client):
     assert client.get("/v1/hs/suggest", params={"q": "a" * 100}).status_code == 200
     assert client.get("/v1/hs/suggest", params={"q": "rice", "limit": 21}).status_code == 422
     assert client.get("/v1/hs/suggest", params={"q": "rice", "limit": 0}).status_code == 422
+
+
+def test_keywords_no_duplicate_hs6_and_well_formed():
+    items = load_json("hs_keywords.json")["items"]
+    codes = [i["hs6"] for i in items]
+    assert len(codes) == len(set(codes)), "duplicate hs6 in hs_keywords.json"
+    for i in items:
+        assert len(i["hs6"]) == 6 and i["hs6"].isdigit() and i["hs6"].isascii(), i["hs6"]
+        assert i["description_ar"].strip() and i["description_en"].strip(), i["hs6"]
+
+
+def test_asgi_live_style_arabic_cotton_fabric():
+    import asyncio
+
+    import httpx
+
+    from ff_logistics.main import create_app
+
+    async def go():
+        transport = httpx.ASGITransport(app=create_app())
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+            return await c.get("/v1/hs/suggest", params={"q": "قماش قطن"})
+
+    r = asyncio.run(go())
+    assert r.status_code == 200
+    b = r.json()
+    assert set(b) == {"items", "total", "indicative", "disclaimer"}
+    assert b["indicative"] is True and b["total"] == len(b["items"]) >= 1
+    for it in b["items"]:
+        assert set(it) == {"hs6", "description_en", "description_ar", "confidence", "note"}
+    assert any(it["hs6"].startswith("52") for it in b["items"]), b["items"]

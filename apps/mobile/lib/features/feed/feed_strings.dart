@@ -44,6 +44,13 @@ const Map<String, (String, String)> _pairs = {
   'feed.unmute': ('إلغاء كتم المورّد', 'Unmute supplier'),
   'feed.muted': ('تم كتم المورّد، لن تظهر منشوراته', 'Supplier muted, their posts are hidden'),
   'feed.unmuted': ('تم إلغاء الكتم', 'Supplier unmuted'),
+  'feed.unmute_short': ('إلغاء الكتم', 'Unmute'),
+  'feed.muted_title': ('الموردون المكتومون', 'Muted suppliers'),
+  'feed.muted_empty': ('لا يوجد موردون مكتومون', 'No muted suppliers'),
+  'feed.muted_empty_hint': (
+    'عند كتم مورّد لن تظهر منشوراته لك، ويمكنك إلغاء الكتم من هنا.',
+    'Muted suppliers\' posts are hidden from you. You can unmute them here.',
+  ),
   'feed.err.mute_self': ('لا يمكنك كتم حسابك', 'You cannot mute your own account'),
   'feed.delete': ('حذف', 'Delete'),
   'feed.delete_post_confirm': ('حذف هذا المنشور نهائياً؟', 'Delete this post permanently?'),

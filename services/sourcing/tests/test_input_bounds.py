@@ -6,7 +6,7 @@ import pytest
     [
         "min_price=NaN", "min_price=Infinity", "min_price=-1", "max_price=1e999999",
         "origin_country=12", "origin_country=1%C3%A9", "category=" + "a" * 101,
-        "moq_max=99999999999999999999", "page=0", "page_size=101", "min_price=5&max_price=1",
+        "moq_max=99999999999999999999", "moq_min=1000000001", "moq_min=-1", "moq_min=x", "page=0", "page_size=101", "min_price=5&max_price=1",
     ],
 )
 async def test_search_rejects_bad_params(client, qs):

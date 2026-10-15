@@ -92,6 +92,7 @@ class SearchQuery(BaseModel):
     min_price: Decimal | None = None
     max_price: Decimal | None = None
     moq_max: int | None = None
+    moq_min: int | None = None
     verified_only: bool = False
     # English keywords for remote APIs (filled by the engine from synonyms)
     keywords_en: list[str] = []

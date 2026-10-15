@@ -50,6 +50,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push('/feed/new'),
             ),
+          if (me != null)
+            PopupMenuButton<String>(
+              key: const ValueKey<String>('feed-menu'),
+              tooltip: context.tr('feed.more'),
+              onSelected: (v) {
+                if (v == 'muted') context.push('/feed/muted');
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem<String>(
+                  key: const ValueKey<String>('feed-menu-muted'),
+                  value: 'muted',
+                  child: Text(context.tr('feed.muted_title')),
+                ),
+              ],
+            ),
         ],
       ),
       body: Column(

@@ -61,6 +61,7 @@ paths:
         - {name: min_price, in: query, description: Unit price floor in USD, schema: {type: number, minimum: 0}}
         - {name: max_price, in: query, description: Unit price cap in USD, schema: {type: number, minimum: 0}}
         - {name: moq_max, in: query, schema: {type: integer, minimum: 0}}
+        - {name: moq_min, in: query, description: "Listing MOQ >= moq_min (inclusive). Listings with unknown MOQ are excluded when moq_min > 0. moq_min > moq_max yields an empty result, not an error.", schema: {type: integer, minimum: 0, maximum: 1000000000}}
         - {name: verified_only, in: query, schema: {type: boolean, default: false}}
         - {name: sort, in: query, description: "Result order; ties always break by relevance score then id", schema: {type: string, enum: [relevance, price_asc, price_desc, trust, moq], default: relevance}}
         - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}

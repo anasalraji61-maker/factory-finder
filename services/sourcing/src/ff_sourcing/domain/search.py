@@ -202,6 +202,9 @@ def passes_filters(listing: Listing, q: SearchQuery) -> bool:
             return False
     if q.moq_max is not None and listing.moq is not None and listing.moq > q.moq_max:
         return False
+    # inclusive; listings with unknown MOQ cannot be shown to satisfy a floor > 0
+    if q.moq_min and (listing.moq is None or listing.moq < q.moq_min):
+        return False
     return not (q.verified_only and not listing.supplier.verified)
 
 

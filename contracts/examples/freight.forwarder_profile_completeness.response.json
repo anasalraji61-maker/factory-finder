@@ -1,0 +1,41 @@
+{
+  "spec": "freight.yaml",
+  "pointer": "#/components/schemas/Forwarder",
+  "description": "GET /v1/freight/forwarders/me: owner profile with optional profile_completeness (score + missing fields).",
+  "value": {
+    "id": "fwd_1",
+    "company_name": "Gulf Star Logistics",
+    "country_code": "AE",
+    "description": "Sea and air freight, China to Iraq",
+    "lanes": [
+      {
+        "origin_country": "CN",
+        "destination_country": "IQ"
+      }
+    ],
+    "modes": [
+      "sea",
+      "air"
+    ],
+    "incoterms": [
+      "FOB",
+      "CIF"
+    ],
+    "certifications": [],
+    "rating": {
+      "average": null,
+      "count": 0
+    },
+    "completed_jobs": 0,
+    "verified_at": "2026-10-15T12:00:00Z",
+    "created_at": "2026-10-15T12:00:00Z",
+    "status": "active",
+    "profile_completeness": {
+      "score": 80,
+      "missing": [
+        "description",
+        "certifications"
+      ]
+    }
+  }
+}

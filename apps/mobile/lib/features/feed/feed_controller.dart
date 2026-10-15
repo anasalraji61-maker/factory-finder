@@ -415,10 +415,43 @@ final followingProvider = StateNotifierProvider<FollowingController, FollowingSt
 
 // -- muted suppliers ------------------------------------------------------
 
-/// Suppliers the viewer muted in this session (optimistic; the server is the
-/// source of truth for what its lists contain). Reset when the user changes.
+/// Reads every page of GET /v1/feed/mutes (at most [kMaxMutePages] pages).
+const int kMaxMutePages = 10;
+
+Future<Set<String>> fetchAllMutes(FeedRepository repo) async {
+  final ids = <String>{};
+  String? cursor;
+  for (var i = 0; i < kMaxMutePages; i++) {
+    final page = await repo.listMutes(cursor: cursor, limit: 50);
+    ids.addAll(page.items.map((m) => m.supplierId).where((id) => id.isNotEmpty));
+    cursor = page.nextCursor;
+    if (cursor == null) break;
+  }
+  return ids;
+}
+
+/// Suppliers the viewer muted (optimistic; the server is the source of truth
+/// for what its lists contain). Loaded once after sign-in, reset when the user
+/// changes. A failed load leaves the set empty; the management screen retries.
 final mutedSuppliersProvider = StateProvider<Set<String>>((ref) {
-  ref.watch(authProvider.select((m) => m?.id));
+  final signedIn = ref.watch(authProvider.select((m) => m?.id)) != null;
+  if (signedIn) {
+    var alive = true;
+    ref.onDispose(() => alive = false);
+    final repo = ref.read(feedRepositoryProvider);
+    // Deferred: a provider must not write its own state while being built.
+    Future<void>(() async {
+      try {
+        final loaded = await fetchAllMutes(repo);
+        // Mutes toggled while loading are already in the current state.
+        if (!alive) return;
+        final notifier = ref.read(mutedSuppliersProvider.notifier);
+        notifier.state = <String>{...loaded, ...notifier.state};
+      } catch (_) {
+        // keep the session-local set
+      }
+    });
+  }
   return const <String>{};
 });
 

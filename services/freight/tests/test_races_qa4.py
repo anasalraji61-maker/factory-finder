@@ -36,7 +36,7 @@ async def test_approve_vs_reject_rounds_and_double_reviewers(tmp_path):
     async with Boot(tmp_path) as b:
         for i in range(ROUNDS):
             u = f"fx{i}"
-            aid = (await b.c.post("/v1/freight/applications", headers=uh(u), json=APP)).json()["id"]
+            aid = (await b.c.post("/v1/freight/applications", headers=uh(u), json={**APP, "company_name": f"Race Co {i}"})).json()["id"]
             calls = [b.c.post(f"/v1/admin/freight/applications/{aid}/approve", headers=ADM) for _ in range(3)]
             calls += [b.c.post(f"/v1/admin/freight/applications/{aid}/reject", headers=ADM, json={"reason": "documents missing"})
                       for _ in range(3)]

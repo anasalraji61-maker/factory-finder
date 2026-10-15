@@ -54,3 +54,5 @@ Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default
 
 ## Landed-cost input
 `GET /v1/freight/quotes/{id}/landed-cost-input`: request owner only (404 for forwarders/strangers), 409 `quote_not_awarded` unless the quote is the accepted one. Returns `{amount, currency, source: "forwarder_quote", quote_id, valid_until, mode_family}`, which the client passes unchanged as `freight_override` to logistics (`POST /v1/quotes/landed-cost`). Services never call each other.
+
+Additive contract notes: forwarder profiles (`GET /v1/freight/forwarders*`, `/me`) carry an optional `profile_completeness {score 0-100, missing[]}`; `POST /v1/freight/applications` accepts optional `attachments[]` (up to 5 validated https document URLs, echoed on the application) and returns 409 `duplicate_company` when a company with the same name already applied or is registered. All are documented in `contracts/openapi/freight.yaml`.

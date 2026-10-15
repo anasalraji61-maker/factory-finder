@@ -37,6 +37,8 @@ supplier-owned listings: `POST|GET /v1/my/listings` · `GET|PUT|DELETE /v1/my/li
 - Query terms are AND-ed. Per-term field weights: title 1.0 > category 0.6 > description 0.35 > supplier/city 0.2
   (typo hit x0.8). Score = `0.62 relevance + 0.10 exact title phrase + 0.12 trust band + 0.03 verified + 0.13 price fit`;
   ties break by id.
+- `moq_min` (optional int 0..10^9, default none): keep listings with MOQ >= `moq_min` (inclusive); listings with
+  unknown MOQ are dropped when `moq_min` > 0. Combined with `moq_max` (inverted range) the result is empty, not an error.
 - `sort` = `relevance` (default) | `price_asc` | `price_desc` | `trust` | `moq`. Response `facets`
   (kind, condition, origin_country, category counts) cover the whole matched set, not just the page.
 

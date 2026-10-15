@@ -96,6 +96,41 @@ async def test_moq_filter_boundary_inclusive(service):
     assert some.id not in got2
 
 
+async def test_moq_min_boundary_inclusive(service):
+    _, res = await ids(service, "")
+    some = next(i for i in res.items if i.moq)
+    got, r2 = await ids(service, "", moq_min=some.moq)
+    assert some.id in got and all(i.moq is not None and i.moq >= some.moq for i in r2.items)
+    got2, _ = await ids(service, "", moq_min=some.moq + 1)
+    assert some.id not in got2
+    zero, _ = await ids(service, "", moq_min=0)
+    assert zero == (await ids(service, ""))[0]
+
+
+async def test_moq_min_with_inverted_max_is_empty_not_error(service):
+    got, res = await ids(service, "", moq_min=100, moq_max=10)
+    assert got == [] and res.total == 0
+
+
+async def test_moq_min_api_validation_and_empty(client):
+    assert (await client.get("/v1/search?moq_min=1000000000")).status_code == 200
+    r = await client.get("/v1/search?moq_min=100&moq_max=10")
+    assert r.status_code == 200 and r.json()["items"] == [] and r.json()["total"] == 0
+
+
+async def test_moq_min_pagination_consistent(service):
+    full, res = await ids(service, "", moq_min=5)
+    assert res.total == len(full) > 0
+    out: list[str] = []
+    for p in range(1, 50):
+        got, r = await ids(service, "", page=p, size=3, moq_min=5)
+        assert r.total == len(full)
+        out += got
+        if not got:
+            break
+    assert out == full
+
+
 # ---- sort stability & pagination ---------------------------------------------
 @pytest.mark.parametrize("sort", ["relevance", "price_asc", "price_desc", "trust", "moq"])
 async def test_sort_deterministic_and_pages_partition(service, sort):

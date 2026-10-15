@@ -23,6 +23,9 @@ abstract class FeedRepository {
   Future<MuteState> muteSupplier(String supplierId);
   Future<MuteState> unmuteSupplier(String supplierId);
 
+  /// Suppliers this viewer muted, most recently muted first.
+  Future<FeedPage<MutedSupplier>> listMutes({String? cursor, int limit = 50});
+
   Future<LikeState> like(String postId);
   Future<LikeState> unlike(String postId);
 
@@ -157,6 +160,11 @@ class LiveFeedRepository implements FeedRepository {
   @override
   Future<MuteState> unmuteSupplier(String supplierId) async =>
       MuteState.fromJson(await _api.delete('/v1/feed/mutes/${_e(supplierId)}'));
+
+  @override
+  Future<FeedPage<MutedSupplier>> listMutes({String? cursor, int limit = 50}) async =>
+      FeedPage.parse(
+          await _api.get('/v1/feed/mutes', query: _page(cursor, limit)), MutedSupplier.fromJson);
 
   @override
   Future<LikeState> like(String postId) async =>
@@ -483,6 +491,15 @@ class MockFeedRepository implements FeedRepository {
     await _wait();
     _mutes.remove(supplierId);
     return MuteState(supplierId: supplierId, muted: false);
+  }
+
+  @override
+  Future<FeedPage<MutedSupplier>> listMutes({String? cursor, int limit = 50}) async {
+    await _wait();
+    final all = <MutedSupplier>[
+      for (final s in _mutes.toList().reversed) MutedSupplier(supplierId: s),
+    ];
+    return _slice(all, _offset(cursor, 'm'), limit, 'm');
   }
 
   @override
