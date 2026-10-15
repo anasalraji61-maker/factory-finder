@@ -60,6 +60,8 @@ applications = Table(
     Column("modes", String(40), nullable=False),  # ",sea,air,"
     Column("incoterms", String(80), nullable=False),  # ",FOB,CIF,"
     Column("certifications", JSON, nullable=False),
+    Column("attachments", JSON, nullable=True),  # validated https URLs (documents)
+    Column("name_key", String(160), nullable=True),  # normalized company name + country (duplicate detection)
     Column("status", String(10), nullable=False),  # pending | approved | rejected
     Column("review_note", String(300), nullable=True),
     Column("forwarder_id", String(40), nullable=True),
@@ -67,6 +69,7 @@ applications = Table(
     Column("reviewed_at", UTCDateTime, nullable=True),
     Index("ix_applications_user_created", "user_id", "created_at", "id"),
     Index("ix_applications_status_created", "status", "created_at", "id"),
+    Index("ix_applications_name_key", "name_key"),
     # race backstop: at most one pending application per user
     Index("uq_applications_one_pending", "user_id", unique=True,
           sqlite_where=text("status = 'pending'"), postgresql_where=text("status = 'pending'")),
@@ -83,6 +86,7 @@ forwarders = Table(
     Column("modes", String(40), nullable=False),
     Column("incoterms", String(80), nullable=False),
     Column("certifications", JSON, nullable=False),
+    Column("name_key", String(160), nullable=True),
     Column("status", String(10), nullable=False),  # active | suspended
     Column("status_reason", String(300), nullable=True),
     Column("rating_sum", Integer, nullable=False, default=0),
@@ -92,6 +96,7 @@ forwarders = Table(
     Column("created_at", UTCDateTime, nullable=False),
     UniqueConstraint("user_id", name="uq_forwarders_user"),
     Index("ix_forwarders_status_created", "status", "created_at", "id"),
+    Index("ix_forwarders_name_key", "name_key"),
 )
 
 forwarder_lanes = Table(
@@ -192,6 +197,20 @@ reports = Table(
     UniqueConstraint("target_type", "target_id", "reporter_id", name="uq_reports_once"),
     Index("ix_reports_target", "target_type", "target_id", "created_at"),
     Index("ix_reports_created", "created_at", "id"),
+)
+
+# Append-only record of admin decisions (approve / reject / suspend / reinstate).
+audit_log = Table(
+    "audit_log",
+    metadata,
+    Column("id", String(40), primary_key=True),
+    Column("actor", String(128), nullable=False),
+    Column("action", String(24), nullable=False),
+    Column("target_type", String(16), nullable=False),
+    Column("target_id", String(40), nullable=False),
+    Column("detail", String(300), nullable=True),
+    Column("created_at", UTCDateTime, nullable=False),
+    Index("ix_audit_target", "target_type", "target_id", "created_at"),
 )
 
 rate_events = Table(

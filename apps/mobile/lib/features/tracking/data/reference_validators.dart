@@ -80,3 +80,22 @@ String? validateReference(ReferenceType type, String input) {
       return validateBl(input);
   }
 }
+
+/// Deterministic local reference-type detection (mirrors the server rules).
+/// Types whose format and check digit pass are candidates; `high` only when
+/// exactly one fits, otherwise `medium`. Empty when nothing fits.
+List<ReferenceCandidate> detectReferenceLocally(String input) {
+  final q = input.trim();
+  if (q.isEmpty) return const [];
+  final s = normalizeReference(q);
+  final fits = <ReferenceType>[
+    if (validateContainer(q) == null) ReferenceType.container,
+    if (validateAwb(q) == null) ReferenceType.awb,
+    if (validateImo(q) == null) ReferenceType.vesselImo,
+    if (validateBl(q) == null) ReferenceType.bl,
+  ];
+  final level = fits.length == 1 ? DetectConfidence.high : DetectConfidence.medium;
+  return [
+    for (final t in fits) ReferenceCandidate(type: t, confidence: level, normalized: s),
+  ];
+}

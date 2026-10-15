@@ -1,4 +1,5 @@
 import 'package:factory_finder/features/logistics/data/hs_repository.dart';
+import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -46,5 +47,16 @@ void main() {
     expect(searchMockHs('steel', limit: 1).items.length, 1);
     expect(searchMockHs('steel', limit: 1).total, 2);
     expect(searchMockHs('led', destinationCountry: 'IQ').destinationCountry, 'IQ');
+  });
+
+  test('mock HS suggestions are deterministic, capped and bilingual', () {
+    expect(suggestMockHs('steel').map((e) => e.hs6), ['721420', '720836']);
+    expect(suggestMockHs('steel', limit: 1).length, 1);
+    expect(suggestMockHs('  ').isEmpty, isTrue);
+    expect(suggestMockHs('zzzz').isEmpty, isTrue);
+    expect(suggestMockHs('earbuds').single.description('ar'), 'سماعات رأس وأذن');
+    final s = HsSuggestion.fromJson({'hs6': '851830', 'description_en': 'X', 'confidence': 'medium'});
+    expect(s.hs6, '851830');
+    expect(s.description('ar'), 'X');
   });
 }

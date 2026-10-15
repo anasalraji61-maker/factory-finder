@@ -19,6 +19,10 @@ abstract class FeedRepository {
   Future<FollowState> follow(String supplierId);
   Future<FollowState> unfollow(String supplierId);
 
+  /// Per-viewer mute: the supplier's posts leave this viewer's lists.
+  Future<MuteState> muteSupplier(String supplierId);
+  Future<MuteState> unmuteSupplier(String supplierId);
+
   Future<LikeState> like(String postId);
   Future<LikeState> unlike(String postId);
 
@@ -147,6 +151,14 @@ class LiveFeedRepository implements FeedRepository {
       );
 
   @override
+  Future<MuteState> muteSupplier(String supplierId) async =>
+      MuteState.fromJson(await _api.put('/v1/feed/mutes/${_e(supplierId)}'));
+
+  @override
+  Future<MuteState> unmuteSupplier(String supplierId) async =>
+      MuteState.fromJson(await _api.delete('/v1/feed/mutes/${_e(supplierId)}'));
+
+  @override
   Future<LikeState> like(String postId) async =>
       LikeState.fromJson(await _api.put('/v1/feed/posts/${_e(postId)}/like'));
 
@@ -221,6 +233,7 @@ class MockFeedRepository implements FeedRepository {
 
   final Set<String> _follows;
   final Set<String> _liked = <String>{};
+  final Set<String> _mutes = <String>{};
   final Set<String> _reported = <String>{};
   final List<FeedPost> _posts = <FeedPost>[]; // newest first
   final Map<String, List<FeedComment>> _comments = <String, List<FeedComment>>{};
@@ -290,6 +303,11 @@ class MockFeedRepository implements FeedRepository {
   ApiException _err(int status, String code, [int? retryAfter]) =>
       ApiException(status: status, code: code, message: code, retryAfterSeconds: retryAfter);
 
+  /// Posts this viewer can see: muted suppliers are hidden (not for their own).
+  List<FeedPost> _visible() => _posts
+      .where((p) => !_mutes.contains(p.supplierId) || p.supplierId == _supplierId())
+      .toList();
+
   FeedPost _view(FeedPost p) => p.copyWith(viewerLiked: _liked.contains(p.id));
 
   FeedPost _find(String id) {
@@ -326,7 +344,7 @@ class MockFeedRepository implements FeedRepository {
   }
 
   List<FeedPost> _trendingOrder() {
-    final l = List<FeedPost>.of(_posts);
+    final l = _visible();
     int score(FeedPost p) => p.likeCount + 2 * p.commentCount;
     l.sort((a, b) {
       final c = score(b).compareTo(score(a));
@@ -351,7 +369,7 @@ class MockFeedRepository implements FeedRepository {
   @override
   Future<FeedPage<FeedPost>> home({String? cursor, int limit = kFeedPageSize}) async {
     await _wait();
-    final followed = _posts.where((p) => _follows.contains(p.supplierId)).toList();
+    final followed = _visible().where((p) => _follows.contains(p.supplierId)).toList();
     final wantFollowing = cursor == null || cursor.isEmpty ? followed.isNotEmpty : cursor.startsWith('f:');
     if (wantFollowing) {
       final page = _slice(followed, _offset(cursor, 'f'), limit, 'f', source: FeedSource.following);
@@ -368,7 +386,7 @@ class MockFeedRepository implements FeedRepository {
   Future<FeedPage<FeedPost>> supplierPosts(String supplierId,
       {String? cursor, int limit = kFeedPageSize}) async {
     await _wait();
-    final mine = _posts.where((p) => p.supplierId == supplierId).toList();
+    final mine = _visible().where((p) => p.supplierId == supplierId).toList();
     final page = _slice(mine, _offset(cursor, 's'), limit, 's');
     return FeedPage<FeedPost>(
         items: page.items.map(_view).toList(), nextCursor: page.nextCursor);
@@ -450,6 +468,21 @@ class MockFeedRepository implements FeedRepository {
     await _wait();
     _follows.remove(supplierId);
     return _followState(supplierId);
+  }
+
+  @override
+  Future<MuteState> muteSupplier(String supplierId) async {
+    await _wait();
+    if (supplierId == _supplierId()) throw _err(422, 'cannot_mute_self');
+    _mutes.add(supplierId);
+    return MuteState(supplierId: supplierId, muted: true);
+  }
+
+  @override
+  Future<MuteState> unmuteSupplier(String supplierId) async {
+    await _wait();
+    _mutes.remove(supplierId);
+    return MuteState(supplierId: supplierId, muted: false);
   }
 
   @override

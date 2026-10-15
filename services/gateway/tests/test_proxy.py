@@ -10,7 +10,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"), ("/v1/hs/851713", "logistics"), ("/v1/compliance/countries", "logistics"), ("/v1/compliance/checklist", "logistics"), ("/v1/compliancex", None),
         ("/v1/countries", "geo"), ("/v1/trust/suppliers/sup_1", "trust"), ("/v1/trust/suppliers:batch", "trust"),
         ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/conversations/unread-total", "messaging"), ("/v1/conversations/conv_1/preferences", "messaging"), ("/v1/blocks/usr_1", "messaging"), ("/v1/blocksx", None), ("/v1/shipments", "tracking"),
-        ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
+        ("/v1/validate/container/X", "tracking"), ("/v1/references/detect", "tracking"), ("/v1/referencesx", None), ("/v1/hs/suggest", "logistics"), ("/v1/feed/mutes", "feed"), ("/v1/feed/mutes/sup_1", "feed"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
         ("/v1/feed/home", "feed"), ("/v1/feed/posts/post_1/like", "feed"), ("/v1/feed/trending", "feed"), ("/v1/feedx", None), ("/v1/admin/feed/posts", None),
         ("/v1/freight/requests/shp_1/quotes", "freight"), ("/v1/freight/forwarders/me", "freight"), ("/v1/freightx", None), ("/v1/admin/freight/applications", None),
@@ -36,7 +36,7 @@ def test_resolve(path, upstream):
         ("GET", "/v1/suppliers/s1/reviews", True), ("GET", "/v1/suppliers/s1/review-summary", True), ("POST", "/v1/suppliers/s1/reviews", False),
         ("POST", "/v1/deals/d1/reviews", False), ("PUT", "/v1/reviews/r1", False), ("DELETE", "/v1/reviews/r1", False), ("GET", "/v1/reviews/r1", False),
         ("POST", "/v1/reviews/r1/reply", False), ("POST", "/v1/reviews/r1/report", False), ("GET", "/v1/media/filesx", False),
-        ("GET", "/v1/feed/trending", True), ("GET", "/v1/feed/home", False), ("POST", "/v1/feed/trending", False), ("GET", "/v1/feed/posts/p1", False), ("GET", "/v1/feed/trending/x", False),
+        ("GET", "/v1/references/detect", False), ("GET", "/v1/hs/suggest", True), ("POST", "/v1/hs/suggest", False), ("GET", "/v1/feed/mutes", False), ("PUT", "/v1/feed/mutes/sup_1", False), ("DELETE", "/v1/feed/mutes/sup_1", False), ("GET", "/v1/feed/trending", True), ("GET", "/v1/feed/home", False), ("POST", "/v1/feed/trending", False), ("GET", "/v1/feed/posts/p1", False), ("GET", "/v1/feed/trending/x", False),
         ("GET", "/v1/freight/forwarders", False), ("POST", "/v1/freight/requests", False), ("GET", "/v1/freight/requests/x", False),
     ],
 )  # fmt: skip

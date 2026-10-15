@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/features/checklist/import_checklist_screen.dart';
 import 'package:factory_finder/features/freight/data/freight_prefill.dart';
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart';
@@ -53,6 +54,10 @@ class _FlakyRepo implements LogisticsRepository {
 
   @override
   Future<ListingPrefill?> prefill(String listingId) async => null;
+
+  @override
+  Future<List<HsSuggestion>> suggestHs(String q, {int limit = 5}) async =>
+      suggestMockHs(q, limit: limit);
 }
 
 Future<ProviderContainer> _pump(
@@ -310,5 +315,35 @@ void main() {
     expect(find.text('الكلفة الإجمالية (تقدير)'), findsWidgets);
     expect(find.text('مستوى الثقة: منخفض'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  test('checklistLocation carries destination country and incoterm', () {
+    final q = _gen(_req(incoterm: Incoterm.cif));
+    expect(checklistLocation(q, Incoterm.cif), '/import-checklist?country=IQ&incoterm=CIF');
+    expect(checklistLocation(q, null), '/import-checklist?country=IQ');
+  });
+
+  testWidgets('results show the checklist CTA', (tester) async {
+    await _pump(tester, quote: _gen(_req()), request: _req());
+    expect(find.byKey(k('results_checklist_cta')), findsOneWidget);
+    expect(find.text('Import documents checklist'), findsOneWidget);
+  });
+
+  testWidgets('checklist CTA opens the import checklist', (tester) async {
+    final q = _gen(_req());
+    await pumpApp(
+      tester,
+      location: '/logistics/results',
+      overrides: [
+        lastQuoteProvider.overrideWith((ref) => q),
+        lastQuoteRequestProvider.overrideWith((ref) => _req()),
+      ],
+    );
+    await settle(tester, frames: 3);
+    await tester.ensureVisible(find.byKey(k('results_checklist_cta')));
+    await tester.tap(find.byKey(k('results_checklist_cta')));
+    await settle(tester, frames: 4);
+    expect(find.byType(ImportChecklistScreen), findsOneWidget);
+    await disposeApp(tester);
   });
 }

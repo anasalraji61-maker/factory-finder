@@ -28,7 +28,7 @@ gateway :8000, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifi
 | Contracts | `scripts/contract_check.py` (routes) and `scripts/contract_validate.py` (238 responses, 0 drift) run locally and in CI. |
 | End to end | `scripts/e2e.py` 35 steps through the gateway (local processes); extended e2e passes. `make compose-e2e` has never been run in a real Docker environment. |
 | PostgreSQL 16 | Verified 2026-10-15 (`docs/fixes/postgres-verification-2026-10.md`): all 11 Alembic services upgrade/downgrade/`alembic check` clean; every suite re-run on real PG paths (FOR UPDATE, advisory locks, JSONB); one real bug found and fixed (notifications `mark_alerts_read`). Gateway has no Alembic (create_all only). Not verified: multi-replica concurrency, connection pool, `pg_dump` restore, `FF_ENV=production` + TLS URLs, compose `pg` profile. |
-| Flutter app | Never compiled locally (no SDK here). CI only compiles/analyzes/tests and builds a debug APK. `android/` and `ios/` platform folders are not committed (`flutter create .` needed); no real-device run yet. |
+| Flutter app | Never compiled locally (no SDK here). Mobile CI is now green (analyze + 1100+ tests) and builds a debug APK. `android/` and `ios/` platform folders are not committed (`flutter create .` needed); no real-device run yet. |
 | Docker images / compose | `docker compose config` validated only; images never built here. |
 | Real providers | Alibaba, freight rates, tracking, TronGrid, FCM/SMTP: skeletons, off by default, wire shapes UNVERIFIED. |
 | Supply chain | `docs/fixes/supply-chain-review-2026-10.md`: no secrets in tree, pip-audit clean after raising floors, Docker hardening, workflow permissions. `.github/dependabot.yml` (weekly: actions, pip per service, docker, pub); `make audit` runs pip-audit per module (non-fatal, skipped if not installed). Actions are not yet SHA-pinned (`docs/requests/infra-pin-actions.md`). |
@@ -94,7 +94,20 @@ Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `paymen
 - **الإنتاج**: حراس تفشل-مغلقة (fail-closed) عند `FF_ENV=production` (التوكنات ومفاتيح التجزئة والتوقيع، وإيقاف صفحات التوثيق)، و`docker-compose.prod.yml`.
 - **الاختبارات**: 4 سكربتات e2e (`e2e`، `e2e-extended`، `e2e-scenarios`، `e2e-privacy`) وأمثلة العقود (`make contract-examples`)، وإعادة التحقق من PostgreSQL (`docs/fixes/postgres-verification-2026-10.md`).
 
+**جديد اليوم (دفعة لاحقة)**
+- **التطبيق**: CI الخاص بالموبايل أصبح أخضر (أكثر من 1100 اختبار).
+- **المنتج**: اقتراح رمز HS (HS suggest)، كشف نوع المرجع (reference detect) في التتبع، كتم المنشورات في الخلاصة (feed mutes)، تجنّب المضائق البحرية (chokepoint avoid)، وقائمة تحقق الاستيراد (import checklist).
+- **الإدارة والدفع**: طابور مراجعة المدفوعات في لوحة المشرف (payments review admin queue).
+- **الأمان والتشغيل**: خنق التسجيل (register throttle)، فحص انحراف المراقبة (obs drift check)، `make compose-check`، `make secrets-scan`، `contract-lint`، واختبارات سجل الامتثال (compliance registry).
+- **الإشعارات والبيانات**: إلغاء تسجيل رمز الدفع (push token unregister)، ترقيم RFQ بالمفتاح (keyset pagination)، وسقف الإشعارات على مستوى قاعدة البيانات (DB-level notification cap).
+
 **مفتوح بصراحة**
+- contract-lint: بقي 72 ملاحظة.
+- خمسة ملفات `.whl` مرفوعة (tracked) في `packages/py-common` وينبغي إزالتها من المستودع.
+- قرار مطلوب: هل نكشف `/metrics`؟ (لم يُحسم).
+- قرار مطلوب: حد تأخر التتبع 12 ساعة أم 24 ساعة.
+- تعداد الحسابات عند التسجيل (registration enumeration): بقي أثر متبقٍّ.
+- RFQ: يوصى بجعل `require_both_invoices` مفعّلاً (true) في الإنتاج.
 - إجراءات GitHub غير مثبّتة بـ SHA (`docs/requests/infra-pin-actions.md`).
 - المحولات الحقيقية هياكل مبنية على بيانات اصطناعية ولم تُجرَّب على واجهات حقيقية.
 - جداول الرسوم الجمركية مؤكدة جزئياً فقط.

@@ -138,3 +138,10 @@ Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env na
 | `FF_GATEWAY_DELETION_WORKER_INTERVAL_SECONDS` | 60.0 |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start unless `FF_GATEWAY_JWT_SECRET` and `FF_GATEWAY_ADMIN_TOKEN` are set (see `docs/OPS.md`).
+
+## Passthroughs: references, feed mutes, HS suggest
+
+- `GET /v1/references/detect` -> tracking (bearer required, like `/v1/validate`; `X-User-Id` injected).
+- `GET|PUT|DELETE /v1/feed/mutes[/{supplier_id}]` -> feed (bearer required; `X-User-Id` injected, `X-Supplier-Id` only when the claim is verified).
+- `GET /v1/hs/suggest` -> logistics (covered by the public `GET /v1/hs` policy).
+- `GET /v1/requests` forwards all query params (incl. `cursor`) unchanged.

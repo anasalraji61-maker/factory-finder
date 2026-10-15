@@ -1,6 +1,6 @@
 # Request: gateway passthrough for tracking reference detection
 
-From: tracking. To: gateway. Status: open (tracking side done).
+From: tracking. To: gateway. Status: DONE (gateway routes `/v1/references`; bearer required).
 
 tracking now serves `GET /v1/references/detect?q=` (additive, `contracts/openapi/tracking.yaml`). The gateway route table
 (`services/gateway/src/ff_gateway/domain/routing.py`) maps `/v1/shipments` and `/v1/validate` to `tracking` but has no entry

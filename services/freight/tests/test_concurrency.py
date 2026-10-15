@@ -27,7 +27,7 @@ class Boot:
         await self.cm.__aexit__(*a)
 
     async def forwarder(self, user):
-        r = await self.c.post("/v1/freight/applications", headers=uh(user), json=APP)
+        r = await self.c.post("/v1/freight/applications", headers=uh(user), json={**APP, "company_name": f"Gulf Star {user}"})
         assert r.status_code == 201, r.text
         a = await self.c.post(f"/v1/admin/freight/applications/{r.json()['id']}/approve", headers=ADM)
         assert a.status_code == 200, a.text

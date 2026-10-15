@@ -66,7 +66,7 @@ def test_forwarder_identity_comes_only_from_approved_table(client):
     # a pending application is not an identity either
     from conftest import APP
 
-    client.post("/v1/freight/applications", headers=uh("mallory"), json=APP)
+    client.post("/v1/freight/applications", headers=uh("mallory"), json={**APP, "company_name": "Mallory Freight"})
     assert client.post(f"/v1/freight/requests/{req['id']}/quotes", headers=spoof, json=QUOTE).status_code == 403
     # approving mallory's application does not let someone else use mallory's forwarder id
     fid = make_forwarder(client, "alice")

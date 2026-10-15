@@ -9,6 +9,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ff_freight.moderation import REPORT_REASONS
+from ff_freight.service_keys import MAX_ATTACHMENTS, check_attachment_url
 
 USER_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,128}$")
 ID_RE = re.compile(r"^[A-Za-z0-9_\-]{1,40}$")
@@ -94,6 +95,12 @@ class ApplicationCreate(_ProfileFields):
     modes: Annotated[list[Mode], Field(min_length=1, max_length=4)]
     incoterms: Annotated[list[Incoterm], Field(min_length=1, max_length=11)]
     certifications: Annotated[list[Annotated[str, Field(max_length=60)]], Field(max_length=10)] = []
+    attachments: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=MAX_ATTACHMENTS)] = []
+
+    @field_validator("attachments")
+    @classmethod
+    def _att(cls, v):
+        return _dedupe([check_attachment_url(x) for x in v])
 
     @field_validator("company_name")
     @classmethod

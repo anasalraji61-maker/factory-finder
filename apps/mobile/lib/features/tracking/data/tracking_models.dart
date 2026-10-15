@@ -408,3 +408,53 @@ class ReferenceCheck {
     );
   }
 }
+
+/// Confidence of a [ReferenceCandidate] (GET /v1/references/detect).
+enum DetectConfidence { high, medium, low }
+
+/// One guess of what kind of reference the user is typing.
+class ReferenceCandidate {
+  const ReferenceCandidate({
+    required this.type,
+    required this.confidence,
+    this.normalized = '',
+    this.note = '',
+  });
+
+  final ReferenceType type;
+  final DetectConfidence confidence;
+  final String normalized;
+  final String note;
+
+  /// Parses one candidate; null when the type is missing or unknown.
+  static ReferenceCandidate? tryParse(Object? json) {
+    if (json is! Map) return null;
+    final t = json['type']?.toString();
+    if (t != 'container' && t != 'bl' && t != 'awb' && t != 'vessel_imo') return null;
+    final DetectConfidence c;
+    switch (json['confidence']?.toString()) {
+      case 'high':
+        c = DetectConfidence.high;
+      case 'medium':
+        c = DetectConfidence.medium;
+      default:
+        c = DetectConfidence.low;
+    }
+    return ReferenceCandidate(
+      type: ReferenceTypeX.parse(t),
+      confidence: c,
+      normalized: (json['normalized'] ?? '').toString(),
+      note: (json['note'] ?? '').toString(),
+    );
+  }
+
+  /// Parses `{candidates: [...]}`; anything malformed yields an empty list.
+  static List<ReferenceCandidate> parseAll(Object? json) {
+    final raw = json is Map ? json['candidates'] : null;
+    if (raw is! List) return const [];
+    return [
+      for (final e in raw)
+        if (tryParse(e) != null) tryParse(e)!,
+    ];
+  }
+}

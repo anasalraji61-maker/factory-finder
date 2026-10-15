@@ -14,6 +14,9 @@ abstract class TrackingRepository {
 
   /// Best-effort reference check with did-you-mean and carrier hints.
   Future<ReferenceCheck> validate(ReferenceType type, String reference);
+
+  /// Guesses the reference type from free text (GET /v1/references/detect).
+  Future<List<ReferenceCandidate>> detect(String query);
 }
 
 class LiveTrackingRepository implements TrackingRepository {
@@ -63,6 +66,12 @@ class LiveTrackingRepository implements TrackingRepository {
     }
     return ReferenceCheck.fromJson(Map<String, dynamic>.from(data));
   }
+
+  @override
+  Future<List<ReferenceCandidate>> detect(String query) async =>
+      ReferenceCandidate.parseAll(await _api.get('/v1/references/detect', query: {
+        'q': query.length > 64 ? query.substring(0, 64) : query,
+      }));
 
   @override
   Future<Shipment> refresh(String id) async {
@@ -302,6 +311,10 @@ class MockTrackingRepository implements TrackingRepository {
       carrierSuggestion: carrier,
     );
   }
+
+  @override
+  Future<List<ReferenceCandidate>> detect(String query) async =>
+      detectReferenceLocally(query);
 
   /// Mock refresh advances the journey by one step until delivered.
   @override

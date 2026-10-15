@@ -55,6 +55,9 @@ class FakeTrackingRepository implements TrackingRepository {
   @override
   Future<ReferenceCheck> validate(ReferenceType type, String reference) async =>
       ReferenceCheck(valid: true, normalized: reference);
+
+  @override
+  Future<List<ReferenceCandidate>> detect(String query) async => const [];
 }
 
 ApiException _api(int status, String code) =>

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -26,9 +28,12 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
   bool _touched = false;
   List<String> _suggestions = const [];
   CarrierSuggestion? _carrierGuess;
+  List<ReferenceCandidate> _detected = const [];
+  Timer? _detectTimer;
 
   @override
   void dispose() {
+    _detectTimer?.cancel();
     _ref.dispose();
     _carrier.dispose();
     super.dispose();
@@ -60,10 +65,33 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
     }
   }
 
+  /// Debounced (400 ms) type detection for 4+ characters. Informational only:
+  /// failures and slow answers never block or change the submission.
+  void _scheduleDetect() {
+    _detectTimer?.cancel();
+    final text = _ref.text.trim();
+    if (text.length < 4) {
+      if (_detected.isNotEmpty) setState(() => _detected = const []);
+      return;
+    }
+    _detectTimer = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final found = await ref.read(trackingRepositoryProvider).detect(text);
+        if (!mounted || _ref.text.trim() != text) return;
+        setState(() => _detected = found.where((c) => c.confidence != DetectConfidence.low).toList());
+      } catch (_) {
+        if (mounted && _ref.text.trim() == text && _detected.isNotEmpty) {
+          setState(() => _detected = const []);
+        }
+      }
+    });
+  }
+
   void _applySuggestion(String value) {
     _ref.text = value;
     _touched = true;
     _revalidate();
+    _scheduleDetect();
     _fetchHints();
   }
 
@@ -150,6 +178,7 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
                 onChanged: (_) {
                   _touched = true;
                   _revalidate();
+                  _scheduleDetect();
                 },
                 onEditingComplete: () {
                   FocusScope.of(context).nextFocus();
@@ -162,6 +191,29 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
                 ),
               ),
             ),
+            if (_detected.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final c in _detected)
+                    ActionChip(
+                      key: Key('detected_${c.type.wire}'),
+                      avatar: const Icon(Icons.auto_awesome, size: 16),
+                      label: Text(
+                        c.confidence == DetectConfidence.high
+                            ? context.tr(typeKey(c.type))
+                            : context.tr('tracking.detect.probable', {'t': context.tr(typeKey(c.type))}),
+                      ),
+                      onPressed: () {
+                        _type = c.type;
+                        _revalidate();
+                      },
+                    ),
+                ],
+              ),
+            ],
             if (_suggestions.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(context.tr('tracking.did_you_mean')),

@@ -72,6 +72,11 @@ APP = {
 
 def make_forwarder(client, user="fwd_user1", **over):
     """Apply + admin-approve; returns the forwarder id."""
+    if "company_name" not in over:  # names are unique per country: first forwarder keeps the plain name
+        n = getattr(client, "_ff_made", 0)
+        client._ff_made = n + 1
+        if n:
+            over["company_name"] = f"{APP['company_name']} {n}"
     r = client.post("/v1/freight/applications", headers=uh(user), json={**APP, **over})
     assert r.status_code == 201, r.text
     a = client.post(f"/v1/admin/freight/applications/{r.json()['id']}/approve", headers=ADM)

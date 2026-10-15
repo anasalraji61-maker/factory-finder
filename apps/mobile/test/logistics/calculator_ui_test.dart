@@ -36,6 +36,10 @@ class _FlakyRepo implements LogisticsRepository {
 
   @override
   Future<ListingPrefill?> prefill(String listingId) async => null;
+
+  @override
+  Future<List<HsSuggestion>> suggestHs(String q, {int limit = 5}) async =>
+      suggestMockHs(q, limit: limit);
 }
 
 Finder _fields() => find.byType(TextField);
@@ -211,6 +215,37 @@ void main() {
     await settle(tester, frames: 6);
     expect(find.byKey(k('calc_prefill_failed')), findsOneWidget);
     expect(_text(tester, 0), '');
+    await disposeApp(tester);
+  });
+
+  testWidgets('HS suggest shows up to 5 indicative chips that fill the field', (tester) async {
+    await pumpApp(tester, location: '/logistics/calculator');
+    await tester.enterText(_fields().at(4), 'steel');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(k('hs_suggest_button')));
+    await tester.tap(find.byKey(k('hs_suggest_button')));
+    await settle(tester, frames: 6);
+    expect(find.byKey(k('hs-suggest-721420')), findsOneWidget);
+    expect(find.byKey(k('hs-suggest-720836')), findsOneWidget);
+    expect(find.byKey(k('hs_suggest_note')), findsOneWidget);
+    expect(find.textContaining('ليست تصنيفاً جمركياً رسمياً'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(k('hs-suggest-720836')));
+    await tester.tap(find.byKey(k('hs-suggest-720836')));
+    await settle(tester, frames: 6);
+    expect(_text(tester, 4), '720836');
+    expect(find.byKey(k('hs-suggest-721420')), findsNothing);
+    await disposeApp(tester);
+  });
+
+  testWidgets('HS suggest with no match says so', (tester) async {
+    await pumpApp(tester, location: '/logistics/calculator');
+    await tester.enterText(_fields().at(4), 'zzzz');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(k('hs_suggest_button')));
+    await tester.tap(find.byKey(k('hs_suggest_button')));
+    await settle(tester, frames: 6);
+    expect(find.byKey(k('hs_suggest_empty')), findsOneWidget);
     await disposeApp(tester);
   });
 }

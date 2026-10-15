@@ -177,6 +177,8 @@ FeedErrorText describeFeedError(Object e) {
       return const FeedErrorText('feed.err.comment_limit');
     case 'cannot_follow_self':
       return const FeedErrorText('feed.err.follow_self');
+    case 'cannot_mute_self':
+      return const FeedErrorText('feed.err.mute_self');
     case 'cannot_report_own':
       return const FeedErrorText('feed.err.report_own');
     case 'not_found':

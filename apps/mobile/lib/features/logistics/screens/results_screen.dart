@@ -15,6 +15,7 @@ import 'package:factory_finder/features/logistics/screens/sensitivity_section.da
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 const Map<String, Color> _stageColors = {
   'goods': Color(0xFF94A3B8),
@@ -307,6 +308,21 @@ class _QuoteView extends StatelessWidget {
             ),
         FreightQuoteButton(quote: quote),
         const SizedBox(height: AppSpacing.sm),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: ListTile(
+            key: const ValueKey<String>('results_checklist_cta'),
+            leading: const Icon(Icons.checklist_rtl_outlined),
+            title: Text(
+              context.tr('logistics.results.checklist_cta'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            subtitle: Text(context.tr('logistics.results.checklist_cta_sub')),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(checklistLocation(quote, incoterm)),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         if (quote.assumptions.isNotEmpty) ...[
           Text(
             context.tr('logistics.results.assumptions'),
@@ -329,6 +345,17 @@ class _QuoteView extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Deep link to the import checklist for the quote's destination and incoterm.
+String checklistLocation(LandedCostQuote quote, Incoterm? incoterm) {
+  final cc = quote.destination?.countryCode;
+  final params = <String, String>{
+    if (cc != null && cc.isNotEmpty) 'country': cc,
+    if (incoterm != null) 'incoterm': incoterm.json,
+  };
+  return Uri(path: '/import-checklist', queryParameters: params.isEmpty ? null : params)
+      .toString();
 }
 
 /// Estimate / confidence / as-of chips plus the honest range note.

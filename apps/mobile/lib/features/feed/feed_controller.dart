@@ -413,6 +413,15 @@ final followingProvider = StateNotifierProvider<FollowingController, FollowingSt
   ),
 );
 
+// -- muted suppliers ------------------------------------------------------
+
+/// Suppliers the viewer muted in this session (optimistic; the server is the
+/// source of truth for what its lists contain). Reset when the user changes.
+final mutedSuppliersProvider = StateProvider<Set<String>>((ref) {
+  ref.watch(authProvider.select((m) => m?.id));
+  return const <String>{};
+});
+
 // -- actions --------------------------------------------------------------
 
 bool _isGone(Object e) => e is ApiException && (e.status == 404 || e.code == 'not_found');
@@ -422,6 +431,7 @@ class FeedActions {
 
   final Ref _ref;
   final Set<String> _liking = <String>{};
+  final Set<String> _muting = <String>{};
 
   FeedRepository get _repo => _ref.read(feedRepositoryProvider);
   PostStore get _store => _ref.read(feedPostStoreProvider.notifier);
@@ -456,6 +466,35 @@ class FeedActions {
       rethrow;
     } finally {
       _liking.remove(postId);
+    }
+  }
+
+  /// Optimistic mute / unmute. The supplier's posts leave (or return to) the
+  /// lists at once; on failure the previous state is restored and the error
+  /// rethrown. Taps while a request for the same supplier is in flight are ignored.
+  Future<void> toggleMute(String supplierId) async {
+    if (supplierId.isEmpty || !_muting.add(supplierId)) return;
+    final notifier = _ref.read(mutedSuppliersProvider.notifier);
+    final was = notifier.state.contains(supplierId);
+    void put(bool muted) {
+      final next = Set<String>.of(notifier.state);
+      muted ? next.add(supplierId) : next.remove(supplierId);
+      notifier.state = next;
+    }
+
+    put(!was);
+    try {
+      final s = was ? await _repo.unmuteSupplier(supplierId) : await _repo.muteSupplier(supplierId);
+      put(s.muted);
+      // Server-side lists changed: reload them (unmuting brings posts back).
+      _ref.invalidate(feedListProvider('home'));
+      _ref.invalidate(feedListProvider('trending'));
+      _ref.invalidate(feedListProvider('sup:$supplierId'));
+    } catch (_) {
+      put(was);
+      rethrow;
+    } finally {
+      _muting.remove(supplierId);
     }
   }
 

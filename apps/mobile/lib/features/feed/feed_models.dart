@@ -195,6 +195,19 @@ class LikeState {
   }
 }
 
+/// Response of PUT / DELETE /v1/feed/mutes/{supplier_id}.
+class MuteState {
+  const MuteState({required this.supplierId, required this.muted});
+
+  final String supplierId;
+  final bool muted;
+
+  factory MuteState.fromJson(Object? json) {
+    final m = json is Map ? json : const <String, dynamic>{};
+    return MuteState(supplierId: (m['supplier_id'] ?? '').toString(), muted: m['muted'] == true);
+  }
+}
+
 /// Entry of GET /v1/feed/following.
 class FollowedSupplier {
   const FollowedSupplier({required this.supplierId, this.followedAt});

@@ -17,6 +17,7 @@ from ff_freight import cursor as cur
 from ff_freight.config import Settings
 from ff_freight.db import (
     applications,
+    audit_log,
     forwarder_lanes,
     forwarders,
     now,
@@ -38,6 +39,7 @@ from ff_freight.schemas import (
     csv_key,
     csv_list,
 )
+from ff_freight.service_keys import completeness, name_key
 
 R = shipment_requests
 Q2 = Decimal("0.01")
@@ -191,6 +193,11 @@ class FreightService:
             "completed_jobs": r.completed_count,
             "verified_at": _iso(r.verified_at),
             "created_at": _iso(r.created_at),
+            "profile_completeness": completeness(
+                company_name=r.company_name, country_code=r.country_code, description=r.description,
+                lanes=lanes, modes=csv_list(r.modes), incoterms=csv_list(r.incoterms),
+                certifications=r.certifications,
+            ),
         }
         if private or admin:
             d["status"] = r.status
@@ -223,6 +230,7 @@ class FreightService:
             "modes": csv_list(r.modes),
             "incoterms": csv_list(r.incoterms),
             "certifications": r.certifications,
+            "attachments": r.attachments or [],
             "status": r.status,
             "review_note": r.review_note,
             "forwarder_id": r.forwarder_id,
@@ -299,6 +307,14 @@ class FreightService:
             d |= {"visibility": r.visibility, "hidden_reason": r.hidden_reason, "report_count": r.report_count}
         return d
 
+    async def _audit(self, c, action: str, target_type: str, target_id: str, detail: str | None, t) -> None:
+        await c.execute(
+            insert(audit_log).values(
+                id=_new_id("aud"), actor="admin", action=action, target_type=target_type, target_id=target_id,
+                detail=(detail or None) and detail[:300], created_at=t,
+            )
+        )
+
     # ------------------------------------------------------------------ identity
     async def _forwarder_of(self, c, user: str):
         return (await c.execute(select(forwarders).where(forwarders.c.user_id == user))).first()
@@ -335,6 +351,20 @@ class FreightService:
             raise Conflict("Application limit reached; contact support", code="application_limit_reached")
         if len(body.lanes) > self.s.max_lanes_per_forwarder:
             raise Invalid("Too many lanes", code="lane_limit_exceeded")
+        key = name_key(body.company_name, body.country_code)
+        async with self.engine.connect() as c:
+            dup = await c.scalar(
+                select(func.count()).select_from(applications).where(
+                    applications.c.name_key == key, applications.c.user_id != user,
+                    applications.c.status.in_(("pending", "approved")),
+                )
+            ) or await c.scalar(
+                select(func.count()).select_from(forwarders).where(
+                    forwarders.c.name_key == key, forwarders.c.user_id != user
+                )
+            )
+        if dup:
+            raise Conflict("A company with this name already applied or is registered", code="duplicate_company")
         await self._rate(user, "applications")
         self._screen(
             {
@@ -352,7 +382,8 @@ class FreightService:
                         description=body.description,
                         lanes=[[x.origin_country, x.destination_country] for x in body.lanes],
                         modes=csv_key(body.modes), incoterms=csv_key(body.incoterms),
-                        certifications=body.certifications, status="pending", created_at=t,
+                        certifications=body.certifications, attachments=body.attachments, name_key=key,
+                        status="pending", created_at=t,
                     )  # fmt: skip
                 )
                 r = (await c.execute(select(applications).where(applications.c.id == aid))).one()
@@ -1139,10 +1170,12 @@ class FreightService:
                 insert(forwarders).values(
                     id=fid, user_id=a.user_id, company_name=a.company_name, country_code=a.country_code,
                     description=a.description, modes=a.modes, incoterms=a.incoterms,
-                    certifications=a.certifications, status="active", rating_sum=0, rating_count=0,
+                    certifications=a.certifications, name_key=a.name_key, status="active", rating_sum=0,
+                    rating_count=0,
                     completed_count=0, verified_at=t, created_at=t,
                 )  # fmt: skip
             )
+            await self._audit(c, "approve", "application", app_id, note, t)
             lanes = sorted({(o, d) for o, d in a.lanes})
             await c.execute(
                 insert(forwarder_lanes),
@@ -1167,6 +1200,7 @@ class FreightService:
                 )
                 if not res.rowcount:
                     raise Conflict("The application was reviewed concurrently; retry", code="already_reviewed")
+                await self._audit(c, "reject", "application", app_id, reason, t)
                 a = (await c.execute(select(applications).where(applications.c.id == app_id))).one()
         return self._application(a, admin=True)
 
@@ -1182,9 +1216,13 @@ class FreightService:
         return self._page_of(rows, limit, lambda r: self._forwarder(r, lanes[r.id], admin=True))
 
     async def admin_set_forwarder(self, fid: str, suspend: bool, reason: str | None) -> dict:
+        t = self.clock()
         async with self.engine.begin() as c:
-            if not (await c.scalar(select(func.count()).select_from(forwarders).where(forwarders.c.id == fid))):
+            before = (await c.execute(select(forwarders.c.status).where(forwarders.c.id == fid))).first()
+            if before is None:
                 raise NotFound("Forwarder not found")
+            if (before.status == "suspended") != suspend:  # audit real transitions only
+                await self._audit(c, "suspend" if suspend else "reinstate", "forwarder", fid, reason, t)
             vals = (
                 {"status": "suspended", "status_reason": f"admin: {reason}"[:300]}
                 if suspend

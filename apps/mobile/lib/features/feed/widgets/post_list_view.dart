@@ -34,9 +34,12 @@ class PostListView extends ConsumerWidget {
     // 404) disappear from the list; rebuild only when that count changes.
     ref.watch(feedPostStoreProvider.select((m) => raw.ids.where(m.containsKey).length));
     final known = ref.read(feedPostStoreProvider);
-    final st = raw.ids.every(known.containsKey)
-        ? raw
-        : raw.copyWith(ids: raw.ids.where(known.containsKey).toList());
+    // Optimistic mute: posts of muted suppliers leave the list at once.
+    final muted = ref.watch(mutedSuppliersProvider);
+    final shown = raw.ids
+        .where((id) => known.containsKey(id) && !muted.contains(known[id]!.supplierId))
+        .toList();
+    final st = shown.length == raw.ids.length ? raw : raw.copyWith(ids: shown);
 
     // Banner when the personalised feed fell back to trending.
     final showFallback = listKey == 'home' && st.source == FeedSource.trending && st.ids.isNotEmpty;

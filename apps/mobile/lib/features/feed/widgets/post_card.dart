@@ -22,6 +22,19 @@ Future<void> reportPostFlow(BuildContext context, WidgetRef ref, String postId) 
   if (sent && context.mounted) showFeedSnack(context, context.tr('feed.report.done'));
 }
 
+/// Mutes / unmutes the supplier (optimistic, rolled back on error).
+Future<void> toggleMuteFlow(BuildContext context, WidgetRef ref, String supplierId) async {
+  final wasMuted = ref.read(mutedSuppliersProvider).contains(supplierId);
+  try {
+    await ref.read(feedActionsProvider).toggleMute(supplierId);
+    if (context.mounted) {
+      showFeedSnack(context, context.tr(wasMuted ? 'feed.unmuted' : 'feed.muted'));
+    }
+  } catch (e) {
+    if (context.mounted) showFeedError(context, e);
+  }
+}
+
 /// Deletes an own post after confirmation. Returns true when it was deleted.
 Future<bool> deletePostFlow(BuildContext context, WidgetRef ref, String postId) async {
   final ok = await confirmFeedAction(
@@ -89,6 +102,7 @@ class PostCard extends ConsumerWidget {
     final supplier = ref.watch(supplierProvider(post.supplierId));
     final theme = Theme.of(context);
     final secondary = AppColors.secondaryOf(context);
+    final isMuted = ref.watch(mutedSuppliersProvider.select((m) => m.contains(post.supplierId)));
     final mine = me?.supplierId != null && me?.supplierId == post.supplierId;
     final name = supplier.maybeWhen(data: (s) => s.name, orElse: () => post.supplierId);
     final verified = supplier.maybeWhen(data: (s) => s.verified, orElse: () => false);
@@ -156,6 +170,8 @@ class PostCard extends ConsumerWidget {
                   onSelected: (v) async {
                     if (v == 'report') {
                       await reportPostFlow(context, ref, post.id);
+                    } else if (v == 'mute') {
+                      await toggleMuteFlow(context, ref, post.supplierId);
                     } else if (v == 'delete') {
                       final done = await deletePostFlow(context, ref, post.id);
                       if (done && detail && context.mounted && context.canPop()) context.pop();
@@ -166,6 +182,11 @@ class PostCard extends ConsumerWidget {
                       PopupMenuItem<String>(
                         value: 'report',
                         child: Text(context.tr('feed.report.action')),
+                      ),
+                    if (!mine)
+                      PopupMenuItem<String>(
+                        value: 'mute',
+                        child: Text(context.tr(isMuted ? 'feed.unmute' : 'feed.mute')),
                       ),
                     if (mine)
                       PopupMenuItem<String>(

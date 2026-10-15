@@ -56,6 +56,56 @@ final Map<String, ListingPrefill> mockPrefills = {
   'lst_024': _pf('Used Metal Stamping Press 160T', 13250, 1, 8500, 14, Incoterm.exw, 'US', 'Chicago', '846299'),
 };
 
+/// One indicative HS heading from GET /v1/hs/suggest. Guidance only, never an
+/// official classification.
+class HsSuggestion {
+  const HsSuggestion({
+    required this.hs6,
+    this.descriptionEn = '',
+    this.descriptionAr = '',
+    this.confidence = 'low',
+  });
+
+  final String hs6;
+  final String descriptionEn;
+  final String descriptionAr;
+  final String confidence;
+
+  String description(String languageCode) =>
+      languageCode == 'ar' && descriptionAr.isNotEmpty ? descriptionAr : descriptionEn;
+
+  factory HsSuggestion.fromJson(Map<String, dynamic> j) => HsSuggestion(
+        hs6: (j['hs6'] ?? '').toString(),
+        descriptionEn: (j['description_en'] ?? '').toString(),
+        descriptionAr: (j['description_ar'] ?? '').toString(),
+        confidence: (j['confidence'] ?? 'low').toString(),
+      );
+}
+
+/// Tiny deterministic table for mock mode and tests: (keywords, suggestion).
+const List<(List<String>, HsSuggestion)> kMockHsSuggestions = [
+  (['earbud', 'headphone', 'headset', 'سماعة', 'سماعات'], HsSuggestion(hs6: '851830', descriptionEn: 'Headphones and earphones', descriptionAr: 'سماعات رأس وأذن', confidence: 'medium')),
+  (['led', 'lamp', 'light', 'مصباح', 'إنارة'], HsSuggestion(hs6: '940540', descriptionEn: 'Electric lamps and lighting fittings', descriptionAr: 'مصابيح وتجهيزات إنارة كهربائية')),
+  (['shirt', 'cotton', 'قميص', 'قطن'], HsSuggestion(hs6: '610910', descriptionEn: 'T-shirts, knitted, of cotton', descriptionAr: 'قمصان تي شيرت قطنية', confidence: 'medium')),
+  (['chair', 'seat', 'كرسي'], HsSuggestion(hs6: '940130', descriptionEn: 'Swivel seats with variable height', descriptionAr: 'كراسي دوّارة قابلة لتعديل الارتفاع')),
+  (['steel', 'iron', 'rebar', 'حديد', 'صلب'], HsSuggestion(hs6: '721420', descriptionEn: 'Bars and rods of iron or steel', descriptionAr: 'قضبان وأسياخ حديد')),
+  (['steel', 'coil', 'sheet', 'صلب'], HsSuggestion(hs6: '720836', descriptionEn: 'Flat-rolled iron or steel, hot-rolled', descriptionAr: 'حديد أو صلب مسطّح مدرفل على الساخن')),
+  (['aluminum', 'aluminium', 'ألمنيوم'], HsSuggestion(hs6: '760110', descriptionEn: 'Unwrought aluminium, not alloyed', descriptionAr: 'ألمنيوم خام غير مخلوط')),
+  (['machine', 'molding', 'injection', 'ماكينة', 'آلة'], HsSuggestion(hs6: '847710', descriptionEn: 'Injection-moulding machines', descriptionAr: 'آلات حقن القوالب')),
+  (['plastic', 'film', 'resin', 'بلاستيك'], HsSuggestion(hs6: '392190', descriptionEn: 'Plastic plates, sheets and film', descriptionAr: 'ألواح وصفائح وأغشية بلاستيكية')),
+  (['watch', 'ساعة'], HsSuggestion(hs6: '910212', descriptionEn: 'Wrist-watches, electronic display', descriptionAr: 'ساعات يد إلكترونية')),
+];
+
+/// Pure mock suggestion lookup: keyword substring match, table order, capped.
+List<HsSuggestion> suggestMockHs(String q, {int limit = 5}) {
+  final text = q.trim().toLowerCase();
+  if (text.isEmpty) return const [];
+  return [
+    for (final e in kMockHsSuggestions)
+      if (e.$1.any(text.contains) || e.$1.any((k) => k.contains(text))) e.$2,
+  ].take(limit).toList();
+}
+
 class LogisticsRepository {
   LogisticsRepository(this._api, {DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
 
@@ -71,6 +121,21 @@ class LogisticsRepository {
     }
     final json = await _api.post('/v1/quotes/landed-cost', body: r.toJson());
     return LandedCostQuote.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// Indicative HS headings for a free-text goods description (max [limit]).
+  Future<List<HsSuggestion>> suggestHs(String q, {int limit = 5}) async {
+    if (_api.isMock) {
+      await mockDelay(120);
+      return suggestMockHs(q, limit: limit);
+    }
+    final json = await _api.get('/v1/hs/suggest', query: {'q': q, 'limit': limit});
+    final items = (Map<String, dynamic>.from(json as Map)['items'] as List?) ?? const [];
+    return items
+        .whereType<Map>()
+        .map((e) => HsSuggestion.fromJson(Map<String, dynamic>.from(e)))
+        .take(limit)
+        .toList();
   }
 
   Future<ListingPrefill?> prefill(String listingId) async {

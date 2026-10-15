@@ -508,11 +508,11 @@ paths:
       trust: [/v1/trust]  # /v1/trust/verification/* (supplier documents) needs a verified supplier claim (403 supplier_claim_required otherwise; X-Supplier-Id forwarded from the DB, JSON body <= 64 KiB, non-GET needs a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on); GET /v1/trust/suppliers/{id}/verification (badge) is public; the rest of /v1/trust needs a bearer token
       rfq: [/v1/requests, /v1/offers, /v1/deals, /v1/reviews, "GET /v1/suppliers/{ref}/reviews", "GET /v1/suppliers/{ref}/review-summary"]  # the two supplier paths are public and take precedence over the sourcing /v1/suppliers prefix
       messaging: [/v1/conversations, /v1/blocks]  # all need a bearer token; X-Supplier-Id is forwarded for a verified claim (blocks by a supplier owner also apply to the supplier identity)
-      tracking: [/v1/shipments, /v1/validate]
+      tracking: [/v1/shipments, /v1/validate, /v1/references]  # GET /v1/references/detect needs a bearer token like /v1/validate; X-User-Id is injected
       notifications: [/v1/watchlist, /v1/alerts, /v1/devices]
       assistant: [/v1/assistant]
       media: [/v1/media]
-      feed: [/v1/feed]  # GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is an admin-only passthrough (see below)
+      feed: [/v1/feed]  # GET /v1/feed/mutes and PUT/DELETE /v1/feed/mutes/{supplier_id} need a bearer token (X-User-Id injected, verified X-Supplier-Id forwarded); GET /v1/feed/trending is public; POST /v1/feed/posts needs a verified supplier claim (X-Supplier-Id forwarded) and, when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on, a verified email. /v1/admin/feed/* is an admin-only passthrough (see below)
       freight: [/v1/freight]  # every route needs a bearer token; POST /v1/freight/applications and POST /v1/freight/requests need a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on. Forwarder status is resolved inside freight from X-User-Id (client-sent X-Forwarder-Id / X-Supplier-Id are never forwarded). /v1/admin/freight/* is an admin-only passthrough (see below)
     get:
       summary: "Get by proxied path"
