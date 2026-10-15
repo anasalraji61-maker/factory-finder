@@ -79,6 +79,7 @@ verification_documents = Table(
     Column("reviewed_at", UTCDateTime, nullable=True),
     Column("approved_on", Date, nullable=True),
     Column("created_at", UTCDateTime, nullable=False),
+    Column("released_at", UTCDateTime, nullable=True),  # set when the supplier's claim was released/revoked: hidden from the next claimant
     CheckConstraint(f"doc_type IN ({DOC_TYPES_SQL})", name="ck_verification_documents_doc_type"),
     CheckConstraint("length(issuing_country) = 2", name="ck_verification_documents_country"),
     CheckConstraint("consent", name="ck_verification_documents_consent"),

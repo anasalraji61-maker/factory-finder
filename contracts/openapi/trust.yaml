@@ -175,6 +175,34 @@ paths:
         "200": {description: Entries, content: {application/json: {schema: {$ref: "#/components/schemas/VerificationAudit"}}}}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/trust/verification/suppliers/{supplier_id}/release:
+    post:
+      operationId: adminReleaseSupplierVerification
+      summary: Claim released/revoked - withdraw live documents and hide all of the supplier's documents from the next claimant
+      description: "Service-to-service (gateway) with X-Admin-Token. Live documents become withdrawn (audited, append-only); every document row is kept but hidden from owner reads, so the next claimant sees none and starts unverified. Idempotent: a repeat call returns zero counts. Invalidates the cached score."
+      parameters:
+        - {name: supplier_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Admin-Token, in: header, required: true, schema: {type: string}}
+        - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: false
+        content: {application/json: {schema: {type: object, properties: {reason: {type: [string, "null"], maxLength: 500}}}}}
+      responses:
+        "200":
+          description: Released
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [supplier_id, released_documents, withdrawn_documents, verification_level]
+                properties:
+                  supplier_id: {type: string}
+                  released_documents: {type: integer}
+                  withdrawn_documents: {type: integer}
+                  verification_level: {type: string}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/internal/users/{user_id}/export:
     post:
       operationId: internalUserExport
@@ -280,6 +308,7 @@ components:
             reviewed_by: {type: [string, "null"]}
             approved_on: {type: [string, "null"], format: date}
             duplicate_elsewhere: {type: boolean, description: Another supplier holds an active document with the same number fingerprint}
+            released_at: {type: [string, "null"], format: date-time, description: Set when the supplier's claim was released; hidden from owner reads}
     AdminVerificationDocumentPage:
       type: object
       required: [items, total, limit, offset]

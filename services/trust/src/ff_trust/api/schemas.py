@@ -132,6 +132,7 @@ class AdminDocumentOut(DocumentOut):
     reviewed_by: str | None = None
     approved_on: date | None = None
     duplicate_elsewhere: bool = False
+    released_at: datetime | None = None
 
 
 class AdminDocumentPage(BaseModel):
@@ -167,6 +168,17 @@ class AuditEntryOut(BaseModel):
     to_status: str | None = None
     reason: str | None = None
     detail: str | None = None
+
+
+class ReleaseIn(BaseModel):
+    reason: str | None = Field(None, max_length=500)
+
+
+class ReleaseOut(BaseModel):
+    supplier_id: str
+    released_documents: int  # documents newly hidden by this call (0 on a repeat call)
+    withdrawn_documents: int  # live (pending/approved) documents closed by this call
+    verification_level: LevelLit
 
 
 class AuditOut(BaseModel):

@@ -421,3 +421,50 @@ def test_no_pii_in_logs(client, capfd, caplog):
     text = out.out + out.err + caplog.text
     for secret in ("SECRET-NUM-123456", "SECRETNUM123456", "jane@example.com", TOKEN, F1):
         assert secret not in text
+
+
+# ---------------- claim release (docs/requests/trust-release-claim.md) ----------------
+def _release(c, sid="sup_a", headers=ADM, **kw):
+    return c.post(f"/v1/admin/trust/verification/suppliers/{sid}/release", headers=headers, **kw)
+
+
+def test_release_hides_docs_from_next_claimant_and_resets_level(client):
+    did = submit(client).json()["id"]
+    submit(client, doc_type="factory_photos", number=None, files=[F2])
+    assert approve(client, did).status_code == 200
+    assert client.get("/v1/trust/suppliers/sup_a/verification").json()["verification_level"] != "none"
+    r = _release(client, json={"reason": "claim revoked"})
+    assert r.status_code == 200
+    assert r.json() | {} == {"supplier_id": "sup_a", "released_documents": 2, "withdrawn_documents": 2, "verification_level": "none"}
+    # next claimant: no documents, unverified, badge cache invalidated, old doc not withdrawable
+    assert client.get("/v1/trust/verification/documents", headers=SUP).json() == {"items": [], "verification_level": "none"}
+    assert client.get("/v1/trust/suppliers/sup_a/verification").json()["verification_level"] == "none"
+    assert client.delete(f"/v1/trust/verification/documents/{did}", headers=SUP).status_code == 404
+    # audit kept (append-only), admin still sees rows
+    acts = [(e["action"], e["actor"]) for e in client.get("/v1/admin/trust/verification/audit", params={"supplier_id": "sup_a"}, headers=ADM).json()["items"]]
+    assert acts.count(("withdraw", "admin")) == 2 and ("approve", "admin") in acts
+    rows = client.get("/v1/admin/trust/verification/documents", params={"status": "all"}, headers=ADM).json()["items"]
+    assert len(rows) == 2 and all(x["status"] == "withdrawn" and x["released_at"] for x in rows)
+    # the new claimant can submit afresh (same number allowed again) and only sees their own
+    assert submit(client, files=[F1.replace("abcdef123456", "aaaaaa999999")]).status_code == 201
+    assert len(client.get("/v1/trust/verification/documents", headers=SUP).json()["items"]) == 1
+
+
+def test_release_is_idempotent_and_other_suppliers_untouched(client):
+    submit(client)
+    submit(client, sid="sup_b", files=[F2], number="OTHER-REG-0001")
+    assert _release(client).json()["released_documents"] == 1
+    n = len(client.get("/v1/admin/trust/verification/audit", headers=ADM).json()["items"])
+    again = _release(client)
+    assert again.status_code == 200 and again.json()["released_documents"] == 0 and again.json()["withdrawn_documents"] == 0
+    assert len(client.get("/v1/admin/trust/verification/audit", headers=ADM).json()["items"]) == n
+    assert _release(client, sid="never_seen").json()["released_documents"] == 0
+    assert len(client.get("/v1/trust/verification/documents", headers={"X-Supplier-Id": "sup_b"}).json()["items"]) == 1
+
+
+def test_release_requires_admin_token(client):
+    assert _release(client, headers={}).status_code == 401
+    assert _release(client, headers={"X-Admin-Token": "nope"}).status_code == 401
+    assert _release(client, headers=SUP).status_code == 401
+    assert _release(client, sid="bad id!").status_code in (404, 422)
+    assert _release(TestClient(create_app(Settings())), headers=ADM).status_code == 404

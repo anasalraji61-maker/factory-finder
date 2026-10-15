@@ -143,6 +143,7 @@ class Document:
     reviewed_by: str | None = None
     reviewed_at: datetime | None = None
     approved_on: date | None = None
+    released_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,7 +170,7 @@ def _doc(row) -> Document:
         id=m["id"], supplier_id=m["supplier_id"], doc_type=m["doc_type"], issuing_country=m["issuing_country"],
         files=tuple(m["files"]), number_masked=m["number_masked"], number_fingerprint=m["number_fingerprint"],
         expires_on=m["expires_on"], consent=bool(m["consent"]), created_at=m["created_at"], status=m["status"],
-        reason=m["reason"], reviewed_by=m["reviewed_by"], reviewed_at=m["reviewed_at"], approved_on=m["approved_on"],
+        reason=m["reason"], reviewed_by=m["reviewed_by"], reviewed_at=m["reviewed_at"], approved_on=m["approved_on"], released_at=m["released_at"],
     )  # fmt: skip
 
 
@@ -311,13 +312,30 @@ class VerificationStore:
 
     async def list_for_supplier(self, supplier_id: str) -> list[Document]:
         async with self.db.begin() as conn:
-            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id).order_by(_D.c.created_at, _D.c.id))).all()
+            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id, _D.c.released_at.is_(None)).order_by(_D.c.created_at, _D.c.id))).all()
         return [_doc(r) for r in rows]
+
+    async def release_supplier(self, supplier_id: str, reviewer: str, reason: str | None) -> tuple[int, int]:
+        """Claim released/revoked: close every live document (audited as a ``withdraw`` by the admin) and hide ALL of the
+        supplier's documents from owner reads, so the next claimant starts clean. Rows are kept for audit. Idempotent.
+        Returns (documents newly hidden, live documents withdrawn)."""
+        reason = clean_reason(reason) or "claim released"
+        async with self.db.begin() as conn:
+            await self.db.lock(conn, f"verification:{supplier_id}")
+            rows = (await conn.execute(select(_D).where(_D.c.supplier_id == supplier_id, _D.c.released_at.is_(None)).order_by(_D.c.created_at, _D.c.id))).all()
+            withdrawn = 0
+            for d in map(_doc, rows):
+                if d.status in ACTIVE:
+                    await self._move(conn, d, "withdrawn", reviewer, "withdraw", reason)
+                    withdrawn += 1
+            now = self.clock()
+            await conn.execute(update(_D).where(_D.c.supplier_id == supplier_id, _D.c.released_at.is_(None)).values(released_at=now))
+            return len(rows), withdrawn
 
     async def withdraw(self, supplier_id: str, doc_id: str) -> Document:
         async with self.db.begin() as conn:
             d = await self._load(conn, doc_id)
-            if d is None or d.supplier_id != supplier_id:  # other suppliers' documents look nonexistent
+            if d is None or d.supplier_id != supplier_id or d.released_at is not None:  # other suppliers' documents look nonexistent
                 raise VerificationError(404, "document_not_found", "Document not found")
             return await self._move(conn, d, "withdrawn", f"supplier:{supplier_id}", "withdraw", None)
 

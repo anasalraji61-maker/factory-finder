@@ -18,6 +18,8 @@ from ff_trust.api.schemas import (
     DocumentOut,
     ExpiryIn,
     PublicVerificationOut,
+    ReleaseIn,
+    ReleaseOut,
 )
 from ff_trust.domain.verification import LEVEL_LABELS
 from ff_trust.service import TrustService
@@ -69,7 +71,7 @@ def _out(request: Request, d: Document) -> dict:
 
 
 def _admin_out(request: Request, d: Document, duplicate: bool) -> AdminDocumentOut:
-    return AdminDocumentOut(**_out(request, d), supplier_id=d.supplier_id, reviewed_by=d.reviewed_by, approved_on=d.approved_on, duplicate_elsewhere=duplicate)
+    return AdminDocumentOut(**_out(request, d), supplier_id=d.supplier_id, reviewed_by=d.reviewed_by, approved_on=d.approved_on, duplicate_elsewhere=duplicate, released_at=d.released_at)
 
 
 async def _level(svc: TrustService, sid: str) -> str:
@@ -166,6 +168,19 @@ async def admin_expiry(
         raise _fail(e) from e
     svc.invalidate(d.supplier_id)
     return _admin_out(request, d, await svc.verification.duplicate_elsewhere(d))
+
+
+@admin.post("/suppliers/{supplier_id}/release", response_model=ReleaseOut)
+async def admin_release_supplier(
+    supplier_id: str, request: Request, body: ReleaseIn | None = None, x_reviewer: Annotated[str | None, Header()] = None
+) -> ReleaseOut:
+    """Claim released/revoked (gateway): withdraw live documents and hide all of them from the next claimant. Idempotent."""
+    svc = _svc(request)
+    if not SUPPLIER_RE.fullmatch(supplier_id):
+        raise ApiError(422, "invalid_supplier_id", "Invalid supplier id")
+    n, w = await svc.verification.release_supplier(supplier_id, reviewer_label(x_reviewer), body.reason if body else None)
+    svc.invalidate(supplier_id)
+    return ReleaseOut(supplier_id=supplier_id, released_documents=n, withdrawn_documents=w, verification_level=await _level(svc, supplier_id))  # type: ignore[arg-type]
 
 
 @admin.get("/audit", response_model=AuditOut)
