@@ -384,3 +384,40 @@ def test_file_cannot_be_reused_by_another_supplier(client):
     assert stolen.status_code == 409 and stolen.json()["error"]["code"] == "file_in_use"
     assert submit(c, "sup_a", files=[F1], number="SECOND-NUMBER-5678").status_code in (200, 201)  # the same supplier may reuse its own
     assert submit(c, "sup_b", files=[F2], number="OTHER-NUMBER-1234").status_code in (200, 201)
+
+
+# ---------------- review: revocation, re-verification, logs ----------------
+def test_revoke_approved_drops_score_immediately_and_is_audited(client):
+    c, sid = client, "sup_demo_avg"
+    h = {"X-Supplier-Id": sid}
+    base = c.get(f"/v1/trust/suppliers/{sid}").json()["score"]
+    did = c.post("/v1/trust/verification/documents", json=doc(), headers=h).json()["id"]
+    approve(c, did, expires_on="2030-01-01")
+    assert c.get(f"/v1/trust/suppliers/{sid}").json()["score"] > base  # now cached
+    url = f"/v1/admin/trust/verification/documents/{did}/decision"
+    assert c.post(url, json={"decision": "reject"}, headers=ADM).status_code == 422  # revoke needs a reason
+    assert c.post(url, json={"decision": "reject", "reason": "forged"}, headers={**ADM, "X-Reviewer": "carol"}).status_code == 200
+    r = c.get(f"/v1/trust/suppliers/{sid}").json()  # no TTL wait: cache invalidated by the revoke
+    assert r["score"] == base and r["verification_level"] == "none"
+    assert c.get(f"/v1/trust/suppliers/{sid}/verification").json()["valid_types"] == []
+    rows = c.get("/v1/admin/trust/verification/audit", headers=ADM).json()["items"]
+    assert rows[0]["action"] == "revoke" and rows[0]["actor"] == "admin:carol" and rows[0]["from_status"] == "approved"
+    assert c.post(url, json={"decision": "approve"}, headers=ADM).status_code == 409  # rejected is terminal
+
+
+def test_approval_never_counts_beyond_max_validity():
+    from ff_trust.domain.verification import MAX_VALIDITY_DAYS, effective_expiry
+
+    d = VerifiedDoc(doc_type="business_license", approved_on=TODAY, expires_on=date(9999, 12, 31))
+    assert (effective_expiry(d, 730) - TODAY).days == MAX_VALIDITY_DAYS
+    ev = VerificationEvidence(documents=[d])
+    assert assess(SupplierSignals(**BASE, verification=ev), CFG, today=TODAY + timedelta(days=MAX_VALIDITY_DAYS + 1)).verification_level == "none"
+
+
+def test_no_pii_in_logs(client, capfd, caplog):
+    did = submit(client, number="SECRET-NUM-123456").json()["id"]
+    client.post(f"/v1/admin/trust/verification/documents/{did}/decision", json={"decision": "reject", "reason": "contains jane@example.com"}, headers={**ADM, "X-Reviewer": "bob"})
+    out = capfd.readouterr()
+    text = out.out + out.err + caplog.text
+    for secret in ("SECRET-NUM-123456", "SECRETNUM123456", "jane@example.com", TOKEN, F1):
+        assert secret not in text

@@ -52,8 +52,12 @@ class VerificationEvidence(BaseModel):
     documents: list[VerifiedDoc] = []
 
 
+MAX_VALIDITY_DAYS = 1095  # re-verification: an approval never counts beyond 3 years, whatever expiry the document claims
+
+
 def effective_expiry(d: VerifiedDoc, default_validity_days: int) -> date:
-    return d.expires_on or (d.approved_on + timedelta(days=default_validity_days))
+    cap = d.approved_on + timedelta(days=MAX_VALIDITY_DAYS)
+    return min(d.expires_on or (d.approved_on + timedelta(days=default_validity_days)), cap)
 
 
 def decay(d: VerifiedDoc, today: date, decay_days: int, floor: float, default_validity_days: int) -> float:
