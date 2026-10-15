@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/core/api/me_refresh.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
@@ -62,11 +63,61 @@ class ProfileScreen extends ConsumerWidget {
     final showMyProducts =
         role == UserRole.supplier || me?.supplierClaimStatus == 'verified';
 
-    return Scaffold(
+    final claimRevoked = ref.watch(supplierClaimRevokedNoticeProvider) && me != null;
+
+    return MeRefreshOnOpen(
+      child: Scaffold(
       appBar: AppBar(title: Text(context.tr('profile.title'))),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
+          if (claimRevoked) ...[
+            AppCard(
+              key: const ValueKey('profile-claim-revoked'),
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.gpp_maybe_outlined, color: AppColors.warning),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          context.tr('claim.revoked_title'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(context.tr('claim.revoked_msg')),
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      FilledButton(
+                        key: const ValueKey('profile-claim-revoked-apply'),
+                        onPressed: () {
+                          ref.read(supplierClaimRevokedNoticeProvider.notifier).state = false;
+                          context.push('/supplier-claim');
+                        },
+                        child: Text(context.tr('claim.revoked_apply')),
+                      ),
+                      TextButton(
+                        key: const ValueKey('profile-claim-revoked-dismiss'),
+                        onPressed: () =>
+                            ref.read(supplierClaimRevokedNoticeProvider.notifier).state = false,
+                        child: Text(context.tr('claim.revoked_dismiss')),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
@@ -302,6 +353,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

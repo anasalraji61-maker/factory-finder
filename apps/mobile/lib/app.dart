@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart' show kReleaseMockBuild;
 import 'package:factory_finder/core/api/auth.dart' show sessionExpiredProvider;
+import 'package:factory_finder/core/api/me_refresh.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/router/app_router.dart';
@@ -51,7 +52,7 @@ class FactoryFinderApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) {
-        final body = child ?? const SizedBox.shrink();
+        final body = MeResumeRefresher(child: child ?? const SizedBox.shrink());
         return DigitStyleScope(
           style: digits,
           child: showMockBanner

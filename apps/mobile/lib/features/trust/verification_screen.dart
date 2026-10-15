@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -158,11 +159,23 @@ class VerificationScreen extends ConsumerWidget {
     final docs = ref.watch(myVerificationProvider);
     return docs.when(
       loading: () => const SingleChildScrollView(child: LoadingList(itemCount: 3)),
-      error: (e, _) => ErrorState(
+      error: (e, _) {
+        if (isSupplierGateError(e, notFoundCounts: true)) {
+          // Claim revoked server-side: re-read /v1/me (rate limited, and it
+          // only replaces state when something changed) and show the claim
+          // prompt instead of an error.
+          final auth = ref.read(authProvider.notifier);
+          Future<void>.microtask(
+            () => auth.refreshMe(minGap: const Duration(seconds: 30)),
+          );
+          return _gate(context);
+        }
+        return ErrorState(
         error: e,
         message: context.tr(verificationErrorKey(e), verificationErrorArgs(e)),
         onRetry: () => ref.invalidate(myVerificationProvider),
-      ),
+        );
+      },
       data: (list) => ListView(
         key: const ValueKey<String>('ver-list'),
         padding: const EdgeInsets.all(AppSpacing.lg),

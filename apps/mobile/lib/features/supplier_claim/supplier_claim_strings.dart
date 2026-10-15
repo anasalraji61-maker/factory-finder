@@ -32,5 +32,12 @@ const Map<String, (String, String)> _pairs = {
   'claim.err.generic': ('تعذّر إكمال الطلب. حاول مرة أخرى.', 'Could not complete the request. Please try again.'),
   'claim.ok_claimed': ('تم إرسال الطلب للمراجعة', 'Claim submitted for review'),
   'claim.ok_released': ('تم إلغاء الربط', 'Supplier account released'),
+  'claim.revoked_title': ('تمت إزالة توثيق حساب المورّد', 'Your supplier verification was removed'),
+  'claim.revoked_msg': (
+    'لم يعد حسابك مرتبطاً بمورّد موثّق. تواصل مع الدعم أو قدّم طلب ربط جديد.',
+    'Your account is no longer linked to a verified supplier. Contact support or apply again.',
+  ),
+  'claim.revoked_apply': ('تقديم طلب جديد', 'Apply again'),
+  'claim.revoked_dismiss': ('تم', 'Dismiss'),
   'claim.signin': ('سجّل الدخول أولاً لربط حساب المورّد.', 'Sign in first to claim a supplier account.'),
 };

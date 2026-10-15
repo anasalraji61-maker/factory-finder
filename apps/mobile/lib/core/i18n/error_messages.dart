@@ -65,3 +65,21 @@ String localizedPasswordError(BuildContext context, Object error) {
   }
   return context.tr(key);
 }
+
+/// Backend codes meaning "this needs a verified supplier claim".
+const Set<String> kSupplierGateCodes = {
+  'supplier_required',
+  'supplier_verification_required',
+  'supplier_claim_revoked',
+  'supplier_not_found',
+};
+
+/// True when [error] says the caller no longer holds a verified supplier
+/// claim: a 403, or one of [kSupplierGateCodes]. With [notFoundCounts] a 404
+/// also counts (for supplier-scoped list endpoints, where the supplier
+/// record itself is what is missing).
+bool isSupplierGateError(Object error, {bool notFoundCounts = false}) {
+  if (error is! ApiException) return false;
+  if (kSupplierGateCodes.contains(error.code)) return true;
+  return error.status == 403 || (notFoundCounts && error.status == 404);
+}

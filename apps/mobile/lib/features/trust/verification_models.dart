@@ -254,6 +254,7 @@ String verificationErrorKey(Object error) {
   switch (error.code) {
     case 'supplier_required':
     case 'supplier_verification_required':
+    case 'supplier_claim_revoked':
       return 'ver.err.supplier_required';
     case 'consent_required':
       return 'ver.err.consent';
@@ -289,6 +290,7 @@ String verificationErrorKey(Object error) {
   }
   switch (error.status) {
     case 401:
+    case 403:
       return 'ver.err.supplier_required';
     case 429:
       return _rateKey(error);

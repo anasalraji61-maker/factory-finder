@@ -174,6 +174,8 @@ String myProductsErrorKey(Object error) {
   if (error is ApiException) {
     switch (error.code) {
       case 'supplier_required':
+      case 'supplier_verification_required':
+      case 'supplier_claim_revoked':
         return 'myp.err.supplier_required';
       case 'validation_error':
         return 'myp.err.server_validation';
@@ -197,6 +199,8 @@ String myProductsErrorKey(Object error) {
         return 'myp.err.network';
     }
     switch (error.status) {
+      case 403:
+        return 'myp.err.supplier_required';
       case 422:
         return 'myp.err.server_validation';
       case 429:

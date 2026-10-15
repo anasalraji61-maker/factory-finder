@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -127,7 +128,13 @@ class _MyProductsScreenState extends ConsumerState<MyProductsScreen> {
       });
     } catch (e) {
       if (!mounted || token != _req) return;
-      final key = myProductsErrorKey(e);
+      // Lost supplier access (403 / missing supplier): re-read /v1/me so the
+      // screen drops to the claim prompt instead of showing an error.
+      final lost = isSupplierGateError(e, notFoundCounts: true);
+      if (lost) {
+        ref.read(authProvider.notifier).refreshMe(minGap: const Duration(seconds: 30));
+      }
+      final key = lost ? 'myp.err.supplier_required' : myProductsErrorKey(e);
       setState(() {
         _loading = false;
         _loadingMore = false;

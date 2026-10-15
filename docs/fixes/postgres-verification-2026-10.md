@@ -44,3 +44,14 @@ New/changed migrations covered: payments 0003, freight 0002, trust 0002, demand 
 - **Partial unique indexes on PG** (schema built by Alembic, 8 concurrent writers via asyncpg pool): payments `uq_invoices_live_deal_kind_payer`, `uq_invoices_provider_tx_ref`, `uq_invoices_provider_pay_amount`: exactly 1 insert wins, the rest raise `sqlalchemy.exc.IntegrityError` (sqlstate 23505, asyncpg `UniqueViolationError`); non-live (expired) duplicates still allowed.
   freight `uq_applications_one_pending` through `FreightService.apply`: 1 ok, the rest map to `Conflict` (`application_pending`) (the one remaining outcome was the per-user rate limiter, expected).
 - Still unverified: unchanged from the list above (psycopg driver not installed; only asyncpg exercised).
+
+---
+
+## Re-verification 3 (2026-10-15; PostgreSQL 16, throwaway cluster on port 5452, stopped and removed afterwards)
+New since the previous run: **gateway** (first Alembic setup, `0001_claim_decisions`), **trust 0003** (`released_at`), media 0002 (`visibility`) checked too. Full migration list diffed against this doc: no other new revisions.
+- **Alembic, 11 services + gateway**: `upgrade head` (empty) -> `downgrade base` -> `upgrade head` -> `alembic check` all OK, including trust 0003 and media 0002; no migration defects.
+- **Gateway by design only migrates `claim_decisions`**; every other table (users, tokens, deletion_jobs, account_events) still comes from `create_tables` (`create_all` + `_add_missing_columns`) in the app lifespan. So `alembic check` on a DB built *only* by migrations reports the other 5 tables as missing: expected, not a defect, but a production PG DB must still start the app once (or run `create_tables`) before it is complete.
+  Both orders verified on PG: (A) `create_tables` twice then `alembic upgrade head` (guard skips existing `claim_decisions`, version stamped 0001, `alembic check` clean); (B) `alembic upgrade head` then `create_tables` (no error, `alembic check` clean, 8 tables). Lifespan startup on PG exercised by the whole gateway suite.
+- **Suites on PG** (same harness idea, Mode A `create_all`): gateway fully green (all tests). trust green except 3 harness artefacts (`test_default_settings_and_url_handling`, `test_default_file_database_is_created_in_data_dir` assert SQLite defaults; `test_rate_limit_and_caps` shares one DB). trust Mode B (schema via `alembic upgrade head`, auto-create off): same 3 only.
+- Fixed: gateway `alembic.ini` comment named `FF_MESSAGING_DATABASE_URL` (actual var is `FF_GATEWAY_DATABASE_URL`).
+- Still unverified: unchanged (pool behaviour, psycopg driver, docker `pg` profile, production TLS URL options).

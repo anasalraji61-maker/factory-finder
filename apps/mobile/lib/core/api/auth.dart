@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
@@ -52,6 +54,10 @@ class Me {
         supplierId: value,
         supplierClaimStatus: value == null ? 'none' : (status ?? 'pending'),
       );
+
+  /// True when [other] serializes to exactly the same fields.
+  bool sameAs(Me other) =>
+      jsonEncode(toJson()) == jsonEncode(other.toJson());
 
   factory Me.fromJson(Map<String, dynamic> j) {
     final dest = j['default_destination'];
@@ -179,6 +185,14 @@ class AuthRepository {
     return Me.fromJson(Map<String, dynamic>.from(me as Map));
   }
 
+  /// Fresh `/v1/me` for the signed-in user. Mock mode has no server-side
+  /// state to refresh and returns null (callers keep the current user).
+  Future<Me?> fetchMe() async {
+    if (_api.isMock) return null;
+    final me = await _api.get('/v1/me');
+    return Me.fromJson(Map<String, dynamic>.from(me as Map));
+  }
+
   /// Claims (or, with null, releases) a catalog supplier for [current].
   /// Throws [ApiException] code `supplier_claimed` (409) when already taken.
   Future<Me> claimSupplier(Me current, String? supplierId) async {
@@ -246,6 +260,20 @@ final sessionExpiredProvider = StateProvider<bool>((ref) => false);
 /// during the restore window.
 final authResolvedProvider = StateProvider<bool>((ref) => false);
 
+/// True when a previously verified supplier claim was removed by the server
+/// (seen after a `/v1/me` refresh). The profile shows a one-time notice and
+/// clears it on dismiss; sign-out also clears it.
+final supplierClaimRevokedNoticeProvider = StateProvider<bool>((ref) => false);
+
+/// A verified claim [before] that is gone ([after] status `none`) for the
+/// same user. A user releasing their own claim goes through `claimSupplier`,
+/// not through a refresh, so it never triggers this.
+bool supplierClaimWasRevoked(Me? before, Me after) =>
+    before != null &&
+    before.id == after.id &&
+    before.supplierClaimStatus == 'verified' &&
+    after.supplierClaimStatus == 'none';
+
 /// Current user, or null when signed out.
 class AuthController extends StateNotifier<Me?> {
   AuthController(this._ref) : super(null) {
@@ -283,6 +311,7 @@ class AuthController extends StateNotifier<Me?> {
 
   Future<void> login({String? email, String? phone, required String password}) async {
     state = await _repo.login(email: email, phone: phone, password: password);
+    _setRevokedNotice(false);
   }
 
   Future<void> register({
@@ -297,6 +326,46 @@ class AuthController extends StateNotifier<Me?> {
       password: password,
       name: name,
     );
+    _setRevokedNotice(false);
+  }
+
+  DateTime? _lastRefresh;
+  bool _refreshing = false;
+
+  void _setRevokedNotice(bool value) {
+    if (!mounted) return;
+    try {
+      _ref.read(supplierClaimRevokedNoticeProvider.notifier).state = value;
+    } catch (_) {
+      // Provider scope already disposed.
+    }
+  }
+
+  /// Re-reads `/v1/me` for the signed-in user (app resume, profile open).
+  /// Never throws: on any failure the current user is kept. Skips when a
+  /// refresh is running or the last one was less than [minGap] ago. State is
+  /// only replaced when something changed, so watchers do not rebuild in a
+  /// loop. A verified -> none claim change raises the one-time notice.
+  Future<void> refreshMe({Duration minGap = Duration.zero}) async {
+    final before = state;
+    if (before == null || _refreshing) return;
+    final last = _lastRefresh;
+    if (last != null && DateTime.now().difference(last) < minGap) return;
+    _refreshing = true;
+    _lastRefresh = DateTime.now();
+    try {
+      final fresh = await _repo.fetchMe();
+      if (fresh == null || !mounted) return;
+      final current = state;
+      if (current == null || current.id != fresh.id) return;
+      final revoked = supplierClaimWasRevoked(current, fresh);
+      if (!current.sameAs(fresh)) state = fresh;
+      if (revoked) _setRevokedNotice(true);
+    } catch (_) {
+      // Offline / server error / expired session: keep what we have.
+    } finally {
+      _refreshing = false;
+    }
   }
 
   Future<void> claimSupplier(String? supplierId) async {
@@ -364,6 +433,7 @@ class AuthController extends StateNotifier<Me?> {
 
   void logout() {
     _repo.logout();
+    _setRevokedNotice(false);
     state = null;
   }
 
