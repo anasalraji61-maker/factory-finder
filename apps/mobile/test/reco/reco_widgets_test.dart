@@ -309,6 +309,7 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(RecentlyViewedSettings)),
       );
+      await tester.runAsync(() => container.read(recentlyViewedProvider.notifier).ready);
       await tester.pump(); // the stored ids finish loading
       expect(container.read(recentlyViewedProvider).ids, ['a', 'b']);
 
