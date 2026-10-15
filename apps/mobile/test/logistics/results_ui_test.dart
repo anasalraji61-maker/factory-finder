@@ -333,6 +333,7 @@ void main() {
     final q = _gen(_req());
     await pumpApp(
       tester,
+      logicalSize: const Size(540, 6000),
       location: '/logistics/results',
       overrides: [
         lastQuoteProvider.overrideWith((ref) => q),
