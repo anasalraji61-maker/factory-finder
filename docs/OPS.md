@@ -16,9 +16,15 @@
 
 ## Production mode guard (`FF_ENV=production`)
 Opt-in, fail closed. Default behaviour (variable unset or any other value) is unchanged.
-- rfq, payments, notifications, sourcing, tracking, messaging, media, feed, freight: refuse to start (`RuntimeError` in `create_app`) if `FF_INTERNAL_TOKEN` is unset/empty.
+- Every service (gateway, sourcing, logistics, trust, rfq, messaging, tracking, notifications, assistant, demand, payments, media, feed, freight) refuses to start (`RuntimeError`) if `FF_INTERNAL_TOKEN` is unset/empty. geo has no token guard.
+- gateway also refuses: `FF_GATEWAY_CORS_ORIGINS` containing `*`, and `FF_GATEWAY_JWT_SECRET` shorter than 32 characters.
+- sourcing: requires `FF_SOURCING_REPORTER_HASH_KEY` (not the public default `ff-sourcing-reporter`) and `FF_SOURCING_ANALYTICS_HASH_KEY`.
+- payments: refuses `FF_PAYMENTS_PROVIDER=mock`; needs a non-mock provider (`off` or `usdt_tron`), `FF_PAYMENTS_WEBHOOK_SECRET_<PROVIDER>` for it, and `FF_PAYMENTS_ADMIN_TOKEN`.
+- media: also `FF_MEDIA_SIGNING_KEY`.
+- All services disable `/docs`, `/redoc` and `/openapi.json` in production (schema lives in `contracts/`).
+- Deploy with `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`: the override forces `FF_ENV=production` and requires these variables via `${VAR:?}` (compose aborts before start if missing).
 - trust: refuses to start (`RuntimeError` in `create_app`) if `FF_TRUST_VERIFICATION_HASH_KEY` is unset (keyed duplicate detection for verification documents must survive restarts); startup also aborts if the key differs from the one the stored fingerprints were made with.
-- gateway: refuses to start if `FF_GATEWAY_JWT_SECRET` or `FF_GATEWAY_ADMIN_TOKEN` is missing.
+- gateway: refuses to start if `FF_GATEWAY_JWT_SECRET`, `FF_GATEWAY_ADMIN_TOKEN` or `FF_INTERNAL_TOKEN` is missing.
 - Implemented per service as a tiny duplicated helper (`_require_production_token`), no cross-service imports. Tests: `tests/test_production_guard.py` in each service.
 - Gateway `/v1/admin/payments/outbox*` needs `FF_PAYMENTS_ADMIN_TOKEN` set on the gateway too (same value as the payments service's); unset = those routes answer 404.
 - Gateway `/v1/admin/trust/verification/*`, `/v1/admin/freight/*` and `/v1/admin/feed/*` (admin console passthroughs) need `FF_TRUST_ADMIN_TOKEN`, `FF_FREIGHT_ADMIN_TOKEN` and `FF_FEED_ADMIN_TOKEN` set on the gateway too (same values as each service's); unset = 404. All three default to empty in `docker-compose.yml` and `.env.example`.

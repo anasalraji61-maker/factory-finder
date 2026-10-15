@@ -5,7 +5,7 @@
 ## 1. Deploy with docker compose (النشر)
 
 1. `cp .env.example .env` ثم عبّئ القيم السرية (توليد: `python -c 'import secrets;print(secrets.token_urlsafe(48))'`).
-2. الحد الأدنى للإنتاج: `FF_ENV=production`، `FF_GATEWAY_JWT_SECRET`، `FF_GATEWAY_ADMIN_TOKEN`، `FF_INTERNAL_TOKEN`، `FF_MEDIA_SIGNING_KEY`، `FF_TRUST_VERIFICATION_HASH_KEY`، `FF_MEDIA_PUBLIC_BASE_URL`، `FF_GATEWAY_CORS_ORIGINS`، `FF_GATEWAY_TRUSTED_PROXIES` (خلف بروكسي).
+2. الحد الأدنى للإنتاج: `FF_ENV=production`، `FF_GATEWAY_JWT_SECRET`، `FF_GATEWAY_ADMIN_TOKEN`، `FF_INTERNAL_TOKEN`، `FF_MEDIA_SIGNING_KEY`، `FF_TRUST_VERIFICATION_HASH_KEY`، `FF_SOURCING_REPORTER_HASH_KEY`، `FF_SOURCING_ANALYTICS_HASH_KEY`، `FF_PAYMENTS_PROVIDER` (غير mock) مع `FF_PAYMENTS_WEBHOOK_SECRET_<PROVIDER>` و`FF_PAYMENTS_ADMIN_TOKEN`، `FF_MEDIA_PUBLIC_BASE_URL`، `FF_GATEWAY_CORS_ORIGINS`، `FF_GATEWAY_TRUSTED_PROXIES` (خلف بروكسي).
 3. PostgreSQL (موصى به): `FF_DOCKER_EXTRAS=pg` و`FF_POSTGRES_PASSWORD`، قاعدة لكل خدمة (`FF_<SVC>_DATABASE_URL=postgresql://ff:<pw>@postgres:5432/ff_<svc>`)، ثم `docker compose --profile pg up -d --build`، وبعدها لكل خدمة لها قاعدة: `docker compose run --rm <svc> alembic upgrade head`. إنشاء الجداول التلقائي مُعطّل مع Postgres (انظر `docs/DB.md`).
 4. وضع تجريبي بدون Postgres: `docker compose up -d --build` (SQLite داخل الحاوية، يضيع عند إعادة الإنشاء — للتطوير فقط).
 5. لوحة الإدارة (admin) تُخدَّم من البوابة على `/admin/` عند `FF_GATEWAY_SERVE_ADMIN=true`؛ لا خدمة منفصلة. تحتاج `FF_GATEWAY_ADMIN_TOKEN` (header `X-Admin-Token`). المصدر: `apps/admin`.
@@ -66,10 +66,13 @@
 ## 4. Production guards (حراس الإنتاج — fail-closed)
 
 مع `FF_ENV=production` ترفض الخدمة الإقلاع (`RuntimeError: FF_ENV=production requires ...`) إذا نقص سرّ لازم، بدل العمل بإعداد غير آمن:
-- rfq، payments، notifications، sourcing، tracking، messaging، media، feed، freight: تحتاج `FF_INTERNAL_TOKEN`؛ media تحتاج أيضاً `FF_MEDIA_SIGNING_KEY`.
-- trust: `FF_TRUST_VERIFICATION_HASH_KEY`.
-- gateway: `FF_GATEWAY_JWT_SECRET` و`FF_GATEWAY_ADMIN_TOKEN`.
-- demand وassistant وgeo وlogistics: بلا حارس (لكن demand يبقى مغلقاً افتراضياً).
+- كل الخدمات (gateway, sourcing, logistics, trust, rfq, messaging, tracking, notifications, assistant, demand, payments, media, feed, freight) تحتاج `FF_INTERNAL_TOKEN`؛ geo بلا حارس.
+- gateway: `FF_GATEWAY_JWT_SECRET` (32 حرفاً على الأقل) و`FF_GATEWAY_ADMIN_TOKEN`؛ و`FF_GATEWAY_CORS_ORIGINS` يجب ألا يحوي `*`.
+- sourcing: `FF_SOURCING_REPORTER_HASH_KEY` (ليس القيمة الافتراضية العامة) و`FF_SOURCING_ANALYTICS_HASH_KEY`.
+- payments: مزوّد غير `mock` (`off` أو `usdt_tron`) مع `FF_PAYMENTS_WEBHOOK_SECRET_<PROVIDER>` و`FF_PAYMENTS_ADMIN_TOKEN`.
+- media: `FF_MEDIA_SIGNING_KEY`؛ trust: `FF_TRUST_VERIFICATION_HASH_KEY`.
+- مع الإنتاج تُعطَّل `/docs` و`/redoc` و`/openapi.json` في كل الخدمات.
+- النشر: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d` (يفرض `FF_ENV=production` ويفشل قبل الإقلاع إذا نقص متغير).
 عند فشل الإقلاع: اقرأ `docker compose logs <svc>`، عبّئ المتغير، ثم `docker compose up -d <svc>`.
 
 ## 5. Key rotation (تدوير المفاتيح)
@@ -139,7 +142,7 @@ Probes: `GET /health` (liveness) and `GET /ready` (DB reachable) exist on every 
 ## 2. A service is down
 
 1. `docker compose ps` / `docker compose logs --tail=200 <svc>`.
-2. Startup refusal with `RuntimeError: FF_ENV=production requires ...`: the production guard is on and a token is missing. rfq, payments, notifications, sourcing, tracking, messaging, media, feed, freight need `FF_INTERNAL_TOKEN` (media also `FF_MEDIA_SIGNING_KEY`); trust needs `FF_TRUST_VERIFICATION_HASH_KEY`; the gateway needs `FF_GATEWAY_JWT_SECRET` and `FF_GATEWAY_ADMIN_TOKEN`. demand, assistant, geo and logistics have no such guard. Fix the env, then restart.
+2. Startup refusal with `RuntimeError: FF_ENV=production requires ...`: the production guard is on and a secret is missing. All services except geo need `FF_INTERNAL_TOKEN`; media `FF_MEDIA_SIGNING_KEY`; trust `FF_TRUST_VERIFICATION_HASH_KEY`; sourcing `FF_SOURCING_REPORTER_HASH_KEY` + `FF_SOURCING_ANALYTICS_HASH_KEY`; payments a non-mock `FF_PAYMENTS_PROVIDER` + its `FF_PAYMENTS_WEBHOOK_SECRET_<PROVIDER>` + `FF_PAYMENTS_ADMIN_TOKEN`; the gateway `FF_GATEWAY_JWT_SECRET` (>=32 chars), `FF_GATEWAY_ADMIN_TOKEN` and non-`*` `FF_GATEWAY_CORS_ORIGINS`. Fix the env, then restart.
 3. `docker compose restart <svc>`; if the image is stale: `docker compose up -d --build <svc>`.
 4. Effects of each service being down (the gateway keeps running; `/ready` shows `degraded`): sourcing -> search/listings fail (assistant and notifications depend on it); logistics -> quotes fail; geo -> logistics cannot resolve places; trust -> sourcing falls back (trust mode `http` has a 0.8 s timeout); rfq -> requests/offers/deals; payments -> invoices (settlement events wait in the payments outbox and retry); tracking -> shipments (tracking outbox to notifications retries with backoff, then marks rows dead after `FF_TRACKING_NOTIFY_MAX_ATTEMPTS` = 8); media -> image uploads/reads (and private verification files); feed -> posts/follows/comments only; freight -> forwarder quotes/requests only; demand -> admin drafts only (never user-facing); assistant -> the chat assistant only; trust verification routes and the admin console's document review fail if trust is down.
 5. Gateway down: nothing is reachable to clients. Check its DB (`FF_GATEWAY_DATABASE_URL`, SQLite by default; `/ready` is 503 only when the gateway DB is down) and that `FF_GATEWAY_UPSTREAMS` JSON is valid.

@@ -1,0 +1,74 @@
+# Production override: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Every value comes from the environment/.env (no values here). `${VAR:?}` makes compose fail
+# BEFORE start when a secret the services' FF_ENV=production guards need is missing.
+services:
+  gateway:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+      FF_GATEWAY_JWT_SECRET: ${FF_GATEWAY_JWT_SECRET:?set FF_GATEWAY_JWT_SECRET}
+      FF_GATEWAY_ADMIN_TOKEN: ${FF_GATEWAY_ADMIN_TOKEN:?set FF_GATEWAY_ADMIN_TOKEN}
+      FF_GATEWAY_CORS_ORIGINS: ${FF_GATEWAY_CORS_ORIGINS:?set FF_GATEWAY_CORS_ORIGINS}
+  sourcing:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+      FF_SOURCING_REPORTER_HASH_KEY: ${FF_SOURCING_REPORTER_HASH_KEY:?set FF_SOURCING_REPORTER_HASH_KEY}
+      FF_SOURCING_ANALYTICS_HASH_KEY: ${FF_SOURCING_ANALYTICS_HASH_KEY:?set FF_SOURCING_ANALYTICS_HASH_KEY}
+  logistics:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  geo:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  trust:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+      FF_TRUST_VERIFICATION_HASH_KEY: ${FF_TRUST_VERIFICATION_HASH_KEY:?set FF_TRUST_VERIFICATION_HASH_KEY}
+  rfq:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  messaging:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  tracking:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  notifications:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  assistant:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  demand:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  payments:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+      FF_PAYMENTS_PROVIDER: ${FF_PAYMENTS_PROVIDER:?set FF_PAYMENTS_PROVIDER}
+      FF_PAYMENTS_ADMIN_TOKEN: ${FF_PAYMENTS_ADMIN_TOKEN:?set FF_PAYMENTS_ADMIN_TOKEN}
+      FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON: ${FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON:?set FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON}
+  media:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+      FF_MEDIA_SIGNING_KEY: ${FF_MEDIA_SIGNING_KEY:?set FF_MEDIA_SIGNING_KEY}
+  feed:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
+  freight:
+    environment:
+      FF_ENV: production
+      FF_INTERNAL_TOKEN: ${FF_INTERNAL_TOKEN:?set FF_INTERNAL_TOKEN}
