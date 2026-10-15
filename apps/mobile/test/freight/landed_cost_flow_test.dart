@@ -17,7 +17,7 @@ import '../widgets/test_app.dart';
 ValueKey<String> k(String id) => ValueKey<String>(id);
 
 Future<void> _pump(WidgetTester tester, String location, List<Override> overrides) async {
-  tester.view.physicalSize = const Size(1080, 4800);
+  tester.view.physicalSize = const Size(1080, 21000);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
