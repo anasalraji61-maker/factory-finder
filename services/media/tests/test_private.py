@@ -140,6 +140,7 @@ def test_tampered_signatures(c):
         f"?u={u}&exp={exp}&sig=",
         f"?u={u}&exp={exp}&sig={'é' * 10}",  # non-ascii
         f"?u={u}&exp=abc&sig={sig}",
+        f"?u={u}&exp=%C2%B2&sig={sig}",  # unicode superscript: isdigit() but int() raises -> was a 500
         f"?u={u}&exp=-5&sig={sig}",
         f"?u={u}&exp={10**15}&sig={sig}",
         f"?u={u}&exp={exp}&sig={sig.upper()}",

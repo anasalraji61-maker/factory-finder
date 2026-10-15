@@ -248,3 +248,16 @@ async def test_delete_listing_and_account_erase_remove_stats(ac):
     r = await ac.delete("/v1/internal/users/u1/data", headers=A)
     assert r.status_code == 200 and r.json()["counts"]["analytics_rows_deleted"] == 1
     assert await n() == 1  # B's row stays
+
+
+async def test_ipv6_rotation_inside_a_64_is_one_viewer(ac):
+    lid = await published(ac)
+    assert (await ev(ac, lid, ip="2001:db8:1:2::1")).json()["counted"] is True
+    assert (await ev(ac, lid, ip="2001:db8:1:2:ffff:eeee:dddd:cccc")).json()["counted"] is False
+    assert (await ev(ac, lid, ip="::ffff:5.5.5.5")).json()["counted"] is True
+    assert (await ev(ac, lid, ip="5.5.5.5")).json()["counted"] is False  # v4-mapped == v4
+    assert (await ev(ac, lid, ip="2001:db8:1:3::1")).json()["counted"] is True  # another /64
+
+
+async def test_newline_in_listing_id_is_rejected(ac):
+    assert (await ac.post("/v1/listings/nat_abc%0A/events", json={"type": "view"})).status_code == 422

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import re
 from typing import Annotated, Literal
 
@@ -13,8 +14,22 @@ from .errors import ApiError
 from .my import Supplier
 
 router = APIRouter()
-_ID_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}$")
-_USER_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,128}$")
+_ID_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}\Z")
+_USER_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,128}\Z")
+
+
+def normalise_ip(raw: str) -> str:
+    """Canonical viewer key: IPv4 as is, IPv4-mapped IPv6 -> IPv4, other IPv6 -> its /64 (one subscriber owns a whole /64, so
+    rotating addresses inside it must not dodge the per-viewer rate limit / dedupe). Non-IP text is kept (internal callers only)."""
+    try:
+        ip = ipaddress.ip_address(raw.strip())
+    except ValueError:
+        return raw.strip()[:64]
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped:
+            return str(ip.ipv4_mapped)
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False).network_address) + "/64"
+    return str(ip)
 
 
 class EventIn(BaseModel):
@@ -34,7 +49,7 @@ async def post_event(
     if not _ID_RE.match(listing_id):
         raise ApiError(422, "invalid_listing_id", "Invalid listing id")
     a: Analytics = request.app.state.analytics
-    ip = (x_client_ip or (request.client.host if request.client else "") or "unknown").strip()[:64]
+    ip = normalise_ip((x_client_ip or (request.client.host if request.client else "") or "unknown")[:100])
     uid = (x_user_id or "").strip()
     uid = uid if _USER_RE.match(uid) else None
     # only published native listings are countable; everything else answers the same 202 (nothing is revealed)

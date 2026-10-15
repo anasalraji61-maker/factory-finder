@@ -278,6 +278,11 @@ class AppNetworkImage extends StatelessWidget {
             width: width,
             height: height,
             fit: fit,
+            // Decode at display size, not source size, so long feeds of
+            // 12MP photos do not exhaust the image cache.
+            memCacheWidth: (width != null && width!.isFinite)
+                ? (width! * MediaQuery.of(context).devicePixelRatio).round()
+                : 1080,
             placeholder: (context, _) => placeholder,
             errorWidget: (context, _, __) => placeholder,
           );

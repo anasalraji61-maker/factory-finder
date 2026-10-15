@@ -148,6 +148,7 @@ class _VerificationThumbState extends ConsumerState<VerificationThumb> {
               resolveMediaUrl(base, url),
               key: const ValueKey<String>('ver-thumb-image'),
               fit: BoxFit.cover,
+              cacheWidth: 480,
               gaplessPlayback: true,
               errorBuilder: (context, _, __) => _placeholder(context),
             ),

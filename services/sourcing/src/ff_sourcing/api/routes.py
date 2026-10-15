@@ -133,7 +133,7 @@ async def similar(listing_id: str, request: Request, limit: int = Query(10, ge=1
     return SimilarResponse(listing_id=listing_id, items=found[1], total=len(found[1]))
 
 
-_REF_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}$")
+_REF_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}\Z")
 MAX_REFS = 20
 
 

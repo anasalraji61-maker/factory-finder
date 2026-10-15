@@ -72,7 +72,9 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   void initState() {
     super.initState();
     _poll = Timer.periodic(const Duration(seconds: 8), (_) {
-      if (mounted) ref.invalidate(conversationsProvider);
+      // The tab stays mounted (indexed stack) while hidden; only poll when
+      // it is the visible branch (hidden branches have tickers disabled).
+      if (mounted && TickerMode.of(context)) ref.invalidate(conversationsProvider);
     });
   }
 
@@ -97,6 +99,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('messages.title'))),
       body: async.when(
+        // Background polling reloads the provider; keep the list on screen.
+        skipLoadingOnReload: true,
         loading: () => const LoadingList(),
         error: (e, _) => ErrorState(
           error: e,

@@ -269,6 +269,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                   ),
                   if (deadline != null)
                     IconButton(
+                      tooltip: context.tr('common.reset'),
                       icon: const Icon(Icons.close, size: 18),
                       onPressed: () => setState(() {
                         _deadline = null;

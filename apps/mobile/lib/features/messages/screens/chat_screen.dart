@@ -85,7 +85,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (c.id == widget.conversationId) _conversation = c;
       }
       final msgs = await _repo.messages(widget.conversationId);
-      await _repo.markRead(widget.conversationId);
+      try {
+        await _repo.markRead(widget.conversationId);
+      } catch (_) {
+        // A failed read receipt must not turn a loaded chat into an error.
+      }
       if (!mounted) return;
       ref.invalidate(conversationsProvider);
       setState(() {
@@ -102,14 +106,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  bool _polling = false;
+
   Future<void> _refresh() async {
-    if (!mounted || _loading) return;
+    // Skip while a previous poll is still in flight (slow network would
+    // otherwise stack requests every 4 s).
+    if (!mounted || _loading || _polling) return;
+    _polling = true;
     try {
       final msgs = await _repo.messages(widget.conversationId);
       if (!mounted) return;
       setState(() => _messages = mergeServer(_messages, msgs));
     } catch (_) {
       // Polling failures are silent; the next tick retries.
+    } finally {
+      _polling = false;
     }
   }
 
@@ -273,6 +284,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               end: 0,
               child: IconButton(
                 key: const ValueKey('chat-image-close'),
+                tooltip: ctx.tr('common.cancel'),
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(ctx).pop(),
               ),

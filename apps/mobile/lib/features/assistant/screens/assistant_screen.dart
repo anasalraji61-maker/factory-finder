@@ -127,7 +127,8 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      enabled: !_busy,
+                      // readOnly (not enabled:false) keeps focus, so the keyboard stays open.
+                      readOnly: _busy,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       inputFormatters: [LengthLimitingTextInputFormatter(1000)],

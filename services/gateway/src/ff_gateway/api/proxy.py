@@ -100,10 +100,23 @@ def _is_listing_report(path: str) -> bool:
     return len(parts) == 5 and parts[:3] == ["", "v1", "listings"] and parts[4] == "report"
 
 
+_ENCODED_TRICKS = ("%2e", "%2f", "%5c")  # double-encoded dot / slash / backslash: decoded again by the upstream
+
+
+def _suspicious_path(path: str) -> bool:
+    """Dot segments, empty segments (``//``), backslashes and still-encoded dots/slashes. The policy checks above run on the
+    decoded path, so anything an upstream or a fronting proxy could normalise differently is refused outright."""
+    segs = path.split("/")[1:]
+    if segs and segs[-1] == "":
+        segs = segs[:-1]  # one trailing slash is fine
+    low = path.lower()
+    return any(s in ("", ".", "..") for s in segs) or "\\" in path or any(t in low for t in _ENCODED_TRICKS)
+
+
 @router.api_route("/{full_path:path}", methods=METHODS, include_in_schema=False)
 async def proxy(full_path: str, request: Request) -> Response:
     path = "/" + full_path
-    if ".." in path.split("/") or "." in path.split("/"):
+    if _suspicious_path(path):
         # "." too: httpx collapses dot segments upstream, which would sidestep the exact-path internal-only /
         # verified-email / supplier-claim checks done on the pre-normalised path
         raise InvalidPath()

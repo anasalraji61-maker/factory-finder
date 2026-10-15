@@ -21,12 +21,15 @@ async def export_user(user_id: str, request: Request) -> dict:
     async with eng.connect() as c:
         rows = (await c.execute(
             select(InvoiceRow.id, InvoiceRow.deal_id, InvoiceRow.kind, InvoiceRow.amount, InvoiceRow.currency,
-                   InvoiceRow.status, InvoiceRow.user_memo, InvoiceRow.paid_at, InvoiceRow.created_at)
+                   InvoiceRow.status, InvoiceRow.user_memo, InvoiceRow.paid_at, InvoiceRow.created_at, InvoiceRow.payer_user_id)
             .where(or_(InvoiceRow.payer_user_id == user_id, InvoiceRow.payee == user_id)).limit(CAP + 1)
         )).mappings().all()  # fmt: skip
     return {
         "service": "payments", "user_id": user_id, "truncated": len(rows) > CAP,
-        "data": {"invoices": [{**r, "paid_at": r["paid_at"].isoformat() if r["paid_at"] else None,
+        # the memo is whatever the *payer* typed: never hand it to a payee who exports their own data
+        "data": {"invoices": [{**{k: v for k, v in r.items() if k != "payer_user_id"},
+                               "user_memo": r["user_memo"] if r["payer_user_id"] == user_id else None,
+                               "paid_at": r["paid_at"].isoformat() if r["paid_at"] else None,
                                "created_at": r["created_at"].isoformat()} for r in rows[:CAP]]},
     }  # fmt: skip
 

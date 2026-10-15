@@ -27,13 +27,21 @@ final tokenStoreProvider = Provider<TokenStore>((ref) {
 /// Secure-store key of the refresh token.
 const String kRefreshTokenKey = 'refresh_token';
 
-final apiClientProvider = Provider<ApiClient>(
-  (ref) => ApiClient(
+/// Bumped by [AuthController] whenever the signed-in user id changes (login,
+/// logout, session restore, forced sign-out). Watched by [apiClientProvider]
+/// so every repository and per-user provider built on it refetches instead of
+/// showing the previous user's data or a 401 cached before the session came
+/// back. (Cannot watch authProvider directly: that would be a cycle.)
+final authEpochProvider = StateProvider<int>((ref) => 0);
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  ref.watch(authEpochProvider);
+  return ApiClient(
     baseUrl: ref.watch(serverUrlProvider),
     isMock: kMockMode,
     tokens: ref.watch(tokenStoreProvider),
-  ),
-);
+  );
+});
 
 /// In-memory token holder shared by every [ApiClient] instance.
 class TokenStore {
@@ -152,8 +160,9 @@ class ApiClient {
     bool auth = true,
     bool retried = false,
   }) async {
+    _checkPath(path);
+    final token = tokens.accessToken;
     try {
-      final token = tokens.accessToken;
       final response = await _dio.request<dynamic>(
         path,
         data: body,
@@ -171,13 +180,29 @@ class ApiClient {
           auth &&
           !retried &&
           tokens.refreshToken != null) {
-        final ok = await _refreshOnce();
+        // If a concurrent request already rotated the token, just retry with
+        // the new one instead of burning another refresh token.
+        final rotated = token != null &&
+            tokens.accessToken != null &&
+            tokens.accessToken != token;
+        final ok = rotated || await _refreshOnce();
         if (ok) {
           return _request(method, path,
               query: query, body: body, auth: auth, retried: true);
         }
       }
       throw mapDioError(e);
+    }
+  }
+
+  /// Ids reach repositories from deep links (`/listing/:id`, ...). Refuse
+  /// values that would climb out of the intended endpoint or smuggle a query.
+  static void _checkPath(String path) {
+    if (path.contains('..') || path.contains('?') || path.contains('#')) {
+      throw ApiException(
+        code: 'bad_request',
+        message: 'Invalid identifier',
+      );
     }
   }
 
@@ -205,8 +230,13 @@ class ApiClient {
         );
         return true;
       }
-    } on DioException {
-      // fall through: session is dropped below
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == null || status >= 500 || status == 429) {
+        // Offline / server trouble: the refresh token may still be valid, so
+        // keep the session and let the caller retry later.
+        return false;
+      }
     }
     tokens.clear();
     return false;

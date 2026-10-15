@@ -20,7 +20,7 @@ from ff_gateway.domain.errors import UpstreamTimeout, UpstreamUnavailable
 
 router = APIRouter(tags=["admin"])
 
-_NAME_RE = re.compile(r"^[a-f0-9]{32}(\.(jpg|png|webp))?$")
+_NAME_RE = re.compile(r"^[a-f0-9]{32}(\.(jpg|png|webp))?\Z")
 _PASS = ("content-type", "cache-control", "x-content-type-options", "content-security-policy", "content-disposition",
          "cross-origin-resource-policy", "referrer-policy", "pragma")  # fmt: skip
 

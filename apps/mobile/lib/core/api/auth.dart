@@ -150,7 +150,17 @@ class AuthRepository {
       _api.tokens.set('mock-access-token', null);
       return Me(id: kMockUserId, name: 'user');
     }
-    if (!await _api.refreshSession()) return null;
+    if (!await _api.refreshSession()) {
+      // Tokens still present => the refresh failed for a transient reason
+      // (offline / 5xx), not because the session was rejected.
+      if (_api.tokens.refreshToken != null) {
+        throw ApiException(
+          code: 'network_error',
+          message: 'Could not reach the server',
+        );
+      }
+      return null;
+    }
     final me = await _api.get('/v1/me');
     return Me.fromJson(Map<String, dynamic>.from(me as Map));
   }
@@ -218,7 +228,14 @@ class AuthController extends StateNotifier<Me?> {
     _ref.read(tokenStoreProvider).onCleared = () {
       if (mounted) state = null;
     };
+    addListener((me) {
+      if (me?.id == _lastUserId) return;
+      _lastUserId = me?.id;
+      _ref.read(authEpochProvider.notifier).state++;
+    }, fireImmediately: false);
   }
+
+  String? _lastUserId;
 
   final Ref _ref;
 
@@ -267,9 +284,13 @@ class AuthController extends StateNotifier<Me?> {
       } else {
         state = me;
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      _ref.read(tokenStoreProvider).clear();
+      // Transient failure (offline / server error): stay signed out for this
+      // launch but keep the stored refresh token for the next one.
+      final transient =
+          e is ApiException && (e.status == null || e.status! >= 500);
+      if (!transient) _ref.read(tokenStoreProvider).clear();
       state = null;
     }
   }

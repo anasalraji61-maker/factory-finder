@@ -48,3 +48,13 @@ def test_dot_segments_cannot_sidestep_path_policies(client, hdr):
     h = [("authorization", hdr["Authorization"])]
     for p in ("/v1/alerts/./evaluate", "/v1/feed/./posts", "/v1/trust/./verification/documents", "/v1/alerts/../alerts/evaluate"):
         assert _raw(client.app, "POST", p, h) == 400, p
+
+def test_path_tricks_are_refused(client, hdr):
+    """Review e: empty segments, backslashes and still-encoded dots/slashes could be normalised differently upstream."""
+    h = [("authorization", hdr["Authorization"])]
+    for p in (
+        "/v1/alerts//evaluate", "//v1/alerts/evaluate", "/v1/alerts/%2e/evaluate", "/v1/alerts/%2E%2e/evaluate",
+        "/v1/alerts%2fevaluate", "/v1/alerts\\evaluate", "/v1/media/files/%5c..%5cprivate",
+    ):
+        assert _raw(client.app, "POST", p, h) == 400, p
+    assert _raw(client.app, "GET", "/v1/media/files/", h) != 400  # one trailing slash stays legal

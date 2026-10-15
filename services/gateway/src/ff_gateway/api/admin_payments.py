@@ -21,8 +21,8 @@ from ff_gateway.domain.errors import UpstreamTimeout, UpstreamUnavailable
 router = APIRouter(tags=["admin"])
 
 _ALLOWED_QUERY = {"status", "limit", "cursor", "page", "page_size"}
-_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
-_CURSOR_RE = re.compile(r"^[A-Za-z0-9_=.-]{1,256}$")
+_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}\Z")
+_CURSOR_RE = re.compile(r"^[A-Za-z0-9_=.-]{1,256}\Z")
 
 
 def _bad(msg: str) -> StarletteHTTPException:

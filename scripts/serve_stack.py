@@ -212,6 +212,7 @@ def seed(tmp: Path) -> dict:
 
 
 def main() -> int:
+    e2e.refuse_in_production()
     tmp = Path(tempfile.mkdtemp(prefix="ff-stack-"))
     procs: list = []
     stop = {"flag": False}
@@ -230,6 +231,7 @@ def main() -> int:
         info = seed(tmp)
         INFO_PATH.parent.mkdir(parents=True, exist_ok=True)
         INFO_PATH.write_text(json.dumps(info, indent=2, ensure_ascii=False))
+        INFO_PATH.chmod(0o600)  # holds test credentials
         print(f"info written to {INFO_PATH}", flush=True)
         print("READY", flush=True)
         while not stop["flag"]:

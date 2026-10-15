@@ -21,7 +21,7 @@ from ff_gateway.domain.errors import PayloadTooLarge, UpstreamTimeout, UpstreamU
 router = APIRouter(tags=["admin"])
 
 _ID = r"[A-Za-z0-9_-]{1,64}"
-_VALUE_RE = re.compile(r"^[A-Za-z0-9_=.:,+@-]{1,300}$")
+_VALUE_RE = re.compile(r"^[A-Za-z0-9_=.:,+@-]{1,300}\Z")
 _NUM_PARAMS = {"limit": 500, "offset": 1_000_000}
 
 
@@ -37,7 +37,7 @@ class AdminService:
 
 
 def _r(method: str, pattern: str) -> tuple[str, str]:
-    return method, "^" + pattern.replace("{id}", _ID) + "$"
+    return method, "^" + pattern.replace("{id}", _ID) + r"\Z"
 
 
 SERVICES = (

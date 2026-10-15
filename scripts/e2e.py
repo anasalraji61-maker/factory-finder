@@ -71,7 +71,15 @@ def items(d) -> list:
     raise AssertionError(f"no list in {str(d)[:200]}")
 
 
+def refuse_in_production() -> None:
+    """These harnesses start services with well-known tokens/secrets and no internal token: never next to real config."""
+    env = os.environ.get("FF_ENV", "").strip().lower()
+    if env in ("production", "prod", "staging", "stage") or os.environ.get("FF_PRODUCTION"):
+        raise SystemExit(f"refusing to start the e2e/dev stack with FF_ENV={env or 'production'}: it uses known test secrets")
+
+
 def start_services(tmp: Path, extra_env: dict[str, str] | None = None) -> list[subprocess.Popen]:
+    refuse_in_production()
     procs = []
     base_env = {
         **os.environ,

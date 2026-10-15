@@ -6,6 +6,9 @@ on:
   pull_request:
     paths: ["contracts/**", "services/**", "apps/mobile/lib/**", "apps/mobile/test/live_contract/**", "scripts/serve_stack.py", ".github/workflows/mobile-live.yml"]
 
+permissions:
+  contents: read
+
 jobs:
   live-contract:
     runs-on: ubuntu-latest

@@ -37,7 +37,7 @@ INTERNAL_ONLY = (("POST", "/v1/alerts/evaluate"), ("POST", "/v1/alerts/digest"))
 
 
 # Public verified-business badge (GET only); the rest of /v1/trust stays authenticated.
-TRUST_BADGE_PATH = re.compile(r"^/v1/trust/suppliers/[^/]+/verification$")
+TRUST_BADGE_PATH = re.compile(r"^/v1/trust/suppliers/[^/]+/verification\Z")
 
 
 def is_trust_verification_write_path(path: str) -> bool:
@@ -53,7 +53,7 @@ def is_internal_only(method: str, path: str) -> bool:
 
 
 # Anonymous listing analytics events (view / contact_click / share); identity optional, see sourcing analytics.
-LISTING_EVENTS_PATH = re.compile(r"^/v1/listings/[A-Za-z0-9_.:\-]{1,64}/events$")
+LISTING_EVENTS_PATH = re.compile(r"^/v1/listings/[A-Za-z0-9_.:\-]{1,64}/events\Z")
 
 
 def is_listing_events(method: str, path: str) -> bool:
@@ -61,7 +61,7 @@ def is_listing_events(method: str, path: str) -> bool:
 
 
 # Supplier review reads live in rfq although /v1/suppliers belongs to sourcing (public GETs, see PUBLIC_GET_PREFIXES).
-RFQ_SUPPLIER_PATH = re.compile(r"^/v1/suppliers/[^/]+/(reviews|review-summary)$")
+RFQ_SUPPLIER_PATH = re.compile(r"^/v1/suppliers/[^/]+/(reviews|review-summary)\Z")
 
 
 def _under(path: str, prefix: str) -> bool:

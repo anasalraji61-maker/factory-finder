@@ -133,6 +133,7 @@ class _ListingBody extends ConsumerStatefulWidget {
 
 class _ListingBodyState extends ConsumerState<_ListingBody> {
   int _page = 0;
+  bool _watchBusy = false;
 
   @override
   void initState() {
@@ -166,6 +167,18 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
   /// Star / watch button. With [suggested] (price history card) it always opens
   /// the alert sheet prefilled with that target instead of un-watching.
   Future<void> _toggleWatch({Money? suggested}) async {
+    // Ignore taps while an add/remove is in flight (double tap would create
+    // duplicate watches, or remove then re-add).
+    if (_watchBusy) return;
+    _watchBusy = true;
+    try {
+      await _toggleWatchInner(suggested: suggested);
+    } finally {
+      _watchBusy = false;
+    }
+  }
+
+  Future<void> _toggleWatchInner({Money? suggested}) async {
     final l = widget.listing;
     final repo = ref.read(watchlistRepositoryProvider);
     final existing = _existingWatch();

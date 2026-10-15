@@ -83,7 +83,7 @@ class DealReviewSection extends ConsumerWidget {
                   onDelete: editable
                       ? () async {
                           final done = await deleteReviewFlow(context, ref, review);
-                          if (done) _refresh(ref);
+                          if (done && context.mounted) _refresh(ref);
                         }
                       : null,
                 ),

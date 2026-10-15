@@ -37,7 +37,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _password.text,
           );
       if (!mounted) return;
-      context.pop();
+      // Deep-linked /login has nothing to pop; fall back to the home tab.
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/discover');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -137,7 +142,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _password.text,
           );
       if (!mounted) return;
-      context.pop();
+      // Deep-linked /login has nothing to pop; fall back to the home tab.
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/discover');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

@@ -29,7 +29,12 @@ class PostStore extends StateNotifier<Map<String, FeedPost>> {
 }
 
 final feedPostStoreProvider =
-    StateNotifierProvider<PostStore, Map<String, FeedPost>>((ref) => PostStore());
+    StateNotifierProvider<PostStore, Map<String, FeedPost>>((ref) {
+  // Per-user state (viewerLiked, own posts): start clean when the user changes
+  // so a second account never sees the first one's like flags.
+  ref.watch(authProvider.select((m) => m?.id));
+  return PostStore();
+});
 
 final feedPostProvider = Provider.family<FeedPost?, String>(
   (ref, id) => ref.watch(feedPostStoreProvider.select((m) => m[id])),
@@ -161,7 +166,8 @@ final feedListProvider =
     StateNotifierProvider.autoDispose.family<FeedListController, FeedListState, String>(
   (ref, key) {
     final repo = ref.watch(feedRepositoryProvider);
-    final store = ref.read(feedPostStoreProvider.notifier);
+    // watch (not read): a rebuilt store must rebuild the lists that write to it.
+    final store = ref.watch(feedPostStoreProvider.notifier);
     FeedFetch fetch;
     if (key == 'home') {
       fetch = (c) => repo.home(cursor: c);
@@ -291,7 +297,7 @@ final feedCommentsProvider =
     StateNotifierProvider.autoDispose.family<CommentsController, CommentsState, String>(
   (ref, postId) => CommentsController(
     ref.watch(feedRepositoryProvider),
-    ref.read(feedPostStoreProvider.notifier),
+    ref.watch(feedPostStoreProvider.notifier),
     postId,
   ),
 );

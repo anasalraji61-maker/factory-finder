@@ -192,7 +192,7 @@ class MediaService:
             raise NotFound("File not found")  # an authenticated stranger gets nothing, even with a stolen link
         if viewer is None:
             now = int(self.clock().timestamp())
-            if not (u and sig and exp and exp.isdigit() and len(exp) <= 12 and len(sig) <= 128):
+            if not (u and sig and exp and exp.isascii() and exp.isdigit() and len(exp) <= 12 and len(sig) <= 128):
                 raise NotFound("File not found")
             e = int(exp)
             if e <= now or e > now + self.settings.signed_url_ttl_seconds + 5:

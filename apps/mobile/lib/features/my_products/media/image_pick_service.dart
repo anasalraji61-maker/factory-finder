@@ -25,7 +25,14 @@ class PluginImagePickService implements ImagePickService {
   final ImagePicker _picker;
 
   Future<PickedImage?> _pick(ImageSource source) async {
-    final file = await _picker.pickImage(source: source);
+    final file = await _picker.pickImage(
+      source: source,
+      // Phone cameras produce 8-15 MB files that exceed the upload limit and
+      // blow up memory; downscale at the source.
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 85,
+    );
     if (file == null) return null;
     final bytes = await file.readAsBytes();
     final name = file.name.isEmpty ? 'photo.jpg' : file.name;

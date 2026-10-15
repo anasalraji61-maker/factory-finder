@@ -252,6 +252,33 @@ void main() {
       expect(adapter.calls.first.headers['Authorization'], 'Bearer old-access');
     });
 
+    test('transient refresh failure (503) keeps the session', () async {
+      final tokens = TokenStore()..set('a', 'r');
+      final adapter = _FakeAdapter((o) {
+        if (o.path == '/v1/auth/refresh') {
+          return _json({'error': {'code': 'unavailable', 'message': 'down'}}, 503);
+        }
+        return _json({'error': {'code': 'unauthorized', 'message': 'no'}}, 401);
+      });
+      final repo = RfqRepository(_client(adapter, tokens: tokens));
+      await expectLater(
+        repo.list(const RfqFilter()),
+        throwsA(isA<ApiException>().having((e) => e.status, 'status', 401)),
+      );
+      expect(tokens.refreshToken, 'r');
+      expect(tokens.hasSession, isTrue);
+    });
+
+    test('ids that would escape the endpoint path are refused', () async {
+      final adapter = _FakeAdapter((o) => _json({}));
+      final client = _client(adapter);
+      await expectLater(
+        client.get('/v1/listings/../auth/me'),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'bad_request')),
+      );
+      expect(adapter.calls, isEmpty);
+    });
+
     test('failed refresh clears the session and surfaces 401', () async {
       final tokens = TokenStore()..set('a', 'r');
       var cleared = false;
