@@ -91,7 +91,7 @@ Future<void> _pump(
   Me? me = _me,
   Locale locale = const Locale('ar'),
   double textScale = 1.0,
-  Size size = const Size(360, 800),
+  Size size = const Size(360, 2400),
 }) async {
   tester.view.physicalSize = size * 2.0;
   tester.view.devicePixelRatio = 2.0;
