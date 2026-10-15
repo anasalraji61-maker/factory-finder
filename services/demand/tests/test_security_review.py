@@ -123,3 +123,25 @@ def test_audit_trail_is_capped():
     assert len(d["audit"]) == MAX_AUDIT
     assert d["audit"][0]["action"] == "drafted"
     assert d["audit"][-1]["action"] == f"outcome:{MAX_AUDIT * 3 - 1}"
+
+
+def test_retention_purges_only_inert_signals_and_rejected_drafts(env):
+    from datetime import timedelta
+
+    c, s = env.c, env.svc
+    new = s.clock()
+    s.clock = lambda: new - timedelta(days=200)
+    ignored = c.post("/v1/signals", headers=H, json={"text": "nice weather today"}).json()["signal"]
+    rejected = env.draft()
+    env.act(rejected, "reject")
+    sig = {"text": "I need packaging machines from China"}
+    approved = c.post("/v1/signals", headers=H, json=sig).json()["draft"]["id"]
+    assert env.act(approved, "approve").status_code == 200
+    sig = {"text": "I need bottle filling machines from China"}
+    pending = c.post("/v1/signals", headers=H, json=sig).json()["draft"]["id"]
+    s.clock = lambda: new
+    assert c.post("/v1/signals/poll", headers=H).status_code == 200  # poll runs the retention pass
+    assert c.get(f"/v1/drafts/{approved}", headers=H).status_code == 200  # audit record kept
+    assert c.get(f"/v1/drafts/{pending}", headers=H).status_code == 200
+    assert c.get(f"/v1/drafts/{rejected}", headers=H).status_code == 404
+    assert c.get(f"/v1/signals/{ignored['id']}", headers=H).status_code == 404

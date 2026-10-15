@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     # --- send rate limit (per user, sliding window) ---------------------------------------------
     conversation_create_limit: int = Field(default=10, ge=1)  # new conversations per user per window
     conversation_create_window_seconds: float = Field(default=60.0, gt=0)
+    # hard caps (0 = unlimited). Conversations counts every thread the creator participates in.
+    max_conversations_per_user: int = Field(default=1000, ge=0)
+    max_messages_per_conversation: int = Field(default=10_000, ge=0)
     send_rate_limit: int = Field(default=20, ge=1)
     send_rate_window_seconds: float = Field(default=10.0, gt=0)
 

@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     outbox_lease_seconds: int = 60
     outbox_inline_timeout_seconds: float = 3.0  # best-effort immediate delivery after settlement
 
+    # per-payer creation caps (non-admin; each invoice creates a provider charge)
+    max_open_invoices_per_user: int = 20  # pending/awaiting_payment/confirming at once
+    max_invoices_per_user_per_day: int = 50  # created in the last 24 h
+    # retention (run by the sweep). Never touches open invoices, paid/refunded invoices, their attempts/webhook events,
+    # the ledger, or outbox events that are not delivered. 0 disables a rule.
+    webhook_event_retention_days: int = 180
+    outbox_delivered_retention_days: int = 180
+    attempt_retention_days: int = 365  # only attempts of expired/failed invoices
+
     commission_product: Decimal = Decimal("0.03")
     commission_raw_material: Decimal = Decimal("0.02")
     commission_production_line: Decimal = Decimal("0.04")

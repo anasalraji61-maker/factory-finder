@@ -52,3 +52,9 @@ class RateLimitedError(MessagingError):
             details={"retry_after_seconds": round(max(retry_after_seconds, 0.0), 3)},
         )
         self.retry_after_seconds = max(retry_after_seconds, 0.0)
+
+
+class LimitReachedError(MessagingError):
+    """A hard cap (conversations per user, messages per conversation) is full."""
+
+    code = "limit_reached"

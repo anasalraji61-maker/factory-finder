@@ -1,0 +1,2 @@
+2026-10-15 | payments/demand/messaging: retention runs inside existing sweep/poll calls (no new scheduler); defaults 90-365 days; money records, audit drafts and undelivered outbox never pruned | simplest lawful policy that keeps audit trail
+2026-10-15 | messaging erasure blanks the erased user's message text (supersedes "text stays") | free text may hold PII; thread structure remains for the counterparty

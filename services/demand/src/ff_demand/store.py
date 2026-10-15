@@ -13,6 +13,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    delete,
     func,
     insert,
     select,
@@ -24,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from ff_demand.dburl import normalize_database_url
 
 metadata = MetaData()
+PURGE_BATCH = 1000  # rows examined per retention pass
 MAX_LIST = 500  # hard cap for list reads (newest first); unbounded scans are a DoS/latency risk
 
 signals = Table(
@@ -180,3 +182,48 @@ class Store:
                     .where(drafts.c.approved_at >= day_start, drafts.c.approved_at < day_end)
                 )
             ).scalar_one()
+
+    async def purge(
+        self, signal_before: datetime | None, rejected_before: datetime | None
+    ) -> dict[str, int]:
+        """Retention: ignored/no_match signals and rejected drafts (with their signal) only.
+
+        Never touches draft/approved/published drafts or the signals they hang off."""
+        out = {"signals": 0, "drafts": 0}
+        async with self.engine.begin() as c:
+            if rejected_before is not None:
+                old = select(drafts.c.id, drafts.c.signal_id).where(
+                    drafts.c.status == "rejected", drafts.c.created_at < rejected_before
+                )
+                rows = (await c.execute(old)).all()
+                if rows:
+                    ids = [r[0] for r in rows]
+                    sids = [r[1] for r in rows]
+                    res = await c.execute(delete(drafts).where(drafts.c.id.in_(ids)))
+                    out["drafts"] = res.rowcount or 0
+                    # drop the signal only when no other draft still references it
+                    keep = select(drafts.c.signal_id).where(drafts.c.signal_id.in_(sids))
+                    out["signals"] += (
+                        await c.execute(
+                            delete(signals).where(signals.c.id.in_(sids), signals.c.id.not_in(keep))
+                        )
+                    ).rowcount or 0
+            if signal_before is not None:
+                # status lives in the JSON doc (no column): filter in Python, bounded per pass
+                cand = (
+                    await c.execute(
+                        select(signals.c.id, signals.c.doc)
+                        .where(
+                            signals.c.created_at < signal_before,
+                            signals.c.id.not_in(select(drafts.c.signal_id)),
+                        )
+                        .order_by(signals.c.created_at)
+                        .limit(PURGE_BATCH)
+                    )
+                ).all()
+                ids = [r[0] for r in cand if (r[1] or {}).get("status") in ("ignored", "no_match")]
+                if ids:
+                    out["signals"] += (
+                        await c.execute(delete(signals).where(signals.c.id.in_(ids)))
+                    ).rowcount or 0
+        return out

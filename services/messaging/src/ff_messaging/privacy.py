@@ -2,7 +2,9 @@
 
 Erasure keeps every thread for the counterparty: the user's participant row, sender ids and
 ``created_by`` are replaced by an irreversible tombstone, and attachment references on the
-user's messages are removed. Message text stays (counterparty's record); the sender is no longer identifiable.
+user's messages are removed. The user's own message text (free text, may hold PII) is blanked, as are the thread preview of their last
+message, idempotency keys that embed their id, and titles of threads they created. Structured events
+(offers, system messages) stay. The counterparty keeps the thread, minus the erased user's words.
 """
 
 import hashlib
@@ -62,9 +64,14 @@ async def export_user(db: Database, user_id: str) -> dict[str, Any]:
 async def erase_user(db: Database, user_id: str) -> dict[str, int]:
     tomb = tombstone(user_id)
     async with db.transaction() as conn:
+        # previews/titles first: they are matched on the not-yet-tombstoned user id
+        await conn.execute(
+            update(convs).where(convs.c.last_message_sender_id == user_id).values(last_message_preview=None)
+        )
+        await conn.execute(update(convs).where(convs.c.created_by == user_id).values(title=None))
         m = await conn.execute(
             update(msgs).where(msgs.c.sender_id == user_id).values(
-                sender_id=tomb, attachment_url=None, attachment_mime=None, attachment_size=None,
+                sender_id=tomb, text=None, client_message_id=None, dedupe_key=None, attachment_url=None, attachment_mime=None, attachment_size=None,
                 attachment_name=None, attachments=None,
             )
         )  # fmt: skip

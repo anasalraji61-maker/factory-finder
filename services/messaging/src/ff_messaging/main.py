@@ -33,6 +33,7 @@ _STATUS: dict[type, int] = {
     E.ForbiddenError: 403,
     E.NotFoundError: 404,
     E.RateLimitedError: 429,
+    E.LimitReachedError: 409,
 }
 
 

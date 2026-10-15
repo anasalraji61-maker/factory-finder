@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     use_mock_sourcing: bool = False
     max_candidates: int = Field(default=3, ge=1, le=10)
 
+    # retention (days, 0 = keep forever): purges ignored/no_match signals and rejected drafts
+    # (+ their signal).
+    # Draft/approved/published drafts are audit records and are never purged.
+    signal_retention_days: int = Field(default=90, ge=0)
+    rejected_draft_retention_days: int = Field(default=90, ge=0)
+
     signal_source: str = "mock"  # only "mock" ships; real sources must be official APIs
 
     @property

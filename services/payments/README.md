@@ -41,3 +41,6 @@ append-only double-entry ledger, provider webhooks. Internal only (reached throu
 
 ## rfq callback outbox
 Every `paid`/`refunded` transition queues an event for rfq in the same transaction; delivered inline (best effort) and by `POST /v1/payments/sweep`. Admin: `GET /v1/payments/outbox`, `POST /v1/payments/outbox/{id}/requeue`. Env: `FF_PAYMENTS_OUTBOX_MAX_ATTEMPTS`, `_OUTBOX_BACKOFF_SECONDS`, `_OUTBOX_LEASE_SECONDS`, `_OUTBOX_INLINE_TIMEOUT_SECONDS`. See `docs/decisions/deal-payment-hook.md`.
+
+### Limits and retention (env)
+`FF_PAYMENTS_MAX_OPEN_INVOICES_PER_USER` (20), `_MAX_INVOICES_PER_USER_PER_DAY` (50), `_WEBHOOK_EVENT_RETENTION_DAYS` (180), `_OUTBOX_DELIVERED_RETENTION_DAYS` (180), `_ATTEMPT_RETENTION_DAYS` (365); 0 disables a rule. Retention runs in `POST /v1/payments/sweep` and never touches invoices, ledger, paid/refunded history or undelivered outbox events.

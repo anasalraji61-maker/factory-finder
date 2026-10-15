@@ -15,3 +15,5 @@ Env (prefix `FF_DEMAND_`): `ENABLED` (default **false**, kill-switch), `DAILY_CA
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+Retention env: `FF_DEMAND_SIGNAL_RETENTION_DAYS` (90), `FF_DEMAND_REJECTED_DRAFT_RETENTION_DAYS` (90); run after `POST /v1/signals/poll`; approved/published drafts are kept.

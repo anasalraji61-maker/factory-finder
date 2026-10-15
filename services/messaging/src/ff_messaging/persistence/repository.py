@@ -248,6 +248,10 @@ class Repository:
         participant_rows = await self._participant_rows([row["id"] for row in rows])
         return [_to_conversation(row, participant_rows[row["id"]]) for row in rows], int(total)
 
+    async def count_user_conversations(self, user_id: str) -> int:
+        stmt = select(func.count()).select_from(participants_t).where(participants_t.c.user_id == user_id)
+        return int((await self.conn.execute(stmt)).scalar_one())
+
     async def unread_total(self, user_id: str | Sequence[str]) -> int:
         ids = [user_id] if isinstance(user_id, str) else list(user_id)
         joined = participants_t.join(

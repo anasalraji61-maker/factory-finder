@@ -151,9 +151,21 @@ class DemandService:
         return {"signal": sig, "draft": draft, "duplicate": False, "created": True}
 
     async def poll(self) -> list[dict]:
-        if self.source is None:
-            return []
-        return [await self.import_signal(r) for r in await self.source.fetch()]
+        try:
+            if self.source is None:
+                return []
+            return [await self.import_signal(r) for r in await self.source.fetch()]
+        finally:
+            await self.prune()
+
+    async def prune(self) -> dict[str, int]:
+        c, now = self.settings, self.clock()
+        sig = now - timedelta(days=c.signal_retention_days) if c.signal_retention_days else None
+        rdays = c.rejected_draft_retention_days
+        rej = now - timedelta(days=rdays) if rdays else None
+        if sig is None and rej is None:
+            return {"signals": 0, "drafts": 0}
+        return await self.store.purge(sig, rej)
 
     # ---- drafts ----------------------------------------------------------------------------
     async def get_draft(self, did: str) -> dict:

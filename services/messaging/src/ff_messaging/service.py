@@ -8,6 +8,7 @@ from ff_messaging.domain.cursor import decode_cursor, encode_cursor
 from ff_messaging.domain.errors import (
     ForbiddenError,
     InvalidInputError,
+    LimitReachedError,
     NotFoundError,
     RateLimitedError,
 )
@@ -100,6 +101,9 @@ class MessagingService:
                 raise RateLimitedError(
                     "Too many new conversations", retry_after_seconds=decision.retry_after
                 )
+            cap = s.max_conversations_per_user
+            if cap and caller not in s.platform_ids and await repo.count_user_conversations(caller) >= cap:
+                raise LimitReachedError("Conversation limit reached", code="conversation_limit_reached")
             conv_id = new_id(CONVERSATION_PREFIX)
             await repo.insert_conversation(
                 conversation_id=conv_id,
@@ -171,6 +175,7 @@ class MessagingService:
                 repo, caller, conversation_id, lock=True, supplier_id=supplier_id
             )
             caller = self._acting_id(conv, caller, supplier_id)
+            msg_cap = self.settings.max_messages_per_conversation
             dedupe = (
                 user_message_dedupe_key(caller, d.client_message_id)
                 if d.client_message_id
@@ -180,6 +185,8 @@ class MessagingService:
                 prior = await repo.find_message_by_dedupe_key(conversation_id, dedupe)
                 if prior is not None:
                     return self._with_read_by(prior, conv), False
+            if msg_cap and conv.last_seq >= msg_cap:  # after the idempotent-retry check
+                raise LimitReachedError("Conversation is full", code="conversation_full")
             seq = await repo.allocate_seq(conversation_id)
             message = Message(
                 id=new_id(MESSAGE_PREFIX),

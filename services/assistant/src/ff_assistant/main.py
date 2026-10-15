@@ -37,6 +37,7 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
     app = FastAPI(title="Factory Finder - assistant", version=__version__, lifespan=lifespan)
     app.state.assistant = Assistant(c, s, llm=llm if llm is not None else build_llm(s))
 
+    app.state.settings = s
     app.state.quota = quota or DailyQuota(s.quota_per_day, s.anon_quota_per_day)
 
     @app.middleware("http")

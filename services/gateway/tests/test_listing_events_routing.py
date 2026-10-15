@@ -58,3 +58,19 @@ def test_my_analytics_requires_auth_and_forwards_only_verified_supplier(make_cli
     assert c.get("/v1/my/analytics?days=7&listing_id=nat_1", headers=h).status_code == 200
     sent = route.calls.last.request
     assert "x-supplier-id" not in sent.headers and sent.url.params["days"] == "7"
+
+
+def test_assistant_gets_derived_client_ip_never_client_supplied(make_client, mock_upstream):
+    c = make_client(internal_token="int-secret")
+    route = mock_upstream.route(host="localhost", port=8109, path="/v1/assistant/query").mock(
+        return_value=httpx.Response(200, json={"answer": "x"})
+    )
+    reg = c.post("/v1/auth/register", json={"email": "as@example.com", "password": "password123", "name": "A"}).json()
+    r = c.post(
+        "/v1/assistant/query", json={"text": "hi"},
+        headers={"Authorization": f"Bearer {reg['access_token']}", "X-Client-Ip": "6.6.6.6", "x-client-ip": "8.8.8.8", "X-Forwarded-For": "7.7.7.7"},
+    )
+    assert r.status_code == 200
+    sent = route.calls.last.request.headers
+    assert sent.get_list("x-client-ip") != [] and len(sent.get_list("x-client-ip")) == 1
+    assert sent["x-client-ip"] not in ("6.6.6.6", "7.7.7.7", "8.8.8.8")  # peer: no trusted proxy configured

@@ -14,14 +14,29 @@
 - **assistant**: tracking-validator `reason` (downstream text) went into the answer and the LLM rewrite unsanitised; now passes through the injection guard.
   Daily quota counter map is capped (200k keys, fail closed for new keys) so spoofed ids/addresses cannot grow memory. `destination.city` capped at 80 chars.
 
+## Fixed (follow-up, 2026-10-15)
+- **demand** (FIXED): retention in `DemandService.prune()` (runs at the end of `POST /v1/signals/poll`): ignored/no_match signals older than
+  `FF_DEMAND_SIGNAL_RETENTION_DAYS` (90) and rejected drafts + their signal older than `FF_DEMAND_REJECTED_DRAFT_RETENTION_DAYS` (90); 0 = keep.
+  draft/approved/published drafts (audit) and their signals are never purged.
+- **payments** (FIXED): per-payer caps for non-admin creation: `FF_PAYMENTS_MAX_OPEN_INVOICES_PER_USER` (20, pending/awaiting/confirming) and
+  `..._MAX_INVOICES_PER_USER_PER_DAY` (50, any status, rolling 24 h) -> 429 `too_many_open_invoices` / `daily_invoice_limit`; idempotent hits are free.
+  Retention in `prune()` (end of `POST /v1/payments/sweep`): `webhook_events` > `..._WEBHOOK_EVENT_RETENTION_DAYS` (180, never those of paid/refunded invoices;
+  signature tolerance is 5 min so replay is still blocked), delivered `outbox_events` > `..._OUTBOX_DELIVERED_RETENTION_DAYS` (180),
+  `payment_attempts` > `..._ATTEMPT_RETENTION_DAYS` (365, only of expired/failed invoices). Invoices, ledger, paid/refunded history, pending/dead outbox are never pruned.
+- **messaging** (FIXED): `FF_MESSAGING_MAX_CONVERSATIONS_PER_USER` (1000, creator only; dedupe hits and platform accounts exempt) -> 409 `conversation_limit_reached`;
+  `FF_MESSAGING_MAX_MESSAGES_PER_CONVERSATION` (10000) -> 409 `conversation_full` (idempotent retries still answered). 0 = unlimited.
+  Erasure now blanks the user's message `text`, `client_message_id`/`dedupe_key`, the inbox preview of their last message and titles of threads they created
+  (export returns the text before erasure; sender ids/attachments were already tombstoned). Counterparty messages are untouched.
+
 ## Open (design / product decision)
-- **demand**: `signals`/`drafts` tables have no retention (admin-only writes, so low risk); needs a policy (e.g. purge ignored/no_match signals > 90 days).
-- **payments**: `webhook_events`, `outbox_events` (delivered), `payment_attempts` grow forever (financial records; archive policy needed). A payer can
-  cancel and re-create invoices without a per-user cap (each creates a provider charge); consider a per-deal/per-user creation limit.
-- **messaging**: no per-user cap on number of conversations or messages per conversation; rate limiters are in-process (not shared across replicas).
-  Erasure keeps message text of the erased user (documented decision) - free text may still contain PII.
+- **messaging**: rate limiters are in-process (not shared across replicas).
 - **assistant**: anonymous quota is keyed by the peer address, which behind the gateway is the gateway's address (one shared bucket); gateway should forward a client key.
 - **notifications**: `register_device` re-assigns an existing push token to the caller (device moves accounts); safe only because tokens are secret per device.
 
 ## Env vars for scripts/e2e.py
-None required (all new settings have defaults).
+None required (all new settings have defaults; e2e invoice/conversation volumes are far below the caps).
+
+## Update: assistant anonymous quota key
+Gateway now sends `X-Client-Ip` (same `client_ip()` derivation as its rate limiter; client-supplied copies stripped) on every `/v1/assistant` call. The assistant uses it
+for the anonymous bucket only if the request carries the valid `FF_INTERNAL_TOKEN` or `FF_ASSISTANT_TRUST_CLIENT_IP_HEADER=true`; value must parse as a single IP, else peer address.
+Note: gateway currently requires auth for `/v1/assistant`, so anonymous traffic only appears if that route is made public.

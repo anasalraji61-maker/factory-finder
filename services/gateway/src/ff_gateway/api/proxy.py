@@ -164,8 +164,10 @@ async def proxy(full_path: str, request: Request) -> Response:
         raise PayloadTooLarge()
     headers = {k: v for k, v in request.headers.items() if k.lower() in FORWARD_REQUEST_HEADERS}
     headers.update(internal_headers(request, user_id))
-    if upstream == "sourcing" and is_listing_events(request.method, path):
-        # transient input for sourcing's daily-salted viewer hash (never stored); client-sent values are not forwarded
+    for k in [k for k in headers if k.lower() == "x-client-ip"]:  # never relay a client-supplied value
+        del headers[k]
+    if upstream == "assistant" or (upstream == "sourcing" and is_listing_events(request.method, path)):
+        # sourcing: transient input for the daily-salted viewer hash (never stored); assistant: anonymous quota key
         peer = request.client.host if request.client else None
         headers["X-Client-Ip"] = client_ip(peer, request.headers.get("x-forwarded-for"), request.app.state.settings.trusted_proxy_networks())
     if (

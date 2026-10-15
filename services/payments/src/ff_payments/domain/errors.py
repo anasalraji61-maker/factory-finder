@@ -47,6 +47,11 @@ class Conflict(DomainError):
     default_code = "conflict"
 
 
+class TooManyInvoices(DomainError):
+    status_code = 429
+    default_code = "invoice_limit_reached"
+
+
 class InvalidTransition(Conflict):
     """A state-machine transition that is not allowed from the current status."""
 

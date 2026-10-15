@@ -31,6 +31,10 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("FF_INTERNAL_TOKEN", "FF_ASSISTANT_INTERNAL_TOKEN"),
     )
 
+    # Anonymous quota key. The gateway forwards X-Client-Ip (derived by its own trusted-proxy logic). It is honoured only
+    # when the request carries the valid internal token, or when this flag says the deployment's network trusts the caller.
+    trust_client_ip_header: bool = Field(default=False, validation_alias="FF_ASSISTANT_TRUST_CLIENT_IP_HEADER")
+
     default_currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
     max_listings: int = Field(default=3, ge=1, le=10)
     search_page_size: int = Field(default=10, ge=3, le=50)

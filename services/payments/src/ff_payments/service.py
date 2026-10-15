@@ -15,7 +15,7 @@ from decimal import Decimal
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -38,6 +38,7 @@ from ff_payments.domain.errors import (
     Forbidden,
     InvalidTransition,
     NotFound,
+    TooManyInvoices,
     UpstreamUnavailable,
     ValidationFailed,
 )
@@ -215,6 +216,8 @@ class PaymentsService:
                 await self._expire_if_due(s, existing)
                 if existing.status != S.EXPIRED.value:
                     return invoice_dict(existing), False
+            if not admin:
+                await self._check_quota(s, payer, now)
             invoice_id = _uid("inv")
             memo = _new_memo()
             taken = frozenset((await s.execute(select(InvoiceRow.pay_amount).where(
@@ -237,6 +240,47 @@ class PaymentsService:
                                     currency=currency, created_at=now, updated_at=now))
             await s.commit()
             return invoice_dict(row), True
+
+    async def _check_quota(self, s: AsyncSession, payer: str, now: datetime) -> None:
+        c = self.settings
+        if c.max_open_invoices_per_user > 0:
+            open_n = (await s.execute(select(func.count()).select_from(InvoiceRow).where(
+                InvoiceRow.payer_user_id == payer,
+                InvoiceRow.status.in_([x.value for x in state.OPEN])))).scalar_one()
+            if open_n >= c.max_open_invoices_per_user:
+                raise TooManyInvoices("Too many open invoices; pay or cancel some first", code="too_many_open_invoices")
+        if c.max_invoices_per_user_per_day > 0:
+            day_n = (await s.execute(select(func.count()).select_from(InvoiceRow).where(
+                InvoiceRow.payer_user_id == payer, InvoiceRow.created_at > now - timedelta(days=1)))).scalar_one()
+            if day_n >= c.max_invoices_per_user_per_day:
+                raise TooManyInvoices("Daily invoice limit reached; try again later", code="daily_invoice_limit")
+
+    async def prune(self) -> dict[str, int]:
+        """Retention. Only inert records: replay rows and delivered outbox events past their window, and attempts of
+        invoices that never took money (expired/failed). Open/paid/refunded invoices, the ledger and any pending or dead
+        outbox event are never deleted."""
+        c, now = self.settings, self.clock()
+        out = {"webhook_events": 0, "outbox_delivered": 0, "payment_attempts": 0}
+        async with self.sessions() as s:
+            if c.webhook_event_retention_days > 0:
+                money = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.PAID.value, S.REFUNDED.value]))
+                r = await s.execute(delete(WebhookEventRow).where(
+                    WebhookEventRow.received_at < now - timedelta(days=c.webhook_event_retention_days),
+                    or_(WebhookEventRow.invoice_id.is_(None), WebhookEventRow.invoice_id.not_in(money))))
+                out["webhook_events"] = int(r.rowcount or 0)
+            if c.outbox_delivered_retention_days > 0:
+                r = await s.execute(delete(OutboxEventRow).where(
+                    OutboxEventRow.status == "delivered",
+                    OutboxEventRow.delivered_at < now - timedelta(days=c.outbox_delivered_retention_days)))
+                out["outbox_delivered"] = int(r.rowcount or 0)
+            if c.attempt_retention_days > 0:
+                dead = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.EXPIRED.value, S.FAILED.value]))
+                r = await s.execute(delete(PaymentAttemptRow).where(
+                    PaymentAttemptRow.updated_at < now - timedelta(days=c.attempt_retention_days),
+                    PaymentAttemptRow.invoice_id.in_(dead)))
+                out["payment_attempts"] = int(r.rowcount or 0)
+            await s.commit()
+        return out
 
     async def _resolve(self, user: str | None, admin: bool, body: InvoiceCreate) -> tuple[str, str, str, str]:
         """-> (payer, payee, amount string, currency). Non-admins can never choose payer/payee/amount."""
@@ -446,7 +490,8 @@ class PaymentsService:
                 await s.commit()
             expired = await self._expire_due(s)
         box = await self.drain_outbox()
-        return {"expired": expired, "polled": polled, "updated": updated, "outbox_delivered": box["delivered"],
+        pruned = await self.prune()
+        return {"pruned": sum(pruned.values()), "expired": expired, "polled": polled, "updated": updated, "outbox_delivered": box["delivered"],
                 "outbox_retry": box["retry"], "outbox_dead": box["dead"]}
 
     async def _apply_observation(self, s: AsyncSession, r: InvoiceRow, obs: Observation) -> bool:

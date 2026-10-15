@@ -16,3 +16,5 @@ Env (prefix `FF_MESSAGING_`): `DATABASE_URL`, `MAX_TEXT_LENGTH`, `ABUSE_ACTION` 
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+Caps env: `FF_MESSAGING_MAX_CONVERSATIONS_PER_USER` (1000), `FF_MESSAGING_MAX_MESSAGES_PER_CONVERSATION` (10000); 0 = unlimited. Erasure blanks the erased user's message text.

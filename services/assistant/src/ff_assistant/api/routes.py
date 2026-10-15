@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hmac
+import ipaddress
 import re
 
 from fastapi import APIRouter, Request, Response
@@ -19,11 +21,27 @@ def caller_id(request: Request) -> str | None:
     return raw if _UID.fullmatch(raw) else None
 
 
+def quota_client(request: Request) -> str:
+    """Anonymous quota key: the peer address, unless X-Client-Ip (set by the gateway) is trustworthy: the request
+    presented the valid internal token, or the deployment explicitly trusts the proxy. Value must be a bare IP."""
+    peer = request.client.host if request.client else "unknown"
+    s = request.app.state.settings
+    token = s.internal_token.get_secret_value() if s.internal_token else None
+    presented = request.headers.get("X-Internal-Token", "")
+    if not (s.trust_client_ip_header or (token and hmac.compare_digest(presented.encode(), token.encode()))):
+        return peer
+    raw = request.headers.get("X-Client-Ip", "").strip()
+    try:
+        return str(ipaddress.ip_address(raw)) if raw else peer
+    except ValueError:
+        return peer
+
+
 @router.post("/query", response_model=AssistantResult, response_model_exclude_none=True,
              responses={429: {"description": "Daily per-user quota exceeded (code quota_exceeded, Retry-After)"}})
 async def query(body: AssistantRequest, request: Request, response: Response):
     user_id = caller_id(request)
-    decision = request.app.state.quota.hit(user_id, request.client.host if request.client else "unknown")
+    decision = request.app.state.quota.hit(user_id, quota_client(request))
     if not decision.allowed:
         return JSONResponse(
             status_code=429, headers={"Retry-After": str(decision.retry_after_s)},
