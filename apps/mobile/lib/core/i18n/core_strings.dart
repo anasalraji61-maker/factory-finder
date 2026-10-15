@@ -65,4 +65,12 @@ const Map<String, (String, String)> _pairs = {
   'country.EG': ('مصر', 'Egypt'),
   'country.JO': ('الأردن', 'Jordan'),
   'country.KW': ('الكويت', 'Kuwait'),
+  'error.file_in_use': ('هذا الملف مستخدم في عنصر آخر ولا يمكن حذفه.', 'This file is in use and cannot be removed.'),
+  'error.rating_too_early': ('لا يمكنك التقييم بعد. انتظر حتى تكتمل الصفقة أو تمر المدة المطلوبة.', 'It is too early to rate. Please wait until the deal is complete or the required time has passed.'),
+  'error.rating_pair_limit': ('وصلت إلى الحد الأقصى للتقييمات بينك وبين هذا الطرف.', 'You have reached the rating limit for this pair of parties.'),
+  'error.too_many_open_invoices': ('لديك فواتير مفتوحة كثيرة. سدّد أو ألغِ بعضها ثم حاول مجدداً.', 'You have too many open invoices. Pay or cancel some, then try again.'),
+  'error.daily_invoice_limit': ('بلغت الحد اليومي للفواتير. حاول مجدداً غداً.', 'You have reached the daily invoice limit. Try again tomorrow.'),
+  'error.conversation_limit_reached': ('بلغت الحد الأقصى للمحادثات. أغلق بعضها لبدء محادثة جديدة.', 'You have reached the conversation limit. Close some to start a new one.'),
+  'error.conversation_full': ('هذه المحادثة وصلت إلى الحد الأقصى للرسائل.', 'This conversation has reached its message limit.'),
+  'error.upstream_timeout': ('استغرقت الخدمة وقتاً أطول من المتوقع. حاول مجدداً بعد قليل.', 'The service took too long to respond. Please try again shortly.'),
 };

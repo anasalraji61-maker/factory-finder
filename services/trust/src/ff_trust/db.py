@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import os
+import sqlite3
+import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
@@ -183,7 +185,16 @@ def make_engine(url: str) -> AsyncEngine:
         cur = dbapi_conn.cursor()
         cur.execute("PRAGMA foreign_keys=ON")
         if not in_memory:
-            cur.execute("PRAGMA journal_mode=WAL")
+            # switching to WAL needs a lock the busy handler cannot always wait for (a second process/engine
+            # bootstrapping the same fresh file): retry instead of failing the first request with "database is locked"
+            for attempt in range(200):
+                try:
+                    cur.execute("PRAGMA journal_mode=WAL")
+                    break
+                except sqlite3.OperationalError as exc:
+                    if "locked" not in str(exc) and "busy" not in str(exc) or attempt == 199:
+                        raise
+                    time.sleep(0.05)
         cur.close()
 
     @event.listens_for(engine.sync_engine, "begin")

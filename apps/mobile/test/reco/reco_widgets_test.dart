@@ -294,6 +294,34 @@ void main() {
       expect(find.byKey(const ValueKey<String>('similar-section')), findsNothing);
       expect(find.byKey(const ValueKey<String>('recommended-section')), findsNothing);
     });
+
+    testWidgets('partial_results warning shows a non-blocking notice', (tester) async {
+      final j = _obj('similar');
+      j['warning'] = 'partial_results: time budget exceeded, results may be incomplete';
+      await _pumpHost(
+        tester,
+        const SimilarListingsSection(listingId: 'a'),
+        repo: _FakeReco(similarPage: RecoPage.fromJson(j)),
+      );
+      expect(find.byKey(const ValueKey<String>('reco-partial-notice')), findsOneWidget);
+      expect(find.text('قد تكون النتائج ناقصة. حاول التحديث بعد قليل.'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('similar-section')), findsOneWidget);
+    });
+
+    testWidgets('partial notice alone when no items; none without warning', (tester) async {
+      await _pumpHost(
+        tester,
+        const RecommendedSection(),
+        repo: _FakeReco(
+          recoPage: const RecoPage(warning: 'partial_results: time budget exceeded'),
+        ),
+      );
+      expect(find.byKey(const ValueKey<String>('reco-partial-notice')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('recommended-section')), findsNothing);
+
+      await _pumpHost(tester, const RecommendedSection(), repo: _FakeReco());
+      expect(find.byKey(const ValueKey<String>('reco-partial-notice')), findsNothing);
+    });
   });
 
   group('recently viewed settings', () {

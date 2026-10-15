@@ -76,29 +76,18 @@ def test_unknown_path_rejected(client, fake, auth):
     )
 
 
-def retry_on_cancel(times=3):
-    """Starlette's TestClient can raise CancelledError when leaving a websocket
-    block while the app is still closing (a test-harness race, not a gateway bug)."""
-    import concurrent.futures
-    import functools
-
-    def deco(fn):
-        @functools.wraps(fn)
-        def wrapper(*a, **kw):
-            for attempt in range(times):
-                try:
-                    return fn(*a, **kw)
-                except concurrent.futures.CancelledError:
-                    if attempt == times - 1:
-                        raise
-
-        return wrapper
-
-    return deco
+def _finish(w):
+    """End a session server-side ("bye" makes the fake upstream close) and wait for the
+    gateway's close frame, so the app has finished before the TestClient cancels it.
+    Leaving the block while the app is still closing races with the harness's cancel."""
+    w.send_text("bye")
+    with pytest.raises(WebSocketDisconnect) as e:
+        while True:
+            w.receive_text()
+    return e.value.code
 
 
 @pytest.mark.parametrize("via", ["header", "query"])
-@retry_on_cancel()
 def test_pipe_and_identity(make_client, via):
     c = make_client(internal_token="int-secret")
     tok = c.post(
@@ -128,6 +117,7 @@ def test_pipe_and_identity(make_client, via):
         assert w.receive_text() == "hello"
         w.send_text('{"type":"ping"}')
         assert w.receive_text() == 'echo:{"type":"ping"}'
+        _finish(w)
     up = box["up"]
     assert up.url == "ws://localhost:8106/v1/ws/conversations/c1"  # no token / user_id forwarded
     assert (
@@ -135,7 +125,7 @@ def test_pipe_and_identity(make_client, via):
         and up.headers["X-Internal-Token"] == "int-secret"
     )
     assert "X-Supplier-Id" not in up.headers
-    assert up.sent == ['{"type":"ping"}']
+    assert up.sent == ['{"type":"ping"}', "bye"]
 
 
 def test_upstream_close_code_propagated(client, fake, hdr):
@@ -166,7 +156,6 @@ def test_ticket_requires_auth(client):
     assert client.post("/v1/ws-ticket").status_code == 401
 
 
-@retry_on_cancel()
 def test_ticket_single_use_and_identity(client, fake, auth, hdr):
     r = client.post("/v1/ws-ticket", headers=hdr)
     assert r.status_code == 200
@@ -175,6 +164,7 @@ def test_ticket_single_use_and_identity(client, fake, auth, hdr):
     url = f"/v1/ws/conversations/c1?ticket={body['ticket']}"
     with client.websocket_connect(url) as w:
         assert w.receive_text() == "hello"
+        _finish(w)
     assert fake["up"].headers["X-User-Id"] == auth["user"]["id"]
     assert "ticket" not in fake["up"].url
     assert _code(client, url) == 4401  # burned

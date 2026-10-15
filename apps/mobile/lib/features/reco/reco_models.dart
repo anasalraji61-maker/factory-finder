@@ -260,6 +260,7 @@ class RecoPage {
     this.total = 0,
     this.basedOn = const [],
     this.listingId,
+    this.warning,
   });
 
   final List<RecoItem> items;
@@ -270,6 +271,12 @@ class RecoPage {
 
   /// Only for similar: the listing the items are similar to.
   final String? listingId;
+
+  /// Backend `warning` (e.g. `partial_results: ...` when the time budget ran out).
+  final String? warning;
+
+  /// True when the server flagged the page as incomplete.
+  bool get isPartial => warning != null && warning!.startsWith('partial_results');
 
   factory RecoPage.fromJson(Map<String, dynamic> j) {
     final items = [
@@ -283,6 +290,7 @@ class RecoPage {
         for (final e in (j['based_on'] as List?) ?? const []) e.toString(),
       ],
       listingId: j['listing_id'] as String?,
+      warning: j['warning'] is String ? j['warning'] as String : null,
     );
   }
 }

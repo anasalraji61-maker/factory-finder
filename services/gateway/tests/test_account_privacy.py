@@ -153,7 +153,7 @@ def test_delete_anonymizes_and_fans_out(client, fleet, auth, hdr, capsys):
     events = db(client, lambda s: s.scalars(select(AccountEvent.event).where(AccountEvent.user_id == uid)))
     assert {"deletion_requested", "deletion_finalized"} <= set(events.all())
     logs = capsys.readouterr().out
-    assert "deletion_requested" in logs and "a@example.com" not in logs and "Anas Secret" not in logs and "750" not in logs
+    assert "deletion_requested" in logs and "a@example.com" not in logs and "Anas Secret" not in logs and "111 2222" not in logs and "1112222" not in logs
 
 
 def test_delete_with_refresh_token_proof(client, fleet, auth, hdr):

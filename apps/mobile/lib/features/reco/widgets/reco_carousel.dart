@@ -87,6 +87,35 @@ class _ReasonChips extends StatelessWidget {
   }
 }
 
+/// Small non-blocking notice shown when the backend returned partial results.
+class PartialResultsNotice extends StatelessWidget {
+  const PartialResultsNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      key: const ValueKey<String>('reco-partial-notice'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              context.tr('reco.partial'),
+              style: TextStyle(fontSize: 12, color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// "Similar listings" block of the listing detail page. Hidden while loading,
 /// on errors and when nothing similar exists (it is a bonus, not essential).
 class SimilarListingsSection extends ConsumerWidget {
@@ -99,7 +128,7 @@ class SimilarListingsSection extends ConsumerWidget {
     final async = ref.watch(similarListingsProvider(listingId));
     return async.maybeWhen(
       data: (page) => page.items.isEmpty
-          ? const SizedBox.shrink()
+          ? (page.isPartial ? const PartialResultsNotice() : const SizedBox.shrink())
           : Column(
               key: const ValueKey<String>('similar-section'),
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,6 +137,7 @@ class SimilarListingsSection extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: SectionHeader(title: context.tr('reco.similar')),
                 ),
+                if (page.isPartial) const PartialResultsNotice(),
                 RecoCarousel(items: page.items),
               ],
             ),
@@ -125,7 +155,7 @@ class RecommendedSection extends ConsumerWidget {
     final async = ref.watch(recommendationsProvider);
     return async.maybeWhen(
       data: (page) => page.items.isEmpty
-          ? const SizedBox.shrink()
+          ? (page.isPartial ? const PartialResultsNotice() : const SizedBox.shrink())
           : Column(
               key: const ValueKey<String>('recommended-section'),
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,6 +164,7 @@ class RecommendedSection extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: SectionHeader(title: context.tr('reco.title')),
                 ),
+                if (page.isPartial) const PartialResultsNotice(),
                 RecoCarousel(items: page.items),
               ],
             ),

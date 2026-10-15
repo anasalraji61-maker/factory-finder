@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/offline.dart';
@@ -179,7 +180,7 @@ class ErrorState extends StatelessWidget {
     final offline = error != null && isNetworkError(error!);
     final text = offline
         ? context.tr('offline.message')
-        : (message ?? describeError(error!));
+        : (message ?? localizedError(context, error!));
     return EmptyState(
       icon: offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
       title: context.tr(offline ? 'offline.title' : 'common.error'),

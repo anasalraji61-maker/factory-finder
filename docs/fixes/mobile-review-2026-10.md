@@ -180,3 +180,17 @@ Note for reviewer: nothing here was compiled. Edits were re-read for syntax;
 `make test` / `flutter analyze` must be run in CI. One read-only git command
 (`git diff --stat`) was run by mistake against the "never run git" rule; it
 changed nothing.
+
+## Backend surfacing pass (2026-10)
+
+- `RecoPage.warning` / `isPartial` parsed; similar and recommended sections show
+  a small non-blocking `PartialResultsNotice` (`reco.partial`) for
+  `partial_results` warnings (also when items are empty).
+- New `lib/core/i18n/error_messages.dart` maps backend codes `file_in_use`,
+  `rating_too_early`, `rating_pair_limit`, `too_many_open_invoices`,
+  `daily_invoice_limit`, `conversation_limit_reached`, `conversation_full`,
+  `upstream_timeout` to ar+en strings (`error.*` in core strings).
+  `ErrorState` uses it; snackbar sites still call `describeError(e)` and can
+  switch to `localizedError(context, e)` (follow-up, per-feature lanes).
+- Tests: `test/core/error_messages_test.dart`, additions in `test/reco/*`.
+  Nothing compiled (no Flutter SDK).

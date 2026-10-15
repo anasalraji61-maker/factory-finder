@@ -37,4 +37,8 @@ const Map<String, (String, String)> _pairs = {
   ),
   'reco.recent_clear': ('مسح المشاهدات الأخيرة', 'Clear recently viewed'),
   'reco.recent_cleared': ('تم مسح المشاهدات الأخيرة', 'Recently viewed cleared'),
+  'reco.partial': (
+    'قد تكون النتائج ناقصة. حاول التحديث بعد قليل.',
+    'Results may be incomplete. Try refreshing in a moment.'
+  ),
 };

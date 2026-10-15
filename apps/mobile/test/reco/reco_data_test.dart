@@ -120,6 +120,15 @@ void main() {
       expect(r.items.first.reasons.first.refListingId, 'lst_0041');
     });
 
+    test('warning field parses; only partial_results counts as partial', () {
+      expect(RecoPage.fromJson(_obj('similar')).warning, isNull);
+      final j = _obj('similar')..['warning'] = 'partial_results: budget';
+      final p = RecoPage.fromJson(j);
+      expect(p.warning, 'partial_results: budget');
+      expect(p.isPartial, isTrue);
+      expect(RecoPage.fromJson(_obj('similar')..['warning'] = 'other').isPartial, isFalse);
+    });
+
     test('reason text falls back to the other language, then the code', () {
       const onlyEn = RecoReason(code: 'c', en: 'English', ar: '');
       expect(onlyEn.text('ar'), 'English');
