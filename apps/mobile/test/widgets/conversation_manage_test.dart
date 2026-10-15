@@ -33,7 +33,7 @@ Future<GoRouter> _pump(WidgetTester tester, String location) async {
 }
 
 ProviderContainer _container(WidgetTester tester) =>
-    ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+    ProviderScope.containerOf(tester.element(find.byType(Scaffold).first));
 
 void main() {
   setUpWidgetTests();
