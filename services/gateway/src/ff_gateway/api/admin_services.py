@@ -45,7 +45,7 @@ SERVICES = (
         "trust", "/v1/admin/trust/verification", "/v1/admin/trust/verification", "trust_admin_token",
         (
             _r("GET", "/documents"), _r("POST", "/documents/{id}/decision"),
-            _r("PUT", "/documents/{id}/expiry"), _r("GET", "/audit"),
+            _r("PUT", "/documents/{id}/expiry"), _r("GET", "/audit"), _r("POST", "/suppliers/{id}/release"),
         ),
         frozenset({"status", "limit", "offset", "document_id", "supplier_id"}),
         reviewer=True,

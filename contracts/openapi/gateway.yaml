@@ -220,7 +220,7 @@ paths:
   /v1/admin/supplier-claims/{user_id}/revoke:
     post:
       operationId: revokeSupplierClaim
-      description: "Admin only (X-Admin-Token). Verified -> released (supplier_id cleared, status none, X-Supplier-Id stops at once); 409 claim_not_verified otherwise; 422 without a reason. Optional X-Reviewer (sanitized: charset [A-Za-z0-9_.:-], max 64, so no '@') is recorded in the audit log, default admin. approve/reject also accept an optional {reason} body and are audited."
+      description: "Admin only (X-Admin-Token). Verified -> released (supplier_id cleared, status none, X-Supplier-Id stops at once); 409 claim_not_verified otherwise; 422 without a reason. Optional X-Reviewer (sanitized: charset [A-Za-z0-9_.:-], max 64, so no '@') is recorded in the audit log, default admin. approve/reject also accept an optional {reason} body and are audited. Reject/revoke and PATCH /v1/me releasing or changing supplier_id also call trust POST /v1/admin/trust/verification/suppliers/{id}/release for the old id (best-effort, 3 s timeout, only when FF_TRUST_ADMIN_TOKEN is set; failures are logged and never fail the request)."
       parameters:
         - {name: user_id, in: path, required: true, schema: {type: string}}
         - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}

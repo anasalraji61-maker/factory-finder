@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from ff_gateway.db import ClaimDecision, DeletionJob, User
 from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import BEARER_REALM, GatewayError, ValidationFailed
+from ff_gateway.domain.trust_release import release_supplier
 
 router = APIRouter(tags=["admin"])
 
@@ -130,6 +131,8 @@ async def _decide(request: Request, user_id: str, action: str) -> dict:
         await s.commit()
         out = _claim(u)
     privacy.drop_active_cache(request.app, user_id)  # X-Supplier-Id is read per request; drop the 5 s active cache too
+    if action in ("reject", "revoke"):  # best-effort: hide the old claimant's documents from the next claimant
+        await release_supplier(request.app, request, sid, f"claim {action}", reviewer)
     return out
 
 

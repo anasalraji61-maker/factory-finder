@@ -18,3 +18,5 @@ that was just released (before or right after clearing `supplier_id`). Add the p
 token is not configured, 401 on a wrong token. Effect: live documents are withdrawn (audited as `withdraw` by `admin`), all rows are kept
 but hidden from owner reads (`released_at`, migration 0003), the cached score/badge is invalidated, so the next claimant sees no documents
 and starts unverified. Files stay bound to the old rows (a re-upload of the same media file by another supplier is still refused).
+
+Wired (2026-10-15): gateway calls this endpoint best-effort on revoke/reject/self-release/change when FF_TRUST_ADMIN_TOKEN is set.

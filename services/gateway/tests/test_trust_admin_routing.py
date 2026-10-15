@@ -168,3 +168,9 @@ def test_freight_and_feed_admin_passthrough(make_client, mock_upstream):
     assert c.get("/v1/admin/feed/posts/p1", headers=adm).status_code == 404
     assert c.get("/v1/admin/feed/reports?bogus=1", headers=adm).status_code == 422
     assert c.get("/v1/admin/freight/reports", headers={"X-Admin-Token": "wrong"}).status_code == 401
+
+
+def test_release_path_is_allow_listed():
+    from ff_gateway.api.admin_services import SERVICES
+
+    assert ("POST", r"^/suppliers/[A-Za-z0-9_-]{1,64}/release\Z") in SERVICES[0].routes

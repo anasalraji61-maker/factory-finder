@@ -87,3 +87,49 @@ def test_migration_on_sqlite(tmp_path):
     con.close()
     command.downgrade(cfg, "base")
     assert not [r for r in sqlite3.connect(tmp_path / "m.db").execute("select name from sqlite_master where name='claim_decisions'")]
+
+
+# --- trust release (best-effort) ---
+REL = "http://localhost:8104/v1/admin/trust/verification/suppliers/{}/release"
+
+
+def _rel_client(make_client):
+    return make_client(admin_token="adm-secret", trust_admin_token="trust-secret", internal_token="int-secret")
+
+
+def test_revoke_and_reject_call_trust_release(make_client, mock_upstream):
+    import httpx
+
+    c = _rel_client(make_client)
+    route = mock_upstream.post(REL.format("sup_a")).mock(return_value=httpx.Response(200, json={}))
+    uid, _ = _verified(c)
+    assert c.post(f"/v1/admin/supplier-claims/{uid}/revoke", headers=A, json={"reason": "fake"}).status_code == 200
+    req = route.calls.last.request
+    assert route.call_count == 1 and req.headers["x-admin-token"] == "trust-secret" and req.headers["x-internal-token"] == "int-secret"
+    t = c.post("/v1/auth/register", json={"email": "p@example.com", "password": "password123", "name": "p"}).json()
+    h = {"Authorization": f"Bearer {t['access_token']}"}
+    r2 = mock_upstream.post(REL.format("sup_p")).mock(return_value=httpx.Response(200, json={}))
+    c.patch("/v1/me", headers=h, json={"supplier_id": "sup_p"})
+    assert c.post(f"/v1/admin/supplier-claims/{t['user']['id']}/reject", headers=A, json={}).status_code == 200
+    assert r2.call_count == 1
+
+
+def test_self_release_and_change_call_trust_and_failure_never_blocks(make_client, mock_upstream):
+    import httpx
+
+    c = _rel_client(make_client)
+    ra = mock_upstream.post(REL.format("sup_x")).mock(return_value=httpx.Response(500))
+    rb = mock_upstream.post(REL.format("sup_y")).mock(side_effect=httpx.ConnectTimeout("t"))
+    t = c.post("/v1/auth/register", json={"email": "s@example.com", "password": "password123", "name": "s"}).json()
+    h = {"Authorization": f"Bearer {t['access_token']}"}
+    c.patch("/v1/me", headers=h, json={"supplier_id": "sup_x"})
+    r = c.patch("/v1/me", headers=h, json={"supplier_id": "sup_y"})  # change: old id released
+    assert r.status_code == 200 and r.json()["supplier_id"] == "sup_y" and ra.call_count == 1
+    r = c.patch("/v1/me", headers=h, json={"supplier_id": None})
+    assert r.status_code == 200 and r.json()["supplier_id"] is None and rb.call_count == 1
+
+
+def test_no_trust_call_without_admin_token(admin, mock_upstream):
+    uid, _ = _verified(admin)
+    assert admin.post(f"/v1/admin/supplier-claims/{uid}/revoke", headers=A, json={"reason": "r"}).status_code == 200
+    assert not mock_upstream.calls

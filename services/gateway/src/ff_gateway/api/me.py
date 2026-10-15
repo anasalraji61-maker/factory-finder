@@ -17,6 +17,7 @@ from ff_gateway.domain.errors import (
 )
 from ff_gateway.domain.mail import Mail
 from ff_gateway.domain.security import hash_password, verify_password
+from ff_gateway.domain.trust_release import release_supplier
 from ff_gateway.schemas import (
     ChangePasswordIn,
     MeOut,
@@ -111,7 +112,10 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             raise ValidationFailed.for_field(
                 "email", "an account needs at least one of email or phone"
             )
+        released_sid = None
         if "supplier_id" in data:
+            if db_user.supplier_id and sid != db_user.supplier_id:
+                released_sid = db_user.supplier_id  # old id is given up (cleared or replaced)
             if sid is None:  # release
                 if db_user.supplier_id:
                     s.add(ClaimDecision(
@@ -141,6 +145,8 @@ async def patch_me(body: MePatch, request: Request, user: User = Depends(current
             if sid:
                 raise SupplierClaimed() from e
             raise AccountExists() from e
+        if released_sid:
+            await release_supplier(request.app, request, released_sid, "self release", db_user.id[:64])
         if email_changed and old_email and request.app.state.mailer.enabled:  # tell the previous address
             await request.app.state.mailer.send(Mail(
                 to=old_email, subject="Your email address was changed",
