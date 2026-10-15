@@ -231,7 +231,15 @@ class AuthController extends StateNotifier<Me?> {
     addListener((me) {
       if (me?.id == _lastUserId) return;
       _lastUserId = me?.id;
-      _ref.read(authEpochProvider.notifier).state++;
+      // Deferred: the state may change while a widget tree is building.
+      Future<void>.microtask(() {
+        if (!mounted) return;
+        try {
+          _ref.read(authEpochProvider.notifier).state++;
+        } catch (_) {
+          // Provider scope already disposed.
+        }
+      });
     }, fireImmediately: false);
   }
 
