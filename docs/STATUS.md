@@ -1,46 +1,94 @@
-# Status — 2026-10-14 night (architect)
+# Status snapshot - 2026-10-15
 
-**Goal:** Phases 0–3 on mock adapters (done), now hardening before Phase 4 (real data).
+A current snapshot, rewritten in place (not a log). History lives in git, `docs/DECISIONS.md` and `docs/decisions/*`.
 
-## Done
-- 10 backend services (gateway, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifications, assistant); all tests + ruff green; `scripts/e2e.py` 22/22 through the gateway.
-- Flutter app (ar/en, RTL): discover, listing, supplier, landed-cost calculator, FX, carriers, requests/offers, chat (REST + WebSocket), tracking, assistant, profile, supplier-claim. CI builds a debug APK.
-- Security review done: refresh-token rotation, supplier claims need admin approval, CORS off by default, only gateway port published in compose.
-- Data: 165 listings / 83 suppliers (mock), 66 countries, ~200 hubs, 41 duty countries, 25 carriers, extended sea graph.
+**Phase position:** Phases 0-3 are done on mock adapters; Phase 4 (real data) is blocked on owner input; Phases 5-6 are built as off-by-default skeletons. See `docs/ROADMAP.md`.
 
-## Added since the first snapshot
-- 11 services now (+demand, payments); admin console (apps/admin); WebSocket chat via gateway; Alembic/Postgres support; structured logs + /ready.
-- Search: bilingual synonyms, typo tolerance, ranking, facets; HS code finder (~690 indicative codes, verify with a customs broker).
-- Mobile: onboarding, persistence, watchlist/alerts, compare, saved searches, trust v2 UI, notification prefs, 120+ tests incl. widget smoke tests.
-- Notifications delivery adapters (push/email, off by default); payments (mock + USDT skeleton, ledger, signed webhooks).
+## 1. What exists
 
-- 13 services now (+media). Suppliers can publish their own listings (native source), upload images, verify digest email. Contract validation (132 responses, 0 drift) and e2e (31 steps) in CI.
-- Gateway: public image GETs have their own rate bucket (media_rate_limit_per_minute).
+**15 backend services** (all behind the gateway, which is the only published port; contracts in `contracts/openapi/*.yaml`, route list in `docs/API_OVERVIEW.md`):
+gateway :8000, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifications, assistant, demand, payments, media, feed :8113, freight :8114.
 
-- Deal lifecycle: payments -> rfq outbox hook (paid/refunded), fulfilment/delivered/confirm-receipt, event log; mobile deal UI + deals list. Verified-deal reviews (rfq) + mobile UI + trust signal.
-- Tracking: real-provider skeletons (off by default), normalization, outbox + relay to notifications (shipment alerts in the app).
-- Gateway: email verification, optional Redis rate limits, moderation routes, is_active re-check, FF_ENV=production fail-closed guard. Sourcing: listing moderation + reports. Messaging: media attachments (mobile composer too).
-- Backend: 140 responses validated (0 drift), e2e 33 steps; security reviews a/b/c in docs/fixes.
-- 14 services (+feed :8113): supplier posts, follow, home/trending feed, likes, comments, reports + admin moderation; routed at /v1/feed/* (see docs/decisions/feed.md). Contract validation 166 responses, e2e 34 steps.
-- 15 services (+freight :8114): freight-forwarder marketplace (forwarder application + admin approval, shipment quote requests, lane-matched quotes, explainable ranking, idempotent award, ratings, reports + admin moderation); routed at /v1/freight/* (see docs/decisions/freight.md). Contract validation 238 responses, e2e 35 steps.
+- gateway: auth (refresh rotation, logout, logout-all, token versioning, password reset/change, email verification), supplier claims (admin approval), per-upstream circuit breaker, rate limits (optional Redis), WebSocket tickets, `FF_ENV=production` fail-closed guard, admin passthroughs.
+- sourcing: mock + native (supplier-published, bulk import up to 100) + licensed-provider skeleton; bilingual search, facets, recommendations/similar, price history, moderation and reports, HS code finder (~690 indicative codes).
+- logistics: landed cost for sea/air/road, duties/VAT (41 countries), FX, carriers, compliance advisor (documents, certificates, incoterms), forwarder quote as a cost override.
+- geo (66 countries, ~200 hubs, sea graph), trust (score v2, verification documents with private files, reviews signal), rfq (requests/offers, invite-only requests, deals, deal lifecycle, verified-deal reviews), messaging (REST + WebSocket, attachments, block/mute/archive), tracking (providers skeletons, outbox relay), notifications (alerts, digests, delivery adapters off by default), assistant (rules + cards, optional LLM), demand (public-reply drafts, compliance guards, opt-outs, human approval), payments (mock + USDT-TRC20 skeleton, ledger, signed webhooks), media (re-encoded images, private files with signed URLs), feed (posts, follow, likes, comments), freight (forwarder marketplace: quotes, comparison, award, ratings).
 
-## Next (needs owner input)
-- Phase 4: official supplier API account (Alibaba or licensed provider) and a freight-rate provider; until then all data is mock.
-- Real-device test of the APK (Flutter never compiled locally; CI is the only check).
+**Admin console** (`apps/admin`, served by the gateway when `FF_GATEWAY_SERVE_ADMIN=true`): supplier claims, moderation, demand drafts, payment events, verification documents (incl. private file viewing), forwarders, feed moderation.
 
-## Known gaps
-- Rate limiting is per-IP in-memory; direct service ports trust X-User-Id when FF_INTERNAL_TOKEN is unset (private network only).
-- Duty and freight tables are approximations; some hub coordinates unverified; some sea regions missing (see docs/requests/data-geo-sea-nodes.md).
-- Admin approval of supplier claims: HTTP endpoints plus the admin console (`apps/admin`); both need `FF_GATEWAY_ADMIN_TOKEN`.
+**Mobile app** (Flutter, ar default + en, RTL) features: onboarding, discover/search with facets, listing and supplier pages, trust v2 and verification badge, landed-cost calculator (with awarded forwarder quote), FX, carriers, requests/offers, deals and payment invoices, deal reviews, chat (REST + WebSocket, attachments, block/mute), tracking and shipment alerts, assistant cards, watchlist/alerts/saved searches/compare, feed (posts, follow), freight (requests, quotes, comparison), my products (publish, images, bulk import), analytics, supplier claim and verification, notification prefs, settings (default currency, dark theme, Arabic digits, accessibility), privacy (export/delete account), offline cache and persistence. 32 test files incl. widget smoke tests.
 
-## ملخص الصباح (15 أكتوبر) — بالعربي
-- الخدمات الآن 15: أُضيفت **feed** (منشورات الموردين/متابعة/إعجاب/تعليقات) و**freight** (وكلاء الشحن: عروض أسعار ومقارنة وترسية).
-- **صفقات**: دورة حياة كاملة (دفع ← تنفيذ ← تسليم ← استلام) + تقييمات للموردين تدخل في درجة الثقة.
-- **توثيق الموردين**: رفع وثائق (ملفات خاصة بروابط موقّعة) + مراجعة الإدارة + شارة مستوى التوثيق.
-- **مستشار الامتثال الجمركي** (العراق والخليج وتركيا...): مستندات مطلوبة وشهادات مطابقة وإنكوترمز — بيانات تقريبية تُراجع مع مخلّص جمركي.
-- **المساعد الذكي** يعرض بطاقات (شحنة/صفقة/مقارنة/رمز جمركي). حساب الكلفة أسرع ~18 ضعفاً.
-- الأمان: 4 جولات مراجعة (a–d)، حماية الإنتاج (FF_ENV=production)، تحقق البريد، Redis اختياري للحدود.
-- التطبيق: إعدادات (دينار افتراضي، مظهر داكن، أرقام عربية)، إمكانية وصول، وضع عدم الاتصال، منشورات، وكلاء شحن، صفقات، توثيق.
-- لوحة الإدارة: إشراف، مدفوعات، توثيق، شحن، منشورات، عرض الوثائق الخاصة.
-- ما زال يحتاج منك: حساب API مرخّص لبيانات الموردين، مزوّد أسعار شحن، تشغيل `make compose-e2e` على جهازك، مراجعة مخلّص جمركي للبيانات، أسرار الإنتاج (انظر docs/OWNER_GUIDE.ar.md).
-- (تحديث 15 أكتوبر صباحاً) جولة أمنية f: حدود احتفاظ وحجم في الدفع والمراسلة والإشعارات والطلب، حذف نص الرسائل عند مسح المستخدم، حماية الـ webhook، مراجعة دقة الكلفة اللوجستية (تسعير الشاحنة، افتراضات صريحة)، IP العميل للمساعد عبر البوابة. المفتوح: محددات المعدل داخل العملية، بيانات الجمارك تحتاج مخلّصاً.
+**Data:** 165 listings / 83 suppliers (mock), 25 carriers, duty and freight tables are approximations.
+
+## 2. Verification state
+
+| Area | State |
+|---|---|
+| Python services | Unit/API tests and ruff green locally on mocks (no network). SQLite in tests. |
+| Contracts | `scripts/contract_check.py` (routes) and `scripts/contract_validate.py` (238 responses, 0 drift) run locally and in CI. |
+| End to end | `scripts/e2e.py` 35 steps through the gateway (local processes); extended e2e passes. `make compose-e2e` has never been run in a real Docker environment. |
+| PostgreSQL 16 | Verified 2026-10-15 (`docs/fixes/postgres-verification-2026-10.md`): all 11 Alembic services upgrade/downgrade/`alembic check` clean; every suite re-run on real PG paths (FOR UPDATE, advisory locks, JSONB); one real bug found and fixed (notifications `mark_alerts_read`). Gateway has no Alembic (create_all only). Not verified: multi-replica concurrency, connection pool, `pg_dump` restore, `FF_ENV=production` + TLS URLs, compose `pg` profile. |
+| Flutter app | Never compiled locally (no SDK here). CI only compiles/analyzes/tests and builds a debug APK. `android/` and `ios/` platform folders are not committed (`flutter create .` needed); no real-device run yet. |
+| Docker images / compose | `docker compose config` validated only; images never built here. |
+| Real providers | Alibaba, freight rates, tracking, TronGrid, FCM/SMTP: skeletons, off by default, wire shapes UNVERIFIED. |
+| Supply chain | `docs/fixes/supply-chain-review-2026-10.md`: no secrets in tree, pip-audit clean after raising floors, Docker hardening, workflow permissions. |
+
+## 3. Security reviews
+
+| Round | Scope | Report |
+|---|---|---|
+| a | Gateway/claims/refresh tokens/CORS (first QA) | `docs/fixes/security-review-2026-10.md` |
+| b | Payments ledger race, demand cap, notification email | `docs/fixes/security-review-2026-10-b.md` |
+| c | Internal-token fail-open (production guard), is_active re-check | `docs/fixes/security-review-2026-10-c.md` |
+| d | Feed, freight, trust verification, private media, licensed feeds, assistant | `docs/fixes/security-review-2026-10-d.md` |
+| e | Account deletion/export, analytics, recommendations, trust persistence, CI | `docs/fixes/security-review-2026-10-e.md` |
+| f | Assistant, notifications, demand, payments, messaging: caps, erasure, client IP | `docs/fixes/security-review-2026-10-f.md` |
+| g | rfq, tracking, geo: invite-only RFQs, refund hides reviews, text sanitising | `docs/fixes/security-review-2026-10-g.md` |
+| h | Gateway: password policy/reset, token version, circuit breaker, WS limits | `docs/fixes/security-review-2026-10-h.md` |
+
+Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `payments-usdt-review-2026-10.md`, `perf-review-2026-10.md`, `mobile-review-2026-10.md`, `contract-drift.md` (resolved), `e2e-extended-findings.md`.
+
+## 4. Open items
+
+### Needs owner input
+- Licensed supplier data account (Alibaba Open Platform or licensed provider) and a freight-rate provider; until then everything is mock (Phase 4).
+- Run `make compose-e2e` and a real-device APK test on your machine; commit/generate `android/` and `ios/` (mobile P0).
+- Production secrets and `FF_ENV=production`, TLS reverse proxy, Postgres URL options (`docs/OWNER_GUIDE.ar.md`, `docs/DEPLOY.md`).
+- Product decisions: admin identity (single shared `X-Admin-Token`, no SSO/per-admin tokens); register enumeration (409 `account_exists`); USDT/USD booking policy and reconciliation of unmatched transfers; whether PDFs are accepted for verification; supplier-to-user resolution beyond claims.
+- Legal drafts: `docs/PRIVACY_POLICY.draft.md`, `docs/TERMS.draft.md`.
+
+### Needs verification by experts
+- Customs broker: duties/VAT tables (41 countries, 2-digit HS rates; US Section 301/IEEPA, Mexico, Brazil/India/Nigeria cascades, Iraq levies not modelled), HS codes, compliance advisor content.
+- Freight forwarder: rate table ("approx. rate table v1") and road-freight model vs real quotes on 3 lanes (Phase 4 exit); inland Iraq trucking looks low.
+- Live-API checks of unverified wire shapes: TronGrid (confirmations field, block endpoint, pagination), tracking providers, FCM/SMTP.
+- Hub coordinates (some unverified); Postgres under real concurrency and pooling.
+- Accessibility/RTL on device (RTL send icon, image_picker process death).
+
+### Engineering backlog
+- Gateway: bcrypt 72-byte truncation (pre-hash + version marker); require `iss`/`aud` after one refresh TTL; uvicorn flags `--no-server-header --timeout-keep-alive 5` (`docs/requests/gateway-uvicorn-flags.md`); gateway still has no Alembic; WS ticket store in-process unless Redis.
+- Per-process state to move to Redis/DB before more than one replica: rate limits (gateway, messaging), assistant quota, sourcing caches.
+- Internal-token guard still fails open when `FF_INTERNAL_TOKEN` is unset and `FF_ENV` is not production.
+- Freight: ratings need payment/tracking evidence; accept `revision` optional (require in v2). Feed: commenter `user_id` exposed; admin actions on feed/freight have no audit log. Messaging legacy single `attachment` allows any https host unless allow-list set.
+- Trust: true uploader check for private verification files (media owner endpoint or HMAC proof, `docs/requests/trust-media-ownership.md`).
+- Media: signed URL replay in TTL, byte quota ignores variants, ICC profile dropped, no malware scan, sweeper local-disk only, lower `FF_MEDIA_MAX_PIXELS` on small hosts.
+- Sourcing erase job could delete a new claimant's listings on retry (claim epoch needed).
+- Payments: reconciliation report for unmatched transfers, `amount` required on confirmed webhooks in v2, `TRUNCATE` revoke on audit tables (deploy docs).
+- Logistics: batch geo lookups for cold quotes; JSON blob columns need write-time caps.
+- Notifications: price alerts are same-currency only (no FX, no absolute threshold).
+- Geo: sea waypoints for Japan, SE Asia, Africa, Black Sea, South America, Australia (`docs/requests/data-geo-sea-nodes.md`).
+- Seed data for live mobile tests: approved forwarder, review, analytics events (`docs/requests/mobile-live-seed.md`).
+- Supply chain: pin base images by digest and actions by SHA, lock file with hashes, scheduled `pip-audit`, commit `pubspec.lock`, `read_only` containers once on Postgres.
+- Cosmetic/ops: gateway sends `X-RateLimit-*` only on 429; no data-consent endpoint beyond export/delete.
+
+## ملخص اليوم (15 أكتوبر)
+
+- **الحساب والجلسات**: إعادة تعيين كلمة المرور، تغيير كلمة المرور بتأكيد الحالية، تسجيل الخروج من كل الأجهزة، وإصدار رقمي للتوكن (token versioning) يُبطل التوكنات القديمة فوراً.
+- **المتانة**: قاطع دائرة (circuit breaker) لكل خدمة خلفية في البوابة مع حدود للاتصالات.
+- **الطلبات**: طلبات بالدعوة فقط (RFQ للموردين المدعوين)، وتُخفى تقييمات الصفقات المستردة.
+- **الموردون**: استيراد جماعي للمنتجات (حتى 100 في المرة)، وعروض أسعار وكلاء الشحن تدخل مباشرة في حساب الكلفة الكاملة.
+- **التطبيق**: ذاكرة مؤقتة للعمل دون اتصال، وحظر وكتم المحادثات.
+- **الامتثال**: ضوابط مطابقة الطلب العام (demand): مسودات فقط، موافقة بشرية، قوائم رفض، لا رسائل خاصة.
+- **الوسائط**: تشديد أمن الصور والملفات الخاصة (إعادة ترميز، روابط موقّعة، إزالة البيانات الوصفية).
+- **قاعدة البيانات**: تم التحقق من PostgreSQL 16 فعلياً (ترحيلات + كل الاختبارات) وأُصلح خطأ واحد في الإشعارات.
+- **سلسلة التوريد**: فحص أسرار، تدقيق الاعتماديات ورفع الحد الأدنى للإصدارات، تشديد Docker وGitHub Actions.
+- **ما زال مطلوباً منك**: حساب API مرخّص لبيانات الموردين، مزوّد أسعار شحن، تجربة التطبيق على هاتف حقيقي و`make compose-e2e`، مراجعة مخلّص جمركي للبيانات، أسرار الإنتاج.
