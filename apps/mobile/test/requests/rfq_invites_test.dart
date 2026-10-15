@@ -84,7 +84,10 @@ void main() {
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await pumpApp(tester, location: '/supplier/sup_cn_001');
+      await pumpApp(
+        tester,
+        logicalSize: const Size(540, 2400),
+        location: '/supplier/sup_cn_001');
       await settle(tester, frames: 8);
       final cta = find.byKey(const ValueKey<String>('supplier-request-quote'));
       expect(cta, findsOneWidget);
@@ -104,6 +107,7 @@ void main() {
       );
       await pumpApp(
         tester,
+        logicalSize: const Size(540, 2400),
         location: '/requests/new?supplier=sup_cn_001&supplier_name=Shenzhen%20Co',
         overrides: [rfqRepositoryProvider.overrideWithValue(repo)],
       );
@@ -124,7 +128,10 @@ void main() {
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await pumpApp(tester, location: '/requests/new?supplier=sup_cn_001');
+      await pumpApp(
+        tester,
+        logicalSize: const Size(540, 2400),
+        location: '/requests/new?supplier=sup_cn_001');
       final chip = find.byKey(const ValueKey<String>('req-invite-sup_cn_001'));
       expect(chip, findsOneWidget);
       await tester.ensureVisible(chip);
@@ -140,7 +147,10 @@ void main() {
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await pumpApp(tester, location: '/requests/new?supplier=bad%20id');
+      await pumpApp(
+        tester,
+        logicalSize: const Size(540, 2400),
+        location: '/requests/new?supplier=bad%20id');
       expect(find.byKey(const ValueKey<String>('req-invite-count')), findsNothing);
       await disposeApp(tester);
     });
@@ -159,6 +169,7 @@ void main() {
       );
       await pumpApp(
         tester,
+        logicalSize: const Size(540, 2400),
         location: '/requests/${created.id}',
         overrides: [rfqRepositoryProvider.overrideWithValue(repo)],
       );
