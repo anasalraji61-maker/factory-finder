@@ -71,14 +71,19 @@ class PoliteClient:
         rp = self._robots.get(origin)
         if rp is None:
             await self._wait(p.netloc)
-            resp = await self.client.get(origin + "/robots.txt", headers=self._headers())
             rp = RobotFileParser()
-            if resp.status_code in (401, 403):
-                rp.parse(["User-agent: *", "Disallow: /"])
-            elif resp.status_code == 200:
+            try:
+                resp = await self.client.get(origin + "/robots.txt", headers=self._headers())
+            except httpx.HTTPError:
+                raise Forbidden(
+                    "robots.txt unreachable; failing closed", code="robots_disallowed"
+                ) from None
+            if resp.status_code == 200:
                 rp.parse(resp.text.splitlines())
-            else:
-                rp.parse([])
+            elif 400 <= resp.status_code < 500 and resp.status_code not in (401, 403, 429):
+                rp.parse([])  # 404/410: no robots.txt
+            else:  # 401/403/429/3xx/5xx: fail closed
+                rp.parse(["User-agent: *", "Disallow: /"])
             self._robots[origin] = rp
         return rp.can_fetch(self.user_agent, url)
 
@@ -90,4 +95,4 @@ class PoliteClient:
         if not await self._allowed(url):
             raise Forbidden("robots.txt disallows this URL", code="robots_disallowed")
         await self._wait(urlsplit(url).netloc)
-        return await self.client.get(url, headers=self._headers())
+        return await self.client.get(url, headers=self._headers(), follow_redirects=False)

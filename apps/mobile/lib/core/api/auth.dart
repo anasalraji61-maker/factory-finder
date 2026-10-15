@@ -320,8 +320,11 @@ class AuthController extends StateNotifier<Me?> {
       if (!mounted) return;
       // Transient failure (offline / server error): stay signed out for this
       // launch but keep the stored refresh token for the next one.
-      final transient =
-          e is ApiException && (e.status == null || e.status! >= 500);
+      final transient = e is ApiException &&
+          (e.status == null ||
+              e.status! >= 500 ||
+              e.status == 429 ||
+              e.status == 408);
       if (!transient) _ref.read(tokenStoreProvider).clear();
       state = null;
     }

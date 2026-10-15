@@ -246,7 +246,14 @@ class ApiClient {
         options: Options(method: 'POST'),
       );
       final data = response.data;
-      if (data is Map && data['access_token'] is String) {
+      if (tokens.refreshToken != refresh) {
+        // Logged out (or signed in again) while the call was in flight: do not
+        // resurrect or overwrite that session with this response.
+        return false;
+      }
+      if (data is Map &&
+          data['access_token'] is String &&
+          (data['access_token'] as String).isNotEmpty) {
         tokens.set(
           data['access_token'] as String,
           data['refresh_token'] as String?,
@@ -255,13 +262,14 @@ class ApiClient {
       }
     } on DioException catch (e) {
       final status = e.response?.statusCode;
-      if (status == null || status >= 500 || status == 429) {
+      if (status == null || status >= 500 || status == 429 || status == 408) {
         // Offline / server trouble: the refresh token may still be valid, so
         // keep the session and let the caller retry later.
         return false;
       }
     }
-    tokens.clear();
+    // Only drop the session if it is still the one that was rejected.
+    if (tokens.refreshToken == refresh) tokens.clear();
     return false;
   }
 }

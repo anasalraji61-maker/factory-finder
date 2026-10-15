@@ -497,3 +497,63 @@ def test_opt_out_arriving_between_draft_and_approve_blocks_approval(env):
     r = env.act(a, "approve")
     assert r.status_code == 403 and r.json()["error"]["code"] == "opted_out"
     assert env.c.get(f"/v1/drafts/{a}", headers=H).json()["status"] == "rejected"
+
+
+def test_polite_client_robots_5xx_429_and_network_error_fail_closed():
+    async def go():
+        for status in (429, 500, 503):
+            def h429(r, s=status):
+                return httpx.Response(s)
+
+            pc = PoliteClient(SourcePolicy("p", True), "FactoryFinderBot/1", client=_client(h429))
+            with pytest.raises(Forbidden):
+                await pc.get("https://d.test/x")
+
+        def boom(req):
+            raise httpx.ConnectError("down")
+
+        pc = PoliteClient(SourcePolicy("p", True), "FactoryFinderBot/1", client=_client(boom))
+        with pytest.raises(Forbidden):
+            await pc.get("https://d.test/x")
+        # 404 robots.txt = no restrictions
+        paths = []
+
+        def h(req):
+            paths.append(req.url.path)
+            return httpx.Response(404 if req.url.path == "/robots.txt" else 200, text="ok")
+
+        pc = PoliteClient(SourcePolicy("p", True), "FactoryFinderBot/1", client=_client(h),
+                          sleep=lambda s: asyncio.sleep(0))  # fmt: skip
+        assert (await pc.get("https://e.test/x")).status_code == 200
+        assert paths == ["/robots.txt", "/x"]
+
+    asyncio.run(go())
+
+
+def test_polite_client_does_not_follow_redirects_or_cache_less_robots():
+    seen = []
+
+    def h(req):
+        seen.append(str(req.url))
+        if req.url.path == "/robots.txt":
+            return httpx.Response(200, text="")
+        return httpx.Response(302, headers={"location": "https://login.test/signin"})
+
+    async def go():
+        pc = PoliteClient(SourcePolicy("p", True), "FactoryFinderBot/1", client=_client(h),
+                          sleep=lambda s: asyncio.sleep(0))  # fmt: skip
+        assert (await pc.get("https://f.test/a")).status_code == 302
+        await pc.get("https://f.test/b")
+
+    asyncio.run(go())
+    assert not any("login.test" in u for u in seen)
+    assert seen.count("https://f.test/robots.txt") == 1
+
+
+def test_demand_defaults_off_and_no_private_message_surface():
+    s = Settings()
+    assert s.enabled is False and s.publisher_enabled is False
+    src = pathlib.Path(__file__).resolve().parent.parent / "src" / "ff_demand"
+    blob = "\n".join(f.read_text() for f in src.glob("*.py")).lower()
+    for needle in ("direct_message", "send_dm", "private_message", "/messages", "inbox"):
+        assert needle not in blob.replace("not a private message", ""), needle

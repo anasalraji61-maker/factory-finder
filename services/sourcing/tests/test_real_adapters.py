@@ -128,3 +128,108 @@ async def test_robots_txt_enforced_for_public_pages():
         with pytest.raises(SourceBlocked):
             await a.search(SearchQuery(q="x"))
     assert page.call_count == 0
+
+
+# ---- lawful-use guards (CLAUDE.md rule 6) -------------------------------------------------
+def _fast_limiter(slept=None):
+    async def sleep(d):
+        if slept is not None:
+            slept.append(d)
+
+    return HostRateLimiter(3.0, clock=lambda: 0.0, sleep=sleep)
+
+
+def test_rate_limit_floor_cannot_be_lowered():
+    assert HostRateLimiter(0).min_interval_s == 3.0
+    assert AlibabaAdapter(Settings(min_request_interval_s=0.1)).limiter.min_interval_s == 3.0
+
+
+@respx.mock
+async def test_kill_switch_global_and_per_adapter(monkeypatch):
+    s = Settings(alibaba_app_key="k", alibaba_app_secret=SECRET)
+    route = respx.get("https://openapi-api.alibaba.com/products/search").mock(
+        return_value=httpx.Response(200, json={})
+    )
+    from ff_sourcing.adapters.http_base import SourceDisabled
+
+    for env in ("FF_SOURCING_KILL_SWITCH", "FF_SOURCING_ALIBABA_DISABLED"):
+        monkeypatch.setenv(env, "true")
+        async with httpx.AsyncClient() as c:
+            with pytest.raises(SourceDisabled):
+                await AlibabaAdapter(s, client=c, limiter=_fast_limiter()).search(SearchQuery(q="x"))
+        monkeypatch.delenv(env)
+    assert route.call_count == 0
+
+
+@respx.mock
+async def test_robots_cached_rate_limited_and_honest_ua():
+    s = Settings(mic_api_base="https://www.made-in-china.com/api", mic_allow_public_pages=True)
+    robots = respx.get("https://www.made-in-china.com/robots.txt").mock(
+        return_value=httpx.Response(200, text="User-agent: *\nDisallow: /private")
+    )
+    page = respx.get("https://www.made-in-china.com/api/search").mock(
+        return_value=httpx.Response(200, json={"items": []})
+    )
+    slept: list[float] = []
+    async with httpx.AsyncClient() as c:
+        a = MadeInChinaAdapter(s, client=c, limiter=_fast_limiter(slept))
+        await a.search(SearchQuery(q="a"))
+        await a.search(SearchQuery(q="b"))
+    assert robots.call_count == 1  # robots.txt cached across fetches
+    assert len(slept) >= 2 and all(d >= 3.0 - 1e-9 for d in slept)  # robots + each page throttled
+    for call in (*robots.calls, *page.calls):
+        assert call.request.headers["user-agent"] == s.user_agent and "bot" in s.user_agent.lower()
+
+
+@respx.mock
+@pytest.mark.parametrize("status", [401, 403, 429, 500, 503])
+async def test_robots_unavailable_fails_closed(status):
+    s = Settings(mic_api_base="https://m.test/api", mic_allow_public_pages=True)
+    respx.get("https://m.test/robots.txt").mock(return_value=httpx.Response(status))
+    page = respx.get("https://m.test/api/search").mock(return_value=httpx.Response(200, json={}))
+    async with httpx.AsyncClient() as c:
+        with pytest.raises(SourceBlocked):
+            await MadeInChinaAdapter(s, client=c, limiter=_fast_limiter()).search(SearchQuery(q="x"))
+    assert page.call_count == 0
+
+
+@respx.mock
+async def test_robots_404_allows_and_network_error_fails_closed():
+    s = Settings(mic_api_base="https://m.test/api", mic_allow_public_pages=True)
+    respx.get("https://m.test/robots.txt").mock(return_value=httpx.Response(404))
+    respx.get("https://m.test/api/search").mock(return_value=httpx.Response(200, json={"items": []}))
+    async with httpx.AsyncClient() as c:
+        assert await MadeInChinaAdapter(s, client=c, limiter=_fast_limiter()).search(SearchQuery(q="x")) == []
+    respx.get("https://n.test/robots.txt").mock(side_effect=httpx.ConnectError("boom"))
+    s2 = Settings(mic_api_base="https://n.test/api", mic_allow_public_pages=True)
+    async with httpx.AsyncClient() as c:
+        with pytest.raises(SourceBlocked):
+            await MadeInChinaAdapter(s2, client=c, limiter=_fast_limiter()).search(SearchQuery(q="x"))
+
+
+@respx.mock
+async def test_captcha_html_and_redirect_are_not_followed_or_bypassed():
+    s = Settings(alibaba_app_key="k", alibaba_app_secret=SECRET)
+    url = "https://openapi-api.alibaba.com/products/search"
+    respx.get(url).mock(return_value=httpx.Response(200, text="<html>captcha</html>"))
+    async with httpx.AsyncClient() as c:
+        a = AlibabaAdapter(s, client=c, limiter=_fast_limiter())
+        with pytest.raises(SourceBlocked):
+            await a.search(SearchQuery(q="x"))
+        respx.get(url).mock(return_value=httpx.Response(302, headers={"location": "https://login.test/"}))
+        login = respx.get("https://login.test/").mock(return_value=httpx.Response(200, json={}))
+        with pytest.raises(Exception):  # noqa: B017
+            await a.search(SearchQuery(q="y"))
+        assert login.call_count == 0
+
+
+@respx.mock
+async def test_errors_and_logs_do_not_leak_secrets_or_signed_urls(caplog):
+    s = Settings(alibaba_app_key="k", alibaba_app_secret=SECRET)
+    respx.get("https://openapi-api.alibaba.com/products/search").mock(return_value=httpx.Response(500))
+    async with httpx.AsyncClient() as c:
+        a = AlibabaAdapter(s, client=c, limiter=_fast_limiter())
+        with pytest.raises(RuntimeError) as ei:
+            await a.search(SearchQuery(q="x"))
+    text = str(ei.value) + repr(a) + repr(s) + caplog.text
+    assert SECRET not in text and "sign=" not in text and "app_key" not in text

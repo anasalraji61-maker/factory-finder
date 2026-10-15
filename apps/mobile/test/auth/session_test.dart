@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/features/auth/password_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -213,6 +214,81 @@ void main() {
       ]);
       expect(results.length, 2);
       expect(a.calls.where((c) => c.path == '/v1/auth/refresh').length, 1);
+    });
+
+    test('logout while a refresh is in flight is not resurrected', () async {
+      final tokens = _signedIn();
+      final a = _Adapter((o) {
+        if (o.path == '/v1/auth/refresh') {
+          tokens.clear(); // user logs out mid-refresh
+          return _json(<String, dynamic>{
+            'access_token': 'late-access',
+            'refresh_token': 'late-refresh',
+          });
+        }
+        return _json(<String, dynamic>{}, 401);
+      });
+      final api = _client(a, tokens);
+      expect(await api.refreshSession(), isFalse);
+      expect(tokens.accessToken, isNull);
+      expect(tokens.refreshToken, isNull);
+    });
+
+    test('a rejected stale refresh does not clear a newer session', () async {
+      final tokens = _signedIn();
+      final a = _Adapter((o) {
+        tokens.set('fresh-access', 'fresh-refresh'); // signed in again
+        return _json(<String, dynamic>{}, 401);
+      });
+      final api = _client(a, tokens);
+      expect(await api.refreshSession(), isFalse);
+      expect(tokens.refreshToken, 'fresh-refresh');
+      expect(tokens.accessToken, 'fresh-access');
+    });
+
+    test('429 on refresh keeps the session and does not loop', () async {
+      final tokens = _signedIn();
+      final a = _Adapter((o) =>
+          _json(<String, dynamic>{}, o.path == '/v1/me' ? 401 : 429));
+      final api = _client(a, tokens);
+      await expectLater(api.get('/v1/me'), throwsA(isA<ApiException>()));
+      expect(tokens.refreshToken, 'old-refresh');
+      expect(a.calls.length, 2);
+    });
+  });
+
+  group('restore', () {
+    test('a 429 while restoring keeps the stored refresh token', () async {
+      final secure = MemoryStore(<String, String>{kRefreshTokenKey: 'saved'});
+      final a = _Adapter((o) => _json(<String, dynamic>{}, 429));
+      final container = ProviderContainer(overrides: [
+        secureStoreProvider.overrideWithValue(secure),
+        apiClientProvider.overrideWith((ref) => _client(
+              a,
+              ref.watch(tokenStoreProvider),
+            )),
+      ]);
+      addTearDown(container.dispose);
+      await container.read(authProvider.notifier).restore();
+      expect(container.read(authProvider), isNull);
+      expect(container.read(tokenStoreProvider).refreshToken, 'saved');
+      expect(secure.data[kRefreshTokenKey], 'saved');
+    });
+
+    test('a rejected refresh token is wiped from the secure store', () async {
+      final secure = MemoryStore(<String, String>{kRefreshTokenKey: 'saved'});
+      final a = _Adapter((o) => _json(<String, dynamic>{}, 401));
+      final container = ProviderContainer(overrides: [
+        secureStoreProvider.overrideWithValue(secure),
+        apiClientProvider.overrideWith((ref) => _client(
+              a,
+              ref.watch(tokenStoreProvider),
+            )),
+      ]);
+      addTearDown(container.dispose);
+      await container.read(authProvider.notifier).restore();
+      expect(container.read(authProvider), isNull);
+      expect(secure.data.containsKey(kRefreshTokenKey), isFalse);
     });
   });
 
