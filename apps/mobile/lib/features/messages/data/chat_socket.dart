@@ -20,11 +20,11 @@ Duration backoffDelay(int attempt) {
   return Duration(seconds: 1 << a);
 }
 
-/// `http(s)://host[/prefix]` -> `ws(s)://host[/prefix]/v1/ws/conversations/{id}?token=...`
+/// `http(s)://host[/prefix]` -> `ws(s)://host[/prefix]/v1/ws/conversations/{id}?ticket=...`
 ///
-/// Pass [ticket] (from `POST /v1/ws-ticket`) instead of an access token to keep
-/// the token out of the URL / server access logs: `...?ticket=...`.
-Uri chatSocketUri(String baseUrl, String conversationId, String token, {bool ticket = false}) {
+/// Only a single-use [ticket] (from `POST /v1/ws-ticket`) ever goes in the URL;
+/// the access token must never appear there (it would leak into server logs).
+Uri chatSocketUri(String baseUrl, String conversationId, String ticket) {
   final base = Uri.parse(baseUrl);
   final scheme = base.scheme == 'https' || base.scheme == 'wss' ? 'wss' : 'ws';
   var prefix = base.path;
@@ -36,7 +36,7 @@ Uri chatSocketUri(String baseUrl, String conversationId, String token, {bool tic
     host: base.host,
     port: base.hasPort ? base.port : null,
     path: '$prefix/v1/ws/conversations/$conversationId',
-    queryParameters: <String, String>{ticket ? 'ticket' : 'token': token},
+    queryParameters: <String, String>{'ticket': ticket},
   );
 }
 
@@ -120,7 +120,7 @@ class LiveChatSocket implements ChatSocket {
     required this.refreshSession,
     required this.connector,
     this.myUserId,
-    this.ticketProvider,
+    required this.ticketProvider,
   });
 
   final String baseUrl;
@@ -132,9 +132,10 @@ class LiveChatSocket implements ChatSocket {
   final ChatChannelConnector connector;
   final String? myUserId;
 
-  /// Fetches a single-use websocket ticket. Null result (or no provider) falls
-  /// back to sending the access token (old gateways).
-  final Future<String?> Function()? ticketProvider;
+  /// Fetches a single-use websocket ticket. A null result or a throw is a
+  /// failed attempt: the socket goes to `reconnecting` and retries with
+  /// backoff. There is no token-in-URL fallback.
+  final Future<String?> Function() ticketProvider;
 
   final StreamController<ChatMessage> _msgs = StreamController<ChatMessage>.broadcast();
   final StreamController<ChatSocketStatus> _stat =
@@ -228,18 +229,14 @@ class LiveChatSocket implements ChatSocket {
     _set(_attempt == 0 ? ChatSocketStatus.connecting : ChatSocketStatus.reconnecting);
     try {
       String? ticket;
-      final provider = ticketProvider;
-      if (provider != null) {
-        try {
-          ticket = await provider();
-        } catch (_) {
-          ticket = null;
-        }
+      try {
+        ticket = await ticketProvider();
+      } catch (_) {
+        ticket = null;
       }
       if (_closed) return null;
-      final uri = (ticket != null && ticket.isNotEmpty)
-          ? chatSocketUri(baseUrl, conversationId, ticket, ticket: true)
-          : chatSocketUri(baseUrl, conversationId, accessToken() ?? token);
+      if (ticket == null || ticket.isEmpty) return null;
+      final uri = chatSocketUri(baseUrl, conversationId, ticket);
       return await connector(uri);
     } catch (_) {
       return null;

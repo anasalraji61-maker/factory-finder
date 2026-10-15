@@ -22,7 +22,7 @@ final chatSocketProvider = Provider.autoDispose.family<ChatSocket, String>((ref,
         final t = r is Map ? r['ticket'] : null;
         return t is String && t.isNotEmpty ? t : null;
       } catch (_) {
-        return null; // old gateway / transient: fall back to the token param
+        return null; // surfaces as reconnecting/backoff; never put the token in the URL
       }
     },
   );

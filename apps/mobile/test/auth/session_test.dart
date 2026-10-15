@@ -182,6 +182,27 @@ void main() {
       expect(cleared, 1);
     });
 
+    test('a rejected refresh fires onExpired once; transient failure and manual clear do not',
+        () async {
+      final tokens = _signedIn();
+      var expired = 0;
+      tokens.onExpired = () => expired++;
+      final transient = _client(_Adapter((o) => _json(<String, dynamic>{}, o.path == '/v1/me' ? 401 : 503)), tokens);
+      await expectLater(transient.get('/v1/me'), throwsA(isA<ApiException>()));
+      expect(expired, 0);
+      final rejected = _client(_Adapter((o) => _json(<String, dynamic>{}, 401)), tokens);
+      await expectLater(rejected.get('/v1/me'), throwsA(isA<ApiException>()));
+      expect(expired, 1);
+      tokens.set('a', 'r');
+      tokens.clear();
+      expect(expired, 1);
+    });
+
+    test('session expired message exists in ar and en', () {
+      expect(AppStrings.lookup('ar', 'auth.session_expired'), isNot('auth.session_expired'));
+      expect(AppStrings.lookup('en', 'auth.session_expired'), contains('expired'));
+    });
+
     test('a transient refresh failure keeps the session', () async {
       final tokens = _signedIn();
       final a = _Adapter((o) => _json(<String, dynamic>{}, o.path == '/v1/me' ? 401 : 503));

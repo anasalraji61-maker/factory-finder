@@ -207,40 +207,52 @@ class PaymentsService:
         payer, payee, amount, currency = await self._resolve(user, admin, body)
         now = self.clock()
         ttl = body.expires_in_minutes if admin and body.expires_in_minutes else self.settings.invoice_ttl_minutes
-        async with self.sessions() as s:
-            existing = (await s.execute(select(InvoiceRow).where(
-                InvoiceRow.deal_id == body.deal_id, InvoiceRow.kind == body.kind.value,
-                InvoiceRow.payer_user_id == payer, InvoiceRow.status.in_(
-                    [S.PENDING.value, S.AWAITING_PAYMENT.value, S.CONFIRMING.value, S.PAID.value]))
-                .order_by(InvoiceRow.created_at.desc()))).scalars().first()
-            if existing is not None:
-                await self._expire_if_due(s, existing)
-                if existing.status != S.EXPIRED.value:
-                    return invoice_dict(existing), False
-            if not admin:
-                await self._check_quota(s, payer, now)
-            invoice_id = _uid("inv")
-            memo = _new_memo()
-            taken = frozenset((await s.execute(select(InvoiceRow.pay_amount).where(
-                InvoiceRow.provider == self.provider.name, InvoiceRow.pay_amount.is_not(None),
-                InvoiceRow.status.in_([S.AWAITING_PAYMENT.value, S.CONFIRMING.value])))).scalars().all())
-            charge = await self.provider.create(InvoiceSpec(invoice_id, memo, Decimal(amount), currency, taken))
-            row = InvoiceRow(
-                id=invoice_id, deal_id=body.deal_id, payer_user_id=payer, payee=payee, kind=body.kind.value,
-                amount=amount, currency=currency, status=S.PENDING.value, expires_at=now + timedelta(minutes=ttl),
-                provider=self.provider.name, memo=memo, user_memo=body.memo, confirmations=0,
-                created_at=now, updated_at=now)
-            s.add(row)
-            await self._move(s, row, S.AWAITING_PAYMENT)
-            row.provider_ref, row.pay_address, row.pay_url = charge.provider_ref, charge.pay_address, charge.pay_url
-            if charge.pay_amount is not None:
-                row.pay_currency = charge.pay_currency or currency
-                row.pay_amount = format(charge.pay_amount, "f")
-            s.add(PaymentAttemptRow(id=_uid("att"), invoice_id=invoice_id, provider=self.provider.name,
-                                    provider_ref=charge.provider_ref, status="created", amount=amount,
-                                    currency=currency, created_at=now, updated_at=now))
-            await s.commit()
-            return invoice_dict(row), True
+        for _ in range(4):
+            async with self.sessions() as s:
+                existing = await self._live_invoice(s, body, payer)
+                if existing is not None:
+                    await self._expire_if_due(s, existing)
+                    if existing.status != S.EXPIRED.value:
+                        return invoice_dict(existing), False
+                if not admin:
+                    await self._check_quota(s, payer, now)
+                invoice_id = _uid("inv")
+                memo = _new_memo()
+                taken = frozenset((await s.execute(select(InvoiceRow.pay_amount).where(
+                    InvoiceRow.provider == self.provider.name, InvoiceRow.pay_amount.is_not(None),
+                    InvoiceRow.status.in_([S.AWAITING_PAYMENT.value, S.CONFIRMING.value])))).scalars().all())
+                charge = await self.provider.create(InvoiceSpec(invoice_id, memo, Decimal(amount), currency, taken))
+                row = InvoiceRow(
+                    id=invoice_id, deal_id=body.deal_id, payer_user_id=payer, payee=payee, kind=body.kind.value,
+                    amount=amount, currency=currency, status=S.PENDING.value,
+                    expires_at=now + timedelta(minutes=ttl), provider=self.provider.name, memo=memo,
+                    user_memo=body.memo, confirmations=0, created_at=now, updated_at=now)
+                try:
+                    s.add(row)
+                    await self._move(s, row, S.AWAITING_PAYMENT)
+                    row.provider_ref, row.pay_address, row.pay_url = charge.provider_ref, charge.pay_address, charge.pay_url
+                    if charge.pay_amount is not None:
+                        row.pay_currency = charge.pay_currency or currency
+                        row.pay_amount = format(charge.pay_amount, "f")
+                    s.add(PaymentAttemptRow(id=_uid("att"), invoice_id=invoice_id, provider=self.provider.name,
+                                            provider_ref=charge.provider_ref, status="created", amount=amount,
+                                            currency=currency, created_at=now, updated_at=now))
+                    await s.commit()
+                except IntegrityError:
+                    # lost a race: a concurrent identical request created the live invoice (return it, never a
+                    # second charge) or took our payment-amount suffix (retry with a fresh one)
+                    await s.rollback()
+                    continue
+                return invoice_dict(row), True
+        raise Conflict("Could not create the invoice; retry", code="concurrent_update")
+
+    @staticmethod
+    async def _live_invoice(s: AsyncSession, body: InvoiceCreate, payer: str) -> InvoiceRow | None:
+        return (await s.execute(select(InvoiceRow).where(
+            InvoiceRow.deal_id == body.deal_id, InvoiceRow.kind == body.kind.value,
+            InvoiceRow.payer_user_id == payer, InvoiceRow.status.in_(
+                [S.PENDING.value, S.AWAITING_PAYMENT.value, S.CONFIRMING.value, S.PAID.value]))
+            .order_by(InvoiceRow.created_at.desc()))).scalars().first()
 
     async def _check_quota(self, s: AsyncSession, payer: str, now: datetime) -> None:
         c = self.settings
@@ -471,14 +483,18 @@ class PaymentsService:
 
     async def sweep(self) -> dict[str, int]:
         polled = updated = 0
-        async with self.sessions() as s:
-            if self.provider is not None:
-                rows = (await s.execute(select(InvoiceRow).where(
+        if self.provider is not None:
+            async with self.sessions() as s:
+                ids = (await s.execute(select(InvoiceRow.id).where(
                     InvoiceRow.provider == self.provider.name,
                     InvoiceRow.status.in_([S.AWAITING_PAYMENT.value, S.CONFIRMING.value]))
                     .order_by(InvoiceRow.created_at).limit(200))).scalars().all()
-                for r in rows:
-                    polled += 1
+            for iid in ids:
+                polled += 1
+                async with self.sessions() as s:  # one session per invoice: a refused row never poisons the rest
+                    r = await s.get(InvoiceRow, iid)
+                    if r is None or r.status not in (S.AWAITING_PAYMENT.value, S.CONFIRMING.value):
+                        continue
                     try:
                         obs = await self.provider.poll(TrackedInvoice(
                             r.provider_ref, r.memo, r.pay_address,
@@ -486,14 +502,18 @@ class PaymentsService:
                             int(r.created_at.timestamp() * 1000)))
                     except Exception:  # noqa: BLE001 - one bad lookup must not stop the sweep
                         continue
-                    if obs is None:
-                        # reorg safety: a confirming tx that vanished from the chain goes back to awaiting
-                        # (nothing is posted to the ledger before PAID)
-                        if r.status == S.CONFIRMING.value and await self._revert_vanished(s, r):
-                            updated += 1
-                    elif await self._apply_observation(s, r, obs):
-                        updated += 1
-                await s.commit()
+                    try:
+                        if obs is None:
+                            # reorg safety: a confirming tx that vanished from the chain goes back to awaiting
+                            # (nothing is posted to the ledger before PAID)
+                            did = r.status == S.CONFIRMING.value and await self._revert_vanished(s, r)
+                        else:
+                            did = await self._apply_observation(s, r, obs)
+                        await s.commit()
+                        updated += 1 if did else 0
+                    except IntegrityError:  # unique index: this transfer is already bound to another invoice
+                        await s.rollback()
+        async with self.sessions() as s:
             expired = await self._expire_due(s)
         box = await self.drain_outbox()
         pruned = await self.prune()
@@ -510,15 +530,17 @@ class PaymentsService:
         r.expires_at = max(r.expires_at, self.clock() + REORG_GRACE)
         return True
 
+    @staticmethod
+    async def _tx_taken(s: AsyncSession, r: InvoiceRow, tx_ref: str) -> bool:
+        return (await s.execute(select(InvoiceRow.id).where(
+            InvoiceRow.tx_ref == tx_ref, InvoiceRow.id != r.id, InvoiceRow.provider == r.provider,
+            InvoiceRow.status.in_([S.CONFIRMING.value, S.PAID.value])).limit(1))).first() is not None
+
     async def _apply_observation(self, s: AsyncSession, r: InvoiceRow, obs: Observation) -> bool:
         target = S.PAID if obs.status == "paid" else S.CONFIRMING
         cur = S(r.status)
-        if obs.tx_ref:  # one on-chain transfer can settle at most one invoice
-            dup = (await s.execute(select(InvoiceRow.id).where(
-                InvoiceRow.tx_ref == obs.tx_ref, InvoiceRow.id != r.id, InvoiceRow.provider == r.provider)
-                .limit(1))).first()
-            if dup is not None:
-                return False
+        if obs.tx_ref and await self._tx_taken(s, r, obs.tx_ref):  # one transfer settles at most one invoice
+            return False
         if cur == target:
             changed = obs.confirmations != r.confirmations
             r.confirmations = obs.confirmations
@@ -551,14 +573,27 @@ class PaymentsService:
             r = await self._find_for_event(s, provider, ev)
             if r is None:
                 raise NotFound("Invoice not found", code="invoice_not_found")  # not recorded: provider may retry
-            outcome = await self._apply_event(s, r, ev)
-            s.add(WebhookEventRow(provider=provider, event_id=ev.event_id, invoice_id=r.id,
-                                  outcome=outcome, received_at=now))
+            rid = r.id
             try:
+                outcome = await self._apply_event(s, r, ev)
+                s.add(WebhookEventRow(provider=provider, event_id=ev.event_id, invoice_id=rid,
+                                      outcome=outcome, received_at=now))
                 await s.commit()
-            except IntegrityError:  # concurrent delivery of the same event
+            except IntegrityError:
                 await s.rollback()
-                return {"status": "duplicate", "invoice_id": None, "invoice_status": None}
+                if await s.get(WebhookEventRow, (provider, ev.event_id)) is not None:  # concurrent same event
+                    return {"status": "duplicate", "invoice_id": None, "invoice_status": None}
+                # a unique index refused the transition (transfer/amount already bound to another invoice)
+                r = await s.get(InvoiceRow, rid)
+                s.add(WebhookEventRow(provider=provider, event_id=ev.event_id, invoice_id=rid,
+                                      outcome="ignored", received_at=now))
+                try:
+                    await s.commit()
+                except IntegrityError:
+                    await s.rollback()
+                    return {"status": "duplicate", "invoice_id": None, "invoice_status": None}
+                return {"status": "ignored", "invoice_id": r.id if r else None,
+                        "invoice_status": r.status if r else None}
             res = {"status": outcome, "invoice_id": r.id, "invoice_status": r.status}
         if outcome == "applied":
             await self._drain_quiet()
@@ -576,6 +611,8 @@ class PaymentsService:
 
     async def _apply_event(self, s: AsyncSession, r: InvoiceRow, ev: WebhookEvent) -> str:
         target = EVENT_TARGET[ev.type]
+        if r.provider == "usdt_tron" and target in (S.CONFIRMING, S.PAID):
+            return "ignored"  # on-chain settlement is proven only by our own explorer poll, never by a callback
         if target == S.PAID and ev.amount is not None:
             want = Decimal(r.pay_amount or r.amount)
             if ev.amount.value != want or ev.amount.currency != (r.pay_currency or r.currency):
@@ -585,6 +622,8 @@ class PaymentsService:
             return "ignored"
         if not state.can(cur, target):
             return "ignored"
+        if ev.tx_ref and target in (S.CONFIRMING, S.PAID) and await self._tx_taken(s, r, ev.tx_ref):
+            return "ignored"  # one transfer can settle at most one invoice
         try:
             await self._move(s, r, target, reason=f"webhook:{ev.type}" if target in (S.FAILED, S.EXPIRED) else None,
                              tx_ref=ev.tx_ref, confirmations=ev.confirmations)

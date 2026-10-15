@@ -63,9 +63,9 @@ void main() {
     expect(backoffDelay(-1).inSeconds, 1);
   });
 
-  test('uri uses ws scheme and token', () {
+  test('uri uses ws scheme and ticket', () {
     final u = chatSocketUri('https://api.example.com/', 'c1', 'tok');
-    expect(u.toString(), 'wss://api.example.com/v1/ws/conversations/c1?token=tok');
+    expect(u.toString(), 'wss://api.example.com/v1/ws/conversations/c1?ticket=tok');
     final d = chatSocketUri('http://10.0.2.2:8000', 'c1', 't');
     expect(d.scheme, 'ws');
     expect(d.port, 8000);
@@ -86,6 +86,7 @@ void main() {
         refreshes++;
         return true;
       },
+      ticketProvider: () async => 'wst_x',
       connector: (uri) async {
         final ch = FakeChannel();
         channels.add(ch);
@@ -115,20 +116,19 @@ void main() {
   });
 
   test('ticket uri uses ticket param, not token', () {
-    final u = chatSocketUri('https://api.example.com', 'c1', 'wst_abc', ticket: true);
+    final u = chatSocketUri('https://api.example.com', 'c1', 'wst_abc');
     expect(u.toString(), 'wss://api.example.com/v1/ws/conversations/c1?ticket=wst_abc');
     expect(u.queryParameters.containsKey('token'), isFalse);
   });
 
-  test('uses the ticket from ticketProvider and falls back to the token', () async {
+  test('uses the ticket from ticketProvider', () async {
     final uris = <Uri>[];
-    var ticket = 'wst_1';
     final s = LiveChatSocket(
       baseUrl: 'http://h',
       conversationId: 'c1',
       accessToken: () => 'tok',
       refreshSession: () async => true,
-      ticketProvider: () async => ticket.isEmpty ? null : ticket,
+      ticketProvider: () async => 'wst_1',
       connector: (uri) async {
         uris.add(uri);
         return FakeChannel();
@@ -137,25 +137,49 @@ void main() {
     s.connect();
     await Future<void>.delayed(const Duration(milliseconds: 5));
     expect(uris.single.queryParameters, {'ticket': 'wst_1'});
+    expect(uris.single.toString().contains('tok'), isFalse);
     await s.close();
-
-    final uris2 = <Uri>[];
-    final s2 = LiveChatSocket(
-      baseUrl: 'http://h',
-      conversationId: 'c1',
-      accessToken: () => 'tok',
-      refreshSession: () async => true,
-      ticketProvider: () async => null,
-      connector: (uri) async {
-        uris2.add(uri);
-        return FakeChannel();
-      },
-    );
-    s2.connect();
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    expect(uris2.single.queryParameters, {'token': 'tok'});
-    await s2.close();
   });
+
+  for (final mode in ['null', 'throws']) {
+    test('ticket failure ($mode) never dials with the token; backs off then recovers', () async {
+      final uris = <Uri>[];
+      var calls = 0;
+      var refreshes = 0;
+      final s = LiveChatSocket(
+        baseUrl: 'http://h',
+        conversationId: 'c1',
+        accessToken: () => 'secret-access-token',
+        refreshSession: () async {
+          refreshes++;
+          return false;
+        },
+        ticketProvider: () async {
+          calls++;
+          if (calls == 1) {
+            if (mode == 'throws') throw Exception('boom');
+            return null;
+          }
+          return 'wst_ok';
+        },
+        connector: (uri) async {
+          uris.add(uri);
+          return FakeChannel();
+        },
+      );
+      s.connect();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(uris, isEmpty);
+      expect(s.status, ChatSocketStatus.reconnecting);
+      expect(refreshes, 1);
+      // First backoff step is 1s.
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(uris.single.toString().contains('secret-access-token'), isFalse);
+      expect(uris.single.queryParameters, {'ticket': 'wst_ok'});
+      expect(s.status, ChatSocketStatus.connected);
+      await s.close();
+    });
+  }
 
   test('connect twice while opening opens a single socket', () async {
     var calls = 0;
@@ -165,6 +189,7 @@ void main() {
       conversationId: 'c1',
       accessToken: () => 'tok',
       refreshSession: () async => true,
+      ticketProvider: () async => 'wst_x',
       connector: (uri) async {
         calls++;
         await gate.future;
@@ -194,16 +219,17 @@ void main() {
         token = 'new';
         return true;
       },
+      ticketProvider: () async => 'wst_$token',
       connector: (uri) async {
-        seen.add(uri.queryParameters['token']);
-        if (uri.queryParameters['token'] == 'old') throw Exception('401');
+        seen.add(uri.queryParameters['ticket']);
+        if (uri.queryParameters['ticket'] == 'wst_old') throw Exception('401');
         return FakeChannel();
       },
     );
     s.connect();
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(refreshes, 1);
-    expect(seen, ['old', 'new']);
+    expect(seen, ['wst_old', 'wst_new']);
     expect(s.status, ChatSocketStatus.connected);
     await s.close();
   });

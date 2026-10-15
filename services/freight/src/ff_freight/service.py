@@ -343,17 +343,20 @@ class FreightService:
             }
         )
         aid, t = _new_id("app"), self.clock()
-        async with self.engine.begin() as c:
-            await c.execute(
-                insert(applications).values(
-                    id=aid, user_id=user, company_name=body.company_name, country_code=body.country_code,
-                    description=body.description,
-                    lanes=[[x.origin_country, x.destination_country] for x in body.lanes],
-                    modes=csv_key(body.modes), incoterms=csv_key(body.incoterms),
-                    certifications=body.certifications, status="pending", created_at=t,
-                )  # fmt: skip
-            )
-            r = (await c.execute(select(applications).where(applications.c.id == aid))).one()
+        try:
+            async with self.engine.begin() as c:
+                await c.execute(
+                    insert(applications).values(
+                        id=aid, user_id=user, company_name=body.company_name, country_code=body.country_code,
+                        description=body.description,
+                        lanes=[[x.origin_country, x.destination_country] for x in body.lanes],
+                        modes=csv_key(body.modes), incoterms=csv_key(body.incoterms),
+                        certifications=body.certifications, status="pending", created_at=t,
+                    )  # fmt: skip
+                )
+                r = (await c.execute(select(applications).where(applications.c.id == aid))).one()
+        except IntegrityError:  # a concurrent duplicate submit won the unique-pending index
+            raise Conflict("An application is already pending review", code="application_pending") from None
         return self._application(r)
 
     async def my_applications(self, user: str) -> dict:
@@ -1071,6 +1074,18 @@ class FreightService:
         return self._page_of(rows, limit, lambda r: self._application(r, admin=True))
 
     async def admin_approve(self, app_id: str, note: str | None) -> dict:
+        for _ in range(2):
+            try:
+                return await self._approve_once(app_id, note)
+            except IntegrityError:  # a concurrent approve created the forwarder first
+                pass
+            except Conflict as exc:
+                if exc.code != "review_race":
+                    raise
+        # lost the race: re-read the settled state (approved -> idempotent success, rejected -> 409)
+        return await self._approve_once(app_id, note)
+
+    async def _approve_once(self, app_id: str, note: str | None) -> dict:
         t = self.clock()
         async with self.engine.begin() as c:
             a = (await c.execute(select(applications).where(applications.c.id == app_id))).first()
@@ -1083,6 +1098,14 @@ class FreightService:
             if await self._forwarder_of(c, a.user_id):
                 raise Conflict("This user is already a forwarder", code="already_forwarder")
             fid = _new_id("fwd")
+            # claim the application first (compare-and-set): approve and reject cannot both win
+            claimed = await c.execute(
+                update(applications).where(applications.c.id == app_id, applications.c.status == "pending").values(
+                    status="approved", forwarder_id=fid, review_note=note, reviewed_at=t
+                )
+            )
+            if not claimed.rowcount:
+                raise Conflict("The application was reviewed concurrently; retry", code="review_race")
             await c.execute(
                 insert(forwarders).values(
                     id=fid, user_id=a.user_id, company_name=a.company_name, country_code=a.country_code,
@@ -1096,11 +1119,6 @@ class FreightService:
                 insert(forwarder_lanes),
                 [{"forwarder_id": fid, "origin_country": o, "destination_country": d} for o, d in lanes],
             )
-            await c.execute(
-                update(applications).where(applications.c.id == app_id).values(
-                    status="approved", forwarder_id=fid, review_note=note, reviewed_at=t
-                )
-            )
             a = (await c.execute(select(applications).where(applications.c.id == app_id))).one()
         return self._application(a, admin=True)
 
@@ -1113,11 +1131,13 @@ class FreightService:
             if a.status == "approved":
                 raise Conflict("The application was already approved", code="already_reviewed")
             if a.status == "pending":
-                await c.execute(
-                    update(applications).where(applications.c.id == app_id).values(
+                res = await c.execute(
+                    update(applications).where(applications.c.id == app_id, applications.c.status == "pending").values(
                         status="rejected", review_note=reason, reviewed_at=t
                     )
                 )
+                if not res.rowcount:
+                    raise Conflict("The application was reviewed concurrently; retry", code="already_reviewed")
                 a = (await c.execute(select(applications).where(applications.c.id == app_id))).one()
         return self._application(a, admin=True)
 

@@ -236,11 +236,23 @@ final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(apiClientProvider)),
 );
 
+/// True after the server rejected the refresh token (not after a manual
+/// sign-out); the app shows a localized "session expired" message once.
+final sessionExpiredProvider = StateProvider<bool>((ref) => false);
+
 /// Current user, or null when signed out.
 class AuthController extends StateNotifier<Me?> {
   AuthController(this._ref) : super(null) {
     _ref.read(tokenStoreProvider).onCleared = () {
       if (mounted) state = null;
+    };
+    _ref.read(tokenStoreProvider).onExpired = () {
+      if (!mounted) return;
+      try {
+        _ref.read(sessionExpiredProvider.notifier).state = true;
+      } catch (_) {
+        // Provider scope already disposed.
+      }
     };
     addListener((me) {
       if (me?.id == _lastUserId) return;

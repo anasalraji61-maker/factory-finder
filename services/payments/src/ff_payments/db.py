@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, TypeDecorator, event
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, TypeDecorator, event, text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -31,8 +31,22 @@ class Base(DeclarativeBase):
     pass
 
 
+_LIVE = "status IN ('pending','awaiting_payment','confirming','paid')"
+_HOLDS_TX = "tx_ref IS NOT NULL AND status IN ('confirming','paid')"
+_HOLDS_AMT = "provider = 'usdt_tron' AND pay_amount IS NOT NULL AND status IN ('awaiting_payment','confirming')"
+
+
 class InvoiceRow(Base):
     __tablename__ = "invoices"
+    __table_args__ = (
+        # DB backstops for races between workers: one live invoice per (deal, kind, payer); one transfer, one invoice
+        Index("uq_invoices_live_deal_kind_payer", "deal_id", "kind", "payer_user_id", unique=True,
+              sqlite_where=text(_LIVE), postgresql_where=text(_LIVE)),
+        Index("uq_invoices_provider_tx_ref", "provider", "tx_ref", unique=True,
+              sqlite_where=text(_HOLDS_TX), postgresql_where=text(_HOLDS_TX)),
+        Index("uq_invoices_provider_pay_amount", "provider", "pay_amount", unique=True,
+              sqlite_where=text(_HOLDS_AMT), postgresql_where=text(_HOLDS_AMT)),
+    )
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     deal_id: Mapped[str] = mapped_column(String(64), index=True)
     payer_user_id: Mapped[str] = mapped_column(String(64), index=True)

@@ -60,7 +60,7 @@ flutter build apk --release --dart-define=FF_MOCK=false --dart-define=FF_API_BAS
 ```
 
 Chat uses a single-use WebSocket ticket (`POST /v1/ws-ticket`, `?ticket=`) so the access token never
-appears in a URL; against an older gateway it falls back to `?token=`. The Cairo font is bundled
+appears in a URL; if the ticket call fails the chat shows reconnecting and retries with backoff (no token-in-URL fallback). The Cairo font is bundled
 (`assets/fonts`, OFL) - no runtime font download.
 
 ## Layout

@@ -28,6 +28,13 @@ String? apiErrorKey(Object error) =>
 /// Localized text for [error]: the mapped message for known codes, otherwise
 /// [describeError].
 String localizedError(BuildContext context, Object error) {
+  if (error is ApiException && (error.status == 429 || error.code == 'rate_limited')) {
+    final s = error.retryAfterSeconds;
+    if (s != null && s > 0) {
+      return context.tr('error.rate_limited_wait', {'n': '${s <= 60 ? 1 : (s / 60).ceil()}'});
+    }
+    return context.tr('error.rate_limited');
+  }
   final key = apiErrorKey(error);
   return key == null ? describeError(error) : context.tr(key);
 }

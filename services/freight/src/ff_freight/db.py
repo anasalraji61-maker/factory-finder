@@ -21,6 +21,7 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -66,6 +67,9 @@ applications = Table(
     Column("reviewed_at", UTCDateTime, nullable=True),
     Index("ix_applications_user_created", "user_id", "created_at", "id"),
     Index("ix_applications_status_created", "status", "created_at", "id"),
+    # race backstop: at most one pending application per user
+    Index("uq_applications_one_pending", "user_id", unique=True,
+          sqlite_where=text("status = 'pending'"), postgresql_where=text("status = 'pending'")),
 )
 
 forwarders = Table(

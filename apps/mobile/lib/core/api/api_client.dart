@@ -79,6 +79,16 @@ class TokenStore {
   /// Called when the session is dropped (logout or failed refresh).
   void Function()? onCleared;
 
+  /// Called (after [onCleared]) only when the server rejected the refresh token.
+  void Function()? onExpired;
+
+  /// Drops the session because the server rejected the refresh token.
+  void expire() {
+    final had = accessToken != null || refreshToken != null;
+    clear();
+    if (had) onExpired?.call();
+  }
+
   bool get hasSession => accessToken != null;
 
   void set(String access, String? refresh) {
@@ -269,7 +279,7 @@ class ApiClient {
       }
     }
     // Only drop the session if it is still the one that was rejected.
-    if (tokens.refreshToken == refresh) tokens.clear();
+    if (tokens.refreshToken == refresh) tokens.expire();
     return false;
   }
 }
