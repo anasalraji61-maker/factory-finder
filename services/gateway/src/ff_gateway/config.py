@@ -90,6 +90,15 @@ class Settings(BaseSettings):
     # Optional link template put in the mail, e.g. https://app.example.com/verify?token={token}
     verify_url_template: str | None = None
 
+    # Account deletion / data export (store requirements; docs/decisions/account-deletion.md)
+    # Days between DELETE /v1/me and the irreversible anonymization (0 = immediately). Login during the grace period cancels it.
+    deletion_grace_days: int = Field(default=0, ge=0, le=90)
+    privacy_rate_limit_per_minute: int = 3  # per user, for DELETE /v1/me and GET /v1/me/export together (0 = off)
+    privacy_timeout_seconds: float = 10.0  # per upstream call during export / erasure fan-out
+    export_max_bytes: int = 5 * 1024 * 1024  # cap of the whole export bundle (and of each service's share)
+    deletion_max_attempts: int = 12  # then the job is marked dead (visible in /v1/admin/account-deletions)
+    deletion_worker_interval_seconds: float = 60.0  # background retry/grace sweep; 0 disables the loop
+
     def trusted_proxy_networks(self) -> list:
         from ff_gateway.domain.client_ip import parse_networks
 

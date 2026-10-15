@@ -135,3 +135,17 @@ class MePatch(BaseModel):
     @classmethod
     def _email(cls, v: str | None) -> str | None:
         return v.lower() if v else v
+
+
+class DeleteAccountIn(BaseModel):
+    """Re-authentication for account deletion: the current password, or a current (unused) refresh token."""
+
+    model_config = ConfigDict(extra="forbid")
+    password: str | None = Field(default=None, min_length=1, max_length=200)
+    refresh_token: str | None = Field(default=None, min_length=10, max_length=2000)
+
+    @model_validator(mode="after")
+    def _one_proof(self) -> "DeleteAccountIn":
+        if not (self.password or self.refresh_token):
+            raise ValueError("password or refresh_token is required")
+        return self

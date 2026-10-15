@@ -6,6 +6,7 @@ import logging
 from .adapters.base import SourceAdapter
 from .adapters.registry import AdapterRegistry
 from .clients.trust import TrustClient, TrustInfo, unknown
+from .domain import reco
 from .domain import search as engine
 from .domain.cache import TTLCache
 from .domain.models import (
@@ -17,6 +18,7 @@ from .domain.models import (
     SourceStatus,
     Supplier,
 )
+from .domain.pricehistory import Obs
 from .domain.text import english_keywords, parse_query, query_phrase
 
 log = logging.getLogger(__name__)
@@ -36,6 +38,7 @@ class SourcingService:
         self.timeout = adapter_timeout_s
         self._results = TTLCache(cache_ttl_s)
         self._trust_cache = TTLCache(trust_cache_ttl_s, maxsize=4096)
+        self.history = None  # PriceHistoryStore (set by main); None = no observations recorded
 
     # ---- trust ----------------------------------------------------------
     async def _trust_for(self, supplier_id: str) -> TrustInfo:
@@ -133,8 +136,10 @@ class SourcingService:
         candidates = engine.dedupe(candidates)
         await self._enrich([c[0] for c in candidates])
         ranked = engine.rank(candidates, sort)
+        page_items = engine.paginate(ranked, page, page_size)
+        await self._observe(page_items)
         return SearchResponse(
-            items=engine.paginate(ranked, page, page_size),
+            items=page_items,
             total=len(ranked),
             page=page,
             page_size=page_size,
@@ -159,7 +164,12 @@ class SourcingService:
         item = await self._first(lambda a: a.get_listing(listing_id))
         if item is not None:
             await self._enrich([item])
+            await self._observe([item])
         return item
+
+    async def _observe(self, items: list[Listing]) -> None:
+        if self.history is not None and items:
+            await self.history.record_listings(items)  # best effort, never raises
 
     async def get_supplier(self, supplier_id: str) -> Supplier | None:
         sup = await self._first(lambda a: a.get_supplier(supplier_id))
@@ -191,3 +201,108 @@ class SourcingService:
             }
 
         return list(await asyncio.gather(*(one(a) for a in self.registry.all())))
+
+    # ---- price history --------------------------------------------------
+    async def stored_prices(self, listing_id: str, since) -> list[Obs]:
+        if self.history is None:
+            return []
+        try:
+            return await self.history.series(listing_id, since)
+        except Exception as exc:
+            log.warning("price history read failed: %s", type(exc).__name__)
+            return []
+
+    # ---- similar / recommendations -------------------------------------------
+    async def _pool(self, kinds: set[str]) -> list[ListingDetail]:
+        queries = [SearchQuery(kind=k, limit=200) for k in (sorted(kinds) or [None])]  # type: ignore[arg-type]
+        outcomes = await asyncio.gather(
+            *(self._query_adapter(a, q) for q in queries for a in self.registry.enabled())
+        )
+        seen: dict[str, ListingDetail] = {}
+        for _, items in outcomes:
+            for it in items:
+                seen.setdefault(it.id, it)
+        return list(seen.values())
+
+    async def _rank_candidates(
+        self,
+        refs: list[tuple[ListingDetail, float]],
+        pool: list[ListingDetail],
+        country: str | None,
+        limit: int,
+        per_supplier: int | None,
+    ) -> list[reco.Recommended]:
+        ref_ids = {r.id for r, _ in refs}
+        pool = [c for c in pool if c.id not in ref_ids]
+        country = country.upper() if country else None
+
+        def score(item: ListingDetail, feats: list[tuple[reco.Features, float, str]]):
+            cf = reco.features(item)
+            best: tuple[float, list[reco.Reason], str | None] = (0.0, [], None)
+            if feats:
+                for rf, w, rid in feats:
+                    sc, why = reco.similarity(rf, cf, item)
+                    if sc * w > best[0]:
+                        best = (sc * w, why, rid)
+            else:  # no usable reference: trust-led fallback
+                band = item.supplier.trust_band
+                sc = 0.3 + reco._TRUST_W.get(band, 0.0) + (0.02 if item.supplier.verified else 0.0)
+                why = [reco.reason("top_trusted")] if band == "green" else []
+                if item.supplier.verified:
+                    why.append(reco.reason("verified_supplier"))
+                best = (sc, why, None)
+            sc, why, rid = best
+            if sc <= 0:
+                return 0.0, []
+            if rid and per_supplier is not None:  # recommendations (not /similar): say which view it follows
+                why = [*why, reco.reason("because_viewed", rid)]
+            if country and cf.country == country:
+                sc += 0.05
+                why = [*why, reco.reason("origin_country_match")]
+            return max(0.0, min(1.0, sc)), why
+
+        feats = [(reco.features(r), w, r.id) for r, w in refs]
+        cats = {f.category for f, _, _ in feats}
+        pool = sorted(pool, key=lambda c: (c.category not in cats, not c.supplier.verified, c.id))[: reco.MAX_CANDIDATES]
+        pre = sorted(((score(c, feats)[0], c) for c in pool), key=lambda x: (-x[0], x[1].id))
+        stage = [c.model_copy() for sc, c in pre[: reco.TRUST_STAGE] if sc > 0]
+        await self._enrich(stage)  # trust lookups only for the best pre-scored candidates (cached per supplier)
+        out: list[reco.Recommended] = []
+        for c in stage:
+            sc, why = score(c, feats)
+            if sc >= reco.MIN_SCORE:
+                out.append(reco.Recommended(listing=reco.as_listing(c), score=round(sc, 4), reasons=why))
+        out.sort(key=reco.rank_key)
+        if per_supplier is None:
+            return out[:limit]
+        kept: list[reco.Recommended] = []
+        count: dict[str, int] = {}
+        for r in out:
+            n = count.get(r.listing.supplier.id, 0)
+            if n < per_supplier:
+                count[r.listing.supplier.id] = n + 1
+                kept.append(r)
+        return kept[:limit]
+
+    async def similar(self, listing_id: str, limit: int) -> tuple[ListingDetail, list[reco.Recommended]] | None:
+        ref = await self.get_listing(listing_id)
+        if ref is None:
+            return None
+        pool = await self._pool({ref.kind})
+        return ref, await self._rank_candidates([(ref, 1.0)], pool, None, limit, None)
+
+    async def recommendations(
+        self, ref_ids: list[str], country: str | None, limit: int
+    ) -> tuple[list[str], list[reco.Recommended]]:
+        """``ref_ids`` are recent listing ids, most recent first (weight decays with position)."""
+        async def one(i: str):
+            try:
+                return await self._first(lambda a: a.get_listing(i))
+            except Exception:
+                return None
+
+        found = await asyncio.gather(*(one(i) for i in ref_ids))
+        refs = [(r, max(0.5, 1 - 0.05 * n)) for n, r in enumerate(x for x in found if x is not None)]
+        pool = await self._pool({r.kind for r, _ in refs})
+        ranked = await self._rank_candidates(refs, pool, country, limit, reco.PER_SUPPLIER_CAP)
+        return [r.id for r, _ in refs], ranked

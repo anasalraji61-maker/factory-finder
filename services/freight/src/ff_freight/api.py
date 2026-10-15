@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request
 
+from ff_freight import privacy
 from ff_freight.errors import NotFound, Unauthenticated
 from ff_freight.schemas import (
     ID_RE,
@@ -25,6 +26,7 @@ from ff_freight.service import FreightService
 
 router = APIRouter(prefix="/v1/freight")
 admin = APIRouter(prefix="/v1/admin/freight")
+internal = APIRouter(prefix="/v1/internal")
 
 
 def svc(request: Request) -> FreightService:
@@ -49,6 +51,13 @@ def require_admin(request: Request, x_admin_token: Annotated[str | None, Header(
         raise NotFound("Not Found")
     if not x_admin_token or not hmac.compare_digest(x_admin_token.encode(), secret.encode()):
         raise Unauthenticated("Valid X-Admin-Token required", code="admin_auth_required")
+
+
+def privacy_guard(request: Request, x_internal_token: Annotated[str | None, Header()] = None) -> None:
+    """Export/erasure: internal token only; anything else looks like a missing route."""
+    token = request.app.state.settings.internal_token_value
+    if token is not None and not hmac.compare_digest((x_internal_token or "").encode(), token.encode()):
+        raise NotFound("Not Found")
 
 
 S = Annotated[FreightService, Depends(svc)]
@@ -288,3 +297,13 @@ async def admin_reports(
 @admin.post("/sweep", dependencies=dep)
 async def admin_sweep(s: S):
     return await s.admin_sweep()
+
+
+@internal.post("/users/{user_id}/export", dependencies=[Depends(privacy_guard)])
+async def export_user(user_id: str, s: S) -> dict:
+    return {"service": "freight", "user_id": user_id, **await privacy.export_user(s.engine, user_id)}
+
+
+@internal.delete("/users/{user_id}/data", dependencies=[Depends(privacy_guard)])
+async def erase_user(user_id: str, s: S) -> dict:
+    return {"service": "freight", "user_id": user_id, "status": "done", "counts": await privacy.erase_user(s.engine, user_id)}

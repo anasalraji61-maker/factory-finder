@@ -135,6 +135,33 @@ class MediaService:
             await s.commit()
         await self._cleanup(keys)
 
+    # ------------------------------------------------------------------ account export / erasure
+    async def export_owner(self, owner: str, cap: int = 1000) -> dict:
+        async with self.sessions() as s:
+            rows = (await s.scalars(select(MediaFileRow).where(MediaFileRow.owner_id == owner).order_by(MediaFileRow.created_at).limit(cap + 1))).all()
+        return {
+            "truncated": len(rows) > cap,
+            "data": {"files": [
+                {"id": r.id, "kind": r.kind, "visibility": r.visibility, "content_type": r.content_type,
+                 "width": r.width, "height": r.height, "bytes": r.size_bytes, "sha256": r.sha256,
+                 "created_at": r.created_at.isoformat()} for r in rows[:cap]
+            ]},
+        }  # fmt: skip
+
+    async def erase_owner(self, owner: str) -> dict[str, int]:
+        """Delete every file the user owns (rows, originals and variants) and the upload-quota events."""
+        async with self.sessions() as s:
+            rows = (await s.scalars(select(MediaFileRow).where(MediaFileRow.owner_id == owner))).all()
+            keys: list[str] = []
+            for row in rows:
+                keys.append(make_key(row.id, row.ext, private=row.visibility == "private"))
+                keys += [make_key(row.id, row.ext, int(w), private=row.visibility == "private") for w in row.widths.split(",") if w]
+                await s.delete(row)
+            await s.execute(delete(UploadEventRow).where(UploadEventRow.owner_id == owner))
+            await s.commit()
+        await self._cleanup(keys)
+        return {"files_deleted": len(rows)}
+
     # ------------------------------------------------------------------ private files
     async def _private_row(self, media_id: str) -> MediaFileRow:
         async with self.sessions() as s:

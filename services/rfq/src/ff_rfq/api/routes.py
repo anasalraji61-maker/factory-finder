@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request
 
+from ff_rfq import privacy
 from ff_rfq.deals import DealService
 from ff_rfq.domain.enums import DealStatus, ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Unauthenticated
@@ -210,3 +211,15 @@ async def reply_review(review_id: str, body: ReplyCreate, user: User, supplier: 
 @router.post("/reviews/{review_id}/report")
 async def report_review(review_id: str, body: ReportCreate, user: User, r: Reviews) -> dict[str, Any]:
     return await r.report(user, review_id, body)
+
+
+@router.post("/internal/users/{user_id}/export", dependencies=[Depends(internal_only)])
+async def export_user(user_id: str, request: Request) -> dict[str, Any]:
+    return {"service": "rfq", "user_id": user_id, **await privacy.export_user(request.app.state.service.engine, user_id)}
+
+
+@router.delete("/internal/users/{user_id}/data", dependencies=[Depends(internal_only)])
+async def erase_user(user_id: str, request: Request) -> dict[str, Any]:
+    return {"service": "rfq", "user_id": user_id, "status": "done",
+            "counts": await privacy.erase_user(request.app.state.service.engine, user_id),
+            "retained": ["deals", "deal_events", "accepted_offer_prices"]}  # fmt: skip

@@ -7,12 +7,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 
+from ff_feed import privacy
 from ff_feed.errors import Invalid, NotFound, Unauthenticated
 from ff_feed.schemas import ID_RE, SUPPLIER_RE, USER_RE, CommentCreate, HideIn, PostCreate, ReportIn
 from ff_feed.service import FeedService
 
 router = APIRouter(prefix="/v1/feed")
 admin = APIRouter(prefix="/v1/admin/feed")
+internal = APIRouter(prefix="/v1/internal")
 
 
 def svc(request: Request) -> FeedService:
@@ -47,6 +49,13 @@ def require_admin(request: Request, x_admin_token: Annotated[str | None, Header(
         raise NotFound("Not Found")
     if not x_admin_token or not hmac.compare_digest(x_admin_token.encode(), secret.encode()):
         raise Unauthenticated("Valid X-Admin-Token required", code="admin_auth_required")
+
+
+def privacy_guard(request: Request, x_internal_token: Annotated[str | None, Header()] = None) -> None:
+    """Export/erasure: internal token only; anything else looks like a missing route."""
+    token = request.app.state.settings.internal_token_value
+    if token is not None and not hmac.compare_digest((x_internal_token or "").encode(), token.encode()):
+        raise NotFound("Not Found")
 
 
 S = Annotated[FeedService, Depends(svc)]
@@ -194,3 +203,13 @@ async def admin_reports(
 
 
 __all__ = ["Invalid", "admin", "router"]
+
+
+@internal.post("/users/{user_id}/export", dependencies=[Depends(privacy_guard)])
+async def export_user(user_id: str, s: S) -> dict:
+    return {"service": "feed", "user_id": user_id, **await privacy.export_user(s.engine, user_id)}
+
+
+@internal.delete("/users/{user_id}/data", dependencies=[Depends(privacy_guard)])
+async def erase_user(user_id: str, s: S) -> dict:
+    return {"service": "feed", "user_id": user_id, "status": "done", "counts": await privacy.erase_user(s.engine, user_id)}

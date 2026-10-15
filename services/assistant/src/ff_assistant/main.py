@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from ff_assistant import __version__
-from ff_assistant.api.routes import router
+from ff_assistant.api.routes import internal, router
 from ff_assistant.clients import Clients, build_http_clients, build_mock_clients
 from ff_assistant.config import Settings, get_settings
 from ff_assistant.llm import LlmClient, build_llm
@@ -43,6 +43,8 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
     async def internal_token(request: Request, call_next):
         guarded = s.internal_token and request.url.path.startswith("/v1/")
         if guarded and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (s.internal_token.get_secret_value()).encode()):
+            if request.url.path.startswith("/v1/internal/users/"):  # account export/erasure: invisible to non-internal callers
+                return _error(404, "not_found", "not found")
             return _error(401, "unauthorized", "invalid internal token")
         return await call_next(request)
 
@@ -63,6 +65,7 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
         return ready_response("assistant", {})
 
     app.include_router(router)
+    app.include_router(internal)
     install_observability(app, "assistant")
     return app
 

@@ -458,3 +458,12 @@ def test_freight_identity_headers_only_from_gateway(make_client, mock_upstream):
     # service-local admin routes are not reachable through the gateway, even with a token
     assert c.get("/v1/admin/freight/applications", headers={**h, "X-Admin-Token": "adm"}).status_code == 404
     assert c.post("/v1/admin/freight/applications/app_1/approve", headers={**h, "X-Admin-Token": "adm"}).status_code == 404
+
+
+def test_recommendations_routed_to_sourcing_and_public():
+    from ff_gateway.domain.routing import is_public, resolve_upstream
+
+    assert resolve_upstream("/v1/recommendations") == "sourcing"
+    assert is_public("GET", "/v1/recommendations")
+    assert not is_public("POST", "/v1/recommendations")
+    assert is_public("GET", "/v1/listings/x/price-history") and is_public("GET", "/v1/listings/x/similar")

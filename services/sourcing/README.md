@@ -13,7 +13,8 @@ cd services/sourcing
 
 ## Endpoints (contract: `contracts/openapi/sourcing.yaml`)
 `GET /health` · `GET /v1/search` · `GET /v1/listings/{id}` · `GET /v1/suppliers/{id}` ·
-`GET /v1/categories` · `GET /v1/sources` ·
+`GET /v1/categories` · `GET /v1/sources` · `GET /v1/listings/{id}/price-history` · `GET /v1/listings/{id}/similar` ·
+`GET /v1/recommendations` ·
 supplier-owned listings: `POST|GET /v1/my/listings` · `GET|PUT|DELETE /v1/my/listings/{id}` ·
 `POST /v1/my/listings/{id}/publish|unpublish`
 
@@ -93,3 +94,20 @@ Examples (fictional providers, refused at runtime): `examples/licensed/*.mapping
 `python -m ff_sourcing.licensed_validate mapping.json --sample response.json`. Quality rules: `domain/quality.py`
 (dedupe by supplier+title, price sanity, currency detection). Enable: `FF_SOURCING_LICENSED_MAPPINGS` + id in
 `FF_SOURCING_ADAPTERS`; see `docs/decisions/sourcing-licensed-provider.md`. Failure falls back to mock with a warning.
+
+## Price history
+`GET /v1/listings/{id}/price-history?days=1..365&bucket=day|week|month` -> `points` (bucket start, avg/min/max, n), `summary`,
+`trend` (`direction` up|down|flat within +-1%, `change_pct`, `insufficient_data` when < 2 observations/buckets) and `hints`
+(`suggested_target` = period low, `at_period_low`; for watchlist/alert target suggestions). Non-mock listings are observed
+(min unit price) on search pages, detail fetches and native publish/update (`price_history.py`, table `price_observations`,
+migration `0003`): same price+currency within 6 h is not re-recorded, max 500 points and 400 days per listing, failures never
+break the request. Mock-catalog listings return a deterministic seeded daily series ending at the current price
+(`synthetic: true`; `domain/pricehistory.py`). Env: `PRICE_HISTORY_DEDUPE_HOURS`, `PRICE_HISTORY_MAX_POINTS`, `PRICE_HISTORY_RETENTION_DAYS`.
+
+## Similar / recommendations
+`domain/reco.py` (pure scoring) + `SourcingService.similar/recommendations`. Same kind only; score = category 0.30 + title/spec
+token overlap 0.30 + price band (same currency, within 2x) 0.15 + condition 0.05 + different supplier +0.08 (same supplier -0.08)
++ trust band (green +0.10, yellow +0.03, red -0.25) + verified 0.02; minimum 0.25. Each item has `reasons[]` with `code`, `en`, `ar`.
+Bounded: <= 300 candidates scored, trust looked up for the best 60 only. `/v1/recommendations?ref=<ids, most recent first, max 20>&country=`:
+stateless (client sends its recent ids; nothing stored/logged per user), weight decays with position, <= 3 per supplier, `country`
+= preferred origin (+0.05, not a filter), no usable ref -> top trusted listings. Gateway: public GET, routed to sourcing.

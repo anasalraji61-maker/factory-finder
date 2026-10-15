@@ -13,6 +13,8 @@ Flows (each is an independent step; a failing setup only skips the steps that de
   rfq deals            deals list as buyer / supplier, role filter, stranger isolation
   assistant            cards for a shipment question, daily quota 429 + Retry-After
   compliance           probes /v1/me/export, /v1/me/data etc.; SKIP when the stack has no such endpoints
+  account deletion     register -> create data in 6 services -> export -> delete (wrong password refused) -> login fails
+                       -> data gone (checked at the services' internal endpoints on a local stack)
   feed                 verified supplier post -> follow / like / comment -> reports hide it -> admin hide / restore
   freight              forwarder application -> admin approve -> request -> quotes -> comparison -> revise -> accept -> rate
   trust verification   private upload -> submit -> admin approve (badge level) -> revoke; public route 404 for private file
@@ -369,6 +371,66 @@ def scenario(tmp: Path | None) -> None:
                 assert c.get(p).status_code == 401, "export open without token"
 
     step("compliance: export / legal / consent endpoints (if present)", compliance)
+
+    # ---- 7b. account export + deletion (store requirements) ------------------------------------------
+    def account_deletion():
+        pw = "Passw0rd!x"
+        d = ok(c.post("/v1/auth/register", json={"email": f"leaver{sfx}@example.com", "password": pw, "name": "Leaver X"}), 201)
+        lid, tok = d["user"]["id"], {"Authorization": f"Bearer {d['access_token']}"}
+        listing = items(ok(c.get("/v1/search", params={"q": "injection molding machine"})))[0]["id"]
+        ok(c.post("/v1/watchlist", headers=tok, json={"listing_id": listing}), 201)
+        ok(c.post("/v1/requests", headers=tok, json={
+            "kind": "product", "title": "Leaver private need", "quantity": 5, "unit": "piece",
+            "destination": {"country_code": "IQ", "city": "Erbil"}}), 201)
+        ok(c.post("/v1/shipments", headers=tok, json={"reference": "CSQU3054383", "reference_type": "container"}), 201)
+        img = ok(c.post("/v1/media/images", headers=tok, files={"file": ("p.png", png_bytes(77), "image/png")}), 201)
+        rel = "/" + img["url"].split("/", 3)[3] if img["url"].startswith("http") else img["url"]
+        cv = ok(c.post("/v1/conversations", headers=tok, json={
+            "participants": [{"user_id": users["buyer"]["id"], "role": "buyer"}], "my_role": "supplier",
+            "context": {"type": "support"}}), 200, 201)
+        ok(c.post(f"/v1/conversations/{cv['id']}/messages", headers=tok, json={"type": "text", "text": "leaver says hi"}), 201)
+
+        exp = c.get("/v1/me/export", headers=tok)
+        assert exp.status_code == 200 and "attachment" in exp.headers.get("content-disposition", ""), exp.text[:200]
+        b = exp.json()
+        assert b["user"]["id"] == lid and b["user"]["email"] == f"leaver{sfx}@example.com"
+        sv = b["services"]
+        for svc, key in (("notifications", "watches"), ("rfq", "requests"), ("tracking", "shipments"),
+                         ("media", "files"), ("messaging", "messages_sent")):
+            assert sv[svc]["status"] == "ok" and sv[svc]["data"][key], f"export lacks {svc}.{key}: {str(sv[svc])[:200]}"
+        assert not b["partial"], {k: v for k, v in sv.items() if v["status"] != "ok"}
+        assert lid not in json.dumps(c.get("/v1/me/export", headers=h("buyer")).json()["services"]), "export leaks another user's data"
+
+        no = c.request("DELETE", "/v1/me", headers=tok, json={"password": "not-my-password"})
+        assert no.status_code == 403 and no.json()["error"]["code"] == "reauth_failed", no.text[:200]
+        assert c.get("/v1/me", headers=tok).status_code == 200, "wrong-password attempt must not delete anything"
+        gone = c.request("DELETE", "/v1/me", headers=tok, json={"password": pw})
+        assert gone.status_code in (200, 202), gone.text[:300]
+        st = gone.json()
+        if st["status"] != "deleted":  # a service was slow: a repeat retries pending jobs at once (idempotent)
+            st = c.request("DELETE", "/v1/me", headers=tok, json={"password": pw}).json()
+        assert st["status"] == "deleted" and set(st["services"].values()) == {"done"}, st
+
+        assert c.post("/v1/auth/login", json={"email": f"leaver{sfx}@example.com", "password": pw}).status_code == 401
+        assert c.post("/v1/auth/refresh", json={"refresh_token": d["refresh_token"]}).status_code == 401
+        assert c.get("/v1/me", headers=tok).status_code == 403
+        assert c.get("/v1/me/export", headers=tok).status_code == 403
+        assert c.get("/v1/media/files/" + rel.rsplit("/", 1)[-1]).status_code == 404, "uploaded file still served"
+        # the counterparty keeps the thread, minus the leaver's identity
+        thread = ok(c.get(f"/v1/conversations/{cv['id']}/messages", headers=h("buyer")))
+        assert lid not in json.dumps(thread), "deleted user's id still in the counterparty's thread"
+        if not REMOTE:  # ask each service directly (local stack runs without an internal token)
+            for svc, key in (("notifications", "watches"), ("tracking", "shipments"),
+                             ("media", "files"), ("messaging", "messages_sent")):
+                r = httpx.post(f"http://localhost:{e2e.SERVICES[svc][0]}/v1/internal/users/{lid}/export", timeout=10)
+                assert r.status_code == 200 and not r.json()["data"][key], f"{svc}.{key} survived deletion: {r.text[:200]}"
+            r = httpx.post(f"http://localhost:{e2e.SERVICES['rfq'][0]}/v1/internal/users/{lid}/export", timeout=10)
+            reqs = r.json()["data"]["requests"]  # rfq keeps the row for audit but not the personal text
+            assert reqs and all(x["title"] == "[deleted]" for x in reqs), r.text[:300]
+        # the public gateway never exposes the internal erase/export routes
+        assert c.post(f"/v1/internal/users/{users['buyer']['id']}/export", headers=h("buyer")).status_code == 404
+
+    step("account: export -> wrong-password refused -> delete -> login fails -> data gone", account_deletion)
 
     # ---- 8. private media -----------------------------------------------------------------------
     def upload_private(role: str, seed: int) -> dict:

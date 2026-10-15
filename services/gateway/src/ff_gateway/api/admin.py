@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, Request
 from sqlalchemy import func, select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ff_gateway.db import User
+from ff_gateway.db import DeletionJob, User
 from ff_gateway.domain.errors import BEARER_REALM, GatewayError
 
 router = APIRouter(tags=["admin"])
@@ -90,3 +90,15 @@ async def approve_claim(user_id: str, request: Request) -> dict:
 @router.post("/v1/admin/supplier-claims/{user_id}/reject")
 async def reject_claim(user_id: str, request: Request) -> dict:
     return await _decide(request, user_id, False)
+
+
+@router.get("/v1/admin/account-deletions")
+async def list_deletion_jobs(request: Request, status: Literal["pending", "dead"] = "pending", limit: int = Query(100, ge=1, le=500)) -> dict:
+    """Erasure jobs that have not completed (opaque ids and short error codes only; no PII)."""
+    require_admin(request)
+    async with request.app.state.sessionmaker() as s:
+        rows = (await s.scalars(select(DeletionJob).where(DeletionJob.status == status).order_by(DeletionJob.id).limit(limit))).all()
+    return {"items": [
+        {"user_id": j.user_id, "service": j.service, "status": j.status, "attempts": j.attempts,
+         "last_error": j.last_error, "next_attempt_at": j.next_attempt_at.isoformat()} for j in rows
+    ]}  # fmt: skip

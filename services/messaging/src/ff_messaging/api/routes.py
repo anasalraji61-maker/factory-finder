@@ -16,6 +16,7 @@ from fastapi import (
 )
 from pydantic import BaseModel, ConfigDict, Field
 
+from ff_messaging import privacy
 from ff_messaging.api.serializers import (
     conversation_json,
     conversation_page_json,
@@ -24,7 +25,12 @@ from ff_messaging.api.serializers import (
     read_state_json,
 )
 from ff_messaging.domain.clock import utc_now
-from ff_messaging.domain.errors import ForbiddenError, MessagingError, UnauthenticatedError
+from ff_messaging.domain.errors import (
+    ForbiddenError,
+    MessagingError,
+    NotFoundError,
+    UnauthenticatedError,
+)
 from ff_messaging.domain.events import TypingChanged
 from ff_messaging.domain.ids import EXTERNAL_ID_PATTERN, USER_ID_PATTERN, is_valid_user_id
 from ff_messaging.domain.models import (
@@ -125,6 +131,13 @@ def supplier_claim(
     if x_supplier_id and is_valid_user_id(x_supplier_id) and x_supplier_id.startswith("sup_"):
         return x_supplier_id
     return None
+
+
+def privacy_guard(request: Request, x_internal_token: Annotated[str | None, Header()] = None) -> None:
+    """Export/erasure are internal-only: anything but the internal token looks like a missing route."""
+    token = request.app.state.service.settings.internal_token_value
+    if token is not None and not hmac.compare_digest((x_internal_token or "").encode(), token.encode()):
+        raise NotFoundError("Route not found")
 
 
 User = Annotated[str, Depends(current_user)]
@@ -307,3 +320,14 @@ async def conversation_socket(
     finally:
         sender.cancel()
         hub.disconnect(conversation_id, conn)
+
+
+@router.post("/internal/users/{user_id}/export", dependencies=[Depends(privacy_guard)])
+async def export_user(user_id: str, svc: Service) -> dict[str, Any]:
+    return {"service": "messaging", "user_id": user_id, **await privacy.export_user(svc.db, user_id)}
+
+
+@router.delete("/internal/users/{user_id}/data", dependencies=[Depends(privacy_guard)])
+async def erase_user(user_id: str, svc: Service) -> dict[str, Any]:
+    return {"service": "messaging", "user_id": user_id, "status": "done",
+            "counts": await privacy.erase_user(svc.db, user_id)}  # fmt: skip

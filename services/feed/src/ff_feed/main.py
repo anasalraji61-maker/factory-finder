@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_feed import __version__
-from ff_feed.api import admin, router
+from ff_feed.api import admin, internal, router
 from ff_feed.config import Settings
 from ff_feed.db import make_engine, now
 from ff_feed.errors import ApiError
@@ -61,6 +61,8 @@ def create_app(settings: Settings | None = None, clock: Callable[[], datetime] |
             and request.url.path not in ("/health", "/ready")
             and not hmac.compare_digest(request.headers.get("X-Internal-Token", "").encode(), token.encode())
         ):
+            if request.url.path.startswith("/v1/internal/"):  # account export/erasure: invisible to non-internal callers
+                return _err(404, "not_found", "Not Found")
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
@@ -87,6 +89,7 @@ def create_app(settings: Settings | None = None, clock: Callable[[], datetime] |
 
     app.include_router(router)
     app.include_router(admin)
+    app.include_router(internal)
     install_observability(app, "feed")
     return app
 

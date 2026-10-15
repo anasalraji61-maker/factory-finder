@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, String, false, text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, UniqueConstraint, false, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -46,6 +46,41 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+    # Account deletion: scheduled_at is set during the optional grace period (login cancels it);
+    # deleted_at marks the anonymized tombstone row (the id is kept for referential integrity).
+    deletion_scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class DeletionJob(Base):
+    """Durable per-service erasure task for a deleted account; retried with backoff until done or dead."""
+
+    __tablename__ = "deletion_jobs"
+    __table_args__ = (UniqueConstraint("user_id", "service", name="uq_deletion_jobs_user_service"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    service: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(8), default="pending", index=True)  # pending | done | dead
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(String(40), nullable=True)  # short code only, never a body
+    supplier_id: Mapped[str | None] = mapped_column(String(64), nullable=True)  # verified claim, cleared when done
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AccountEvent(Base):
+    """Append-only audit trail of export / deletion actions. Holds opaque ids and counters, never PII."""
+
+    __tablename__ = "account_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(40), index=True)
+    event: Mapped[str] = mapped_column(String(32))
+    detail: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class RefreshToken(Base):
@@ -100,6 +135,10 @@ def _add_missing_columns(sync_conn) -> None:
         sync_conn.execute(
             text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE")
         )
+    ts = "TIMESTAMP WITH TIME ZONE" if sync_conn.dialect.name == "postgresql" else "DATETIME"
+    for col in ("deletion_scheduled_at", "deleted_at"):
+        if col not in cols:
+            sync_conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ts} NULL"))
     if "supplier_claim_status" not in cols:
         sync_conn.execute(
             text(

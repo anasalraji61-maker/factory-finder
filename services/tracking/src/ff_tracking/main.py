@@ -12,7 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from ff_tracking import __version__
+from ff_tracking import __version__, repository
 from ff_tracking.adapters.base import TrackingProvider
 from ff_tracking.adapters.http import (
     HttpAwbProvider,
@@ -97,6 +97,8 @@ def create_app(
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
         if token and request.url.path not in ("/health", "/ready") and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode()):
+            if request.url.path.startswith("/v1/internal/users/"):  # account export/erasure: invisible to non-internal callers
+                return _err(404, "not_found", "Not Found")
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
@@ -126,6 +128,14 @@ def create_app(
     async def outbox_status() -> dict:
         """Relay/outbox counters (internal; guarded by X-Internal-Token when set)."""
         return {"relay": "on" if app.state.relay else "off", **await repo.outbox_stats()}
+
+    @app.post("/v1/internal/users/{user_id}/export")
+    async def export_user(user_id: str) -> dict:
+        return {"service": "tracking", "user_id": user_id, **await repository.export_owner(repo.engine, user_id)}
+
+    @app.delete("/v1/internal/users/{user_id}/data")
+    async def erase_user(user_id: str) -> dict:
+        return {"service": "tracking", "user_id": user_id, "status": "done", "counts": await repository.erase_owner(repo.engine, user_id)}
 
     app.include_router(router)
     install_observability(app, "tracking")

@@ -1,0 +1,39 @@
+name: ios
+on:
+  pull_request:
+    paths: ["apps/mobile/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate and patch platform folders
+        run: |
+          if [ ! -d ios ]; then
+            flutter create . --platforms=android,ios --org com.factoryfinder --project-name factory_finder
+          fi
+          bash tool/ci_prepare_platforms.sh "$PWD"
+      - name: Remove default template test
+        run: rm -f test/widget_test.dart
+      - run: flutter pub get
+      - name: Build iOS (simulator, unsigned, mock mode)
+        shell: bash
+        run: |
+          set +e
+          flutter build ios --simulator --debug --no-codesign --dart-define=FF_MOCK=true 2>&1 | tee build.txt
+          code=${PIPESTATUS[0]}
+          msg=$(grep -iE "error|fail|exception|requires|pod|xcode|\.swift|\.plist" build.txt | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=ios build::$msg"; fi
+          exit $code

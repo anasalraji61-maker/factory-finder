@@ -12,6 +12,7 @@ from ff_trust.adapters.base import SignalsAdapter
 from ff_trust.adapters.mock import MockSignalsAdapter
 from ff_trust.adapters.real import AlibabaSignalsAdapter, MadeInChinaSignalsAdapter
 from ff_trust.api import errors
+from ff_trust.api.privacy_routes import router as privacy_router
 from ff_trust.api.routes import router
 from ff_trust.api.verification_routes import router as verification_router
 from ff_trust.cache import TTLCache
@@ -86,6 +87,8 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
             and request.url.path not in ("/health", "/ready")
             and not hmac.compare_digest((request.headers.get("x-internal-token", "")).encode(), (settings.internal_token).encode())
         ):
+            if request.url.path.startswith("/v1/internal/users/"):  # account export/erasure: invisible to non-internal callers
+                return JSONResponse({"error": {"code": "not_found", "message": "Not Found", "details": {}}}, status_code=404)
             return JSONResponse({"error": {"code": "forbidden", "message": "Invalid internal token", "details": {}}}, status_code=403)
         return await call_next(request)
 
@@ -99,6 +102,7 @@ def create_app(settings: Settings | None = None, adapter: SignalsAdapter | None 
 
     app.include_router(router)
     app.include_router(verification_router)
+    app.include_router(privacy_router)
     install_observability(app, "trust")
     return app
 

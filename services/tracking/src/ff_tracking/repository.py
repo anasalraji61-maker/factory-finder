@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, func, select
+from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -61,6 +61,24 @@ def make_engine(url: str) -> AsyncEngine:
     if is_sqlite(url):
         return create_async_engine(url)
     return create_async_engine(url, pool_pre_ping=True)
+
+
+async def export_owner(engine: AsyncEngine, owner_id: str, cap: int = 500) -> dict:
+    """Account export: the user's shipments with their stored tracking data (bounded)."""
+    async with AsyncSession(engine) as c:
+        rows = (await c.scalars(select(ShipmentRow).where(ShipmentRow.owner_id == owner_id).order_by(ShipmentRow.created_at).limit(cap + 1))).all()
+    return {"truncated": len(rows) > cap, "data": {"shipments": [
+        {"id": r.id, "reference_type": r.reference_type, "reference": r.reference, "status": r.status,
+         "created_at": r.created_at.isoformat() if hasattr(r.created_at, "isoformat") else str(r.created_at)}
+        for r in rows[:cap]]}}  # fmt: skip
+
+
+async def erase_owner(engine: AsyncEngine, owner_id: str) -> dict[str, int]:
+    """Account erasure: delete the user's shipments and their notification outbox rows."""
+    async with engine.begin() as c:
+        o = await c.execute(delete(OutboxRow).where(OutboxRow.owner_id == owner_id))
+        s = await c.execute(delete(ShipmentRow).where(ShipmentRow.owner_id == owner_id))
+    return {"shipments_deleted": int(s.rowcount or 0), "outbox_deleted": int(o.rowcount or 0)}
 
 
 class ShipmentRepository:

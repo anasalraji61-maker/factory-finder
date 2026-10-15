@@ -45,3 +45,7 @@ documents as JSON. A move to `Numeric(p, s)` columns would need a data-migrating
 score snapshots and `trust_meta`. Replaces the former loose DDL file. In `FF_ENV=production` the service also needs
 `FF_TRUST_VERIFICATION_HASH_KEY` (stable secret; changing it breaks duplicate detection and is refused at startup).
 Back up the database together with that key.
+
+## Gateway account tables
+`users` gained `deletion_scheduled_at` and `deleted_at`; new tables `deletion_jobs` (durable per-service erasure queue, unique per user and service) and `account_events` (audit). The gateway still creates/extends its tables at startup (`create_tables`, no Alembic), so the columns are added by the lightweight migration in `ff_gateway/db`. Services need no schema change: erasure only updates or deletes existing rows.
+

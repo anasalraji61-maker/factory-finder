@@ -35,3 +35,13 @@ class DailyQuota:
             return QuotaDecision(False, limit, 0, retry)
         self._counts[key] = used + 1
         return QuotaDecision(True, limit, limit - used - 1, retry)
+
+    def usage(self, user_id: str) -> int:
+        """Requests counted for the user in the current UTC day window (0 if none)."""
+        if int(self._clock() // DAY) != self._day:
+            return 0
+        return self._counts.get(f"u:{user_id}", 0)
+
+    def forget(self, user_id: str) -> int:
+        """Drop the user's counter (account erasure). Returns how many counters were removed."""
+        return 1 if self._counts.pop(f"u:{user_id}", None) is not None else 0

@@ -7,6 +7,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     DateTime,
     Float,
     Index,
@@ -93,6 +94,20 @@ class ListingReportRow(Base):
     status: Mapped[str] = mapped_column(String(10))  # open | actioned | dismissed
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class PriceObservationRow(Base):
+    """One observed price of one listing (min unit price). Bounded per listing; see price_history.py."""
+
+    __tablename__ = "price_observations"
+    __table_args__ = (Index("ix_price_observations_listing_time", "listing_id", "observed_at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    listing_id: Mapped[str] = mapped_column(String(64))
+    price: Mapped[str] = mapped_column(String(32))  # decimal string
+    currency: Mapped[str] = mapped_column(String(3))
+    source: Mapped[str] = mapped_column(String(32))
+    observed_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 def make_engine(url: str) -> AsyncEngine:

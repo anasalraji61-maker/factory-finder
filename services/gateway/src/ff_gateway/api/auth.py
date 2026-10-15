@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ff_gateway.api.deps import to_me
 from ff_gateway.db import EmailVerificationToken, RefreshToken, User
+from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import (
     AccountDisabled,
     AccountExists,
@@ -119,7 +120,10 @@ async def login(body: LoginIn, request: Request) -> TokensOut:
     if not ok or user is None:
         raise InvalidCredentials()
     if not user.is_active:
-        raise AccountDisabled()
+        # grace period after DELETE /v1/me: the right password cancels the deletion (never for admin-disabled or finalized accounts)
+        if user.deletion_scheduled_at is None or user.deleted_at is not None or not await privacy.cancel_deletion(request.app, user.id):
+            raise AccountDisabled()
+        user.is_active = True
     return await _tokens(request, user)
 
 

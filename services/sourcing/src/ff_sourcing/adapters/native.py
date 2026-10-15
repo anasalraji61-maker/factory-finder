@@ -213,6 +213,45 @@ class NativeStore:
             await s.commit()
             return (res.rowcount or 0) > 0
 
+    # ---- account export / erasure ----------------------------------------
+    async def export_user(self, supplier_id: str | None, reporter_ref: str, cap: int = 500) -> dict:
+        await self.ensure_ready()
+        async with self.sm() as s:
+            rows = []
+            if supplier_id:
+                rows = (await s.scalars(select(NativeListingRow).where(NativeListingRow.supplier_id == supplier_id).limit(cap + 1))).all()
+            reps = (await s.scalars(select(ListingReportRow).where(ListingReportRow.reporter_ref == reporter_ref).limit(cap + 1))).all()
+        return {
+            "truncated": len(rows) > cap or len(reps) > cap,
+            "data": {
+                "listings": [{"id": r.id, "status": r.status, "kind": r.kind, "title": r.title, "title_ar": r.title_ar,
+                              "description": r.description, "category": r.category, "price_min": r.price_min,
+                              "price_max": r.price_max, "currency": r.currency, "images": r.images,
+                              "created_at": r.created_at.isoformat()} for r in rows[:cap]],
+                "listing_reports": [{"listing_id": r.listing_id, "reason": r.reason, "details": r.details,
+                                     "status": r.status, "created_at": r.created_at.isoformat()} for r in reps[:cap]],
+            },
+        }  # fmt: skip
+
+    async def erase_user(self, supplier_id: str | None, reporter_ref: str) -> dict[str, int]:
+        """Delete the claimed supplier's native listings (and their reports); blank this user's report details."""
+        await self.ensure_ready()
+        async with self.sm() as s:
+            n = 0
+            if supplier_id:
+                ids = list((await s.scalars(select(NativeListingRow.id).where(NativeListingRow.supplier_id == supplier_id))).all())
+                if ids:
+                    await s.execute(delete(ListingReportRow).where(ListingReportRow.listing_id.in_(ids)))
+                    await s.execute(delete(NativeListingRow).where(NativeListingRow.id.in_(ids)))
+                n = len(ids)
+            res = await s.execute(
+                sa_update(ListingReportRow)
+                .where(ListingReportRow.reporter_ref == reporter_ref, ListingReportRow.details.is_not(None))
+                .values(details=None)
+            )
+            await s.commit()
+        return {"listings_deleted": n, "report_details_cleared": int(res.rowcount or 0)}
+
     # ---- public (published only) ----------------------------------------
     async def published(self, limit: int = 200, supplier_id: str | None = None) -> list[NativeListingRow]:
         await self.ensure_ready()

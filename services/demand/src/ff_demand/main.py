@@ -42,6 +42,17 @@ def admin(
     return x_user_id
 
 
+def privacy_guard(
+    request: Request, x_internal_token: Annotated[str | None, Header()] = None
+) -> None:
+    """Account export/erasure: internal token only; anything else looks like a missing route."""
+    expected = request.app.state.settings.internal_token_value
+    if expected is not None and not hmac.compare_digest(
+        (x_internal_token or "").encode(), expected.encode()
+    ):
+        raise HTTPException(404, "Not Found")
+
+
 Actor = Annotated[str, Depends(admin)]
 Service = Annotated[DemandService, Depends(svc)]
 
@@ -201,6 +212,18 @@ def create_app(
     @app.get("/ready")
     async def ready():
         return ready_response("demand", {"database": await db_ready(store.engine)})
+
+    @app.post("/v1/internal/users/{user_id}/export", dependencies=[Depends(privacy_guard)])
+    async def export_user(user_id: str) -> dict:
+        # demand signals come from public posts, not platform users: nothing is keyed by the account
+        return {
+            "service": "demand", "user_id": user_id, "truncated": False,
+            "data": {"holds_user_data": False},
+        }  # fmt: skip
+
+    @app.delete("/v1/internal/users/{user_id}/data", dependencies=[Depends(privacy_guard)])
+    async def erase_user(user_id: str) -> dict:
+        return {"service": "demand", "user_id": user_id, "status": "done", "counts": {}}
 
     app.include_router(router)
     install_observability(app, "demand")

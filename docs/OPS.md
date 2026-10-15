@@ -26,3 +26,14 @@ Opt-in, fail closed. Default behaviour (variable unset or any other value) is un
 
 ## Trust persistence
 `FF_TRUST_DATABASE_URL` (default SQLite `./data/trust.db`; in Docker that is inside the container, so mount a volume at `/app/data` or use PostgreSQL, otherwise a recreated container starts empty). Run `alembic upgrade head` in `services/trust` before starting on PostgreSQL. `/ready` returns 503 when the database is unreachable. The audit table is append-only by trigger: do not grant UPDATE/DELETE to the application role either.
+
+## Account deletion and data export
+Details and the retention exceptions (payments ledger, rfq deals, trust verification audit, counterparty records): `docs/decisions/account-deletion.md`.
+- `DELETE /v1/me` (re-auth by password or refresh token) and `GET /v1/me/export` on the gateway; both rate limited per user (`FF_GATEWAY_PRIVACY_RATE_LIMIT_PER_MINUTE`, default 3).
+- Settings (prefix `FF_GATEWAY_`): `DELETION_GRACE_DAYS` (0), `PRIVACY_TIMEOUT_SECONDS` (10), `EXPORT_MAX_BYTES` (5 MiB), `DELETION_MAX_ATTEMPTS` (12), `DELETION_WORKER_INTERVAL_SECONDS` (60, 0 turns the retry loop off).
+- Every service needs the same `FF_INTERNAL_TOKEN` as the gateway: the internal export/erase routes answer 404 otherwise, the gateway then records `http_404` and retries until the job is dead. The upstream map (`FF_GATEWAY_UPSTREAMS`) must include every service.
+- Failed erasures: `GET /v1/admin/account-deletions?status=pending|dead` (admin token). `dead` jobs need a human: fix the cause, then reset the row (`UPDATE deletion_jobs SET status='pending', attempts=0 WHERE ...`). Do not delete jobs.
+- The tables `deletion_jobs` and `account_events` are in the gateway DB. They hold opaque ids, service names and short error codes, no PII. Back them up with the gateway DB.
+- Logs: audit lines (`"event":"audit"`) have the opaque user id and request id only.
+- Ledger and audit records are retained on purpose; do not "clean" payments or rfq deal tables when a user is deleted.
+

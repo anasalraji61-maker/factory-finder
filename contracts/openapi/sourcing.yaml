@@ -107,6 +107,72 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/ListingDetail"}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/listings/{id}/price-history:
+    get:
+      summary: Price history of a listing (headline min unit price) with min/max/avg and trend
+      description: >
+        Observations are recorded (best effort) whenever a non-mock listing is fetched in search/detail or a native
+        listing is published/updated; identical price within 6 h is not re-recorded and each listing keeps a bounded
+        number of points. Mock-catalog listings return a deterministic seeded series (`synthetic: true`) so apps can draw
+        charts. `trend.insufficient_data` is true with fewer than 2 observations or 2 buckets (then `change_pct` is absent).
+        `hints` (absent when insufficient) feeds watchlist/alert target suggestions.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: days, in: query, schema: {type: integer, minimum: 1, maximum: 365, default: 90}}
+        - {name: bucket, in: query, schema: {type: string, enum: [day, week, month], default: day}}
+      responses:
+        "200":
+          description: Price history
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PriceHistory"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/listings/{id}/similar:
+    get:
+      summary: Similar listings (same kind, category/title/spec overlap, price band, trust-aware)
+      description: Deterministic and bounded (at most 300 candidates scored, trust looked up for the best 60). Different suppliers rank above the same supplier; red-band suppliers are demoted. Every item carries bilingual reason codes.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 30, default: 10}}
+      responses:
+        "200":
+          description: Ranked similar listings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listing_id, items, total]
+                properties:
+                  listing_id: {type: string}
+                  items: {type: array, items: {$ref: "#/components/schemas/Recommended"}}
+                  total: {type: integer}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/recommendations:
+    get:
+      summary: Recommendations from recently viewed listing ids (stateless, no user tracking)
+      description: >
+        The client sends its own recent listing ids (`ref`, most recent first, max 20; unknown ids are ignored). Nothing is
+        stored or linked to a user. With no usable ref, returns top trusted listings. At most 3 results per supplier.
+        `country` is an optional preferred origin country (small boost, never a filter).
+      parameters:
+        - {name: ref, in: query, schema: {type: string, maxLength: 1500}, description: "Comma-separated listing ids (max 20)"}
+        - {name: country, in: query, schema: {type: string, minLength: 2, maxLength: 2}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 50, default: 20}}
+      responses:
+        "200":
+          description: Ranked listings with reasons
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, based_on]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/Recommended"}}
+                  total: {type: integer}
+                  based_on: {type: array, items: {type: string}, description: "Reference ids that resolved to listings"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/suppliers/{id}:
     get:
       summary: Supplier profile (with trust band)
@@ -380,6 +446,51 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
+  /v1/internal/users/{user_id}/export:
+    post:
+      operationId: internalUserExport
+      summary: Internal - GDPR/store data export for one user
+      description: "Service-to-service only (gateway). Needs X-Internal-Token when FF_INTERNAL_TOKEN is set; any other caller gets 404. Returns what this service holds about the user (bounded; `truncated` is true when capped). Never routed by the public gateway."
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Supplier-Id, in: header, required: false, schema: {type: string}, description: "The user's verified supplier id (gateway-set). Sourcing is keyed by supplier, so without it only the user's listing reports are in scope."}
+      responses:
+        "200":
+          description: The user's data held by this service
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, user_id, data]
+                properties:
+                  service: {type: string, const: sourcing}
+                  user_id: {type: string}
+                  truncated: {type: boolean}
+                  data: {type: object, additionalProperties: true}
+        "404": {description: Not an internal caller}
+  /v1/internal/users/{user_id}/data:
+    delete:
+      operationId: internalUserErase
+      summary: Internal - erase or anonymize one user's data (account deletion)
+      description: "Service-to-service only; same guard as the export. Idempotent: repeating it returns status done with zero counts. Retention exceptions (ledger/audit) are listed in docs/decisions/account-deletion.md."
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+        - {name: X-Supplier-Id, in: header, required: false, schema: {type: string}, description: "The user's verified supplier id (gateway-set). Sourcing is keyed by supplier, so without it only the user's listing reports are in scope."}
+      responses:
+        "200":
+          description: Erased/anonymized
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, user_id, status, counts]
+                properties:
+                  service: {type: string, const: sourcing}
+                  user_id: {type: string}
+                  status: {type: string, const: done}
+                  counts: {type: object, additionalProperties: {type: integer}}
+                  retained: {type: array, items: {type: string}}
+        "404": {description: Not an internal caller}
 components:
   parameters:
     AdminToken:
@@ -442,6 +553,70 @@ components:
             created_at: {type: string, format: date-time}
             updated_at: {type: string, format: date-time}
             published_at: {type: string, format: date-time}
+    Recommended:
+      type: object
+      required: [listing, score, reasons]
+      properties:
+        listing: {$ref: ../schemas/common.schema.json#/$defs/Listing}
+        score: {type: number, minimum: 0, maximum: 1}
+        reasons:
+          type: array
+          items:
+            type: object
+            required: [code, en, ar]
+            properties:
+              code:
+                type: string
+                description: same_category | similar_title | shared_specs | similar_price | same_condition | different_supplier | same_supplier | trusted_supplier | verified_supplier | origin_country_match | because_viewed | top_trusted
+              en: {type: string}
+              ar: {type: string}
+              ref_listing_id: {type: string, description: "For because_viewed: the viewed listing this follows"}
+    PriceHistory:
+      type: object
+      required: [listing_id, currency, days, bucket, synthetic, points, trend]
+      properties:
+        listing_id: {type: string}
+        currency: {type: string}
+        unit: {type: string}
+        days: {type: integer}
+        bucket: {type: string, enum: [day, week, month]}
+        synthetic: {type: boolean, description: "true = deterministic mock history"}
+        points:
+          type: array
+          items:
+            type: object
+            required: [t, avg, min, max, n]
+            properties:
+              t: {type: string, format: date-time, description: "Bucket start (UTC)"}
+              avg: {type: string, description: "Decimal string"}
+              min: {type: string}
+              max: {type: string}
+              n: {type: integer}
+        summary:
+          type: object
+          required: [min, max, avg, current, first, observations]
+          properties:
+            min: {type: string}
+            max: {type: string}
+            avg: {type: string}
+            current: {type: string}
+            first: {type: string}
+            observations: {type: integer}
+        trend:
+          type: object
+          required: [direction, insufficient_data]
+          properties:
+            direction: {type: string, enum: [up, down, flat]}
+            change_pct: {type: string, description: "Decimal string, first to latest observation in the window; flat = within +-1%"}
+            insufficient_data: {type: boolean}
+        hints:
+          type: object
+          required: [at_period_low, at_period_high, current_vs_min_pct, suggested_target]
+          properties:
+            at_period_low: {type: boolean}
+            at_period_high: {type: boolean}
+            current_vs_min_pct: {type: string}
+            suggested_target: {$ref: ../schemas/common.schema.json#/$defs/Money}
     ListingDetail:
       allOf:
         - $ref: ../schemas/common.schema.json#/$defs/Listing

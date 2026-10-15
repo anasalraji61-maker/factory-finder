@@ -74,6 +74,49 @@ paths:
           content:
             application/json:
               schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
+  /v1/internal/users/{user_id}/export:
+    post:
+      operationId: internalUserExport
+      summary: Internal - GDPR/store data export for one user
+      description: "Service-to-service only (gateway). Needs X-Internal-Token when FF_INTERNAL_TOKEN is set; any other caller gets 404. Returns what this service holds about the user (bounded; `truncated` is true when capped). Never routed by the public gateway."
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: The user's data held by this service
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, user_id, data]
+                properties:
+                  service: {type: string, const: assistant}
+                  user_id: {type: string}
+                  truncated: {type: boolean}
+                  data: {type: object, additionalProperties: true}
+        "404": {description: Not an internal caller}
+  /v1/internal/users/{user_id}/data:
+    delete:
+      operationId: internalUserErase
+      summary: Internal - erase or anonymize one user's data (account deletion)
+      description: "Service-to-service only; same guard as the export. Idempotent: repeating it returns status done with zero counts. Retention exceptions (ledger/audit) are listed in docs/decisions/account-deletion.md."
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: Erased/anonymized
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, user_id, status, counts]
+                properties:
+                  service: {type: string, const: assistant}
+                  user_id: {type: string}
+                  status: {type: string, const: done}
+                  counts: {type: object, additionalProperties: {type: integer}}
+                  retained: {type: array, items: {type: string}}
+        "404": {description: Not an internal caller}
 components:
   responses:
     Error:

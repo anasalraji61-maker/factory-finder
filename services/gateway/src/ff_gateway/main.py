@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ff_gateway import SERVICE_NAME, __version__
 from ff_gateway.api import (
+    account,
     admin,
     admin_demand,
     admin_media,
@@ -33,6 +34,7 @@ from ff_gateway.api.deps import bearer_token
 from ff_gateway.clients.home import HomeClient, HttpHomeClient, MockHomeClient
 from ff_gateway.config import Settings
 from ff_gateway.db import create_tables, make_engine, make_sessionmaker
+from ff_gateway.domain import privacy
 from ff_gateway.domain.client_ip import client_ip
 from ff_gateway.domain.clock import Clock, SystemClock
 from ff_gateway.domain.errors import GatewayError, RateLimited
@@ -92,10 +94,22 @@ def create_app(
     engine = make_engine(settings.database_url)
     http = http_client or httpx.AsyncClient(timeout=settings.upstream_timeout_seconds)
 
+    async def deletion_worker() -> None:
+        """Grace-period sweep + retry of per-service erasure jobs (never dies on an error)."""
+        while True:
+            await asyncio.sleep(settings.deletion_worker_interval_seconds)
+            try:
+                await privacy.process_due(app)
+            except Exception:
+                log.exception("deletion worker tick failed")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await create_tables(engine)
+        worker = asyncio.create_task(deletion_worker()) if settings.deletion_worker_interval_seconds > 0 else None
         yield
+        if worker:
+            worker.cancel()
         await http.aclose()
         await engine.dispose()
 
@@ -226,6 +240,7 @@ def create_app(
 
     app.include_router(auth.router)
     app.include_router(me.router)
+    app.include_router(account.router)
     app.include_router(admin.router)
     app.include_router(admin_demand.router)
     app.include_router(admin_moderation.router)

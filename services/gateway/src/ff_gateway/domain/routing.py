@@ -5,6 +5,7 @@ import re
 PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/search": "sourcing", "/v1/listings": "sourcing", "/v1/suppliers": "sourcing",
     "/v1/categories": "sourcing", "/v1/sources": "sourcing", "/v1/my": "sourcing",
+    "/v1/recommendations": "sourcing",
     "/v1/quotes": "logistics", "/v1/fx": "logistics", "/v1/carriers": "logistics", "/v1/hs": "logistics",
     "/v1/compliance": "logistics",
     "/v1/countries": "geo", "/v1/cities": "geo", "/v1/hubs": "geo", "/v1/distance": "geo",
@@ -22,7 +23,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
 }  # fmt: skip
 
 PUBLIC_GET_PREFIXES = (
-    "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories",
+    "/v1/search", "/v1/listings", "/v1/suppliers", "/v1/categories", "/v1/recommendations",
     "/v1/countries", "/v1/cities", "/v1/hubs", "/v1/fx/rates", "/v1/hs", "/v1/compliance",
     "/v1/media/files",  # image bytes only; upload/delete (/v1/media/images) stay authenticated
     "/v1/media/private",  # private files: media itself requires the owner's X-User-Id (optional bearer here) or a valid signed URL

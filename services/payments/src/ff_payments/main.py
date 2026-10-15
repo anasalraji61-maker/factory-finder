@@ -18,6 +18,7 @@ from ff_payments.config import Settings
 from ff_payments.db import make_engine
 from ff_payments.domain.errors import DomainError
 from ff_payments.obs import db_ready, install_observability, ready_response
+from ff_payments.privacy import router as privacy_router
 from ff_payments.providers.base import PaymentProvider
 from ff_payments.providers.registry import build_provider
 from ff_payments.service import PaymentsService
@@ -68,6 +69,8 @@ def create_app(
         path = request.url.path
         exempt = path in ("/health", "/ready") or path.startswith(WEBHOOK_PREFIX)  # webhooks: HMAC instead
         if token and not exempt and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode()):
+            if path.startswith("/v1/internal/users/"):  # account export/erasure: invisible to non-internal callers
+                return _err(404, "not_found", "Not Found")
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
@@ -93,6 +96,7 @@ def create_app(
         return ready_response("payments", {"database": await db_ready(engine)})
 
     app.include_router(router)
+    app.include_router(privacy_router)
     install_observability(app, "payments")
     return app
 

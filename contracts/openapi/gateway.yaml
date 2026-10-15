@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/compliance/* + POST /v1/compliance/checklist, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml). GET /v1/media/private/{id}.{ext} is reachable without a token but media only serves it to the owner (optional bearer) or with a valid short-lived signature; POST /v1/media/files/{id}/sign needs a bearer token."}
+info: {title: Factory Finder gateway, version: 0.1.0, description: "Auth, profile, home feed and reverse proxy for all /v1/* service paths (see docs). Bearer JWT: access 15 min, refresh 30 days. Public: /health, /v1/auth/*, GET search/listings/suppliers/categories/recommendations/countries/cities/hubs/fx-rates, POST /v1/quotes/landed-cost, GET /v1/compliance/* + POST /v1/compliance/checklist, GET /v1/feed/trending (anonymous browsing), GET /v1/media/files/{id}.{ext} (image bytes; POST /v1/media/images and DELETE need a bearer token, see media.yaml). GET /v1/media/private/{id}.{ext} is reachable without a token but media only serves it to the owner (optional bearer) or with a valid short-lived signature; POST /v1/media/files/{id}/sign needs a bearer token."}
 servers: [{url: http://localhost:8000}]
 security: [{bearer: []}]
 paths:
@@ -102,6 +102,42 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+    delete:
+      operationId: deleteMe
+      summary: Delete my account (store requirement)
+      description: "Re-auth with the current `password` or a current unused `refresh_token`. Revokes all sessions, then soft-deletes and anonymizes (scrubs email/phone/name/company/destination/supplier claim; the id stays) and erases or anonymizes the user's data in every service via durable, retried jobs. FF_GATEWAY_DELETION_GRACE_DAYS (default 0) delays the anonymization; a login with the right password inside the grace period cancels it. Idempotent: repeating it reports status and retries pending services. 200 when every service is done, 202 when scheduled or partial. Rate limited per user (FF_GATEWAY_PRIVACY_RATE_LIMIT_PER_MINUTE). Retention exceptions: docs/decisions/account-deletion.md."
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/DeleteAccountIn"}}}}
+      responses:
+        "200": {description: Deleted (all services done), content: {application/json: {schema: {$ref: "#/components/schemas/DeletionStatus"}}}}
+        "202": {description: Scheduled (grace period) or partial (some services pending/failed and being retried), content: {application/json: {schema: {$ref: "#/components/schemas/DeletionStatus"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/me/export:
+    get:
+      operationId: exportMe
+      summary: Download my data (privacy export)
+      description: "JSON bundle (attachment) with the profile and what each service holds about the user, produced by fan-out with per-call timeouts. A failing service is reported in `services.<name>` (`status: error`, short `error` code) and sets `partial: true`; the bundle is capped (FF_GATEWAY_EXPORT_MAX_BYTES, default 5 MiB) and streamed. Rate limited per user."
+      responses:
+        "200":
+          description: Export bundle
+          headers: {Content-Disposition: {schema: {type: string}}}
+          content: {application/json: {schema: {$ref: "#/components/schemas/ExportBundle"}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/admin/account-deletions:
+    get:
+      operationId: listAccountDeletionJobs
+      description: "Admin only (X-Admin-Token; 404 unset, 401 wrong). Erasure jobs that have not completed: opaque user id, service, attempts, short error code. No PII."
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending, dead], default: pending}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}
+      responses:
+        "200": {description: Open jobs, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {type: object, properties: {user_id: {type: string}, service: {type: string}, status: {type: string}, attempts: {type: integer}, last_error: {type: [string, "null"]}, next_attempt_at: {type: string, format: date-time}}}}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
   /v1/admin/supplier-claims:
     get:
       operationId: listSupplierClaims
@@ -343,7 +379,7 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
   /v1/{proxied_path}:
     x-proxy:
-      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my]
+      sourcing: [/v1/search, /v1/listings, /v1/suppliers, /v1/categories, /v1/sources, /v1/my, /v1/recommendations]  # GET /v1/recommendations is public (client sends recent ids; nothing stored)
       logistics: [/v1/quotes, /v1/fx, /v1/carriers, /v1/hs, /v1/compliance]  # GET /v1/compliance/* and POST /v1/compliance/checklist are public (static indicative data; same rate-limit class as landed-cost)
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]  # /v1/trust/verification/* (supplier documents) needs a verified supplier claim (403 supplier_claim_required otherwise; X-Supplier-Id forwarded from the DB, JSON body <= 64 KiB, non-GET needs a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on); GET /v1/trust/suppliers/{id}/verification (badge) is public; the rest of /v1/trust needs a bearer token
@@ -378,6 +414,37 @@ components:
   responses:
     Error: {description: Error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
   schemas:
+    DeleteAccountIn:
+      type: object
+      additionalProperties: false
+      description: At least one of password or refresh_token is required.
+      properties: {password: {type: string}, refresh_token: {type: string}}
+    DeletionStatus:
+      type: object
+      required: [status, services]
+      properties:
+        status: {type: string, enum: [scheduled, partial, deleted]}
+        scheduled_for: {type: [string, "null"], format: date-time}
+        deleted_at: {type: [string, "null"], format: date-time}
+        services: {type: object, additionalProperties: {type: string, enum: [done, pending, failed]}}
+    ExportBundle:
+      type: object
+      required: [format_version, generated_at, user, services, partial]
+      properties:
+        format_version: {type: integer, const: 1}
+        generated_at: {type: string, format: date-time}
+        user: {type: object, additionalProperties: true}
+        partial: {type: boolean}
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            required: [status]
+            properties:
+              status: {type: string, enum: [ok, error]}
+              error: {type: string, description: "timeout | unavailable | too_large | size_cap | bad_response | http_<code> | not_configured"}
+              truncated: {type: boolean}
+              data: {type: object, additionalProperties: true}
     RegisterIn:
       type: object
       required: [password, name]

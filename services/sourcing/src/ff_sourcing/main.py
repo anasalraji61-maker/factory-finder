@@ -11,6 +11,7 @@ from . import __version__
 from .adapters.native import NativeAdapter, NativeStore
 from .adapters.registry import AdapterRegistry, build_registry
 from .api.errors import install_error_handlers
+from .api.internal import router as internal_router
 from .api.moderation import admin as admin_router
 from .api.moderation import router as moderation_router
 from .api.my import router as my_router
@@ -21,6 +22,7 @@ from .db import make_engine
 from .domain.models import SupplierSummary
 from .native_service import NativeService
 from .obs import db_ready, install_observability, ready_response
+from .price_history import PriceHistoryStore
 from .service import SourcingService
 
 
@@ -68,6 +70,13 @@ def create_app(
         cache_ttl_s=settings.cache_ttl_s,
         trust_cache_ttl_s=settings.trust_cache_ttl_s,
     )
+    service.history = PriceHistoryStore(
+        engine,
+        settings.auto_create_tables,
+        settings.price_history_dedupe_hours,
+        settings.price_history_max_points,
+        settings.price_history_retention_days,
+    )
     app.state.service = service
 
     async def resolve_supplier(supplier_id: str):
@@ -89,6 +98,8 @@ def create_app(
         settings.report_review_threshold,
         settings.reporter_hash_key,
     )
+    native_service = app.state.native
+    native_service.on_change = service.history.record_listings
     app.state.admin_token = settings.admin_token.get_secret_value() if settings.admin_token else None
     token = settings.internal_token or os.environ.get("FF_INTERNAL_TOKEN")
 
@@ -99,9 +110,11 @@ def create_app(
         path = request.url.path
         if (
             token
-            and (path.startswith(("/v1/my", "/v1/admin")) or path.endswith("/report"))
+            and (path.startswith(("/v1/my", "/v1/admin", "/v1/internal")) or path.endswith("/report"))
             and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode())
         ):
+            if path.startswith("/v1/internal/"):  # account export/erasure: invisible to non-internal callers
+                return JSONResponse({"error": {"code": "not_found", "message": "Not Found", "details": {}}}, status_code=404)
             body = {"error": {"code": "invalid_internal_token", "message": "Missing or invalid X-Internal-Token", "details": {}}}
             return JSONResponse(body, status_code=401)
         return await call_next(request)
@@ -109,6 +122,7 @@ def create_app(
     install_error_handlers(app)
     app.include_router(router)
     app.include_router(my_router)
+    app.include_router(internal_router)
     app.include_router(moderation_router)
     app.include_router(admin_router)
 

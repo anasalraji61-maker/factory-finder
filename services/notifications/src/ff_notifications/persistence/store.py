@@ -554,4 +554,45 @@ class Store:
             )
 
 
+    # ---------------------------------------------- privacy (account deletion / export)
+
+    _OWNED = (
+        ("watches", watches),
+        ("alerts", alerts),
+        ("devices", devices),
+        ("preferences", prefs),
+        ("email_verifications", email_verifications),
+        ("deliveries", deliveries),
+    )
+
+    async def export_owner(self, owner_id: str, cap: int = MAX_LIMIT) -> dict[str, list[dict]]:
+        """Owner's documents per table, at most ``cap`` rows each. Tokens/addresses are masked."""
+        out: dict[str, list[dict]] = {}
+        async with self.engine.connect() as conn:
+            for name, t in self._OWNED:
+                rows = (
+                    await conn.execute(select(t).where(t.c.owner_id == owner_id).limit(cap))
+                ).mappings()
+                docs = [{"id": r.get("id"), **dict(r["doc"] or {})} for r in rows]
+                if name == "devices":
+                    for d in docs:
+                        tok = str(d.get("token") or "")
+                        d["token"] = ("***" + tok[-4:]) if tok else None
+                if name == "email_verifications":
+                    docs = [{"status": "pending_verification"} for _ in docs]
+                if name == "deliveries":  # transport log: counts only
+                    docs = [{"id": d["id"], "status": d.get("status")} for d in docs]
+                out[name] = docs
+        return out
+
+    async def erase_owner(self, owner_id: str) -> dict[str, int]:
+        """Hard-delete every row owned by the user (idempotent)."""
+        counts: dict[str, int] = {}
+        async with self._lock, self.engine.begin() as conn:
+            for name, t in self._OWNED:
+                res = await conn.execute(delete(t).where(t.c.owner_id == owner_id))
+                counts[name] = int(res.rowcount or 0)
+        return counts
+
+
 __all__ = ["Store", "watch_identity"]

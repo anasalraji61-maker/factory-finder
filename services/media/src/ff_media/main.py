@@ -65,6 +65,8 @@ def create_app(
     @app.middleware("http")
     async def internal_auth(request: Request, call_next):
         if token and request.url.path not in ("/health", "/ready") and not hmac.compare_digest((request.headers.get("X-Internal-Token", "")).encode(), (token).encode()):
+            if request.url.path.startswith("/v1/internal/users/"):  # account export/erasure: invisible to non-internal callers
+                return _err(404, "not_found", "Not Found")
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 

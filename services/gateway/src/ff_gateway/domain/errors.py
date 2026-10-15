@@ -85,6 +85,12 @@ class AccountDisabled(GatewayError):
     default_message = "This account is disabled"
 
 
+class ReauthFailed(GatewayError):
+    status_code = 403
+    code = "reauth_failed"
+    default_message = "Confirm with your current password or a valid refresh token"
+
+
 class AccountExists(GatewayError):
     status_code = 409
     code = "account_exists"

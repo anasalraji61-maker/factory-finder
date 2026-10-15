@@ -33,3 +33,19 @@ async def query(body: AssistantRequest, request: Request, response: Response):
     response.headers["X-Quota-Remaining"] = str(decision.remaining)
     assistant: Assistant = request.app.state.assistant
     return await assistant.handle(body.text, body.destination, user_id)
+
+
+internal = APIRouter(prefix="/v1/internal", tags=["internal"])
+
+
+@internal.post("/users/{user_id}/export")
+async def export_user(user_id: str, request: Request) -> dict:
+    """Account export (internal token only). The assistant stores no conversations; only the daily quota counter exists."""
+    return {"service": "assistant", "user_id": user_id, "truncated": False,
+            "data": {"quota_used_today": request.app.state.quota.usage(user_id), "conversations_stored": False}}  # fmt: skip
+
+
+@internal.delete("/users/{user_id}/data")
+async def erase_user(user_id: str, request: Request) -> dict:
+    return {"service": "assistant", "user_id": user_id, "status": "done",
+            "counts": {"quota_counters_removed": request.app.state.quota.forget(user_id)}}  # fmt: skip

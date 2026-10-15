@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import re
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Query, Request
+from pydantic import BaseModel
 
+from ..domain import pricehistory as ph
+from ..domain import reco
 from ..domain.categories import CATEGORY_TREE
 from ..domain.models import (
     CategoryNode,
@@ -80,3 +85,73 @@ async def categories() -> list[CategoryNode]:
 @router.get("/sources")
 async def sources(request: Request) -> list[dict]:
     return await svc(request).sources_overview()
+
+
+@router.get(
+    "/listings/{listing_id}/price-history", response_model=ph.PriceHistory, response_model_exclude_none=True
+)
+async def price_history(
+    listing_id: str,
+    request: Request,
+    days: int = Query(90, ge=1, le=365),
+    bucket: ph.Bucket = "day",
+) -> ph.PriceHistory:
+    service = svc(request)
+    item = await service.get_listing(listing_id)  # also records today's observation for non-mock sources
+    if item is None:
+        raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
+    now = datetime.now(UTC)
+    if item.source == "mock":
+        obs = ph.synthetic_observations(item.id, item.price.min.amount, item.price.min.currency, now, days)
+    else:
+        obs = await service.stored_prices(item.id, now - timedelta(days=days))
+    return ph.build(
+        item.id, obs, days, bucket, now, unit=item.unit, synthetic=item.source == "mock",
+        currency=item.price.min.currency,
+    )
+
+
+class SimilarResponse(BaseModel):
+    listing_id: str
+    items: list[reco.Recommended]
+    total: int
+
+
+class RecommendationsResponse(BaseModel):
+    items: list[reco.Recommended]
+    total: int
+    based_on: list[str]  # the reference ids that resolved to listings (others are ignored)
+
+
+@router.get("/listings/{listing_id}/similar", response_model=SimilarResponse, response_model_exclude_none=True)
+async def similar(listing_id: str, request: Request, limit: int = Query(10, ge=1, le=30)) -> SimilarResponse:
+    found = await svc(request).similar(listing_id, limit)
+    if found is None:
+        raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
+    return SimilarResponse(listing_id=listing_id, items=found[1], total=len(found[1]))
+
+
+_REF_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,64}$")
+MAX_REFS = 20
+
+
+@router.get("/recommendations", response_model=RecommendationsResponse, response_model_exclude_none=True)
+async def recommendations(
+    request: Request,
+    ref: str = Query("", max_length=1500, description="Comma-separated recently viewed listing ids, most recent first"),
+    country: str | None = Query(None, min_length=2, max_length=2, pattern="^[A-Za-z]{2}$"),
+    limit: int = Query(20, ge=1, le=50),
+) -> RecommendationsResponse:
+    ids: list[str] = []
+    for part in ref.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if not _REF_RE.match(part):
+            raise ApiError(422, "invalid_ref", "ref must be comma-separated listing ids")
+        if part not in ids:
+            ids.append(part)
+    if len(ids) > MAX_REFS:
+        raise ApiError(422, "too_many_refs", f"At most {MAX_REFS} ref ids are allowed")
+    based_on, items = await svc(request).recommendations(ids, country, limit)
+    return RecommendationsResponse(items=items, total=len(items), based_on=based_on)

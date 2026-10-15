@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import hmac
 import time
 from collections import defaultdict, deque
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from .adapters.native import NativeAdapter, NativeStore, OwnedListing
@@ -41,6 +42,7 @@ class NativeService:
         self._clock = clock or (lambda: datetime.now(UTC))
         self._mono = monotonic
         self._creates: dict[str, deque[float]] = defaultdict(deque)  # per process
+        self.on_change: Callable[[list], Awaitable[object]] | None = None  # price observation hook (best effort)
 
     # ---- helpers ----------------------------------------------------------
     async def _view(self, row) -> OwnedListing:
@@ -98,7 +100,15 @@ class NativeService:
         row = await self.store.update(supplier_id, listing_id, body, self._clock(), self._screen(body))
         if row is None:
             raise ApiError(404, "listing_not_found", f"Listing {listing_id} not found")
-        return await self._view(row)
+        view = await self._view(row)
+        if row.status == "published":
+            await self._changed(view)
+        return view
+
+    async def _changed(self, view: OwnedListing) -> None:
+        if self.on_change is not None:
+            with contextlib.suppress(Exception):  # never fail an owner write because of price bookkeeping
+                await self.on_change([view])
 
     async def delete(self, supplier_id: str, listing_id: str) -> None:
         if not await self.store.delete(supplier_id, listing_id):
@@ -129,7 +139,9 @@ class NativeService:
                 {"trust_band": "red"},
             )
         row = await self.store.set_status(supplier_id, listing_id, "published", self._clock())
-        return await self._view(row)
+        view = await self._view(row)
+        await self._changed(view)
+        return view
 
     async def unpublish(self, supplier_id: str, listing_id: str) -> OwnedListing:
         row = await self._owned(supplier_id, listing_id)

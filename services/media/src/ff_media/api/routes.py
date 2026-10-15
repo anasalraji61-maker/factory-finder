@@ -132,3 +132,13 @@ async def admin_get(name: str, request: Request) -> Response:
         raise NotFound("File not found")
     row, data = await svc.read_admin(media_id)
     return _private_response(row, data)
+
+
+@router.post("/v1/internal/users/{user_id}/export")
+async def export_user(user_id: str, request: Request) -> dict:
+    return {"service": "media", "user_id": user_id, **await _svc(request).export_owner(user_id)}
+
+
+@router.delete("/v1/internal/users/{user_id}/data")
+async def erase_user(user_id: str, request: Request) -> dict:
+    return {"service": "media", "user_id": user_id, "status": "done", "counts": await _svc(request).erase_owner(user_id)}

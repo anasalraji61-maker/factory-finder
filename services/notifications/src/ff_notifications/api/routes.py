@@ -13,7 +13,7 @@ from ff_notifications.domain.delivery import Prefs
 from ff_notifications.domain.models import Alert, Device, Locale, Platform, SearchQuery, Watch
 from ff_notifications.domain.money import Money, MoneyError
 from ff_notifications.domain.verification import mask_email
-from ff_notifications.errors import Invalid, Unauthenticated
+from ff_notifications.errors import Invalid, NotFound, Unauthenticated
 from ff_notifications.service import NotificationService
 
 router = APIRouter(prefix="/v1")
@@ -44,6 +44,17 @@ def internal_only(
     request: Request, x_internal_token: Annotated[str | None, Header()] = None
 ) -> None:
     _check_token(request, x_internal_token)
+
+
+def privacy_guard(
+    request: Request, x_internal_token: Annotated[str | None, Header()] = None
+) -> None:
+    """Account export/erasure: internal token only; anything else looks like a missing route."""
+    expected = request.app.state.settings.internal_token_value
+    if expected is not None and not hmac.compare_digest(
+        (x_internal_token or "").encode(), expected.encode()
+    ):
+        raise NotFound("Route not found")
 
 
 User = Annotated[str, Depends(current_user)]
@@ -329,3 +340,15 @@ async def resend_code(user: User, s: Service) -> dict[str, Any]:
 @router.post("/alerts/digest", dependencies=[Depends(internal_only)])
 async def send_digests(s: Service) -> dict[str, int]:
     return {"sent": await s.send_digests()}
+
+
+@router.post("/internal/users/{user_id}/export", dependencies=[Depends(privacy_guard)])
+async def export_user(user_id: str, s: Service) -> dict[str, Any]:
+    return {"service": "notifications", "user_id": user_id, "truncated": False,
+            "data": await s.store.export_owner(user_id)}  # fmt: skip
+
+
+@router.delete("/internal/users/{user_id}/data", dependencies=[Depends(privacy_guard)])
+async def erase_user(user_id: str, s: Service) -> dict[str, Any]:
+    return {"service": "notifications", "user_id": user_id, "status": "done",
+            "counts": await s.store.erase_owner(user_id)}  # fmt: skip

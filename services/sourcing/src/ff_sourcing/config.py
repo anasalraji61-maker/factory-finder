@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     report_rate_per_hour: int = 10  # per reporter, per process (attempts count, duplicates included)
     report_review_threshold: int = 3  # distinct open reports that move a listing to pending_review (0 = off)
 
+    # Price history (observations are deduped per listing within the window and capped per listing)
+    price_history_dedupe_hours: float = 6.0
+    price_history_max_points: int = 500
+    price_history_retention_days: int = 400
+
     trust_mode: str = "mock"  # mock | http | off
     trust_base_url: str = "http://localhost:8104"
     trust_timeout_s: float = 0.8
