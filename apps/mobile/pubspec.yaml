@@ -17,7 +17,7 @@ dependencies:
   go_router: ^14.2.0
   dio: ^5.4.3
   intl: any
-  cached_network_image: ^3.3.1
+  cached_network_image: ^4.0.4
   shimmer: ^3.0.0
   google_fonts: ^6.2.1
   shared_preferences: ^2.2.3
