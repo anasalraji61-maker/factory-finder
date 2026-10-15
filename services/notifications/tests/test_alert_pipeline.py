@@ -231,8 +231,8 @@ async def test_restart_does_not_repeat_alerts_and_scheduler_is_idempotent(tmp_pa
     await ctx2.__aexit__(None, None, None)
 
 
-async def test_scheduler_loop_survives_failures_and_evaluates():
-    _, svc, mock, _, ctx = await make()
+async def test_scheduler_loop_survives_failures_and_evaluates(tmp_path):
+    _, svc, mock, _, ctx = await make(tmp_path)
     svc.settings = svc.settings.model_copy(update={"scheduler_interval_seconds": 0.01})
     await watch(svc)
     await svc.evaluate_all()
