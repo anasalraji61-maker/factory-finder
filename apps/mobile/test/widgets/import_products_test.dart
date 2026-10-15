@@ -163,7 +163,8 @@ void main() {
     await settle(tester, frames: 2);
     await tester.tap(_key('imp-run'));
     await settle(tester, frames: 6);
-    expect(repo.sizes, [100, 100]);
+    // 150 valid rows -> batches of 100 and 50; the 2nd call (50 rows) fails.
+    expect(repo.sizes, [100, 50]);
     expect(_key('imp-run-error'), findsOneWidget);
     expect(_key('imp-summary'), findsOneWidget);
     expect(tester.takeException(), isNull);

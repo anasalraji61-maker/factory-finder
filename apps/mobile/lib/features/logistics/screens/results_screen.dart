@@ -284,16 +284,16 @@ class _LineRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Flexible(
-                      child: Text(
-                        context.tr('logistics.stage.${line.stage}'),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                    Text(
+                      context.tr('logistics.stage.${line.stage}'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     if (line.quoted) ...[
-                      const SizedBox(width: 6),
                       Container(
                         key: const ValueKey<String>('quoted_pill'),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -311,7 +311,6 @@ class _LineRow extends StatelessWidget {
                         ),
                       ),
                     ] else if (line.estimate) ...[
-                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(
