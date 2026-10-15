@@ -40,6 +40,7 @@ Future<void> _pump(WidgetTester tester, String location, List<Override> override
 Future<void> _expandAll(WidgetTester tester) async {
   final n = find.byType(ExpansionTile).evaluate().length;
   for (var i = 0; i < n; i++) {
+    if (find.byType(ExpansionTile).evaluate().length <= i) break;
     final tile = find.byType(ExpansionTile).at(i);
     await tester.ensureVisible(tile);
     await tester.tap(tile);
