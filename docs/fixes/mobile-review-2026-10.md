@@ -65,11 +65,11 @@ UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass
     are alive. Invalidate only `home` and the affected supplier key.
 15. [FIXED] `CommentsController.refresh` has no generation guard (unlike the post
     list); two overlapping refreshes can apply out of order.
-16. `ListView(children: [...])` in several forms/sheets is fine, but
+16. [FIXED] `ListView(children: [...])` in several forms/sheets is fine, but
     `chat_screen` rebuilds `buildChatItems(_messages).reversed.toList()` on
     every build (including each keystroke-driven rebuild of the composer
     state). Memoise when `_messages` changes if chats get long (1000+ rows).
-17. [PARTLY FIXED (composer remove-image button; compact chips left)] Several `IconButton.styleFrom(minimumSize: Size(32,32))` (feed composer
+17. [FIXED] Several `IconButton.styleFrom(minimumSize: Size(32,32))` (feed composer
     remove-image) and `VisualDensity.compact` chips are below 48 dp tap size.
 18. `Icons.send_rounded` in the chat composer: confirm it mirrors in RTL on a
     device (Icons.send does; the rounded variant may not).
@@ -165,7 +165,15 @@ UNFIXED, ordered by priority. Items tagged [FIXED] were fixed in the second pass
   responses are dropped (test in `test/feed/feed_test.dart`).
 - #20 `restore()` wipes the refresh-token key once when the secure store read
   throws and starts signed out (test in `test/persistence/persistence_test.dart`).
-- Still open: #16 (memoise chat items), #17 compact chips, #18 RTL send icon
+- #16 `_ChatScreenState._displayItems()` memoises `buildChatItems(...).reversed`
+  keyed on `identical(_messages)`; every mutation assigns a new list, so it
+  recomputes only when messages change.
+- #17 Product-editor image reorder/remove buttons are 48 dp (tile widened to
+  144 dp). The remaining `VisualDensity.compact` `Chip`s (reviews, watchlist,
+  carriers) are display-only (not tappable), so need no change; the follow
+  button already uses `MaterialTapTargetSize.padded`. Size assertions added in
+  `test/widgets/media_verify_test.dart`.
+- Still open: #18 RTL send icon
   (device check), #19 (device/live check). Nothing compiled.
 
 Note for reviewer: nothing here was compiled. Edits were re-read for syntax;

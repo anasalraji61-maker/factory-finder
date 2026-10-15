@@ -93,7 +93,7 @@ def start_services(tmp: Path, extra_env: dict[str, str] | None = None) -> list[s
         "FF_MEDIA_STORAGE_ROOT": str(tmp / "media-files"), "FF_MEDIA_PUBLIC_BASE_URL": GW,
         "FF_FEED_ADMIN_TOKEN": ADMIN_TOKEN, "FF_FREIGHT_ADMIN_TOKEN": ADMIN_TOKEN,
         "FF_MEDIA_ADMIN_TOKEN": ADMIN_TOKEN,
-        "FF_FREIGHT_RATING_MIN_DELAY_SECONDS": "0", "FF_FREIGHT_REPORT_MIN_ACCOUNT_AGE_SECONDS": "0",
+        "FF_FEED_REPORT_MIN_ACCOUNT_AGE_SECONDS": "0", "FF_FREIGHT_RATING_MIN_DELAY_SECONDS": "0", "FF_FREIGHT_REPORT_MIN_ACCOUNT_AGE_SECONDS": "0",
     }  # fmt: skip
     base_env.update(extra_env or {})  # serve_stack.py: shifted ports / URLs
     base_env.pop("FF_INTERNAL_TOKEN", None)

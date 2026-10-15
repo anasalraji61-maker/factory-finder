@@ -88,6 +88,12 @@ void main() {
     expect(find.byKey(const ValueKey('myp-image-tile-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('myp-image-tile-1')), findsOneWidget);
 
+    for (final id in ['earlier-1', 'later-0', 'remove-1']) {
+      final size = tester.getSize(find.byKey(ValueKey('myp-image-$id')));
+      expect(size.width, greaterThanOrEqualTo(48), reason: id);
+      expect(size.height, greaterThanOrEqualTo(48), reason: id);
+    }
+
     await tester.tap(find.byKey(const ValueKey('myp-image-later-0')));
     await settle(tester, frames: 2);
     await tester.tap(find.byKey(const ValueKey('myp-image-remove-1')));

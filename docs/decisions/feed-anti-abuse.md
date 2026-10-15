@@ -1,0 +1,2 @@
+2026-10-15 | feed: a report counts toward auto-hide only if the reporter was first seen (a never-pruned `seen` row in rate_events, written on any rate-limited action) >= `report_min_account_age_seconds` (86400) ago; reports are always stored and counted in `report_count` | same as freight; feed has no accounts table so first activity stands in for account age (no migration)
+2026-10-15 | feed: deleting a post/comment keeps its report rows | evidence for moderators; only user erasure (privacy) and admin restore still remove reports

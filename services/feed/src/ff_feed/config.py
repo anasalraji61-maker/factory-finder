@@ -36,6 +36,9 @@ class Settings(BaseSettings):
 
     # moderation
     report_hide_threshold: int = Field(default=3, ge=1, le=100)  # distinct reporters
+    # A report counts toward auto-hide only if the reporter was first seen at least this long ago
+    # (reports are always stored). 0 disables the delay.
+    report_min_account_age_seconds: int = Field(default=86400, ge=0)
 
     # caps
     max_posts_per_supplier: int = Field(default=500, ge=1)

@@ -29,9 +29,9 @@ state machine incl. terminal states, HMAC fingerprints, number never stored/retu
    Owner: media + trust. Also a supplier can reference any other media file id (no ownership link between uploader and document).
 2. MEDIUM - MITIGATED 2026-10-15 (docs/decisions/freight-anti-abuse.md: rating only after `rating_min_delay_seconds` (24 h) past close, max 2 ratings per buyer/forwarder pair per 365 d; real fix still needs payment/tracking evidence). **Freight ratings can be farmed**: award -> close -> rate has no proof of shipment/payment; a forwarder with a sock-puppet buyer
    account can mint 5-star ratings (rate limited 20/h, one per request). Needs payment/escrow or tracking evidence before a rating counts.
-3. LOW - FIXED for freight 2026-10-15 (reports count toward auto-hide only from accounts older than `report_min_account_age_seconds` (24 h); awarded requests are never auto-hidden); feed still open. Feed/freight auto-hide at 3 distinct reporters: three throwaway accounts can hide a competitor's post (feed has no eligibility
+3. LOW - FIXED for freight 2026-10-15 (reports count toward auto-hide only from accounts older than `report_min_account_age_seconds` (24 h); awarded requests are never auto-hidden); feed FIXED 2026-10-15 too (`FF_FEED_REPORT_MIN_ACCOUNT_AGE_SECONDS`, default 86400, age = first activity in the feed service). Feed/freight auto-hide at 3 distinct reporters: three throwaway accounts can hide a competitor's post (feed has no eligibility
    filter; freight limits reporters to parties). Add account-age / verified-email requirement for reports.
-4. LOW - A supplier can delete a hidden/reported post or comment, destroying the report evidence (`delete_post` removes its reports).
+4. LOW - FIXED 2026-10-15 (feed `delete_post`/`delete_comment` keep report rows; admin /reports still lists them. Post body is not snapshotted). A supplier can delete a hidden/reported post or comment, destroying the report evidence (`delete_post` removes its reports).
    Soft-delete or keep an audit copy.
 5. LOW - Feed comments expose the commenter's `user_id` to every user; replace with a `mine` flag + display name if ids are sensitive.
 6. LOW - Messaging legacy `attachment` (single URL) still allows any https host by default (`attachment_allowed_hosts` empty): a phishing

@@ -7,6 +7,7 @@ from ff_feed.main import create_app
 
 
 def mk(**kw):
+    kw.setdefault("report_min_account_age_seconds", 0)
     return TestClient(create_app(Settings(database_url="sqlite+aiosqlite:///:memory:", **kw)))
 
 

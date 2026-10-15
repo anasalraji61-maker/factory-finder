@@ -330,8 +330,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
           tooltip: tip,
           iconSize: 18,
           padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
           icon: Icon(icon),
           onPressed: (i + delta < 0 || i + delta >= n)
               ? null
@@ -339,7 +338,8 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
         );
     return SizedBox(
       key: ValueKey('myp-image-tile-$i'),
-      width: 96,
+      // 3 x 48 dp buttons (tap-target minimum) set the tile width.
+      width: 144,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -382,8 +382,7 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
                 tooltip: context.tr('myp.media.remove'),
                 iconSize: 18,
                 padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                constraints: const BoxConstraints.tightFor(width: 48, height: 48),
                 icon: const Icon(Icons.close),
                 onPressed: () => setState(() {
                   _images = <String>[..._images]..removeAt(i);

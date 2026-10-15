@@ -47,10 +47,11 @@ class FeedService:
     async def _rate(self, user: str, action: str) -> None:
         """Rolling-window limit, stored in the DB so it holds across replicas. Counted even when the
         request is later rejected (screening), so the banned-term list cannot be probed."""
+        t = self.clock()
+        await self._touch(user, t)
         limit = getattr(self.s, f"rate_{action}")
         if limit == 0:
             return
-        t = self.clock()
         window = timedelta(seconds=self.s.rate_window_seconds)
         where = and_(rate_events.c.user_id == user, rate_events.c.action == action)
         async with self.engine.begin() as c:
@@ -72,6 +73,15 @@ class FeedService:
                     headers={"Retry-After": str(wait)},
                 )
             await c.execute(insert(rate_events).values(user_id=user, action=action, created_at=t))
+
+    async def _touch(self, user: str, t: datetime) -> None:
+        """Remember when a user was first seen (a ``seen`` rate_events row, never pruned): used as the
+        account age for report eligibility."""
+        async with self.engine.begin() as c:
+            if not await c.scalar(
+                select(func.count()).select_from(rate_events).where(rate_events.c.user_id == user, rate_events.c.action == "seen")
+            ):
+                await c.execute(insert(rate_events).values(user_id=user, action="seen", created_at=t))
 
     def _media(self, urls: list[str]) -> list[str]:
         base = (self.s.media_base_url or "").rstrip("/")
@@ -200,9 +210,7 @@ class FeedService:
                 raise NotFound("Post not found")
             if not supplier or supplier != r[0]:
                 raise Forbidden("Only the publishing supplier can delete this post")
-            cids = select(comments.c.id).where(comments.c.post_id == post_id)
-            await c.execute(delete(reports).where(reports.c.target_type == "comment", reports.c.target_id.in_(cids)))
-            await c.execute(delete(reports).where(reports.c.target_type == "post", reports.c.target_id == post_id))
+            # report evidence is retained (admin /reports keeps showing it) -- security-review-2026-10-d item 4
             await c.execute(delete(comments).where(comments.c.post_id == post_id))
             await c.execute(delete(likes).where(likes.c.post_id == post_id))
             await c.execute(delete(posts).where(posts.c.id == post_id))
@@ -420,7 +428,6 @@ class FeedService:
                 raise NotFound("Comment not found")
             if r.user_id != user and not (supplier and supplier == r.supplier_id):
                 raise Forbidden("Only the author or the post's supplier can delete this comment")
-            await c.execute(delete(reports).where(reports.c.target_type == "comment", reports.c.target_id == comment_id))
             await c.execute(delete(comments).where(comments.c.id == comment_id))
             await self._recount(c, r.post_id)
 
@@ -462,8 +469,17 @@ class FeedService:
                 n = await c.scalar(
                     select(func.count()).select_from(reports).where(reports.c.target_type == kind, reports.c.target_id == target_id)
                 )
+                cutoff = self.clock() - timedelta(seconds=self.s.report_min_account_age_seconds)
+                seen = select(func.min(rate_events.c.created_at)).where(
+                    rate_events.c.user_id == reports.c.reporter_id, rate_events.c.action == "seen"
+                ).scalar_subquery()
+                eligible = await c.scalar(
+                    select(func.count()).select_from(reports).where(
+                        reports.c.target_type == kind, reports.c.target_id == target_id, seen <= cutoff
+                    )
+                )
                 vals: dict = {"report_count": n}
-                hide = n >= self.s.report_hide_threshold
+                hide = (eligible or 0) >= self.s.report_hide_threshold
                 if hide:
                     vals |= {"status": "hidden", "hidden_reason": "auto: report threshold reached"}
                 await c.execute(update(tbl).where(tbl.c.id == target_id, tbl.c.status == "published").values(**vals))

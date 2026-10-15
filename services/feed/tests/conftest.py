@@ -47,6 +47,7 @@ def make_client(clock):
 
     def _make(**kw):
         kw.setdefault("database_url", "sqlite+aiosqlite:///:memory:")
+        kw.setdefault("report_min_account_age_seconds", 0)
         c = TestClient(create_app(Settings(**kw), clock=clock))
         c.__enter__()
         clients.append(c)

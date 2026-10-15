@@ -47,6 +47,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   StreamSubscription<ChatSocketStatus>? _wsStatus;
   ChatSocketStatus _wsState = ChatSocketStatus.idle;
 
+  // Memoised display rows: rebuilt only when `_messages` is replaced (every
+  // mutation assigns a new list), not on each composer/keystroke rebuild.
+  List<ChatMessage>? _itemsSource;
+  List<ChatItem> _items = const <ChatItem>[];
+
+  List<ChatItem> _displayItems() {
+    if (_itemsSource == null || !identical(_itemsSource, _messages)) {
+      _itemsSource = _messages;
+      _items = buildChatItems(_messages).reversed.toList();
+    }
+    return _items;
+  }
+
   MessagingRepository get _repo => ref.read(messagingRepositoryProvider);
 
   @override
@@ -344,7 +357,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     final conv = _conversation;
-    final items = buildChatItems(_messages).reversed.toList();
+    final items = _displayItems();
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
