@@ -11,6 +11,7 @@ from ff_assistant import compose
 from ff_assistant import guard as guardrails
 from ff_assistant.clients.base import ClientError, Clients
 from ff_assistant.config import Settings
+from ff_assistant.domain import lexicon as lx
 from ff_assistant.domain.cards import Card
 from ff_assistant.domain.gazetteer import Gazetteer
 from ff_assistant.domain.models import (
@@ -22,6 +23,7 @@ from ff_assistant.domain.models import (
 )
 from ff_assistant.domain.parser import parse
 from ff_assistant.domain.query import Intent, ParsedQuery
+from ff_assistant.domain.text import clean_text
 from ff_assistant.guard import Sanitizer
 from ff_assistant.llm import LlmClient, extract_query, rewrite_answer
 from ff_assistant.tools import Tools
@@ -53,6 +55,12 @@ class Assistant:
         if guardrails.is_injection(text):  # never route, never call an LLM or a downstream service
             return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=compose.help_text(p.language),
                                    warnings=[guardrails.INJECTION_WARNING])
+        special = lx.special_request(clean_text(text))
+        if special:  # never send private messages (draft only) and never post an RFQ on the user's behalf
+            L = p.language
+            body = compose.message_refusal(L) if special == "message" else compose.rfq_text(L)
+            return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=body,
+                                   warnings=["private_message_blocked"] if special == "message" else [])
         tool_intent = p.intent in TOOL_INTENTS
         if self.llm is not None and p.confidence < self.s.llm_min_confidence and not tool_intent:
             p = await extract_query(self.llm, self.s, text, p)

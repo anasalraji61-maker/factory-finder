@@ -59,6 +59,16 @@ def help_text(lang: str = "ar") -> str:
     return HELP_TEXT_EN if lang == "en" else HELP_TEXT
 
 
+def message_refusal(lang: str = "ar") -> str:
+    return msg(lang, "ما أكدر أرسل رسائل خاصة للموردين نيابة عنك. أكدر أكتبلك مسودة تراجعها وترسلها بنفسك من محادثات التطبيق.",
+               "I cannot send private messages to suppliers on your behalf. I can draft a message for you to review and send yourself from the in-app chat.")
+
+
+def rfq_text(lang: str = "ar") -> str:
+    return msg(lang, "لنشر طلب شراء واستلام عروض الموردين، استخدم تبويب الطلبات في التطبيق. جهّز المنتج والكمية ومدينة التسليم.",
+               "To post a purchase request and receive supplier offers, use the Requests tab in the app. Have the product, quantity and delivery city ready.")
+
+
 def msg(lang: str, ar: str, en: str) -> str:
     return en if lang == "en" else ar
 

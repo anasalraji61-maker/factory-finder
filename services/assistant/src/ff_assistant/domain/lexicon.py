@@ -18,8 +18,8 @@ TRACK_WORDS = word_set(["تتبع", "تعقب", "track", "tracking", "trace", "�
 TRUST_WORDS = word_set(
     ["موثوق", "موثوقه", "ثقه", "trust", "trusted", "trustworthy", "reliable", "legit", "legitimate", "مصداقيه", "سمعه", "نصاب", "scam", "fraud", "امين"]
 )
-SHIP_WORDS = word_set(["شحن", "شحنه", "freight", "shipping", "ship", "landed", "جمارك"])
-COST_WORDS = word_set(["شكد", "كم", "much", "كلفه", "تكلفه", "تكاليف", "اجور", "اجره", "cost", "costs", "landed", "price"])
+SHIP_WORDS = word_set(["شحن", "شحنه", "freight", "shipping", "ship", "landed", "جمارك", "توصيل"])
+COST_WORDS = word_set(["شكد", "كم", "much", "كلفه", "تكلفه", "تكاليف", "اجور", "اجره", "cost", "costs", "landed", "price", "quote", "quotes", "سعر", "اسعار", "عروض"])
 HELP_WORDS = word_set(
     ["مساعده", "ساعدني", "help", "شنو", "شكو", "مرحبا", "هلا", "السلام", "اهلا", "hi", "hello", "hey", "تكدر", "تقدر"]
 )
@@ -52,7 +52,7 @@ UNITS: dict[str, tuple[str, int | None]] = {
 }
 
 STOPWORDS = word_set(
-    ["اريد", "ابي", "ابغي", "ابغى", "احتاج", "اطلب", "ارد", "اشتري", "اشتر", "اكو", "شكد", "منو", "عنده", "عندهم", "يوصل", "توصل", "وصل", "الى", "من", "في", "ب", "ل", "ك", "و", "مع", "عن", "او", "هل", "شنو", "شلون", "وين", "كم", "اني", "انا", "لو", "ممكن", "رجاء", "رجاءا", "بس", "هذا", "هذه", "ذلك", "سعر", "بسعر", "اقل", "اكثر", "من", "خط", "انتاج", "i", "need", "want", "a", "an", "the", "to", "from", "in", "of", "for", "with", "and", "or", "me", "my", "please", "delivered", "deliver", "delivery", "find", "looking", "look", "get", "buy", "is", "are", "can", "you", "do", "how", "much", "what", "price", "under", "over", "below", "above", "than", "at", "on", "by", "some", "any"]
+    ["اريد", "ابي", "ابغي", "ابغى", "احتاج", "اطلب", "ارد", "اشتري", "اشتر", "اكو", "شكد", "منو", "عنده", "عندهم", "يوصل", "توصل", "وصل", "الى", "من", "في", "ب", "ل", "ك", "و", "مع", "عن", "او", "هل", "شنو", "شلون", "وين", "كم", "اني", "انا", "لو", "ممكن", "رجاء", "رجاءا", "بس", "هذا", "هذه", "ذلك", "سعر", "بسعر", "اقل", "اكثر", "من", "خط", "انتاج", "i", "need", "want", "a", "an", "the", "to", "from", "in", "of", "for", "with", "and", "or", "me", "my", "please", "delivered", "deliver", "delivery", "find", "looking", "look", "get", "buy", "is", "are", "can", "you", "do", "how", "much", "what", "price", "under", "over", "below", "above", "than", "at", "on", "by", "some", "any", "something", "anything", "شي", "شيء", "اي"]
 )
 
 KIND_PHRASES: PhraseIndex[str] = PhraseIndex(
@@ -74,11 +74,11 @@ REF_RES = {
     "awb": re.compile(r"(?<!\d)\d{3}[- ]\d{8}(?!\d)"),
 }
 INCOTERM_RE = re.compile(r"(?i)(?<![A-Za-z])(EXW|FCA|FOB|CFR|CIF|DAP|DDP)(?![A-Za-z])|(?<!\S)(فوب)(?!\S)")
-DOOR_RE = re.compile(r"(?i)لحد\s+(?:ال)?باب|door[- ]to[- ]door|doorstep|landed")
+DOOR_RE = re.compile(r"(?i)لحد\s+(?:ال)?باب|door[- ]to[- ]door|doorstep|landed|total (?:landed )?cost|full cost|(?:ال)?(?:كلفة|تكلفة|كلفه|تكلفه)\s+(?:ال)?كامل[ةه]")
 # clearly non-sourcing chatter / compliance questions (only honoured when no product term was recognised)
 OFFTOPIC_RE = re.compile(
-    r"(?i)\b(?:poem|poetry|joke|jokes|football|soccer|match|weather|recipe|horoscope|lyrics|song|movie|news|stock|bitcoin|crypto|homework)\b|"
-    r"قصيد[ةه]|شعر|نكت[ةه]|احجيلي|طقس|مباراة|كرة|وصف[ةه]\s+(?:اكل|طبخ)|برج|اغنيه|اغنية|فيلم|اخبار|أخبار"
+    r"(?i)\bcapital of\b|\bhow many days\b|\bhow long (?:will|does)\b|كم\s+يوم|\bflight tickets?\b|\bhotel booking\b|\bexchange rate\b|\b(?:poem|poetry|joke|jokes|football|soccer|match|weather|recipe|horoscope|lyrics|song|movie|news|stock|bitcoin|crypto|homework)\b|"
+    r"قصيد[ةه]|شعر|نكت[ةه]|احجيلي|طقس|تذكر[ةه]\s+طيران|سعر\s+(?:ال)?دولار\s+(?:اليوم|الان|الآن)|عاصم[ةه]|مباراة|كرة|وصف[ةه]\s+(?:اكل|طبخ)|برج|اغنيه|اغنية|فيلم|اخبار|أخبار"
 )
 COMPLIANCE_RE = re.compile(
     r"(?i)\bdocuments?\b|\bdocumentation\b|certificate of origin|\bimport (?:requirements?|permit|licen[cs]e)|\bcompliance\b|"
@@ -90,7 +90,7 @@ DEAL_RE = re.compile(r"(?i)\bdeal_[a-z0-9]+(?:_[a-z0-9]+)*\b")
 # tool intents (raw, unfolded text; Arabic variants spelled out)
 COMPARE_RE = re.compile(r"(?i)\bcompare\b|\bcomparison\b|\bvs\.?(?=\s|$)|\bversus\b|قارن|مقارن|مقابل|الفرق بين|ايهما|أيهما|اي منهم")
 HS_RE = re.compile(
-    r"(?i)\bhs\b|\bhs[- ]?codes?\b|harmoni[sz]ed|\btariff\b|customs code|"
+    r"(?i)\bhs\b|\bduty (?:rate|on)\b|\bduties (?:on|for)\b|\bwhat (?:import )?duty\b|\bcustoms (?:duty|duties|rate)\b|(?:نسب[ةه]|رسوم)\s+(?:ال)?جمرك(?:ي[ةه])?|(?:ال)?جمرك\s+على|\bhs[- ]?codes?\b|harmoni[sz]ed|\btariff\b|customs code|"
     r"(?:رمز|كود|رقم|بند)\s+(?:ال)?(?:جمرك[يى]?|جمارك|hs)|تعرف[ةه]\s+(?:ال)?(?:جمرك[يى]?|جمارك)|رمز\s+الـ?\s*hs"
 )
 HS_CODE_RE = re.compile(r"(?<![\d.])\d{4}(?:[. ]?\d{2}){1,2}(?![\d])|(?<![\d.])\d{6,10}(?![\d])")
@@ -112,3 +112,24 @@ def glossary_index() -> PhraseIndex[dict]:
     return index
 
 HS_NOISE = word_set(["hs", "code", "codes", "tariff", "harmonized", "customs", "رمز", "كود", "رقم", "بند", "جمركي", "الجمركي", "جمرك", "تعرفه", "التعرفه", "لل", "ما", "ماهو", "ماهي", "what", "which", "whats", "find", "lookup", "search"])
+
+# requests the assistant must never act on by itself: private messages to suppliers (draft only) and RFQ posting (done in the app)
+MESSAGE_RE = re.compile(
+    r"(?i)\bwhats\s?app\b|\btelegram\b|\bdm\b|\bprivate(?:ly)?\b|\bdirect message\b|"
+    r"\b(?:send|write|draft|message|text|email|contact)\b[^.?!]{0,40}\b(?:suppliers?|sellers?|vendors?|factor(?:y|ies)|captain)\b|"
+    r"واتس(?:اب)?|[اأإ]رسل|[اأإ]بعث|راسل|(?:رسال[ةه]|مسج|اكتب)[^.؟?!]{0,30}(?:مورد|موردين|الموردين|المصنع|مصانع|التاجر|البائع|الكابتن)"
+)
+RFQ_RE = re.compile(
+    r"(?i)\brfq\b|\b(?:post|create|publish|submit|open)\s+(?:a\s+|an\s+|my\s+)?(?:purchase\s+|buy(?:ing)?\s+)?request\b|request for quotation|"
+    r"(?:collect|receive|get)\s+(?:offers|quotes)|"
+    r"انشر\s+طلب|[اإأ]نشاء\s+طلب|اضف\s+طلب|طلب\s+(?:شراء|عروض|تسعير|عرض)|استلم\s+عروض|عروض\s+[اأ]سعار"
+)
+
+
+def special_request(text: str) -> str | None:
+    """'message' | 'rfq' | None: handled without any tool call (message wins: it is the riskier one)."""
+    if MESSAGE_RE.search(text):
+        return "message"
+    if RFQ_RE.search(text):
+        return "rfq"
+    return None

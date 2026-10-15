@@ -2,12 +2,14 @@
 
 import asyncio
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
 from ff_assistant.clients import build_mock_clients
+from ff_assistant.compose import help_text
 from ff_assistant.config import Settings
 from ff_assistant.domain.parser import parse
 from ff_assistant.service import Assistant
@@ -39,7 +41,7 @@ def check(case: dict) -> list[str]:
         "kind": p.kind.value if p.kind else None,
     }
     for key, want in exp.items():
-        if key == "injection":
+        if key in ("injection", "message_blocked", "numeric_guard"):
             continue
         have = got[key]
         if key == "quantity" and want is not None and have is not None:
@@ -56,14 +58,39 @@ def check(case: dict) -> list[str]:
         bad.append(f"injection flag: expected {exp.get('injection', False)}, got {flagged}")
     if exp.get("injection") and (res.listings or res.quote or res.trust or res.cards):
         bad.append("injection attempt triggered a tool/search result")
+    blocked = "private_message_blocked" in res.warnings
+    if exp.get("message_blocked", False) != blocked:
+        bad.append(f"message_blocked: expected {exp.get('message_blocked', False)}, got {blocked}")
+    if blocked and (res.listings or res.quote or res.trust or res.cards):
+        bad.append("private-message request triggered a tool/search result")
+    bad += numeric_violations(case["text"], res)  # every case: answers never invent numbers
     return bad
 
 
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789.")
+SCALE_CONSTANTS = {Decimal(100)}  # the "/100" of a trust score
+
+
+def _numbers(text: str) -> set[Decimal]:
+    return {Decimal(m.replace(",", "")) for m in re.findall(r"\d[\d,]*(?:\.\d+)?", text.translate(_ARABIC_DIGITS))}
+
+
+def numeric_violations(user_text: str, res) -> list[str]:
+    """Numbers in the answer must come from tool output (the structured result) or the user's own message."""
+    if res.answer_text in (help_text("ar"), help_text("en")):  # static template examples
+        return []
+    allowed = _numbers(user_text) | _numbers(res.model_dump_json(exclude={"answer_text"})) | SCALE_CONSTANTS
+    allowed |= {a.to_integral_value() for a in allowed}  # displayed rounded ("4 $" for 4.00 / 3.6)
+    allowed |= {a.to_integral_value(rounding="ROUND_DOWN") for a in allowed}
+    extra = sorted(str(n) for n in _numbers(res.answer_text) - allowed)
+    return [f"answer numbers not from tool output: {extra}"] if extra else []
+
+
 def test_fixture_size_and_coverage():
-    assert len(CASES) >= 80
+    assert len(CASES) >= 125
     assert len({c["id"] for c in CASES}) == len(CASES)
     cats = {c["category"] for c in CASES}
-    assert {"search", "quote", "compare", "trust", "hs", "track", "deal", "compliance", "smalltalk", "out_of_scope", "injection"} <= cats
+    assert {"search", "quote", "compare", "trust", "hs", "track", "deal", "compliance", "smalltalk", "out_of_scope", "injection", "rfq", "message", "duties", "ambiguity", "numeric"} <= cats
     assert any(c["text"].isascii() for c in CASES) and any(not c["text"].isascii() for c in CASES)
 
 

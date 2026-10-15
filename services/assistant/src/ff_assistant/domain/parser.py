@@ -51,6 +51,8 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
     if guard.is_injection(text):  # instructions aimed at the assistant are never parsed into tool calls
         return ParsedQuery(intent=Intent.HELP, language=detect_language(clean_text(text)), confidence=1.0)
     clean = clean_text(text)
+    if lx.special_request(clean):  # private messages / RFQ posting are app actions, never parsed into tool calls
+        return ParsedQuery(intent=Intent.HELP, language=detect_language(clean), confidence=1.0)
 
     # 1. references (masked afterwards so they never leak into keywords)
     spans: list[tuple[int, int]] = []
@@ -286,6 +288,9 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
             and not in_set(t.norm, lx.STOPWORDS | lx.SHIP_WORDS | lx.COST_WORDS, clitics=True)
         ]
         keywords = [t.surface for t in leftover][:6]
+
+    if intent is Intent.SEARCH and not keywords and kind is None:
+        intent = Intent.HELP  # nothing to search for: ask, do not guess
 
     hs_query = None
     if intent is Intent.HS_LOOKUP and not hs_code:
