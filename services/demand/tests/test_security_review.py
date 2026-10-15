@@ -46,7 +46,7 @@ def env():
 
 def test_edited_text_cannot_strip_the_disclosure(env):
     did = env.draft()
-    r = env.act(did, "approve", text="Buy from us, best prices guaranteed!")
+    r = env.act(did, "approve", text="هلا بيك، عندنا خيارات مناسبة لطلبك على المنصة")
     assert r.status_code == 200
     assert DISCLOSURE["ar"] in r.json()["text"]
 

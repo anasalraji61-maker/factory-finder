@@ -24,7 +24,7 @@ from ff_messaging.api.serializers import (
     message_page_json,
     read_state_json,
 )
-from ff_messaging.domain.clock import utc_now
+from ff_messaging.domain.clock import format_utc, utc_now
 from ff_messaging.domain.errors import (
     ForbiddenError,
     MessagingError,
@@ -101,6 +101,11 @@ class MessageCreate(_Body):
     )
 
 
+class PreferencesIn(_Body):
+    muted: bool | None = None
+    archived: bool | None = None
+
+
 class ReadIn(_Body):
     message_id: str | None = None
 
@@ -172,6 +177,7 @@ async def list_conversations(
     context_type: ContextType | None = None,
     context_ref_id: str | None = None,
     unread_only: bool = False,
+    archived: bool = False,
     supplier: Supplier = None,
 ) -> dict[str, Any]:
     result = await svc.list_conversations(
@@ -181,9 +187,15 @@ async def list_conversations(
         context_type=context_type,
         context_ref_id=context_ref_id,
         unread_only=unread_only,
+        archived=archived,
         supplier_id=supplier,
     )
     return conversation_page_json(result, user, supplier)
+
+
+@router.get("/conversations/unread-total")
+async def unread_total(user: User, svc: Service, supplier: Supplier) -> dict[str, Any]:
+    return {"unread_total": await svc.unread_total(user, supplier)}
 
 
 @router.get("/conversations/{conversation_id}")
@@ -239,6 +251,43 @@ async def mark_read(
 ) -> dict[str, Any]:
     state = await svc.mark_read(user, conversation_id, body.message_id if body else None, supplier)
     return read_state_json(state)
+
+
+@router.put("/conversations/{conversation_id}/preferences")
+async def set_preferences(
+    conversation_id: str, body: PreferencesIn, user: User, svc: Service, supplier: Supplier
+) -> dict[str, Any]:
+    me = await svc.set_preferences(
+        user, conversation_id, muted=body.muted, archived=body.archived, supplier_id=supplier
+    )
+    return {"conversation_id": conversation_id, "muted": me.muted, "archived": me.archived}
+
+
+@router.get("/blocks")
+async def list_blocks(user: User, svc: Service) -> dict[str, Any]:
+    return {
+        "items": [
+            {"user_id": uid, "blocked_at": format_utc(at)} for uid, at in await svc.list_blocks(user)
+        ]
+    }
+
+
+@router.put("/blocks/{blocked_user_id}", status_code=204)
+async def block_user(
+    blocked_user_id: str, user: User, svc: Service, supplier: Supplier
+) -> Response:
+    if not is_valid_user_id(blocked_user_id):
+        raise NotFoundError("Route not found")
+    await svc.block_user(user, blocked_user_id, supplier)
+    return Response(status_code=204)
+
+
+@router.delete("/blocks/{blocked_user_id}", status_code=204)
+async def unblock_user(
+    blocked_user_id: str, user: User, svc: Service, supplier: Supplier
+) -> Response:
+    await svc.unblock_user(user, blocked_user_id, supplier)
+    return Response(status_code=204)
 
 
 @router.websocket("/ws/conversations/{conversation_id}")

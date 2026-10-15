@@ -11,7 +11,10 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 - Ids: 128-bit random hex. Files: `GET /v1/media/files/<id>.<ext>` -> immutable cache headers, ETag/304, `X-Content-Type-Options: nosniff`, CSP `default-src 'none'`. Names are regex-validated and storage paths must resolve inside the storage root.
 - Ownership: owner = `X-User-Id`; `DELETE /v1/media/images/{id}` by anyone else is 404 (never 403). Deleted images can live on in downstream caches for the immutable lifetime (use a CDN purge if that matters).
 - Private files (`visibility=private`, or `kind=verification` which is always private; `kind=verification`+`visibility=public` -> 422): stored under `p-` keys the public route cannot address (public `GET /v1/media/files/*` -> 404), no resized variants, response `url` is the relative ref `/v1/media/private/<id>.<ext>`. Readable by the owner (`X-User-Id`) at that path, by anyone with a signed URL (`POST /v1/media/files/{id}/sign`, owner only -> `?u=&exp=&sig=`, HMAC-SHA256 over id+user+exp, 5 min, constant-time compare, bound to the file's owner) and by admins via `GET /v1/media/admin/files/{id}` (X-Admin-Token; gateway: `/v1/admin/media/files/{name}`). All other cases are one 404. Headers: `Cache-Control: private, no-store`, nosniff, `Referrer-Policy: no-referrer`, CSP. No listing. Dedupe is per (owner, hash, visibility). Rows created before migration 0002 are public; re-upload old verification documents.
-- Quotas per user: 200 stored files, 30 upload requests per rolling hour (every request counts, valid or not; 429 + `Retry-After`).
+- Quotas per user: 200 stored files, 100 MiB of stored originals (`quota_bytes_exceeded`), 30 upload requests per rolling hour (every request counts, valid or not; 429 + `Retry-After`). At most `FF_MEDIA_MAX_CONCURRENT_PROCESSING` (4) decode/re-encode jobs run at once per process.
+- HEAD and single-range `Range: bytes=` (206/416, `Accept-Ranges: bytes`) work on public, private and admin reads; multi-range is served whole. Errors (>=400) and every private/admin/sign response are `Cache-Control: no-store`. A signed URL is a bearer link: it can be replayed until expiry (<=5 min) by design.
+- PDFs and other documents are NOT accepted (415); verification documents must be images. Metadata is stripped from every stored byte, including private originals.
+- Orphans: `python -m ff_media.sweep` (dry run) / `--apply` deletes storage blobs no row references and older than `FF_MEDIA_SWEEP_MIN_AGE_SECONDS` (3600); rows with a missing blob are only counted. Local disk only (S3 has no `list_keys`). Run it from cron.
 - Dedupe: per owner by SHA-256 of the re-encoded bytes.
 - Storage: `StorageBackend` protocol (`storage/base.py`); `LocalDiskStorage` (default; keep `FF_MEDIA_STORAGE_ROOT` on a persistent volume) and `S3Storage` (UNVERIFIED skeleton, off by default, needs `pip install .[s3]`; credentials only from the environment).
 - Nothing is scanned for malware and no content moderation is performed; add both before opening uploads to untrusted users at scale.
@@ -30,6 +33,8 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 | `FF_MEDIA_MAX_DIMENSION` / `_MAX_PIXELS` | `8000` / `40000000` |
 | `FF_MEDIA_JPEG_QUALITY` | `85` |
 | `FF_MEDIA_MAX_FILES_PER_USER` / `_MAX_UPLOADS_PER_HOUR` | `200` / `30` |
+| `FF_MEDIA_MAX_BYTES_PER_USER` | `104857600` |
+| `FF_MEDIA_MAX_CONCURRENT_PROCESSING` / `_SWEEP_MIN_AGE_SECONDS` | `4` / `3600` |
 | `FF_MEDIA_DATABASE_URL` / `_DB_AUTO_CREATE` | `sqlite+aiosqlite:///./media.db` / auto (see docs/DB.md) |
 
 ## Ops (logging / readiness)
@@ -61,5 +66,8 @@ Every setting in `src/ff_media/config.py` (`Settings`, case-insensitive env name
 | `FF_MEDIA_JPEG_QUALITY` | 85 |
 | `FF_MEDIA_MAX_FILES_PER_USER` | 200 |
 | `FF_MEDIA_MAX_UPLOADS_PER_HOUR` | 30 |
+| `FF_MEDIA_MAX_BYTES_PER_USER` | 104857600 |
+| `FF_MEDIA_MAX_CONCURRENT_PROCESSING` | 4 |
+| `FF_MEDIA_SWEEP_MIN_AGE_SECONDS` | 3600 |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` and `FF_MEDIA_SIGNING_KEY` (see `docs/OPS.md`).

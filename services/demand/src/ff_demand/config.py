@@ -40,6 +40,25 @@ class Settings(BaseSettings):
     signal_retention_days: int = Field(default=90, ge=0)
     rejected_draft_retention_days: int = Field(default=90, ge=0)
 
+    # Compliance (CLAUDE.md rules 6-7)
+    thread_cooldown_hours: int = Field(default=72, ge=1)  # one approved reply per thread/author
+    blocked_domains: str = ""  # comma-separated, added to compliance.DEFAULT_BLOCKED_DOMAINS
+    blocked_sources: str = ""  # comma-separated source names whose robots/ToS forbid automation
+    publisher_enabled: bool = False  # real publisher adapter: OFF unless explicitly enabled
+    min_host_interval_seconds: float = Field(default=3.0, ge=3.0)  # >= 1 req / 3 s per host
+    user_agent: str = "FactoryFinderBot/0.1 (+https://factoryfinder.example/bot; sourcing platform)"
+
+    @property
+    def blocked_domain_set(self) -> set[str]:
+        from ff_demand.compliance import DEFAULT_BLOCKED_DOMAINS
+
+        extra = {d.strip().casefold() for d in self.blocked_domains.split(",") if d.strip()}
+        return set(DEFAULT_BLOCKED_DOMAINS) | extra
+
+    @property
+    def blocked_source_set(self) -> set[str]:
+        return {d.strip().casefold() for d in self.blocked_sources.split(",") if d.strip()}
+
     signal_source: str = "mock"  # only "mock" ships; real sources must be official APIs
 
     @property

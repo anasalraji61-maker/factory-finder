@@ -11,7 +11,7 @@ PREFIX_TO_UPSTREAM: dict[str, str] = {
     "/v1/countries": "geo", "/v1/cities": "geo", "/v1/hubs": "geo", "/v1/distance": "geo",
     "/v1/trust": "trust",
     "/v1/requests": "rfq", "/v1/offers": "rfq", "/v1/deals": "rfq", "/v1/reviews": "rfq",
-    "/v1/conversations": "messaging",
+    "/v1/conversations": "messaging", "/v1/blocks": "messaging",
     "/v1/shipments": "tracking", "/v1/validate": "tracking",
     "/v1/watchlist": "notifications", "/v1/alerts": "notifications", "/v1/devices": "notifications",
     "/v1/notification-prefs": "notifications",

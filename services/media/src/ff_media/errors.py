@@ -46,6 +46,10 @@ class QuotaFiles(MediaError):
     status_code, code = 429, "quota_files_exceeded"
 
 
+class QuotaBytes(MediaError):
+    status_code, code = 429, "quota_bytes_exceeded"
+
+
 class QuotaUploads(MediaError):
     status_code, code = 429, "quota_uploads_exceeded"
 

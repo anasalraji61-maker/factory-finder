@@ -13,6 +13,8 @@ class RawSignal:
     text: str
     url: str | None = None
     source: str = "mock"
+    author: str | None = None  # poster handle: only ever stored as a hash (cooldown / opt-out)
+    scraping_disallowed: bool = False  # source robots/ToS forbid automated access -> never ingest
 
 
 class SignalSource(Protocol):

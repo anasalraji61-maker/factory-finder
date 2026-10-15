@@ -67,6 +67,7 @@ def conversation_json(
     c: Conversation, viewer: str | None = None, alias: str | None = None
 ) -> dict[str, Any]:
     lm = c.last_message
+    me = c.view_for(viewer, alias)
     return {
         "id": c.id,
         "context": {"type": c.context.type.value, "ref_id": c.context.ref_id}
@@ -88,6 +89,8 @@ def conversation_json(
             for p in c.participants
         ],
         "unread_count": c.unread_count_for(viewer, alias),
+        "muted": bool(me and me.muted),
+        "archived": bool(me and me.archived),
         "last_message": (
             {
                 "id": lm.id,

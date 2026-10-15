@@ -82,7 +82,7 @@ def process_image(data: bytes, *, max_dimension: int, max_pixels: int, jpeg_qual
             )
         im.seek(0)  # animated PNG/WebP: first frame only
         im.load()
-        im = ImageOps.exif_transpose(im) if kind != "png" else im
+        im = ImageOps.exif_transpose(im)  # JPEG/WebP/PNG(eXIf) orientation
     except (UnsupportedMediaType, DimensionsExceeded):
         raise
     except Image.DecompressionBombError as e:

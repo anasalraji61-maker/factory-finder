@@ -63,7 +63,7 @@ paths:
         Fields: `file` (required, exactly one), `kind` (optional: listing | avatar | attachment | verification, default listing) and `visibility` (optional: public | private, default public; verification is always private).
         Uploading the same pixels again as the same user returns the existing image with 200 instead of 201.
         Error codes: missing_user 401, file_too_large 413, unsupported_media_type 415, invalid_image 422,
-        image_dimensions_exceeded 422, validation_error 422, quota_files_exceeded 429, quota_uploads_exceeded 429 (Retry-After).
+        image_dimensions_exceeded 422, validation_error 422, quota_files_exceeded 429, quota_bytes_exceeded 429 (default 100 MiB of stored originals per user), quota_uploads_exceeded 429 (Retry-After).
       requestBody:
         required: true
         content:
@@ -123,6 +123,19 @@ paths:
             image/jpeg: {schema: {type: string, format: binary}}
             image/png: {schema: {type: string, format: binary}}
             image/webp: {schema: {type: string, format: binary}}
+        "206": {description: "Partial content (single `Range: bytes=a-b` honoured; multi-range is served whole). Responses add Accept-Ranges: bytes."}
+        "404": {$ref: "#/components/responses/Error"}
+        "416": {description: Range not satisfiable}
+    head:
+      operationId: headPrivateFile
+      summary: Same access rules and headers as GET, no body (a failure is the same no-store 404)
+      parameters:
+        - {name: filename, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}\.(jpg|png|webp)$'}}
+        - {name: u, in: query, required: false, schema: {type: string}}
+        - {name: exp, in: query, required: false, schema: {type: integer}}
+        - {name: sig, in: query, required: false, schema: {type: string}}
+      responses:
+        "200": {description: Headers only}
         "404": {$ref: "#/components/responses/Error"}
   /v1/media/admin/files/{name}:
     get:
@@ -137,6 +150,15 @@ paths:
             image/jpeg: {schema: {type: string, format: binary}}
             image/png: {schema: {type: string, format: binary}}
             image/webp: {schema: {type: string, format: binary}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+    head:
+      operationId: headAdminFile
+      summary: Headers only
+      parameters:
+        - {name: name, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}(\.(jpg|png|webp))?$'}}
+      responses:
+        "200": {description: Headers only}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
   /v1/media/files/{filename}:
@@ -162,6 +184,19 @@ paths:
             image/jpeg: {schema: {type: string, format: binary}}
             image/png: {schema: {type: string, format: binary}}
             image/webp: {schema: {type: string, format: binary}}
+        "206": {description: "Partial content (single Range honoured; Accept-Ranges: bytes)"}
+        "304": {description: Not modified}
+        "404": {$ref: "#/components/responses/Error"}
+        "416": {description: Range not satisfiable}
+        "422": {$ref: "#/components/responses/Error"}
+    head:
+      operationId: headImageFile
+      summary: Headers only (same ETag / Content-Length as GET)
+      parameters:
+        - {name: filename, in: path, required: true, schema: {type: string, pattern: '^[a-f0-9]{32}\.(jpg|png|webp)$'}}
+        - {name: w, in: query, required: false, schema: {type: integer, enum: [200, 400, 800]}}
+      responses:
+        "200": {description: Headers only}
         "304": {description: Not modified}
         "404": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}

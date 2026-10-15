@@ -51,6 +51,22 @@ class LocalDiskStorage:
         with contextlib.suppress(FileNotFoundError):
             self.path_for(key).unlink()
 
+    def _list_keys(self) -> list[tuple[str, float]]:
+        out: list[tuple[str, float]] = []
+        if not self.root.is_dir():
+            return out
+        for sub in self.root.iterdir():
+            if not sub.is_dir() or sub.is_symlink():
+                continue
+            for f in sub.iterdir():
+                if f.is_file() and not f.is_symlink() and valid_key(f.name):
+                    out.append((f.name, f.stat().st_mtime))
+        return out
+
+    async def list_keys(self) -> list[tuple[str, float]]:
+        """(key, mtime) of every stored blob; temp files and foreign names are ignored."""
+        return await asyncio.to_thread(self._list_keys)
+
     async def put(self, key: str, data: bytes, content_type: str) -> None:
         await asyncio.to_thread(self._put, key, data)
 

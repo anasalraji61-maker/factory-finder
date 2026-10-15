@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from ff_media import signing
 from ff_media.config import Settings
 from ff_media.db import Base, MediaFileRow, UploadEventRow
-from ff_media.errors import NotFound, QuotaFiles, QuotaUploads, StorageUnavailable
+from ff_media.errors import NotFound, QuotaBytes, QuotaFiles, QuotaUploads, StorageUnavailable
 from ff_media.imaging import Processed, process_image
 from ff_media.schemas import MediaImage, SignedUrl
 from ff_media.storage import StorageBackend, make_key
@@ -30,6 +30,7 @@ class MediaService:
         self.engine, self.settings, self.storage = engine, settings, storage
         self.clock = clock or (lambda: datetime.now(UTC))
         self.sessions = async_sessionmaker(engine, expire_on_commit=False)
+        self._cpu = asyncio.Semaphore(max(1, settings.max_concurrent_processing))
         sk = settings.signing_key.get_secret_value() if settings.signing_key else ""
         self.signing_key: bytes = sk.encode() if sk else secrets.token_bytes(32)  # random per process when unset (dev)
 
@@ -68,9 +69,10 @@ class MediaService:
 
     async def store(self, owner: str, kind: str, data: bytes, visibility: str = "public") -> tuple[MediaImage, bool]:
         s_ = self.settings
-        proc: Processed = await asyncio.to_thread(
-            process_image, data, max_dimension=s_.max_dimension, max_pixels=s_.max_pixels, jpeg_quality=s_.jpeg_quality
-        )  # fmt: skip
+        async with self._cpu:  # bounded: a 40 MP decode can take several hundred MB
+            proc: Processed = await asyncio.to_thread(
+                process_image, data, max_dimension=s_.max_dimension, max_pixels=s_.max_pixels, jpeg_quality=s_.jpeg_quality
+            )  # fmt: skip
         async with self.sessions() as s:
             private = visibility == "private"
             if private:
@@ -81,6 +83,12 @@ class MediaService:
             count = await s.scalar(select(func.count()).select_from(MediaFileRow).where(MediaFileRow.owner_id == owner))
             if (count or 0) >= s_.max_files_per_user:
                 raise QuotaFiles(f"Stored file limit reached ({s_.max_files_per_user})", {"limit": s_.max_files_per_user})
+            used = await self.stored_bytes(owner, s)
+            if used + len(proc.data) > s_.max_bytes_per_user:
+                raise QuotaBytes(
+                    f"Storage limit reached ({s_.max_bytes_per_user} bytes)",
+                    {"limit_bytes": s_.max_bytes_per_user, "used_bytes": used},
+                )
             media_id = secrets.token_hex(16)
             keys = [make_key(media_id, proc.ext, private=private)] + [make_key(media_id, proc.ext, w) for w in proc.variants]
             try:
@@ -109,6 +117,13 @@ class MediaService:
                 await self._cleanup(keys)
                 raise
             return self.to_image(row), True
+
+    async def stored_bytes(self, owner: str, s=None) -> int:
+        q = select(func.coalesce(func.sum(MediaFileRow.size_bytes), 0)).where(MediaFileRow.owner_id == owner)
+        if s is not None:
+            return int(await s.scalar(q) or 0)
+        async with self.sessions() as s2:
+            return int(await s2.scalar(q) or 0)
 
     @staticmethod
     async def _by_hash(s, owner: str, sha: str, visibility: str) -> MediaFileRow | None:
@@ -213,3 +228,31 @@ class MediaService:
         if data is None:
             raise NotFound("File not found")
         return row, data
+
+    # ------------------------------------------------------------------ orphan cleanup
+    async def sweep_orphans(self, *, dry_run: bool = True) -> dict[str, int]:
+        """Remove blobs that no database row references (failed/crashed uploads, rows deleted out of band).
+
+        Needs a storage backend that can list keys (``LocalDiskStorage``); blobs younger than
+        ``sweep_min_age_seconds`` are kept because their row may not be committed yet. Rows whose original blob is
+        missing are only counted (``rows_missing_blob``), never deleted.
+        """
+        lister = getattr(self.storage, "list_keys", None)
+        if lister is None:
+            return {"scanned": 0, "orphans": 0, "deleted": 0, "rows_missing_blob": 0, "unsupported": 1}
+        async with self.sessions() as s:
+            rows = (await s.scalars(select(MediaFileRow))).all()
+        wanted: set[str] = set()
+        for r in rows:
+            priv = r.visibility == "private"
+            wanted.add(make_key(r.id, r.ext, private=priv))
+            wanted.update(make_key(r.id, r.ext, int(w), private=priv) for w in r.widths.split(",") if w)
+        cutoff = self.clock().timestamp() - self.settings.sweep_min_age_seconds
+        present = await lister()
+        orphans = [k for k, mtime in present if k not in wanted and mtime <= cutoff]
+        if not dry_run:
+            await self._cleanup(orphans)
+        have = {k for k, _ in present}
+        missing = sum(1 for r in rows if make_key(r.id, r.ext, private=r.visibility == "private") not in have)
+        return {"scanned": len(present), "orphans": len(orphans), "deleted": 0 if dry_run else len(orphans),
+                "rows_missing_blob": missing}  # fmt: skip

@@ -10,6 +10,8 @@ Phase 5 demand matching with a **human in the loop** (CLAUDE.md rule 7). Contrac
 
 Run: `uvicorn ff_demand.main:app --port 8110` (from `src/`). Test: `../../.venv/bin/python -m pytest -q`.
 
+Compliance (see `docs/decisions/demand-compliance-qa.md`): `THREAD_COOLDOWN_HOURS` (72), `BLOCKED_DOMAINS`, `BLOCKED_SOURCES`, `PUBLISHER_ENABLED` (false), `MIN_HOST_INTERVAL_SECONDS` (>=3), `USER_AGENT`. Extra routes: `PATCH /v1/drafts/{id}` (edit resets approval), `POST|GET /v1/optouts`.
+
 Env (prefix `FF_DEMAND_`): `ENABLED` (default **false**, kill-switch), `DAILY_CAP` (20), `DATABASE_URL`, `SOURCING_BASE_URL`, `USE_MOCK_SOURCING`, `MAX_CANDIDATES`, `SIGNAL_SOURCE` (mock); shared `FF_INTERNAL_TOKEN`.
 
 
@@ -37,3 +39,8 @@ Every setting in `src/ff_demand/config.py` (`Settings`, case-insensitive env nam
 | `FF_DEMAND_SIGNAL_SOURCE` | mock |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).
+| `FF_DEMAND_THREAD_COOLDOWN_HOURS` | 72 |
+| `FF_DEMAND_BLOCKED_DOMAINS` / `FF_DEMAND_BLOCKED_SOURCES` | empty |
+| `FF_DEMAND_PUBLISHER_ENABLED` | False |
+| `FF_DEMAND_MIN_HOST_INTERVAL_SECONDS` | 3.0 (minimum) |
+| `FF_DEMAND_USER_AGENT` | FactoryFinderBot/0.1 (...) |

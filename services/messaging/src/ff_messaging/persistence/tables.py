@@ -18,6 +18,7 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import TypeDecorator
@@ -103,6 +104,9 @@ conversation_participants = Table(
     Column("last_read_message_id", String(ID_LENGTH), nullable=True),
     Column("last_read_at", UTCDateTime(), nullable=True),
     Column("unread_count", Integer, nullable=False, default=0),
+    # per-user preferences (never visible to the counterparty)
+    Column("muted", Boolean, nullable=False, default=False, server_default=false()),
+    Column("archived", Boolean, nullable=False, default=False, server_default=false()),
     Index("ix_participants_user_activity", "user_id", "activity_at", "conversation_id"),
 )
 
@@ -137,4 +141,14 @@ messages = Table(
     Column("created_at", UTCDateTime(), nullable=False),
     UniqueConstraint("conversation_id", "seq"),
     UniqueConstraint("conversation_id", "dedupe_key"),
+)
+
+# blocker_id no longer wants direct messages from blocked_id; never exposed to blocked_id.
+user_blocks = Table(
+    "user_blocks",
+    metadata,
+    Column("blocker_id", String(USER_ID_LENGTH), primary_key=True),
+    Column("blocked_id", String(USER_ID_LENGTH), primary_key=True),
+    Column("created_at", UTCDateTime(), nullable=False),
+    Index("ix_user_blocks_blocked", "blocked_id"),
 )

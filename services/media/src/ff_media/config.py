@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     jpeg_quality: int = 85
     max_files_per_user: int = 200
     max_uploads_per_hour: int = 30
+    max_bytes_per_user: int = 100 * 1024 * 1024  # sum of stored ORIGINAL sizes per user (variants add at most ~1x on top)
+    max_concurrent_processing: int = 4  # simultaneous decode/re-encode jobs per process (memory guard)
+    sweep_min_age_seconds: int = 3600  # orphan blobs younger than this are never swept (in-flight uploads)
 
     @property
     def base(self) -> str:

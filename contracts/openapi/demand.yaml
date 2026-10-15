@@ -76,10 +76,35 @@ paths:
         "200": {description: Draft with audit log, content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
+    patch:
+      operationId: editDraft
+      description: Human edit of the reply text. Voids any approval (approved -> draft, approved_by/approved_at cleared) so it must be approved again. 422 when the text leaks contact data, claims to be a person, contains unlisted prices/claims, blocked-domain links, injection text or is in the wrong language; 409 unless draft/approved.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [text], properties: {text: {type: string, minLength: 5}}}}}}
+      responses:
+        "200": {description: Edited (back to draft), content: {application/json: {schema: {$ref: "#/components/schemas/Draft"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+  /v1/optouts:
+    post:
+      operationId: addOptOut
+      description: Record that a stranger (author handle and/or post URL) asked not to be contacted. Stored as hashes, permanent, idempotent, no delete. Open drafts for them are rejected.
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {author: {type: string}, url: {type: string}, note: {type: string}}}}}}
+      responses:
+        "201": {description: Recorded, content: {application/json: {schema: {type: object, required: [recorded, rejected_drafts], properties: {recorded: {type: array, items: {type: string, enum: [author, thread]}}, rejected_drafts: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+    get:
+      operationId: listOptOuts
+      responses:
+        "200": {description: Suppression records (hashes only), content: {application/json: {schema: {type: object, required: [items, total], properties: {items: {type: array, items: {type: object}}, total: {type: integer}}}}}}
+        "401": {$ref: "#/components/responses/Error"}
   /v1/drafts/{id}/approve:
     post:
       operationId: approveDraft
-      description: draft -> approved. 403 when the kill-switch is off, 429 when today's cap is used up (counted at approval time, UTC day), 409 when not in draft.
+      description: draft -> approved. 403 when the kill-switch is off, 429 when today's cap is used up (counted at approval time, UTC day) or the thread/author was approved within the cooldown (code thread_cooldown), 403 code opted_out when the stranger opted out, 422 on non-compliant text, 409 when not in draft.
       parameters: [{$ref: "#/components/parameters/Id"}]
       requestBody: {required: false, content: {application/json: {schema: {type: object, properties: {text: {type: string, description: "Optional human-edited reply text"}}}}}}
       responses:
@@ -189,12 +214,13 @@ components:
         url: {type: string, description: Public post URL (reference only; never fetched)}
         source: {type: string, default: manual}
         language: {type: string, enum: [ar, en], description: Override auto-detected language}
+        author: {type: string, description: Poster handle; stored only as a hash (cooldown / opt-out)}
     Signal:
       type: object
       required: [id, status, language, text, source, created_at]
       properties:
         id: {type: string}
-        status: {type: string, enum: [drafted, ignored, no_match]}
+        status: {type: string, enum: [drafted, ignored, no_match, suppressed]}
         language: {type: string, enum: [ar, en]}
         text: {type: string}
         url: {type: [string, "null"]}

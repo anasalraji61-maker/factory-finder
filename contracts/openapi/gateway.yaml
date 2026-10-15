@@ -431,7 +431,7 @@ paths:
       geo: [/v1/countries, /v1/cities, /v1/hubs, /v1/distance]
       trust: [/v1/trust]  # /v1/trust/verification/* (supplier documents) needs a verified supplier claim (403 supplier_claim_required otherwise; X-Supplier-Id forwarded from the DB, JSON body <= 64 KiB, non-GET needs a verified email when FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on); GET /v1/trust/suppliers/{id}/verification (badge) is public; the rest of /v1/trust needs a bearer token
       rfq: [/v1/requests, /v1/offers, /v1/deals, /v1/reviews, "GET /v1/suppliers/{ref}/reviews", "GET /v1/suppliers/{ref}/review-summary"]  # the two supplier paths are public and take precedence over the sourcing /v1/suppliers prefix
-      messaging: [/v1/conversations]
+      messaging: [/v1/conversations, /v1/blocks]  # all need a bearer token; X-Supplier-Id is forwarded for a verified claim (blocks by a supplier owner also apply to the supplier identity)
       tracking: [/v1/shipments, /v1/validate]
       notifications: [/v1/watchlist, /v1/alerts, /v1/devices]
       assistant: [/v1/assistant]

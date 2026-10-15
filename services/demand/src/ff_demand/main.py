@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ff_demand.config import Settings
 from ff_demand.errors import ApiError, NotFound, Unauthenticated
 from ff_demand.obs import db_ready, install_observability, ready_response
+from ff_demand.publisher import Publisher, RealPublisher
 from ff_demand.service import DemandService
 from ff_demand.signals import MockSignalSource, RawSignal, SignalSource
 from ff_demand.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
@@ -66,10 +67,21 @@ class SignalIn(_Body):
     url: str | None = Field(default=None, max_length=1000, pattern=r"^https?://\S+$")
     source: str = Field(default="manual", max_length=40)
     language: str | None = Field(default=None, pattern="^(ar|en)$")
+    author: str | None = Field(default=None, max_length=200)
 
 
 class ApproveIn(_Body):
     text: str | None = Field(default=None, max_length=5000)
+
+
+class EditIn(_Body):
+    text: str = Field(min_length=5, max_length=5000)
+
+
+class OptOutIn(_Body):
+    author: str | None = Field(default=None, max_length=200)
+    url: str | None = Field(default=None, max_length=1000, pattern=r"^https?://\S+$")
+    note: str | None = Field(default=None, max_length=500)
 
 
 class RejectIn(_Body):
@@ -91,7 +103,8 @@ def _result(r: dict) -> dict:
 
 @router.post("/signals")
 async def import_signal(body: SignalIn, s: Service, _: Actor, response: Response):
-    r = await s.import_signal(RawSignal(body.text, body.url, body.source), body.language)
+    raw = RawSignal(body.text, body.url, body.source, body.author)
+    r = await s.import_signal(raw, body.language)
     response.status_code = 201 if r["created"] else 200
     return _result(r)
 
@@ -124,6 +137,22 @@ async def list_drafts(s: Service, _: Actor, status: str | None = None):
 @router.get("/drafts/{did}")
 async def get_draft(did: str, s: Service, _: Actor):
     return await s.get_draft(did)
+
+
+@router.patch("/drafts/{did}")
+async def edit_draft(did: str, body: EditIn, s: Service, actor: Actor):
+    return await s.edit(did, actor, body.text)
+
+
+@router.post("/optouts", status_code=201)
+async def add_optout(body: OptOutIn, s: Service, actor: Actor):
+    return await s.record_opt_out(actor, body.author, body.url, body.note)
+
+
+@router.get("/optouts")
+async def list_optouts(s: Service, _: Actor):
+    items = await s.store.list_suppressions()
+    return {"items": items, "total": len(items)}
 
 
 @router.post("/drafts/{did}/approve")
@@ -162,6 +191,7 @@ def create_app(
     *,
     sourcing: SourcingClient | None = None,
     source: SignalSource | None = None,
+    publisher: Publisher | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     store = Store(settings.database_url)
@@ -173,7 +203,8 @@ def create_app(
         )
     if source is None and settings.signal_source == "mock":
         source = MockSignalSource()
-    service = DemandService(store, sourcing, settings, source)
+    publisher = publisher or RealPublisher(settings.publisher_enabled)
+    service = DemandService(store, sourcing, settings, source, publisher)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):

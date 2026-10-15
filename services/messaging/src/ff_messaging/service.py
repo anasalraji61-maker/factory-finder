@@ -1,6 +1,7 @@
 """Application service: orchestrates policy, rate limit, persistence and event publishing."""
 
 from collections.abc import Callable
+from datetime import datetime
 
 from ff_messaging.config import Settings
 from ff_messaging.domain.clock import Clock, utc_now
@@ -24,6 +25,7 @@ from ff_messaging.domain.models import (
     MessageDraft,
     MessagePage,
     MessageType,
+    Participant,
     ParticipantSpec,
     ReadState,
     Role,
@@ -96,6 +98,17 @@ class MessagingService:
             max_participants=s.max_participants,
         )
         clean_title = self.policy.check_title(title)
+        if len(specs) == 2:
+            async with self.db.read() as conn:
+                repo = Repository(conn)
+                others = [p.user_id for p in specs if p.user_id != caller]
+                for other in others:
+                    if other in s.platform_ids:
+                        continue
+                    if await repo.has_blocked([other], caller):
+                        raise NotFoundError("Conversation not found", code="conversation_not_found")
+                    if await repo.has_blocked([caller], other):
+                        raise InvalidInputError("Unblock this user first", code="user_blocked")
         key = conversation_dedupe_key([p.user_id for p in specs], context)
         async with self.db.transaction() as conn:
             repo = Repository(conn)
@@ -142,6 +155,7 @@ class MessagingService:
         context_ref_id: str | None = None,
         unread_only: bool = False,
         supplier_id: str | None = None,
+        archived: bool = False,
     ) -> ConversationPage:
         size = min(
             page_size or self.settings.conversations_page_size,
@@ -157,6 +171,7 @@ class MessagingService:
                 context_type=context_type,
                 context_ref_id=context_ref_id,
                 unread_only=unread_only,
+                archived=archived,
             )
             unread = await repo.unread_total(ids)
         return ConversationPage(tuple(items), total, page, size, unread)
@@ -181,6 +196,14 @@ class MessagingService:
                 repo, caller, conversation_id, lock=True, supplier_id=supplier_id
             )
             caller = self._acting_id(conv, caller, supplier_id)
+            if conv.is_direct:  # neutral: indistinguishable from an unknown conversation
+                for p in conv.participants:
+                    if (
+                        p.user_id != caller
+                        and p.user_id not in self.settings.platform_ids
+                        and await repo.has_blocked([p.user_id], caller)
+                    ):
+                        raise NotFoundError("Conversation not found", code="conversation_not_found")
             msg_cap = self.settings.max_messages_per_conversation
             dedupe = (
                 user_message_dedupe_key(caller, d.client_message_id)
@@ -288,6 +311,59 @@ class MessagingService:
             self.publisher.publish(ReadUpdated(state))
         return state
 
+    async def unread_total(self, caller: str, supplier_id: str | None = None) -> int:
+        """Badge count: unread messages in visible, non-muted, non-archived conversations."""
+        async with self.db.read() as conn:
+            ids = (caller, supplier_id) if supplier_id else (caller,)
+            return await Repository(conn).unread_total(ids)
+
+    async def set_preferences(
+        self,
+        caller: str,
+        conversation_id: str,
+        *,
+        muted: bool | None,
+        archived: bool | None,
+        supplier_id: str | None = None,
+    ) -> Participant:
+        async with self.db.transaction() as conn:
+            repo = Repository(conn)
+            conv = await self._require_access(
+                repo, caller, conversation_id, lock=True, supplier_id=supplier_id
+            )
+            actor = self._acting_id(conv, caller, supplier_id)
+            await repo.set_preferences(conversation_id, actor, muted=muted, archived=archived)
+            conv = await repo.get_conversation(conversation_id)
+        assert conv is not None
+        me = conv.participant(actor)
+        assert me is not None
+        return me
+
+    # ------------------------------------------------------------ blocks
+
+    async def block_user(self, caller: str, target: str, supplier_id: str | None = None) -> None:
+        if target in (caller, supplier_id):
+            raise InvalidInputError("You cannot block yourself", code="cannot_block_self")
+        if target in self.settings.platform_ids:
+            raise InvalidInputError("This account cannot be blocked", code="cannot_block_platform")
+        async with self.db.transaction() as conn:
+            repo = Repository(conn)
+            # a verified supplier owner blocks as the supplier identity too (threads address sup_*)
+            for blocker in (caller, supplier_id):
+                if blocker:
+                    await repo.add_block(blocker, target, self.clock())
+
+    async def unblock_user(self, caller: str, target: str, supplier_id: str | None = None) -> None:
+        async with self.db.transaction() as conn:
+            repo = Repository(conn)
+            for blocker in (caller, supplier_id):
+                if blocker:
+                    await repo.remove_block(blocker, target)
+
+    async def list_blocks(self, caller: str) -> list[tuple[str, datetime]]:
+        async with self.db.read() as conn:
+            return await Repository(conn).list_blocks(caller)
+
     # ------------------------------------------------------------ helpers
 
     async def _require_access(
@@ -304,6 +380,11 @@ class MessagingService:
             raise NotFoundError("Conversation not found", code="conversation_not_found")
         if not (conv.is_participant(caller) or (supplier_id and conv.is_participant(supplier_id))):
             raise ForbiddenError("You are not a participant of this conversation")
+        if conv.is_direct:  # threads with someone the caller blocked are hidden
+            mine = [x for x in (caller, supplier_id) if x and conv.is_participant(x)]
+            for p in conv.participants:
+                if p.user_id not in mine and await repo.has_blocked(mine, p.user_id):
+                    raise NotFoundError("Conversation not found", code="conversation_not_found")
         return conv
 
     @staticmethod

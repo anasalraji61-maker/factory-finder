@@ -17,6 +17,42 @@ router = APIRouter()
 CACHE = "public, max-age=31536000, immutable"
 
 
+def _parse_range(header: str | None, size: int) -> tuple[int, int] | None | str:
+    """None = no/ignorable Range header (serve 200); 'bad' = unsatisfiable (416); else inclusive (start, end).
+    Only a single ``bytes=a-b`` / ``a-`` / ``-n`` range is honoured; multi-range requests are served whole."""
+    if not header or not header.lower().startswith("bytes=") or "," in header:
+        return None
+    spec = header[6:].strip()
+    a, sep, b = spec.partition("-")
+    if not sep or not (a.isascii() and b.isascii()) or not (a.isdigit() or a == "") or not (b.isdigit() or b == "") or (a == "" and b == ""):
+        return None
+    if a == "":  # suffix
+        n = int(b)
+        if n == 0:
+            return "bad"
+        return max(0, size - n), size - 1
+    start = int(a)
+    end = min(int(b), size - 1) if b else size - 1
+    if start >= size or end < start:
+        return "bad"
+    return start, end
+
+
+def _body_response(request: Request, data: bytes, media_type: str, headers: dict[str, str]) -> Response:
+    """200/206/416 with HEAD support (headers only, true Content-Length) and single-range handling."""
+    headers = {**headers, "Accept-Ranges": "bytes"}
+    rng = _parse_range(request.headers.get("range"), len(data))
+    status, body = 200, data
+    if rng == "bad":
+        return Response(status_code=416, headers={**headers, "Content-Range": f"bytes */{len(data)}"})
+    if isinstance(rng, tuple):
+        status, body = 206, data[rng[0] : rng[1] + 1]
+        headers["Content-Range"] = f"bytes {rng[0]}-{rng[1]}/{len(data)}"
+    if request.method == "HEAD":
+        return Response(status_code=status, media_type=media_type, headers={**headers, "Content-Length": str(len(body))})
+    return Response(body, status_code=status, media_type=media_type, headers=headers)
+
+
 def _svc(request: Request) -> MediaService:
     return request.app.state.service
 
@@ -57,6 +93,7 @@ async def delete_image(media_id: str, request: Request) -> Response:
     return Response(status_code=204)
 
 
+@router.head("/v1/media/files/{filename}", operation_id="headImageFile")
 @router.get("/v1/media/files/{filename}")
 async def get_file(filename: str, request: Request, w: int | None = None) -> Response:
     m = FILENAME_RE.fullmatch(filename)
@@ -80,7 +117,7 @@ async def get_file(filename: str, request: Request, w: int | None = None) -> Res
     }  # fmt: skip
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
-    return Response(data, media_type=EXTS[ext], headers=headers)
+    return _body_response(request, data, EXTS[ext], headers)
 
 
 PRIVATE_HEADERS = {
@@ -90,9 +127,9 @@ PRIVATE_HEADERS = {
 }  # fmt: skip
 
 
-def _private_response(row, data: bytes) -> Response:
+def _private_response(request: Request, row, data: bytes) -> Response:
     headers = {**PRIVATE_HEADERS, "Content-Disposition": f'inline; filename="{row.id}.{row.ext}"'}
-    return Response(data, media_type=EXTS[row.ext], headers=headers)
+    return _body_response(request, data, EXTS[row.ext], headers)
 
 
 @router.post("/v1/media/files/{media_id}/sign", response_model=SignedUrl)
@@ -105,6 +142,7 @@ async def sign_private(media_id: str, request: Request) -> Response:
     return Response(signed.model_dump_json(), media_type="application/json", headers={"Cache-Control": "private, no-store"})
 
 
+@router.head("/v1/media/private/{filename}", operation_id="headPrivateFile")
 @router.get("/v1/media/private/{filename}")
 async def get_private(
     filename: str, request: Request, u: str | None = None, exp: str | None = None, sig: str | None = None,
@@ -114,9 +152,10 @@ async def get_private(
         raise NotFound("File not found")
     viewer = sanitize_id(request.headers.get("x-user-id"))
     row, data = await _svc(request).read_private(m.group(1), m.group(2), viewer, u, exp, sig)
-    return _private_response(row, data)
+    return _private_response(request, row, data)
 
 
+@router.head("/v1/media/admin/files/{name}", operation_id="headAdminFile")
 @router.get("/v1/media/admin/files/{name}")
 async def admin_get(name: str, request: Request) -> Response:
     """Admin read (gateway passthrough injects the service admin token). 404 when no admin token is configured."""
@@ -131,7 +170,7 @@ async def admin_get(name: str, request: Request) -> Response:
     if not ID_RE.fullmatch(media_id) or (name != media_id and not FILENAME_RE.fullmatch(name)):
         raise NotFound("File not found")
     row, data = await svc.read_admin(media_id)
-    return _private_response(row, data)
+    return _private_response(request, row, data)
 
 
 @router.post("/v1/internal/users/{user_id}/export")

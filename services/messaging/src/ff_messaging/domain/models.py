@@ -74,6 +74,8 @@ class Participant:
     last_read_message_id: str | None = None
     last_read_at: datetime | None = None
     unread_count: int = 0
+    muted: bool = False
+    archived: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +109,17 @@ class Conversation:
 
     def is_participant(self, user_id: str) -> bool:
         return self.participant(user_id) is not None
+
+    @property
+    def is_direct(self) -> bool:
+        """Block rules apply to two-party conversations only."""
+        return len(self.participants) == 2
+
+    def view_for(self, user_id: str | None, alias: str | None = None) -> "Participant | None":
+        p = self.participant(user_id) if user_id is not None else None
+        if p is None and alias is not None:
+            p = self.participant(alias)
+        return p
 
     def unread_count_for(self, user_id: str | None, alias: str | None = None) -> int:
         participant = self.participant(user_id) if user_id is not None else None

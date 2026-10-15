@@ -10,12 +10,13 @@ message, idempotency keys that embed their id, and titles of threads they create
 import hashlib
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, or_, select, update
 
 from ff_messaging.persistence.database import Database
 from ff_messaging.persistence.tables import conversation_participants as parts
 from ff_messaging.persistence.tables import conversations as convs
 from ff_messaging.persistence.tables import messages as msgs
+from ff_messaging.persistence.tables import user_blocks as blocks
 
 MAX_CONVERSATIONS = 500
 MAX_MESSAGES = 5000
@@ -77,6 +78,7 @@ async def erase_user(db: Database, user_id: str) -> dict[str, int]:
         )  # fmt: skip
         await conn.execute(update(convs).where(convs.c.last_message_sender_id == user_id).values(last_message_sender_id=tomb))
         await conn.execute(update(convs).where(convs.c.created_by == user_id).values(created_by=tomb))
+        await conn.execute(delete(blocks).where(or_(blocks.c.blocker_id == user_id, blocks.c.blocked_id == user_id)))
         p = await conn.execute(
             update(parts).where(parts.c.user_id == user_id).values(user_id=tomb, unread_count=0)
         )

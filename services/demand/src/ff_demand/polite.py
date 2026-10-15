@@ -1,0 +1,93 @@
+"""Lawful, polite access for any adapter that reads public web pages (CLAUDE.md rule 6).
+
+* sources whose robots/ToS forbid automation are refused before any request,
+* robots.txt is honoured per host (cached),
+* >= 3 s between requests to the same host (never configurable below that),
+* honest ``User-Agent``; never solves CAPTCHAs or logs in.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import time
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from urllib.parse import urlsplit
+from urllib.robotparser import RobotFileParser
+
+import httpx
+
+from ff_demand.errors import Forbidden
+
+MIN_INTERVAL = 3.0
+
+
+@dataclass(frozen=True)
+class SourcePolicy:
+    name: str
+    automated_access_allowed: bool = False  # ToS flag: must be affirmatively True
+    robots_disallowed: bool = False
+
+
+def check_source(policy: SourcePolicy | None, blocked: set[str] | None = None) -> None:
+    if policy is None or not policy.automated_access_allowed or policy.robots_disallowed:
+        raise Forbidden("Source disallows automated access", code="source_disallowed")
+    if blocked and policy.name.casefold() in blocked:
+        raise Forbidden("Source is switched off", code="source_disallowed")
+
+
+class PoliteClient:
+    def __init__(
+        self,
+        policy: SourcePolicy | None,
+        user_agent: str,
+        *,
+        client: httpx.AsyncClient,
+        min_interval: float = MIN_INTERVAL,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    ):
+        if "bot" not in user_agent.casefold() or not user_agent.strip():
+            raise ValueError("User-Agent must identify the bot honestly")
+        self.policy, self.user_agent, self.client = policy, user_agent, client
+        self.min_interval = max(min_interval, MIN_INTERVAL)
+        self._clock, self._sleep = clock, sleep
+        self._last: dict[str, float] = {}
+        self._robots: dict[str, RobotFileParser] = {}
+        self._lock = asyncio.Lock()
+
+    async def _wait(self, host: str) -> None:
+        async with self._lock:
+            last = self._last.get(host)
+            if last is not None:
+                gap = self.min_interval - (self._clock() - last)
+                if gap > 0:
+                    await self._sleep(gap)
+            self._last[host] = self._clock()
+
+    async def _allowed(self, url: str) -> bool:
+        p = urlsplit(url)
+        origin = f"{p.scheme}://{p.netloc}"
+        rp = self._robots.get(origin)
+        if rp is None:
+            await self._wait(p.netloc)
+            resp = await self.client.get(origin + "/robots.txt", headers=self._headers())
+            rp = RobotFileParser()
+            if resp.status_code in (401, 403):
+                rp.parse(["User-agent: *", "Disallow: /"])
+            elif resp.status_code == 200:
+                rp.parse(resp.text.splitlines())
+            else:
+                rp.parse([])
+            self._robots[origin] = rp
+        return rp.can_fetch(self.user_agent, url)
+
+    def _headers(self) -> dict[str, str]:
+        return {"User-Agent": self.user_agent}
+
+    async def get(self, url: str) -> httpx.Response:
+        check_source(self.policy)
+        if not await self._allowed(url):
+            raise Forbidden("robots.txt disallows this URL", code="robots_disallowed")
+        await self._wait(urlsplit(url).netloc)
+        return await self.client.get(url, headers=self._headers())

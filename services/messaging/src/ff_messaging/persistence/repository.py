@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ColumnElement, and_, func, insert, select, update
+from sqlalchemy import ColumnElement, and_, delete, exists, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ff_messaging.domain.models import (
@@ -25,6 +25,7 @@ from ff_messaging.domain.models import (
 from ff_messaging.persistence.tables import conversation_participants as participants_t
 from ff_messaging.persistence.tables import conversations as conversations_t
 from ff_messaging.persistence.tables import messages as messages_t
+from ff_messaging.persistence.tables import user_blocks as blocks_t
 
 
 def _to_participant(row: Mapping[str, Any], last_seq: int) -> Participant:
@@ -37,6 +38,8 @@ def _to_participant(row: Mapping[str, Any], last_seq: int) -> Participant:
         last_read_at=row["last_read_at"],
         # Exact by invariant: every message after a participant's read pointer is someone else's.
         unread_count=max(last_seq - row["last_read_seq"], 0),
+        muted=bool(row["muted"]),
+        archived=bool(row["archived"]),
     )
 
 
@@ -202,9 +205,14 @@ class Repository:
         context_type: ContextType | None,
         context_ref_id: str | None,
         unread_only: bool,
+        archived: bool = False,
     ) -> list[ColumnElement[bool]]:
         ids = [user_id] if isinstance(user_id, str) else list(user_id)
-        filters: list[ColumnElement[bool]] = [participants_t.c.user_id.in_(ids)]
+        filters: list[ColumnElement[bool]] = [
+            participants_t.c.user_id.in_(ids),
+            participants_t.c.archived.is_(archived),
+            ~self._hidden_by_block(ids),
+        ]
         if context_type is not None:
             filters.append(conversations_t.c.context_type == context_type.value)
         if context_ref_id is not None:
@@ -222,6 +230,7 @@ class Repository:
         context_type: ContextType | None = None,
         context_ref_id: str | None = None,
         unread_only: bool = False,
+        archived: bool = False,
     ) -> tuple[list[Conversation], int]:
         """The user's conversations, most recent activity first, plus the filtered total."""
         joined = participants_t.join(
@@ -232,6 +241,7 @@ class Repository:
             context_type=context_type,
             context_ref_id=context_ref_id,
             unread_only=unread_only,
+            archived=archived,
         )
         total = (
             await self.conn.execute(select(func.count()).select_from(joined).where(and_(*filters)))
@@ -264,9 +274,94 @@ class Repository:
                 )
             )
             .select_from(joined)
-            .where(participants_t.c.user_id.in_(ids))
+            .where(
+                participants_t.c.user_id.in_(ids),
+                participants_t.c.muted.is_(False),
+                participants_t.c.archived.is_(False),
+                ~self._hidden_by_block(ids),
+            )
         )
         return int((await self.conn.execute(stmt)).scalar_one())
+
+    @staticmethod
+    def _hidden_by_block(ids: Sequence[str]) -> ColumnElement[bool]:
+        """True for a direct conversation whose counterparty one of ``ids`` has blocked."""
+        other = participants_t.alias("blk_other")
+        count = participants_t.alias("blk_count")
+        return exists(
+            select(1)
+            .select_from(
+                other.join(
+                    blocks_t,
+                    and_(blocks_t.c.blocker_id.in_(list(ids)), blocks_t.c.blocked_id == other.c.user_id),
+                )
+            )
+            .where(
+                other.c.conversation_id == participants_t.c.conversation_id,
+                other.c.user_id.notin_(list(ids)),
+                select(func.count())
+                .select_from(count)
+                .where(count.c.conversation_id == participants_t.c.conversation_id)
+                .correlate(participants_t)
+                .scalar_subquery()
+                == 2,
+            )
+        )
+
+    async def set_preferences(
+        self, conversation_id: str, user_id: str, *, muted: bool | None, archived: bool | None
+    ) -> None:
+        values: dict[str, Any] = {}
+        if muted is not None:
+            values["muted"] = muted
+        if archived is not None:
+            values["archived"] = archived
+        if values:
+            await self.conn.execute(
+                update(participants_t)
+                .where(
+                    participants_t.c.conversation_id == conversation_id,
+                    participants_t.c.user_id == user_id,
+                )
+                .values(**values)
+            )
+
+    # ---------------------------------------------------------------- blocks
+
+    async def add_block(self, blocker_id: str, blocked_id: str, now: datetime) -> None:
+        existing = await self.conn.execute(
+            select(blocks_t.c.blocker_id).where(
+                blocks_t.c.blocker_id == blocker_id, blocks_t.c.blocked_id == blocked_id
+            )
+        )
+        if existing.first() is None:
+            await self.conn.execute(
+                insert(blocks_t).values(blocker_id=blocker_id, blocked_id=blocked_id, created_at=now)
+            )
+
+    async def remove_block(self, blocker_id: str, blocked_id: str) -> None:
+        await self.conn.execute(
+            delete(blocks_t).where(
+                blocks_t.c.blocker_id == blocker_id, blocks_t.c.blocked_id == blocked_id
+            )
+        )
+
+    async def list_blocks(self, blocker_id: str) -> list[tuple[str, datetime]]:
+        rows = await self.conn.execute(
+            select(blocks_t.c.blocked_id, blocks_t.c.created_at)
+            .where(blocks_t.c.blocker_id == blocker_id)
+            .order_by(blocks_t.c.created_at, blocks_t.c.blocked_id)
+            .limit(1000)
+        )
+        return [(r[0], r[1]) for r in rows]
+
+    async def has_blocked(self, blocker_ids: Sequence[str], target_id: str) -> bool:
+        row = await self.conn.execute(
+            select(blocks_t.c.blocker_id)
+            .where(blocks_t.c.blocker_id.in_(list(blocker_ids)), blocks_t.c.blocked_id == target_id)
+            .limit(1)
+        )
+        return row.first() is not None
 
     # ---------------------------------------------------------------- messages
 
@@ -329,6 +424,14 @@ class Repository:
             .where(participants_t.c.conversation_id == message.conversation_id)
             .values(activity_at=message.created_at)
         )
+        # a new message resurfaces an archived thread for everyone but the sender
+        resurface = [
+            participants_t.c.conversation_id == message.conversation_id,
+            participants_t.c.archived.is_(True),
+        ]
+        if message.sender_id is not None:
+            resurface.append(participants_t.c.user_id != message.sender_id)
+        await self.conn.execute(update(participants_t).where(*resurface).values(archived=False))
 
     async def advance_read_pointer(
         self,

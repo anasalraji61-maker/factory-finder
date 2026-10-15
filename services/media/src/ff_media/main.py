@@ -70,6 +70,15 @@ def create_app(
             return _err(401, "invalid_internal_token", "Missing or invalid X-Internal-Token")
         return await call_next(request)
 
+    @app.middleware("http")
+    async def no_store_errors(request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        sensitive = path.startswith(("/v1/media/private/", "/v1/media/admin/")) or path.endswith("/sign")
+        if "cache-control" not in response.headers and (response.status_code >= 400 or sensitive):
+            response.headers["Cache-Control"] = "no-store"  # errors and private paths are never cacheable
+        return response
+
     @app.exception_handler(MediaError)
     async def media_error(_: Request, exc: MediaError):
         return _err(exc.status_code, exc.code, exc.message, exc.details, exc.headers)

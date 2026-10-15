@@ -16,6 +16,7 @@ from sqlalchemy import (
     delete,
     func,
     insert,
+    or_,
     select,
     text,
     update,
@@ -45,6 +46,17 @@ drafts = Table(
     Column("approved_at", DateTime(timezone=True), nullable=True, index=True),
     Column("created_at", DateTime(timezone=True), nullable=False, index=True),
     Column("version", Integer, nullable=False, default=1),
+    Column("thread_key", String(64), nullable=True, index=True),  # hash of normalised thread URL
+    Column("author_key", String(64), nullable=True, index=True),  # hash of the poster handle
+    Column("doc", JSON, nullable=False),
+)
+# Opt-outs / takedowns: hashes only (never the handle or URL itself). Never purged.
+suppressions = Table(
+    "suppressions",
+    metadata,
+    Column("key", String(64), primary_key=True),
+    Column("kind", String(16), nullable=False),  # author | thread
+    Column("created_at", DateTime(timezone=True), nullable=False),
     Column("doc", JSON, nullable=False),
 )
 
@@ -96,6 +108,8 @@ class Store:
                     signal_id=doc["signal_id"],
                     status=doc["status"],
                     created_at=created_at,
+                    thread_key=doc.get("thread_key"),
+                    author_key=doc.get("author_key"),
                     doc=doc,
                 )
             )
@@ -167,6 +181,112 @@ class Store:
                 update(drafts)
                 .where(drafts.c.id == doc["id"], drafts.c.status == expected_status)
                 .values(**vals)
+            )
+            if res.rowcount != 1:
+                await c.rollback()
+                return False
+        return True
+
+    async def drafts_by_keys(self, keys: list[str]) -> list[dict]:
+        if not keys:
+            return []
+        q = select(drafts.c.doc).where(
+            or_(drafts.c.thread_key.in_(keys), drafts.c.author_key.in_(keys))
+        )
+        async with self.engine.connect() as c:
+            return [r[0] for r in await c.execute(q)]
+
+    async def is_suppressed(self, keys: list[str]) -> bool:
+        keys = [k for k in keys if k]
+        if not keys:
+            return False
+        async with self.engine.connect() as c:
+            return await self._suppressed(c, keys)
+
+    @staticmethod
+    async def _suppressed(c, keys: list[str]) -> bool:
+        q = select(func.count()).select_from(suppressions).where(suppressions.c.key.in_(keys))
+        return (await c.execute(q)).scalar_one() > 0
+
+    async def add_suppression(self, key: str, kind: str, created_at: datetime, doc: dict) -> bool:
+        """Idempotent; returns True when newly recorded. There is deliberately no delete."""
+        async with self.engine.begin() as c:
+            if await self._suppressed(c, [key]):
+                return False
+            await c.execute(
+                insert(suppressions).values(key=key, kind=kind, created_at=created_at, doc=doc)
+            )
+        return True
+
+    async def list_suppressions(self, limit: int = MAX_LIST) -> list[dict]:
+        async with self.engine.connect() as c:
+            q = select(suppressions.c.doc).order_by(suppressions.c.created_at.desc()).limit(limit)
+            return [r[0] for r in await c.execute(q)]
+
+    async def approve_draft(
+        self,
+        doc: dict,
+        now: datetime,
+        *,
+        cap: int,
+        day_start: datetime,
+        day_end: datetime,
+        cooldown_since: datetime,
+    ) -> str:
+        """Atomic approval: status CAS + opt-out + per-thread/author cooldown + daily cap, all in
+        one serialised transaction (process lock + PostgreSQL advisory lock across replicas).
+        Returns ok | conflict | opted_out | cooldown | cap."""
+        async with self._cap_lock, self.engine.begin() as c:
+            if c.dialect.name == "postgresql":
+                await c.execute(text("SELECT pg_advisory_xact_lock(727001)"))
+            keys = [k for k in (doc.get("thread_key"), doc.get("author_key")) if k]
+            if await self._suppressed(c, keys):
+                return "opted_out"
+            tk, ak = doc.get("thread_key"), doc.get("author_key")
+            same = [
+                col == v for col, v in ((drafts.c.thread_key, tk), (drafts.c.author_key, ak)) if v
+            ]
+            if same:
+                n = (
+                    await c.execute(
+                        select(func.count())
+                        .select_from(drafts)
+                        .where(
+                            drafts.c.id != doc["id"],
+                            drafts.c.status.in_(("approved", "published")),
+                            drafts.c.approved_at >= cooldown_since,
+                            or_(*same),
+                        )
+                    )
+                ).scalar_one()
+                if n:
+                    return "cooldown"
+            n = (
+                await c.execute(
+                    select(func.count())
+                    .select_from(drafts)
+                    .where(drafts.c.approved_at >= day_start, drafts.c.approved_at < day_end)
+                )
+            ).scalar_one()
+            if n >= cap:
+                return "cap"
+            res = await c.execute(
+                update(drafts)
+                .where(drafts.c.id == doc["id"], drafts.c.status == "draft")
+                .values(status="approved", doc=doc, approved_at=now, version=drafts.c.version + 1)
+            )
+            if res.rowcount != 1:
+                await c.rollback()
+                return "conflict"
+        return "ok"
+
+    async def reset_approval(self, doc: dict, expected_status: str) -> bool:
+        """approved|draft -> draft with approved_at cleared (an edit voids the approval)."""
+        async with self._cap_lock, self.engine.begin() as c:
+            res = await c.execute(
+                update(drafts)
+                .where(drafts.c.id == doc["id"], drafts.c.status == expected_status)
+                .values(status="draft", approved_at=None, doc=doc, version=drafts.c.version + 1)
             )
             if res.rowcount != 1:
                 await c.rollback()

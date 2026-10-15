@@ -9,7 +9,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
     [
         ("/v1/search", "sourcing"), ("/v1/listings/lst_1", "sourcing"), ("/v1/quotes/landed-cost", "logistics"), ("/v1/hs/851713", "logistics"), ("/v1/compliance/countries", "logistics"), ("/v1/compliance/checklist", "logistics"), ("/v1/compliancex", None),
         ("/v1/countries", "geo"), ("/v1/trust/suppliers/sup_1", "trust"), ("/v1/trust/suppliers:batch", "trust"),
-        ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/shipments", "tracking"),
+        ("/v1/requests/req_1/offers", "rfq"), ("/v1/conversations", "messaging"), ("/v1/conversations/unread-total", "messaging"), ("/v1/conversations/conv_1/preferences", "messaging"), ("/v1/blocks/usr_1", "messaging"), ("/v1/blocksx", None), ("/v1/shipments", "tracking"),
         ("/v1/validate/container/X", "tracking"), ("/v1/watchlist", "notifications"), ("/v1/devices", "notifications"), ("/v1/notification-prefs", "notifications"), ("/v1/assistant/query", "assistant"),
         ("/v1/media/images", "media"), ("/v1/media/files/abc.jpg", "media"), ("/v1/mediax", None),
         ("/v1/feed/home", "feed"), ("/v1/feed/posts/post_1/like", "feed"), ("/v1/feed/trending", "feed"), ("/v1/feedx", None), ("/v1/admin/feed/posts", None),
