@@ -32,6 +32,17 @@ const List<String> kProductCurrencies = ['USD', 'EUR', 'CNY', 'IQD', 'TRY', 'AED
 
 const int kMaxProductImages = 8;
 
+/// Formats [v] without exponent notation (Dart prints 1e-7 for small values),
+/// at most 6 decimals, trailing zeros trimmed: the editor's plain-decimal form.
+String plainDecimalString(double v) {
+  if (!v.isFinite) return '';
+  var t = v.toStringAsFixed(6);
+  if (t.contains('.')) {
+    t = t.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+  }
+  return t;
+}
+
 double? _num(Object? v) {
   if (v is num) return v.toDouble();
   if (v is String) return double.tryParse(v);
@@ -229,8 +240,8 @@ class OwnedListing {
         unit: unit,
         moq: moq == null ? '1' : '$moq',
         incoterm: incoterm,
-        unitWeightKg: unitWeightKg == null ? '' : '$unitWeightKg',
-        unitVolumeM3: unitVolumeM3 == null ? '' : '$unitVolumeM3',
+        unitWeightKg: unitWeightKg == null ? '' : plainDecimalString(unitWeightKg!),
+        unitVolumeM3: unitVolumeM3 == null ? '' : plainDecimalString(unitVolumeM3!),
         hsCode: hsCode ?? '',
         leadMin: leadTimeDays == null ? '' : '${leadTimeDays!.min}',
         leadMax: leadTimeDays == null ? '' : '${leadTimeDays!.max}',

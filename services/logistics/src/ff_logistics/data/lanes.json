@@ -2342,5 +2342,8 @@
   "air": 0.6,
   "rail": 0.03,
   "road": 0.1
- }
+ },
+ "confidence": "low",
+ "as_of": "2026-10",
+ "label": "indicative estimate, verify with a forwarder"
 }

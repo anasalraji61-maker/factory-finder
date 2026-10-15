@@ -98,10 +98,15 @@ def stem(token: str) -> str:
 # Unit vocabulary: every spelling (post-normalize/stem) -> one canonical token, so "250 كغم" == "250kg" == "250 kilogram".
 _UNIT_SPELLINGS: dict[str, tuple[str, ...]] = {
     "kg": ("kg", "kgs", "kilo", "kilogram", "kilogramme", "كغ", "كغم", "كجم", "كلغ", "كيلو", "كيلوغرام", "كيلوجرام"),
-    "ton": ("ton", "tonne", "tonnes", "mt", "طن", "اطنان", "أطنان"),
-    "meter": ("m", "meter", "metre", "متر", "امتار"),
-    "liter": ("l", "liter", "litre", "لتر", "لتره", "لترات"),
-    "pc": ("pc", "pcs", "piece", "قطعه", "قطع"),
+    "ton": ("ton", "tonne", "tonnes", "mt", "طن", "اطنان", "أطنان", "吨"),
+    "meter": ("m", "meter", "metre", "متر", "امتار", "米"),
+    "liter": ("l", "liter", "litre", "لتر", "لتره", "لترات", "升"),
+    "pc": ("pc", "pcs", "piece", "pce", "قطعه", "قطع", "件", "个"),
+    "set": ("set", "طقم", "اطقم", "套"),
+    "pair": ("pair", "prs", "زوج", "ازواج", "双", "对"),
+    "dozen": ("dozen", "doz", "دزينه", "打"),
+    "m2": ("m2", "sqm"),
+    "m3": ("m3", "cbm"),
 }
 _UNIT = {stem(normalize(sp)): canon for canon, sps in _UNIT_SPELLINGS.items() for sp in sps}
 _UNIT.update({normalize(sp): canon for canon, sps in _UNIT_SPELLINGS.items() for sp in sps})

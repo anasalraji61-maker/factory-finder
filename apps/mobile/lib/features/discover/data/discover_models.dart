@@ -25,6 +25,8 @@ class ListingQuery {
     this.category,
     this.supplierId,
     this.sort = SortOption.relevance,
+    this.minPrice,
+    this.maxPrice,
   });
 
   final String query;
@@ -37,11 +39,17 @@ class ListingQuery {
   final String? supplierId;
   final SortOption sort;
 
+  /// Unit price bounds in USD (`min_price` / `max_price` of GET /v1/search).
+  final double? minPrice;
+  final double? maxPrice;
+
   int get activeFilterCount =>
       (kind != null ? 1 : 0) +
       (condition != null ? 1 : 0) +
       (originCountry != null ? 1 : 0) +
       (maxMoq != null ? 1 : 0) +
+      (minPrice != null ? 1 : 0) +
+      (maxPrice != null ? 1 : 0) +
       (verifiedOnly ? 1 : 0);
 
   ListingQuery copyWith({
@@ -62,6 +70,8 @@ class ListingQuery {
       category: clearCategory ? null : (category ?? this.category),
       supplierId: supplierId,
       sort: sort ?? this.sort,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
     );
   }
 
@@ -76,7 +86,9 @@ class ListingQuery {
       other.verifiedOnly == verifiedOnly &&
       other.category == category &&
       other.supplierId == supplierId &&
-      other.sort == sort;
+      other.sort == sort &&
+      other.minPrice == minPrice &&
+      other.maxPrice == maxPrice;
 
   @override
   int get hashCode => Object.hash(
@@ -89,7 +101,20 @@ class ListingQuery {
         category,
         supplierId,
         sort,
+        minPrice,
+        maxPrice,
       );
+}
+
+/// Query-string form of a price bound: "10" for whole numbers, else "10.5".
+String priceParam(double v) =>
+    v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
+
+/// Parses a price text field: null when blank, malformed or negative.
+double? parsePriceInput(String text) {
+  final v = double.tryParse(text.trim().replaceAll(',', '.'));
+  if (v == null || v.isNaN || v.isInfinite || v < 0) return null;
+  return v;
 }
 
 /// Category keys per listing kind (labels: `cat.<key>`).

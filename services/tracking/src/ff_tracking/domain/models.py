@@ -6,7 +6,7 @@ objects directly so the wire format and the domain cannot drift apart.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
@@ -107,6 +107,21 @@ class TrackingSnapshot(_Value):
         return self.events[-1].status if self.events else None
 
 
+def merge_events(old: list[TrackingEvent], new: list[TrackingEvent]) -> list[TrackingEvent]:
+    """Union of two polls of the same provider: same id or same status + place within 2 minutes collapse (the
+    newer copy wins), ordered by time then id."""
+    merged: list[TrackingEvent] = []
+    for e in [*old, *new]:  # new last, so it replaces an older copy
+        merged = [m for m in merged if m.id != e.id and not (
+            m.status == e.status and _place(m) == _place(e) and abs(m.timestamp - e.timestamp) <= timedelta(seconds=120))]
+        merged.append(e)
+    return sorted(merged, key=lambda e: (e.timestamp, e.id))
+
+
+def _place(e: TrackingEvent) -> str:
+    return (e.location.hub_id or e.location.name) if e.location else ""
+
+
 class Shipment(BaseModel):
     """The tracked-shipment aggregate owned by one user."""
 
@@ -155,6 +170,8 @@ class Shipment(BaseModel):
             self.updated_at = now
             return
         events = sorted(snapshot.events, key=lambda e: e.timestamp)
+        if events and self.events and self.provider == snapshot.provider:
+            events = merge_events(self.events, events)  # a shorter / windowed answer never drops history
         if events and self.status == ShipmentStatus.DELIVERED and events[-1].status != ShipmentStatus.DELIVERED:
             events = []  # a stale/partial provider answer must not reopen a delivered shipment
         if events:
@@ -171,8 +188,9 @@ class Shipment(BaseModel):
             self.carrier = snapshot.carrier
         if snapshot.milestones:
             self.milestones = dict(snapshot.milestones)
+        landed_at = self.milestones.get("arrived") if self.destination_hub_id else None
         self.eta, self.initial_eta, self.delayed, self.delay_hours = assess_eta(
-            self.eta, self.initial_eta, self.status, now)
+            self.eta, self.initial_eta, self.status, now, landed_at)
         self.warning = snapshot.warning
         self.provider = snapshot.provider
         self.last_refreshed_at = now

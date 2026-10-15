@@ -29,9 +29,11 @@ import httpx
 
 from ff_tracking.adapters.base import ProviderUnavailable, VesselEta
 from ff_tracking.domain.carriers import carrier_for_awb_prefix, carrier_for_bl_prefix, find_carrier
+from ff_tracking.domain.dcsa import dcsa_raw_events, is_dcsa
 from ff_tracking.domain.enums import ReferenceType
 from ff_tracking.domain.models import CarrierRef, GeoPoint, TrackingSnapshot, VesselRef
 from ff_tracking.domain.normalize import location_of, normalize_events, parse_ts, resolve_location
+from ff_tracking.domain.validators import parse_vessel
 
 GLOBAL_KILL_SWITCH_ENV = "FF_TRACKING_KILL_SWITCH"
 MIN_INTERVAL_FLOOR_S = 3.0
@@ -167,11 +169,7 @@ class _HttpBase:
 
 
 def _vessel(v: Any) -> VesselRef | None:
-    if isinstance(v, Mapping) and v.get("name"):
-        imo = str(v.get("imo") or "")
-        return VesselRef(name=str(v["name"]), imo=imo if imo.isdigit() and len(imo) == 7 else None,
-                         voyage=v.get("voyage"))
-    return None
+    return parse_vessel(v)
 
 
 class HttpContainerProvider(_HttpBase):
@@ -208,10 +206,15 @@ class HttpContainerProvider(_HttpBase):
         """UNVERIFIED shape: data.{events[{id,type,description,occurred_at,actual,location{unlocode,
         name,country,lat,lon},vessel}],eta,origin.unlocode,destination.unlocode,vessel,carrier.scac}."""
         try:
-            d = payload["data"]
+            if is_dcsa(payload):  # DCSA Track & Trace events: no envelope, destination/ETA come from the events
+                d = {"events": [], "destination": {"unlocode": payload.get("destination")}, "origin": {"unlocode": payload.get("origin")}}
+                raw = dcsa_raw_events(payload)
+            else:
+                d = payload["data"]
+                raw = None
             origin_hub = (d.get("origin") or {}).get("unlocode")
             dest_hub = (d.get("destination") or {}).get("unlocode")
-            raw = [{
+            raw = raw if raw is not None else [{
                 "code": e.get("type"), "description": e.get("description"), "timestamp": e.get("occurred_at"),
                 "actual": e.get("actual", True), "event_id": e.get("id"), "vessel": e.get("vessel"),
                 "hub": (e.get("location") or {}).get("unlocode"), "name": (e.get("location") or {}).get("name"),

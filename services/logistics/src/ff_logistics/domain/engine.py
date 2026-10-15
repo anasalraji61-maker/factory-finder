@@ -44,8 +44,23 @@ def freight_volatility(mode: str, oc: str, dc: str) -> tuple[Decimal, str, str]:
     return frac, label, note
 
 
+# Countries with no continuous rail path from China/Europe origins (Gulf peninsula, Levant coast, Africa): rail is
+# never offered to or from them. Iraq stays (rail to Turkey + truck via Ibrahim Khalil is listed in routes.json).
+NO_RAIL_CORRIDOR = {"AE", "SA", "KW", "QA", "OM", "BH", "JO", "EG", "LY", "DZ", "MA", "TN", "NG", "KE", "ZA", "GH", "SN",
+                    "IL", "LB", "SY", "YE"}
+ROAD_MAX_KM = Decimal(6500)  # longer international truck hauls are only built when the caller asks for road explicitly
+ESTIMATE_AS_OF = "2026-10"
+
 INS_RATE = {"sea": "0.003", "air": "0.002", "road": "0.0035", "rail": "0.003"}
 W_COST, W_TIME = Decimal("0.6"), Decimal("0.4")  # recommendation weights
+
+
+def estimate_confidence(mode: str, oc: str, dc: str, synthetic: bool) -> str:
+    """Never "high": tables are static. "medium" only for sea/air on a tabulated lane away from disrupted corridors."""
+    fam = family(mode)
+    if synthetic or fam in ("road", "rail") or {oc, dc} & VOLATILE_COUNTRIES or (oc == "CN" and dc == "US"):
+        return "low"
+    return "medium"
 
 
 def family(mode: str) -> str:
@@ -83,6 +98,7 @@ class Draft:
     days: tuple[int, int]
     co2: float
     countries: set[str] = field(default_factory=set)
+    confidence: str = "low"
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -277,6 +293,12 @@ class Engine:
             if reason:
                 assumptions.append(f"{mode} not offered: {reason}.")
                 continue
+            if mode == "road" and not explicit:
+                km = await self.dist(self.ctx["o_pt"], self.ctx["d_pt"], "road")
+                if km > ROAD_MAX_KM:
+                    assumptions.append(f"road not offered: {km:.0f} km is too far for a realistic truck haul "
+                                       "(request it explicitly to see an estimate).")
+                    continue
             d = await self._build_mode(mode)
             if d is None:
                 assumptions.append(f"{mode} not offered: no usable hub/route found.")
@@ -387,11 +409,15 @@ class Engine:
             if m3 < D(big[0]) and kg < D(big[1]):
                 return f"cargo too small to justify it (needs ~{big[0]:.0f} m3 or {big[1]} kg)"
         if mode == "rail":
+            if oc in NO_RAIL_CORRIDOR or dc in NO_RAIL_CORRIDOR:
+                return "no continuous rail corridor to/from this country"
             lanes = DATA.lanes["lanes"]
             o_r, d_r = DATA.region(oc), DATA.region(dc)
             if not (lanes.get(f"{o_r}>{d_r}") or lanes.get(f"{d_r}>{o_r}") or {}).get("rail_40"):
                 return "no rail service on this lane in the rate table"
         if mode == "road":
+            if "EG" in (oc, dc) and not {oc, dc} & {"LY", "SD", "IL", "JO"}:
+                return "no practical land route (Egypt is reached via Suez/sea, or Sinai/Libya neighbours only)"
             cont = DATA.lanes["continents"]
             if cont.get(oc, "EA") != cont.get(dc, "EA"):
                 return "no land connection between origin and destination"
@@ -412,6 +438,8 @@ class Engine:
         for h in await self.geo.nearest_hubs(d_pt, "sea", 2, None):
             if all(a.hub.id != h.id for a in alts):
                 foreign = h.country_code != dc
+                if foreign and DATA.routes["sea"].get(dc):
+                    continue  # curated routes exist (e.g. IQ): no ad-hoc neighbour-country port
                 alts.append(Alt(h, None, D(250) if foreign else D(0), (2, 4) if foreign else (0, 0), h.name))
         return alts
 
@@ -526,6 +554,7 @@ class Engine:
             o_id, d_id = oc + "-road", dc + "-road"
             summary = f"Door-to-door by truck ({km:.0f} km)"
             main_km = km
+            lane = {}
         else:
             assert oh is not None and alt is not None
             o_id, d_id = oh.id, alt.hub.id
@@ -656,7 +685,9 @@ class Engine:
         co2_t = float(kg) / 1000
         co2 = co2_t * float(co2_km) * DATA.lanes["co2_kg_per_tonne_km"][fam]
         co2 += co2_t * 150 * DATA.lanes["co2_kg_per_tonne_km"]["road"]  # ~150 km inland trucking
-        return Draft(mode, final, o_id, d_id, summary, (days_min, days_max), round(co2, 1), countries)
+        draft = Draft(mode, final, o_id, d_id, summary, (days_min, days_max), round(co2, 1), countries)
+        draft.confidence = estimate_confidence(mode, oc, dc, bool(lane.get("synthetic")))
+        return draft
 
     # ------------------------------------------------------------ outputs
     @staticmethod
@@ -713,6 +744,8 @@ class Engine:
         warns = cargo_warnings(d.mode, self.ctx["kg"], self.ctx["m3"], dg,
                                cargo.air_chargeable_kg(self.ctx["kg"], self.ctx["m3"]))
         warns += value_warnings(goods_usd, d.logistics_usd)
+        warns.append(f"Estimate, confidence {d.confidence}, as of {ESTIMATE_AS_OF}: transit {d.days[0]}-{d.days[1]} days "
+                     "and the cost range are indicative, not a quote; verify with a forwarder.")
         sw = sanctions_warning(d.countries)
         if sw:
             warns.append(sw)

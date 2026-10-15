@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
@@ -27,13 +29,35 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   late final TextEditingController _controller =
       TextEditingController(text: widget.initialQuery);
 
+  Timer? _debounce;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   SearchFacets? _facets;
+
+  /// The query with whatever is currently typed in the field, so typed but
+  /// not yet submitted text is never lost when a filter or sort changes.
+  ListingQuery get _current => _query.copyWith(query: _controller.text.trim());
+
+  void _applyText() {
+    _debounce?.cancel();
+    final text = _controller.text.trim();
+    if (text != _query.query) {
+      setState(() => _query = _query.copyWith(query: text));
+    }
+  }
+
+  void _onTextChanged(String _) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 450), () {
+      if (mounted) _applyText();
+    });
+  }
 
   String _sortLabel(SortOption o) {
     switch (o) {
@@ -56,9 +80,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _FilterSheet(initial: _query, facets: facets),
+      builder: (_) => _FilterSheet(initial: _current, facets: facets),
     );
-    if (result != null) setState(() => _query = result);
+    if (result != null && mounted) {
+      _debounce?.cancel();
+      setState(() => _query = result);
+    }
   }
 
   void _snack(String text) {
@@ -106,7 +133,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         title: TextField(
           controller: _controller,
           textInputAction: TextInputAction.search,
-          onSubmitted: (v) => setState(() => _query = _query.copyWith(query: v.trim())),
+          onChanged: _onTextChanged,
+          onSubmitted: (_) => _applyText(),
           decoration: InputDecoration(
             hintText: context.tr('discover.search_hint'),
             prefixIcon: const Icon(Icons.search),
@@ -149,7 +177,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     isExpanded: true,
                     onChanged: (v) {
                       if (v != null) {
-                        setState(() => _query = _query.copyWith(sort: v));
+                        _debounce?.cancel();
+                        setState(() => _query = _current.copyWith(sort: v));
                       }
                     },
                     items: [
@@ -195,6 +224,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                       ),
                     ),
+                    if (page.total > page.items.length && _query.supplierId == null)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          key: const ValueKey('search-truncated'),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                          ),
+                          child: Text(
+                            context.tr('discover.results_shown', {
+                              'shown': '${page.items.length}',
+                              'total': '${page.total}',
+                            }),
+                            style: const TextStyle(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ),
                     ListingGrid(items: page.items),
                     const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
                   ],
@@ -224,6 +272,31 @@ class _FilterSheetState extends State<_FilterSheet> {
   late String? _origin = widget.initial.originCountry;
   late int? _maxMoq = widget.initial.maxMoq;
   late bool _verified = widget.initial.verifiedOnly;
+  late final TextEditingController _minPrice = TextEditingController(
+    text: widget.initial.minPrice == null ? '' : priceParam(widget.initial.minPrice!),
+  );
+  late final TextEditingController _maxPrice = TextEditingController(
+    text: widget.initial.maxPrice == null ? '' : priceParam(widget.initial.maxPrice!),
+  );
+
+  @override
+  void dispose() {
+    _minPrice.dispose();
+    _maxPrice.dispose();
+    super.dispose();
+  }
+
+  /// Parsed price bounds, swapped when the user typed them the wrong way round.
+  (double?, double?) _priceBounds() {
+    var lo = parsePriceInput(_minPrice.text);
+    var hi = parsePriceInput(_maxPrice.text);
+    if (lo != null && hi != null && lo > hi) {
+      final t = lo;
+      lo = hi;
+      hi = t;
+    }
+    return (lo, hi);
+  }
 
   static const List<String> _origins = ['CN', 'DE', 'IT', 'TR', 'US'];
   static const List<int?> _moqOptions = [null, 10, 100, 500, 1000];
@@ -319,6 +392,34 @@ class _FilterSheetState extends State<_FilterSheet> {
                   ),
               ],
             ),
+            _label(context.tr('discover.filter.price')),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const ValueKey('filter-min-price'),
+                    controller: _minPrice,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: context.tr('discover.filter.price_min'),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    key: const ValueKey('filter-max-price'),
+                    controller: _maxPrice,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: context.tr('discover.filter.price_max'),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(context.tr('discover.filter.verified')),
@@ -346,19 +447,24 @@ class _FilterSheetState extends State<_FilterSheet> {
                   flex: 2,
                   child: PrimaryButton(
                     label: context.tr('common.apply'),
-                    onPressed: () => Navigator.of(context).pop(
-                      ListingQuery(
-                        query: widget.initial.query,
-                        sort: widget.initial.sort,
-                        category: widget.initial.category,
-                        supplierId: widget.initial.supplierId,
-                        kind: _kind,
-                        condition: _condition,
-                        originCountry: _origin,
-                        maxMoq: _maxMoq,
-                        verifiedOnly: _verified,
-                      ),
-                    ),
+                    onPressed: () {
+                      final (lo, hi) = _priceBounds();
+                      Navigator.of(context).pop(
+                        ListingQuery(
+                          query: widget.initial.query,
+                          sort: widget.initial.sort,
+                          category: widget.initial.category,
+                          supplierId: widget.initial.supplierId,
+                          kind: _kind,
+                          condition: _condition,
+                          originCountry: _origin,
+                          maxMoq: _maxMoq,
+                          verifiedOnly: _verified,
+                          minPrice: lo,
+                          maxPrice: hi,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

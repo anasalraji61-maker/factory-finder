@@ -9,7 +9,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build-ios:
@@ -26,6 +26,11 @@ jobs:
         with:
           channel: stable
           cache: true
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('apps/mobile/pubspec.yaml', 'apps/mobile/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
       - name: Generate and patch platform folders
         run: |
           if [ ! -d ios ]; then

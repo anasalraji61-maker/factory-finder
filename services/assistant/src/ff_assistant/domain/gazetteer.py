@@ -207,4 +207,6 @@ def _default_gazetteer() -> Gazetteer:
     records: list[dict] = []
     for name in place_files():
         records.extend(load_json(name)["places"])
+    extra: dict[str, list[str]] = load_json("aliases_ml.json")["places"]  # Turkish/Kurdish/Persian/Chinese names
+    records = [{**rec, "names": [*rec.get("names", []), *extra.get(rec["id"], [])]} for rec in records]
     return Gazetteer.from_records(records)

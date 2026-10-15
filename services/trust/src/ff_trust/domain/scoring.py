@@ -6,6 +6,7 @@ are applied in order and recorded as negative "cap" factors. Rules:
   * sanctions_hit or blocked -> band red, score <= 20 (hard fail, clear explanation)
   * dispute_rate (recency-blended) >= 0.15 -> score <= 49; >= 0.08 -> score <= 69
   * price_vs_market_ratio < 0.4 (too cheap) -> score <= 59
+  * deal cancellation share >= 0.3 (>= 0.5) with >= 20 on-platform deals -> score <= 69 (<= 59)
   * fewer than min_signals known signals (and no hard fail) -> band unknown
 Missing data never lowers the score: it lowers `confidence` (0-100) and is listed in `data_gaps`.
 Review rating and deal completion use Bayesian shrinkage towards a prior so small samples
@@ -385,6 +386,17 @@ def assess(signals: SupplierSignals, cfg: ScoringConfig | None = None, today: da
         apply_cap("dispute_rate_cap", cfg.dispute_high_cap,
                   f"High dispute rate: score capped at {cfg.dispute_high_cap}.",
                   f"نسبة نزاعات مرتفعة: الدرجة محدودة بـ {cfg.dispute_high_cap}.")  # fmt: skip
+    done, canc = signals.deals_completed or 0, signals.deals_cancelled or 0
+    if done + canc >= cfg.deal_cancel_min_deals:  # a bounded -4 factor alone let a supplier cancelling most deals stay green
+        share = canc / (done + canc)
+        if share >= cfg.deal_cancel_severe_share:
+            apply_cap("deal_cancellation_cap", cfg.deal_cancel_severe_cap,
+                      f"Most on-platform deals are cancelled ({share:.0%}): score capped at {cfg.deal_cancel_severe_cap}.",
+                      f"معظم الصفقات على المنصة ملغاة ({share:.0%}): الدرجة محدودة بـ {cfg.deal_cancel_severe_cap}.")  # fmt: skip
+        elif share >= cfg.deal_cancel_high_share:
+            apply_cap("deal_cancellation_cap", cfg.deal_cancel_high_cap,
+                      f"High deal cancellation rate ({share:.0%}): score capped at {cfg.deal_cancel_high_cap}.",
+                      f"نسبة إلغاء صفقات مرتفعة ({share:.0%}): الدرجة محدودة بـ {cfg.deal_cancel_high_cap}.")  # fmt: skip
     if is_new_account(signals, cfg):  # self-reported claims alone cannot make a brand-new account green
         flags.append("new_account")
         apply_cap("new_account_cap", cfg.green_min - 1,

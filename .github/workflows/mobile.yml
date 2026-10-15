@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
@@ -41,6 +41,11 @@ jobs:
         with:
           channel: stable
           cache: true
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('apps/mobile/pubspec.yaml', 'apps/mobile/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
       - name: Generate platform folders if missing
         run: |
           if [ ! -d android ]; then
@@ -84,6 +89,17 @@ jobs:
           msg=$(grep -iE "error|fail|wrong|exception|what went wrong|requires|minSdk|plugin|\.gradle|\.kt|\.java" build.txt | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
           if [ $code -ne 0 ] && [ -n "$msg" ]; then echo "::error title=build::$msg"; fi
           exit $code
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-logs
+          path: |
+            apps/mobile/analyze.txt
+            apps/mobile/test.txt
+            apps/mobile/build.txt
+          if-no-files-found: ignore
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: factory-finder-debug-apk

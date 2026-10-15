@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 
 from ..domain.cache import TTLCache
 from ..domain.models import ListingDetail, SearchQuery, Supplier
+from ..domain.pricing import parse_price_text
 from ._norm import build_listing, dec
 from .base import Health, SourceAdapter
 from .http_base import HostRateLimiter, SourceBlocked, SourceNotConfigured
@@ -102,12 +103,15 @@ def get_path(obj: Any, path: str) -> Any:
 
 
 def parse_price_range(text: Any) -> tuple[Decimal, Decimal] | None:
-    """'US $12.50 - 15' -> (12.50, 15); '9' -> (9, 9). Decimal only."""
-    nums = _PRICE_NUM.findall(str(text or ""))
-    if not nums:
+    """'US $12.50 - 15' -> (12.50, 15); '9' -> (9, 9); MOQ ladders -> (cheapest tier, dearest tier). Decimal only.
+
+    Delegates to ``domain.pricing.parse_price_text``: quantities ('100-499 pcs'), units and decimal commas are no
+    longer read as prices, and ambiguous text (several unrelated numbers) yields None instead of a guess.
+    """
+    parsed = parse_price_text(text)
+    if parsed.price_min is None or parsed.price_max is None:
         return None
-    lo, hi = dec(nums[0]), dec(nums[-1])
-    return (lo, hi) if lo <= hi else (hi, lo)
+    return parsed.price_min, parsed.price_max
 
 
 class HttpProviderAdapter(SourceAdapter):

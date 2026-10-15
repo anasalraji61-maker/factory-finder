@@ -51,5 +51,7 @@ def test_search_cities_uses_precomputed_names():
     ds = get_dataset()
     first = search_cities(ds, "sh")
     assert first == search_cities(ds, "sh")
-    assert first and all("sh" in c.name_en.lower() for c in first)
+    assert first and all(
+        "sh" in c.name_en.lower() or any("sh" in a.lower() for a in ds.aliases.get(c.id, [])) for c in first
+    )
     assert [c.name_en for c in search_cities(ds, None, "CN")] == sorted(c.name_en for c in ds.cities if c.country_code == "CN")

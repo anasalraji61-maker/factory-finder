@@ -1,0 +1,8 @@
+{"shipment": {"origin": "PVG", "destination": "BGW", "estimated_arrival": "2026-10-03T14:00:00Z",
+ "events": [
+  {"id": "a5", "code": "ARR", "time": "2026-10-02T12:00:00+03:00", "station": "BGW", "flight": "EK 0941"},
+  {"id": "a4", "code": "DEP", "time": "2026-10-02T01:00:00+04:00", "station": "DXB", "flight": "ek941"},
+  {"id": "a3", "code": "ARR", "time": "2026-10-01T11:30:00Z", "station": "DXB", "flight": "EK306"},
+  {"id": "a2", "code": "DEP", "time": "2026-10-01T10:30:00Z", "station": "PVG", "flight": "EK306"},
+  {"id": "a1", "code": "RCS", "time": "2026-10-01T02:00:00Z", "station": "PVG"}
+ ]}}

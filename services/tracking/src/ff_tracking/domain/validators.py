@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from ff_tracking.domain.enums import ReferenceType
+from ff_tracking.domain.models import VesselRef
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +17,7 @@ class Validation:
     reason: str | None = None
     prefix: str | None = None  # container owner code / B/L prefix / AWB airline prefix
     suggestions: tuple[str, ...] = ()  # fully valid alternatives for common typos (O/0, I/1, ...)
+    warnings: tuple[str, ...] = ()  # accepted but suspicious, e.g. ``unusual_format:maersk`` (B/L)
 
 
 def _letter_values() -> dict[str, int]:
@@ -104,25 +107,86 @@ def imo_check_ok(seven: str) -> bool:
 
 
 def validate_imo(raw: str) -> Validation:
-    ref = re.sub(r"^IMO", "", re.sub(r"[\s\-]", "", raw).upper())
+    ref = re.sub(r"^IMO[:#.]*", "", re.sub(r"[\s\-]", "", raw).upper())
     if not re.fullmatch(r"[0-9]{7}", ref):
         return Validation(False, ref, "format: expected 7 digits")
+    if ref[0] == "0":
+        return Validation(False, ref, "format: an IMO number never starts with 0")
     if not imo_check_ok(ref):
         return Validation(False, ref, "check_digit")
     return Validation(True, ref)
 
 
-_BL_NOISE = re.compile(r"^(?:B/?L|BILL\s+OF\s+LADING|HBL|MBL|BOL)\s*(?:NO\.?|NUMBER|#)?\s*[:#.]?\s*", re.IGNORECASE)
+_VESSEL_TITLE = re.compile(r"^(?:M\s*/\s*[VTS]|M\.[VTS]\.?|MV|MT|SS|MS)(?=[\s.:/-]+\S)[\s.:/-]*", re.IGNORECASE)
+_NAME_IMO = re.compile(r"\(?\s*IMO[\s:#.-]*([0-9]{7})\s*\)?", re.IGNORECASE)
+
+
+def clean_vessel_name(raw: str | None) -> str | None:
+    """Upper-case, control characters and ``M/V`` / ``MV`` / ``MT`` titles removed, whitespace collapsed."""
+    text = strip_control(raw)
+    if not text:
+        return None
+    text = _NAME_IMO.sub(" ", text)
+    if re.fullmatch(r"M\s*/\s*[VTS]|M\.[VTS]\.?|MV|MT", text.strip(), re.IGNORECASE):
+        return None
+    return " ".join(_VESSEL_TITLE.sub("", " ".join(text.split())).upper().split()) or None
+
+
+def parse_vessel(value: object) -> VesselRef | None:
+    """Provider vessel object (``name``, ``imo``, ``voyage``) -> ``VesselRef``.
+
+    * the IMO may sit in ``imo`` (``"IMO 9074729"``, ``9074729``) or inside the name (``"MSC GULSUN (IMO 9811000)"``)
+    * an IMO is kept only when it passes the check digit; a bad one is dropped, the name is kept
+    * no usable name -> ``None``
+    """
+    if not isinstance(value, Mapping):
+        return None
+    name_raw = str(value.get("name") or "")
+    imo_raw = str(value.get("imo") or "")
+    if not imo_raw and (m := _NAME_IMO.search(name_raw)):
+        imo_raw = m.group(1)
+    imo = None
+    if imo_raw:
+        v = validate_imo(imo_raw)
+        imo = v.normalized if v.valid else None
+    name = clean_vessel_name(name_raw)
+    if not name:
+        return None
+    voyage = strip_control(str(value["voyage"])) if value.get("voyage") not in (None, "") else None
+    return VesselRef(name=name[:120], imo=imo, voyage=(voyage or "").upper()[:20] or None)
+
+
+_BL_NOISE = re.compile(
+    r"^(?:B\s*/\s*L|(?:BILL\s+OF\s+LADING|HBL|MBL|BOL|BL)(?![A-Z0-9]))\s*(?:NO\.?(?![A-Z])|NUMBER|#)?\s*[:#.]?\s*",
+    re.IGNORECASE)
+
+# Best-effort B/L number shapes per carrier SCAC prefix (UNVERIFIED, indicative): a mismatch only adds a warning.
+_BL_FORMATS: dict[str, tuple[str, re.Pattern[str]]] = {
+    **{p: ("maersk", re.compile(r"(?:MAEU|SUDU)?[0-9]{9}")) for p in ("MAEU", "SUDU")},
+    **{p: ("msc", re.compile(r"(?:MEDU|MSCU)[A-Z0-9]{8}")) for p in ("MEDU", "MSCU")},
+    "COSU": ("cosco", re.compile(r"COSU[0-9]{10}")),
+    "OOLU": ("oocl", re.compile(r"OOLU[0-9]{10}")),
+    "EGLV": ("evergreen", re.compile(r"EGLV[0-9]{12}")),
+    "HLCU": ("hapag_lloyd", re.compile(r"HLCU[A-Z0-9]{8,14}")),
+    "CMDU": ("cma_cgm", re.compile(r"CMDU[A-Z0-9]{7,12}")),
+    "ONEY": ("one", re.compile(r"ONEY[A-Z0-9]{8,12}")),
+    "YMLU": ("yang_ming", re.compile(r"YMLU[A-Z0-9]{9,10}")),
+    "ZIMU": ("zim", re.compile(r"ZIMU[A-Z0-9]{8,12}")),
+    "HDMU": ("hmm", re.compile(r"HDMU[A-Z0-9]{8,12}")),
+}
 
 
 def validate_bl(raw: str) -> Validation:
     """Tolerant B/L check: strips "B/L No.:" labels, spaces and separators. A 4-letter SCAC-style prefix gives the
-    carrier hint; pure-digit numbers (some carriers issue them) are accepted without a prefix."""
+    carrier hint (and a ``unusual_format:<carrier>`` warning when the rest does not look like that carrier's
+    numbers); pure-digit numbers (Maersk and others issue them) are accepted without a prefix."""
     ref = re.sub(r"[\s\-/._#:]", "", _BL_NOISE.sub("", raw.strip())).upper()
     if not re.fullmatch(r"[A-Z0-9]{8,20}", ref):
         return Validation(False, ref, "format: expected 8-20 letters/digits")
     if re.match(r"[A-Z]{4}", ref):
-        return Validation(True, ref, None, ref[:4])
+        fmt = _BL_FORMATS.get(ref[:4])
+        warn = (f"unusual_format:{fmt[0]}",) if fmt and not fmt[1].fullmatch(ref) else ()
+        return Validation(True, ref, None, ref[:4], warnings=warn)
     if ref.isdigit() and len(ref) >= 9:
         return Validation(True, ref)
     return Validation(False, ref, "format: expected a 4-letter carrier (SCAC) prefix")

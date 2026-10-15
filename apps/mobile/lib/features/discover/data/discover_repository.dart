@@ -54,6 +54,8 @@ class DiscoverRepository {
       if (q.condition != null) 'condition': q.condition!.json,
       if (q.originCountry != null) 'origin_country': q.originCountry,
       if (q.maxMoq != null) 'moq_max': q.maxMoq,
+      if (q.minPrice != null) 'min_price': priceParam(q.minPrice!),
+      if (q.maxPrice != null) 'max_price': priceParam(q.maxPrice!),
       if (q.verifiedOnly) 'verified_only': true,
       if (categorySlug != null) 'category': categorySlug,
       if (q.sort != SortOption.relevance) 'sort': q.sort.api,

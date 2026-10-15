@@ -70,6 +70,7 @@
    "ARRI": "arrived",
    "DEPA": "departed",
    "STUF": "gate_in",
+   "CONF": "booked",
    "STRP": "delivered",
    "PICK": "booked",
    "DROP": "delivered",

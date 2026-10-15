@@ -1,0 +1,1720 @@
+{
+"AE-ABU_DHABI": [
+"Abu Dabi",
+"Abu Dhabi",
+"Abudhabi",
+"ابو ظبي"
+],
+"AE-DUBAI": [
+"Dubayy",
+"Dubai",
+"دبى"
+],
+"AE-JEBEL_ALI": [
+"Jebel Ali",
+"Jabal Ali",
+"Jebel Ali Free Zone",
+"JAFZA"
+],
+"AE-RAS_AL_KHAIMAH": [
+"RAK",
+"Ras Al Khaimah",
+"Ras al-Khaimah",
+"راس الخيمه"
+],
+"AE-SHARJAH": [
+"Sharjah",
+"Al Sharjah",
+"الشارقه"
+],
+"AT-VIENNA": [
+"Wien",
+"Vienna",
+"فيينا"
+],
+"AU-MELBOURNE": [
+"Melbourne",
+"Port Melbourne"
+],
+"AU-SYDNEY": [
+"Sydney",
+"Port Botany"
+],
+"AZ-BAKU": [
+"Baki",
+"Baku"
+],
+"BD-CHITTAGONG": [
+"Chattogram",
+"Chittagong",
+"Chattagram",
+"شيتاغونغ"
+],
+"BD-DHAKA": [
+"Dacca",
+"Dhaka",
+"Daka",
+"داكا"
+],
+"BE-ANTWERP": [
+"Anvers",
+"Antwerpen",
+"Antwerp",
+"Port of Antwerp"
+],
+"BE-BRUGES": [
+"Brugge",
+"Bruges"
+],
+"BE-BRUSSELS": [
+"Bruxelles",
+"Brussel",
+"Brussels"
+],
+"BE-GHENT": [
+"Gent",
+"Gand",
+"Ghent"
+],
+"BE-LIEGE": [
+"Luik",
+"Liege",
+"Lüttich"
+],
+"BH-MANAMA": [
+"Al Manamah",
+"Manama"
+],
+"BR-RIO_DE_JANEIRO": [
+"Rio",
+"Rio de Janeiro"
+],
+"BR-SAO_PAULO": [
+"Sao Paulo",
+"São Paulo",
+"Sampa"
+],
+"CA-MONTREAL": [
+"Montréal",
+"Montreal"
+],
+"CA-PRINCE_RUPERT": [
+"Prince Rupert",
+"Port of Prince Rupert"
+],
+"CA-VANCOUVER": [
+"Vancouver",
+"Port of Vancouver"
+],
+"CH-BASEL": [
+"Basle",
+"Bale",
+"Basel"
+],
+"CH-GENEVA": [
+"Geneve",
+"Genf",
+"Geneva"
+],
+"CH-ZURICH": [
+"Zuerich",
+"Zurich",
+"Zürich"
+],
+"CN-BEIJING": [
+"Peking",
+"Beijing",
+"Beiging",
+"بيجين",
+"بيكين"
+],
+"CN-CHENGDU": [
+"Cheng Du",
+"Chengdu",
+"تشنغدو"
+],
+"CN-CHONGQING": [
+"Chungking",
+"Chong Qing",
+"Chongqing",
+"تشونجتشينج"
+],
+"CN-CIXI": [
+"Ci Xi",
+"Cixi"
+],
+"CN-DALIAN": [
+"Dalien",
+"Dairen",
+"Da Lian"
+],
+"CN-DONGGUAN": [
+"Dongguang",
+"Dong Guan",
+"دونغقوان",
+"دونقوان"
+],
+"CN-DONGYANG": [
+"Dongyang",
+"Hengdian"
+],
+"CN-FOSHAN": [
+"Fo Shan",
+"Foshan",
+"فوشان"
+],
+"CN-GUANGZHOU": [
+"Canton",
+"Guangzhou",
+"Kwangchow",
+"كانتون",
+"قوانزو",
+"غوانزو",
+"قوانغتشو"
+],
+"CN-HANGZHOU": [
+"Hang Zhou",
+"Hangchow",
+"هانجتشو",
+"هانغتشو"
+],
+"CN-HUIZHOU": [
+"Hui Zhou",
+"Huizhou"
+],
+"CN-JIAXING": [
+"Jia Xing",
+"Jiaxing"
+],
+"CN-KASHGAR": [
+"Kashi",
+"Kashgar",
+"Kashghar"
+],
+"CN-KUNSHAN": [
+"Kun Shan",
+"Kunshan"
+],
+"CN-LINYI": [
+"Lin Yi",
+"Linyi"
+],
+"CN-NANJING": [
+"Nanking",
+"Nanjing",
+"نانكين"
+],
+"CN-NINGBO": [
+"Ning Bo",
+"Ningbo",
+"نينغبو",
+"نينجبو"
+],
+"CN-PINGXIANG": [
+"Pingxiang",
+"Youyiguan",
+"Friendship Pass"
+],
+"CN-QINGDAO": [
+"Tsingtao",
+"Qing Dao",
+"Qingdao",
+"تشينجداو",
+"تشينغداو"
+],
+"CN-SHANGHAI": [
+"Shangai",
+"Shanghai",
+"شانغهاي",
+"شنغهاى"
+],
+"CN-SHANTOU": [
+"Swatow",
+"Shan Tou",
+"Shantou"
+],
+"CN-SHENZHEN": [
+"Shenzen",
+"Shen Zhen",
+"شينزين",
+"شنزن"
+],
+"CN-SHUNDE": [
+"Shunde",
+"Shun De"
+],
+"CN-SUZHOU": [
+"Su Zhou",
+"Soochow",
+"سوجو"
+],
+"CN-TAICANG": [
+"Tai Cang",
+"Taicang"
+],
+"CN-TIANJIN": [
+"Tientsin",
+"Tianjing",
+"Tian Jin",
+"تيانجين",
+"تيانجن"
+],
+"CN-URUMQI": [
+"Urumchi",
+"Urumqi",
+"Wulumuqi",
+"ارومتشي"
+],
+"CN-WENZHOU": [
+"Wen Zhou",
+"Wenzhou",
+"ونتشو"
+],
+"CN-WUHAN": [
+"Wu Han",
+"Wuhan"
+],
+"CN-WUXI": [
+"Wu Xi",
+"Wuxi"
+],
+"CN-XIAMEN": [
+"Amoy",
+"Xiamen",
+"شيامين"
+],
+"CN-XIAN": [
+"Xi'an",
+"Xian",
+"Sian",
+"Hsian",
+"شيان",
+"شي آن"
+],
+"CN-YIWU": [
+"Yi Wu",
+"Yiwu",
+"ييوو",
+"ايوو",
+"يي وو"
+],
+"CN-YONGKANG": [
+"Yong Kang",
+"Yongkang"
+],
+"CN-YUEQING": [
+"Yueqing",
+"Yue Qing"
+],
+"CN-ZHENGZHOU": [
+"Zhengzhou",
+"Zheng Zhou",
+"تشنجتشو"
+],
+"CN-ZHONGSHAN": [
+"Zhong Shan",
+"Zhongshan",
+"تشونغشان"
+],
+"CN-ZHUHAI": [
+"Zhu Hai",
+"Zhuhai"
+],
+"CN-ZHUJI": [
+"Zhuji",
+"Zhu Ji",
+"Socks City"
+],
+"CZ-PLZEN": [
+"Pilsen",
+"Plzen"
+],
+"CZ-PRAGUE": [
+"Praha",
+"Prague",
+"براغ"
+],
+"DE-AACHEN": [
+"Aachen",
+"Aix la Chapelle"
+],
+"DE-COLOGNE": [
+"Koln",
+"Koeln",
+"Cologne",
+"Cöln"
+],
+"DE-DUISBURG": [
+"Duisburg",
+"Duisburg Port",
+"Duisport",
+"Duisburg Rail"
+],
+"DE-DUSSELDORF": [
+"Duesseldorf",
+"Dusseldorf",
+"Duss"
+],
+"DE-FRANKFURT": [
+"Frankfurt am Main",
+"Frankfurt",
+"Frankfurt Main"
+],
+"DE-HANNOVER": [
+"Hanover",
+"Hannover"
+],
+"DE-LUBECK": [
+"Luebeck",
+"Lubeck"
+],
+"DE-MUNICH": [
+"Munchen",
+"Muenchen",
+"Munich"
+],
+"DE-MUNSTER": [
+"Muenster",
+"Munster"
+],
+"DE-NUREMBERG": [
+"Nurnberg",
+"Nuernberg",
+"Nuremberg"
+],
+"DE-OSNABRUCK": [
+"Osnabrueck",
+"Osnabruck"
+],
+"DE-SAARBRUCKEN": [
+"Saarbruecken",
+"Saarbrucken"
+],
+"DJ-DJIBOUTI": [
+"Djibouti",
+"Jibuti",
+"Gibuti"
+],
+"DZ-ALGIERS": [
+"Alger",
+"El Djazair",
+"Algiers",
+"Al Jazair",
+"الجزائر"
+],
+"DZ-ANNABA": [
+"Bone",
+"Annaba",
+"عنابة"
+],
+"DZ-BEJAIA": [
+"Bejaia",
+"Bgayet",
+"Bougie",
+"Bejaia Port"
+],
+"DZ-CONSTANTINE": [
+"Qacentina",
+"Constantine",
+"قسنطينة"
+],
+"DZ-HASSI_MESSAOUD": [
+"Hassi Messaoud",
+"Hassi Mes'ud"
+],
+"DZ-ORAN": [
+"Wahran",
+"Oran",
+"وهران"
+],
+"DZ-SETIF": [
+"Setif",
+"Stif",
+"سطيف"
+],
+"DZ-SKIKDA": [
+"Skikda",
+"Philippeville",
+"سكيكدة"
+],
+"EG-10TH_OF_RAMADAN_CITY": [
+"Tenth of Ramadan",
+"10th Ramadan",
+"Ramadan 10",
+"العاشر من رمضان"
+],
+"EG-AIN_SOKHNA": [
+"Sokhna",
+"Ain Sokhna",
+"El Sokhna",
+"Ain Sukhna",
+"عين سخنة"
+],
+"EG-ALEXANDRIA": [
+"Iskandariya",
+"Alexandria",
+"El Iskandariyah",
+"Alex",
+"اسكندرية"
+],
+"EG-BORG_EL_ARAB": [
+"Borg al Arab",
+"Burg El Arab",
+"Borg El Arab"
+],
+"EG-CAIRO": [
+"Al Qahirah",
+"Cairo",
+"El Qahira",
+"Kairo"
+],
+"EG-GIZA": [
+"Gizeh",
+"Giza",
+"الجيزه"
+],
+"EG-HURGHADA": [
+"El Ghardaqa",
+"Hurghada",
+"Ghardaqa"
+],
+"EG-LUXOR": [
+"Uqsur",
+"Luxor",
+"الاقصر"
+],
+"EG-MAHALLA_EL_KUBRA": [
+"El Mahalla",
+"Mahalla",
+"Mahalla El Kubra",
+"Mahalla Al Kubra"
+],
+"EG-PORT_SAID": [
+"Bur Said",
+"Port Said",
+"Portsaid",
+"بورسعيد"
+],
+"EG-SUEZ": [
+"Al Suways",
+"Suez",
+"السويس"
+],
+"ES-ALGECIRAS": [
+"Algeciras",
+"Gibraltar Bay",
+"Algeciras Port"
+],
+"ES-A_CORUNA": [
+"La Coruna",
+"A Coruna",
+"Corunna",
+"La Coruña"
+],
+"ES-BARCELONA": [
+"Barcelona",
+"Barna"
+],
+"ES-GIJON": [
+"Gijon",
+"Xixon"
+],
+"ES-MALAGA": [
+"Malaga",
+"Málaga"
+],
+"ES-SAN_SEBASTIAN": [
+"Donostia",
+"San Sebastian"
+],
+"ES-SEVILLE": [
+"Sevilla",
+"Seville"
+],
+"ES-TARRAGONA": [
+"Tarragona",
+"Tarraco"
+],
+"ES-VALENCIA": [
+"Valencia",
+"Valencia Port"
+],
+"FI-HELSINKI": [
+"Helsingfors",
+"Helsinki"
+],
+"FR-DUNKIRK": [
+"Dunkerque",
+"Dunkirk"
+],
+"FR-FOS_SUR_MER": [
+"Fos",
+"Fos sur Mer",
+"Fos-sur-Mer"
+],
+"FR-LE_HAVRE": [
+"Le Havre",
+"Havre",
+"Lehavre"
+],
+"FR-MARSEILLE": [
+"Marseille",
+"Marseilles",
+"Marsella"
+],
+"FR-SAINT_ETIENNE": [
+"St Etienne",
+"Saint Etienne",
+"Saint-Etienne"
+],
+"FR-STRASBOURG": [
+"Strassburg",
+"Strasbourg"
+],
+"GB-EDINBURGH": [
+"Edinburgh",
+"Edinburg"
+],
+"GB-LONDON": [
+"London",
+"Londres",
+"لندن"
+],
+"GB-NEWCASTLE": [
+"Newcastle upon Tyne",
+"Newcastle"
+],
+"GE-BATUMI": [
+"Batum",
+"Batumi"
+],
+"GE-TBILISI": [
+"Tiflis",
+"Tbilisi"
+],
+"GR-ATHENS": [
+"Athina",
+"Athens"
+],
+"GR-PIRAEUS": [
+"Peiraias",
+"Piraeus",
+"Piraievs"
+],
+"GR-THESSALONIKI": [
+"Salonica",
+"Thessaloniki",
+"Saloniki"
+],
+"HK-HONG_KONG": [
+"HK",
+"Hongkong",
+"Hong Kong",
+"Xianggang",
+"هونغ كونغ",
+"هونج كونج"
+],
+"HU-GYOR": [
+"Gyor",
+"Raab"
+],
+"ID-JAKARTA": [
+"Djakarta",
+"Jakarta",
+"Batavia",
+"جاكارتا"
+],
+"ID-SURABAYA": [
+"Soerabaja",
+"Surabaya",
+"سورابايا"
+],
+"ID-SURAKARTA": [
+"Solo",
+"Surakarta"
+],
+"ID-TANJUNG_PRIOK": [
+"Tanjung Priok",
+"Tanjungpriok",
+"Priok",
+"Port of Jakarta"
+],
+"ID-YOGYAKARTA": [
+"Jogja",
+"Jogjakarta",
+"Yogya",
+"Yogyakarta"
+],
+"IL-ASHDOD": [
+"Ashdod",
+"Isdud"
+],
+"IL-BEERSHEBA": [
+"Beer Sheva",
+"Beersheva",
+"Beersheba"
+],
+"IL-HAIFA": [
+"Haifa",
+"Hefa",
+"حيفا"
+],
+"IL-TEL-AVIV": [
+"Tel-Aviv",
+"Tel Aviv Yafo",
+"Tel Aviv-Yafo"
+],
+"IN-BANGALORE": [
+"Bengaluru",
+"Bangalore",
+"Bengalore",
+"بنغالورو"
+],
+"IN-CHENNAI": [
+"Madras",
+"Chenai",
+"Chennai",
+"مدراس"
+],
+"IN-DELHI": [
+"New Delhi",
+"Delhi",
+"نيودلهي",
+"نيو دلهي"
+],
+"IN-GANDHIDHAM": [
+"Kandla",
+"Gandhidham",
+"Kandla Port",
+"كاندلا"
+],
+"IN-GURGAON": [
+"Gurugram",
+"Gurgaon"
+],
+"IN-KOCHI": [
+"Cochin",
+"Kochi",
+"كوشين"
+],
+"IN-KOLKATA": [
+"Calcutta",
+"Kolkata",
+"كلكتا"
+],
+"IN-LUDHIANA": [
+"Ludhiana",
+"Ludiana"
+],
+"IN-MUMBAI": [
+"Bombay",
+"Mumbay",
+"Mumbai",
+"بومباي"
+],
+"IN-MUNDRA": [
+"Mundra Port",
+"Mundra"
+],
+"IN-NHAVA_SHEVA": [
+"JNPT",
+"Jawaharlal Nehru Port",
+"Nhava Sheva",
+"Jawaharlal Nehru",
+"نهافا شيفا"
+],
+"IN-PUNE": [
+"Poona",
+"Pune"
+],
+"IN-THIRUVANANTHAPURAM": [
+"Trivandrum",
+"Thiruvananthapuram"
+],
+"IN-TIRUPPUR": [
+"Tirupur",
+"Tiruppur",
+"Tirpur"
+],
+"IN-TUTICORIN": [
+"Thoothukudi",
+"Tuticorin",
+"V O Chidambaranar"
+],
+"IN-VADODARA": [
+"Baroda",
+"Vadodara"
+],
+"IN-VARANASI": [
+"Benares",
+"Banaras",
+"Varanasi",
+"Kashi"
+],
+"IN-VISAKHAPATNAM": [
+"Vizag",
+"Visakhapatnam",
+"Vishakhapatnam"
+],
+"IQ-AMARAH": [
+"Amara",
+"Al Amarah",
+"Maysan",
+"Missan",
+"ميسان"
+],
+"IQ-BAGHDAD": [
+"Bagdad",
+"Baghdaad"
+],
+"IQ-BAQUBAH": [
+"Baquba",
+"Baqouba",
+"Diyala",
+"ديالى"
+],
+"IQ-BASRA": [
+"Basrah",
+"Al Basrah",
+"البصره"
+],
+"IQ-DIWANIYAH": [
+"Diwaniya",
+"Ad Diwaniyah",
+"Qadisiyah",
+"Qadisiyyah",
+"القادسية"
+],
+"IQ-DUHOK": [
+"Dohuk",
+"Dahuk",
+"Dihok",
+"دهوك"
+],
+"IQ-ERBIL": [
+"Arbil",
+"Irbil",
+"Hewler",
+"Hawler",
+"هولير",
+"اربيل"
+],
+"IQ-FALLUJAH": [
+"Falluja",
+"Fallujah",
+"Falujah"
+],
+"IQ-FAW": [
+"Al Faw",
+"Faw Port",
+"Grand Faw"
+],
+"IQ-HALABJA": [
+"Halabja",
+"Helebce",
+"Halabjah"
+],
+"IQ-HAMDANIYA": [
+"Hamdaniya",
+"Al Hamdaniya",
+"Qaraqosh"
+],
+"IQ-HILLAH": [
+"Hilla",
+"Al Hillah",
+"Babil",
+"Babylon",
+"بابل"
+],
+"IQ-KALAR": [
+"Kalar",
+"Qalar"
+],
+"IQ-KARBALA": [
+"Kerbala",
+"Karbala",
+"Kerbela",
+"كربلا"
+],
+"IQ-KIRKUK": [
+"Karkuk",
+"Kerkuk",
+"Kirkuk Governorate",
+"كركوك"
+],
+"IQ-KUFA": [
+"Al Kufa",
+"Kufah"
+],
+"IQ-KUT": [
+"Al Kut",
+"Wasit",
+"Kut al Imara",
+"واسط"
+],
+"IQ-MOSUL": [
+"Mawsil",
+"Nineveh",
+"Ninawa",
+"Nineveh Governorate",
+"نينوى"
+],
+"IQ-NAJAF": [
+"An Najaf",
+"Al Najaf",
+"النجف الاشرف"
+],
+"IQ-NASIRIYAH": [
+"Nasiriya",
+"Nassiriya",
+"An Nasiriyah",
+"Dhi Qar",
+"Thi Qar",
+"ذي قار"
+],
+"IQ-RAMADI": [
+"Ar Ramadi",
+"Anbar",
+"Al Anbar",
+"الانبار"
+],
+"IQ-SAFWAN": [
+"Safwan Border"
+],
+"IQ-SAMAWAH": [
+"Samawa",
+"As Samawah",
+"Muthanna",
+"Muthana",
+"المثنى"
+],
+"IQ-SULAYMANIYAH": [
+"Sulaimani",
+"Sulaimaniyah",
+"Slemani",
+"Suleimaniya",
+"Sulaymaniya",
+"السليمانيه"
+],
+"IQ-TIKRIT": [
+"Takrit",
+"Salahuddin",
+"Salah ad Din",
+"Saladin",
+"صلاح الدين"
+],
+"IQ-UMM_QASR": [
+"Um Qasr",
+"Umm Qasar",
+"Umm Kasr",
+"Um Qasar",
+"ام قصر"
+],
+"IQ-ZAKHO": [
+"Zaxo",
+"Zakho"
+],
+"IQ-ZUBAIR": [
+"Az Zubayr",
+"Zubayr",
+"Al Zubair"
+],
+"IR-AHVAZ": [
+"Ahwaz",
+"Ahvaz",
+"Ahwas"
+],
+"IR-BANDAR_ABBAS": [
+"Bandar Abbas",
+"Bandar-e Abbas",
+"Shahid Rajaee"
+],
+"IR-BANDAR_IMAM_KHOMEINI": [
+"Bandar Khomeini",
+"Bandar-e Imam Khomeyni"
+],
+"IR-ISFAHAN": [
+"Esfahan",
+"Isfahan",
+"Ispahan"
+],
+"IR-KHORRAMSHAHR": [
+"Khorramshahr",
+"Khorramshar",
+"Khoramshahr",
+"المحمرة"
+],
+"IR-MASHHAD": [
+"Meshed",
+"Mashad",
+"Mashhad"
+],
+"IR-MEHRAN": [
+"Mehran Border"
+],
+"IR-TEHRAN": [
+"Teheran",
+"Tehran"
+],
+"IR-URMIA": [
+"Urumieh",
+"Orumiyeh",
+"Urmia",
+"Rezaiyeh"
+],
+"IT-FLORENCE": [
+"Firenze",
+"Florence"
+],
+"IT-GENOA": [
+"Genova",
+"Genoa"
+],
+"IT-GIOIA_TAURO": [
+"Gioia Tauro",
+"Gioiatauro"
+],
+"IT-LA_SPEZIA": [
+"La Spezia",
+"Spezia"
+],
+"IT-MILAN": [
+"Milano",
+"Milan"
+],
+"IT-NAPLES": [
+"Napoli",
+"Naples"
+],
+"IT-ROME": [
+"Roma",
+"Rome"
+],
+"IT-TURIN": [
+"Torino",
+"Turin"
+],
+"IT-VENICE": [
+"Venezia",
+"Venice",
+"Venezia Mestre"
+],
+"JO-AMMAN": [
+"Amman"
+],
+"JO-AQABA": [
+"Akaba",
+"Aqaba",
+"Al Aqabah",
+"العقبة"
+],
+"JO-IRBID": [
+"Irbid",
+"اربد"
+],
+"JO-MAAN": [
+"Maan",
+"Ma'an"
+],
+"JO-ZARQA": [
+"Zarqa",
+"Az Zarqa"
+],
+"JP-NAGOYA": [
+"Nagoya",
+"Port of Nagoya"
+],
+"JP-TOKYO": [
+"Tokio",
+"Tokyo"
+],
+"JP-YOKOHAMA": [
+"Yokohama",
+"Port of Yokohama"
+],
+"KE-MOMBASA": [
+"Mombasa",
+"Port of Mombasa"
+],
+"KR-BUSAN": [
+"Pusan",
+"Busan",
+"Pusan Port"
+],
+"KR-INCHEON": [
+"Inchon",
+"Incheon"
+],
+"KR-SEOUL": [
+"Soul",
+"Seoul"
+],
+"KW-AHMADI": [
+"Mina Al Ahmadi",
+"Ahmadi"
+],
+"KW-KUWAIT_CITY": [
+"Kuwait",
+"Al Kuwait",
+"Kuwait City",
+"الكويت"
+],
+"KZ-ALMATY": [
+"Alma-Ata",
+"Alma Ata",
+"Almaty"
+],
+"KZ-ASTANA": [
+"Nur-Sultan",
+"Nur Sultan",
+"Astana",
+"Akmola",
+"Tselinograd"
+],
+"LB-BEIRUT": [
+"Beyrouth",
+"Beirut",
+"Bayrut"
+],
+"LB-SIDON": [
+"Saida",
+"Sidon"
+],
+"LB-TRIPOLI": [
+"Tarabulus",
+"Tripoli Lebanon",
+"Tripoli"
+],
+"LB-TYRE": [
+"Sur",
+"Tyre"
+],
+"LK-COLOMBO": [
+"Colombo",
+"كولومبو"
+],
+"LY-BENGHAZI": [
+"Banghazi",
+"Benghazi",
+"Bengasi"
+],
+"LY-MISRATA": [
+"Misurata",
+"Misrata",
+"Misratah"
+],
+"LY-TRIPOLI": [
+"Tarabulus",
+"Tripoli Libya",
+"Tripoli"
+],
+"MA-AGADIR": [
+"Agadir",
+"Agadeer",
+"اكادير"
+],
+"MA-CASABLANCA": [
+"Dar el Beida",
+"Casablanca",
+"Casa",
+"الدار البيضاء",
+"الدارالبيضاء"
+],
+"MA-EL_JADIDA": [
+"El Jadida",
+"Mazagan",
+"Jorf Lasfar"
+],
+"MA-FEZ": [
+"Fes",
+"Fez",
+"Fas",
+"فاس"
+],
+"MA-KENITRA": [
+"Kenitra",
+"Port Lyautey"
+],
+"MA-MARRAKESH": [
+"Marrakech",
+"Marrakesh",
+"Marrakeche",
+"مراكش"
+],
+"MA-MOHAMMEDIA": [
+"Mohammedia",
+"Fedala"
+],
+"MA-NADOR": [
+"Nador",
+"Nador West Med"
+],
+"MA-OUJDA": [
+"Oujda",
+"Ujda",
+"Oudjda"
+],
+"MA-RABAT": [
+"Rabat",
+"Ar Ribat",
+"الرباط"
+],
+"MA-SAFI": [
+"Safi",
+"Asfi"
+],
+"MA-TANGIER": [
+"Tanger",
+"Tangier",
+"Tanja",
+"Tangier Med",
+"طنجة"
+],
+"MA-TETOUAN": [
+"Tetouan",
+"Tetuan",
+"Titwan"
+],
+"MX-CIUDAD_JUAREZ": [
+"Juarez",
+"Ciudad Juarez",
+"Cd Juarez"
+],
+"MX-LAZARO_CARDENAS": [
+"Lazaro Cardenas",
+"Lázaro Cárdenas"
+],
+"MX-MANZANILLO": [
+"Manzanillo",
+"Puerto Manzanillo"
+],
+"MX-MEXICO_CITY": [
+"CDMX",
+"Ciudad de Mexico",
+"Mexico DF",
+"Mexico City",
+"México"
+],
+"MX-NUEVO_LAREDO": [
+"Nuevo Laredo",
+"Nvo Laredo"
+],
+"MX-QUERETARO": [
+"Queretaro",
+"Querétaro"
+],
+"MX-SAN_LUIS_POTOSI": [
+"SLP",
+"San Luis Potosi"
+],
+"MY-JOHOR_BAHRU": [
+"JB",
+"Johor Bahru",
+"Johore Bahru"
+],
+"MY-KUALA_LUMPUR": [
+"KL",
+"Kuala Lumpur",
+"كوالالمبور"
+],
+"MY-MALACCA": [
+"Melaka",
+"Malacca",
+"Malaka"
+],
+"MY-PENANG": [
+"Georgetown",
+"Penang",
+"George Town",
+"Pulau Pinang"
+],
+"MY-PORT_KLANG": [
+"Klang",
+"Port Klang",
+"Pelabuhan Klang",
+"Port Kelang"
+],
+"NL-AMSTERDAM": [
+"Amsterdam",
+"Amsterdam Port"
+],
+"NL-ROTTERDAM": [
+"Rotterdam",
+"Port of Rotterdam",
+"Rotterdam Port"
+],
+"NL-THE_HAGUE": [
+"Den Haag",
+"The Hague",
+"s-Gravenhage",
+"La Haye"
+],
+"NL-VLISSINGEN": [
+"Flushing",
+"Vlissingen"
+],
+"OM-DUQM": [
+"Duqm",
+"Ad Duqm",
+"Dugm"
+],
+"OM-MUSCAT": [
+"Masqat",
+"Muscat",
+"Maskat",
+"مسقط"
+],
+"OM-SALALAH": [
+"Salalah",
+"Port Salalah"
+],
+"OM-SOHAR": [
+"Suhar",
+"Sohar",
+"صحار"
+],
+"PH-MANILA": [
+"Maynila",
+"Manila",
+"مانيلا"
+],
+"PH-QUEZON_CITY": [
+"QC",
+"Quezon City"
+],
+"PK-GWADAR": [
+"Gawadar",
+"Gwadar",
+"غوادر"
+],
+"PK-KARACHI": [
+"Karachi",
+"Karachi Port",
+"كراتشي"
+],
+"PK-LAHORE": [
+"Lahore",
+"لاهور"
+],
+"PK-PORT_QASIM": [
+"Bin Qasim",
+"Port Bin Qasim",
+"Port Qasim"
+],
+"PL-GDANSK": [
+"Danzig",
+"Gdansk"
+],
+"PL-KRAKOW": [
+"Cracow",
+"Krakow",
+"Krakau"
+],
+"PL-LODZ": [
+"Lodz",
+"Łódź"
+],
+"PL-SZCZECIN": [
+"Stettin",
+"Szczecin"
+],
+"PL-WARSAW": [
+"Warszawa",
+"Warsaw",
+"وارسو"
+],
+"PL-WROCLAW": [
+"Breslau",
+"Wroclaw"
+],
+"PT-LISBON": [
+"Lisboa",
+"Lisbon",
+"لشبونة"
+],
+"PT-PORTO": [
+"Oporto",
+"Porto"
+],
+"QA-AL_WAKRAH": [
+"Wakra",
+"Al Wakrah"
+],
+"QA-DOHA": [
+"Ad Dawhah",
+"Doha"
+],
+"RO-CLUJ_NAPOCA": [
+"Cluj",
+"Cluj-Napoca",
+"Klausenburg"
+],
+"RO-CONSTANTA": [
+"Constanta",
+"Constanza"
+],
+"RU-MOSCOW": [
+"Moskva",
+"Moscow",
+"Moskow",
+"موسكو"
+],
+"RU-SAINT_PETERSBURG": [
+"St Petersburg",
+"Saint Petersburg",
+"Leningrad",
+"Petersburg",
+"St. Petersburg",
+"SPB"
+],
+"SA-DAMMAM": [
+"Dammam",
+"Ad Dammam",
+"الدمام"
+],
+"SA-HOFUF": [
+"Hofuf",
+"Al Hofuf",
+"Hufuf",
+"Al Ahsa",
+"الاحساء"
+],
+"SA-JAZAN": [
+"Jizan",
+"Gizan",
+"Jazan"
+],
+"SA-JEDDAH": [
+"Jiddah",
+"Jidda",
+"Jeddah",
+"Jedda"
+],
+"SA-JUBAIL": [
+"Jubail",
+"Al Jubail",
+"Jubail Industrial City"
+],
+"SA-KHOBAR": [
+"Al Khobar",
+"Khobar",
+"Alkhobar"
+],
+"SA-MECCA": [
+"Makkah",
+"Mecca",
+"Makka",
+"Makkah Al Mukarramah"
+],
+"SA-MEDINA": [
+"Madinah",
+"Medina",
+"Al Madinah",
+"Madina",
+"المدينه المنوره",
+"المدينة"
+],
+"SA-RAS_TANURA": [
+"Ras Tannura",
+"Ras Tanura"
+],
+"SA-RIYADH": [
+"Riyadh",
+"Riyad",
+"Ar Riyad"
+],
+"SD-KHARTOUM": [
+"Al Khartum",
+"Khartoum"
+],
+"SE-GOTHENBURG": [
+"Goteborg",
+"Gothenburg",
+"Göteborg"
+],
+"SE-MALMO": [
+"Malmoe",
+"Malmo",
+"Malmö"
+],
+"SG-SINGAPORE": [
+"Singapura",
+"Singapore",
+"سنغافورة"
+],
+"SY-ALEPPO": [
+"Halab",
+"Aleppo",
+"حلب"
+],
+"SY-DAMASCUS": [
+"Dimashq",
+"Damascus",
+"Sham",
+"الشام",
+"دمشق"
+],
+"SY-DEIR_EZ_ZOR": [
+"Deir ez Zor",
+"Deir Ezzor",
+"Dayr az Zawr",
+"Deir al-Zor"
+],
+"SY-HASAKAH": [
+"Hasaka",
+"Al Hasakah",
+"Hasakah"
+],
+"SY-LATAKIA": [
+"Al Ladhiqiyah",
+"Lattakia",
+"Latakia",
+"Ladhiqiyah",
+"اللاذقية"
+],
+"TH-BANGKOK": [
+"Krung Thep",
+"Bangkok",
+"Bkk"
+],
+"TH-CHONBURI": [
+"Chonburi",
+"Chon Buri",
+"Laem Chabang"
+],
+"TH-LAEM_CHABANG": [
+"Laem Chabang",
+"Leam Chabang",
+"Laemchabang"
+],
+"TH-SAMUT_PRAKAN": [
+"Samut Prakan",
+"Samutprakarn",
+"Samut Prakarn"
+],
+"TN-SFAX": [
+"Safaqis",
+"Sfax",
+"صفاقس"
+],
+"TN-SOUSSE": [
+"Sousse",
+"Susa",
+"سوسة"
+],
+"TN-TUNIS": [
+"Tunes",
+"Tunis",
+"تونس"
+],
+"TR-ADANA": [
+"Adana",
+"اضنه"
+],
+"TR-ANTAKYA": [
+"Hatay",
+"Antioch",
+"Antakya"
+],
+"TR-DIYARBAKIR": [
+"Amed",
+"Diyarbakir"
+],
+"TR-GAZIANTEP": [
+"Antep",
+"Gaziantep",
+"عنتاب"
+],
+"TR-ISKENDERUN": [
+"Alexandretta",
+"Iskenderun",
+"Iskandarun"
+],
+"TR-ISTANBUL": [
+"Stamboul",
+"Istambul",
+"Constantinople",
+"Istanbul",
+"اسطنبول",
+"استانبول"
+],
+"TR-IZMIR": [
+"Smyrna",
+"Izmir"
+],
+"TR-KOCAELI": [
+"Izmit",
+"Kocaeli",
+"Gebze",
+"كوجه ايلي"
+],
+"TR-MERSIN": [
+"Icel",
+"Mersin",
+"مرسين"
+],
+"TR-SANLIURFA": [
+"Urfa",
+"Sanliurfa",
+"الرها"
+],
+"TR-SILOPI": [
+"Habur",
+"Habur Gate",
+"Ibrahim Khalil",
+"Zakho Border"
+],
+"TW-KAOHSIUNG": [
+"Gaoxiong",
+"Kaohsiung"
+],
+"TW-TAIPEI": [
+"Taibei",
+"Taipei"
+],
+"TZ-DAR-ES-SALAAM": [
+"Dar es Salaam",
+"Dar-es-Salaam"
+],
+"UA-KYIV": [
+"Kiev",
+"Kyiv",
+"Kijev"
+],
+"UA-ODESA": [
+"Odessa",
+"Odesa",
+"Odesa Port"
+],
+"US-EL_PASO": [
+"El Paso",
+"ElPaso"
+],
+"US-FORT_LAUDERDALE": [
+"Port Everglades",
+"Fort Lauderdale",
+"Ft Lauderdale"
+],
+"US-HOUSTON": [
+"Houston",
+"Port of Houston"
+],
+"US-KANSAS_CITY": [
+"KC",
+"Kansas City"
+],
+"US-LAREDO": [
+"Laredo",
+"Port Laredo"
+],
+"US-LONG_BEACH": [
+"Long Beach",
+"Port of Long Beach"
+],
+"US-LOS_ANGELES": [
+"LA",
+"Los Angeles",
+"L.A.",
+"LAX",
+"San Pedro Bay"
+],
+"US-NEWARK": [
+"Newark",
+"Port Newark"
+],
+"US-NEW_YORK": [
+"NYC",
+"New York City",
+"New York",
+"Manhattan",
+"نيويورك سيتي"
+],
+"US-NORFOLK": [
+"Norfolk",
+"Hampton Roads"
+],
+"US-OAKLAND": [
+"Oakland",
+"Port of Oakland"
+],
+"US-OKLAHOMA_CITY": [
+"OKC",
+"Oklahoma City"
+],
+"US-PHILADELPHIA": [
+"Philly"
+],
+"US-SALT_LAKE_CITY": [
+"SLC",
+"Salt Lake",
+"Salt Lake City"
+],
+"US-SAN_FRANCISCO": [
+"SF",
+"San Francisco"
+],
+"US-SAVANNAH": [
+"Savannah",
+"Port of Savannah"
+],
+"US-SEATTLE": [
+"Seattle",
+"Port of Seattle"
+],
+"US-ST_LOUIS": [
+"Saint Louis",
+"St Louis",
+"St. Louis"
+],
+"US-TACOMA": [
+"Tacoma",
+"Port of Tacoma"
+],
+"UZ-TASHKENT": [
+"Toshkent",
+"Tashkent"
+],
+"VN-DA_NANG": [
+"Danang",
+"Da Nang",
+"Tourane"
+],
+"VN-HAI_PHONG": [
+"Haiphong",
+"Hai Phong",
+"هايفونج"
+],
+"VN-HO_CHI_MINH_CITY": [
+"Saigon",
+"HCMC",
+"Ho Chi Minh",
+"HCM City",
+"Sai Gon",
+"سايغون"
+],
+"VN-LANG_SON": [
+"Lang Son",
+"Langson",
+"Huu Nghi"
+],
+"VN-VUNG_TAU": [
+"Vungtau",
+"Cai Mep",
+"Cai Mep Thi Vai",
+"Vung Tau"
+],
+"YE-ADEN": [
+"Aden",
+"Adan",
+"Aden Port"
+],
+"ZA-CAPE_TOWN": [
+"Kaapstad",
+"Cape Town"
+],
+"ZA-JOHANNESBURG": [
+"Joburg",
+"Jozi",
+"Johannesburg"
+]
+}

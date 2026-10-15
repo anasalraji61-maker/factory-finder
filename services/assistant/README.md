@@ -10,6 +10,8 @@ Arabic/English natural-language sourcing assistant. `POST /v1/assistant/query {t
 * `service.py` - orchestration; any downstream failure becomes a `warnings` entry (`<svc>_unavailable`).
 * `compose.py` - Arabic (default) / English answer composer; language follows the query text. `llm.py` - optional provider-agnostic `LlmClient` (`MockLlm`, `HttpLlm` = Anthropic Messages shape, base URL configurable); OFF by default.
 
+Multilingual routing: Turkish, Kurdish (Sorani), Persian and simple Chinese share the same lexicon structure (`domain/lexicon_ml.py`, `data/aliases_ml.json`; Chinese is segmented by `domain/han.py`, Turkish apostrophe suffixes become direction markers in `text.py`). Replies use the Arabic/English templates (Arabic-script input -> Arabic; Latin/Chinese -> English).
+
 Tools (intents `shipment_status`, `deal_status`, `compare`, `hs_lookup`; `tools.py`): shipment status by reference (tracking), deal/payment status (rfq; needs `X-User-Id`, otherwise a sign-in notice and no downstream call), compare two `lst_*` listings (sourcing + trust [+ logistics landed cost]), HS-code lookup (logistics). Responses add bilingual `cards[]`. Third-party text is sanitized (`guard.py`, warning `untrusted_text_filtered`). Daily per-user quota (`quota.py`, 429 `quota_exceeded`). Decisions: `docs/decisions/assistant-tools-2.md`.
 
 Run: `uvicorn ff_assistant.main:app --port 8109` (needs `PYTHONPATH=src`). Test: `python -m pytest -q`.

@@ -244,7 +244,7 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         entry = m.value
         first = tokens[m.start]
         term = entry["en"]
-        if not is_arabic(first.norm) and m.end - m.start >= len(term.split()):
+        if not is_arabic(first.norm) and not entry.get("ml") and m.end - m.start >= len(term.split()):
             term = " ".join(t.surface for t in tokens[m.start : m.end])
         if term not in keywords:
             keywords.append(term)

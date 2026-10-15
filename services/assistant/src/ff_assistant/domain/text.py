@@ -36,6 +36,8 @@ _CHAR_MAP: dict[int, str | None] = {
     0x200E: None,  # left-to-right mark
     0x200F: None,  # right-to-left mark
     0x061C: None,  # Arabic letter mark
+    0x3002: ".",  # ideographic full stop
+    0x3001: ",",  # ideographic comma
     0x00A0: " ",  # no-break space
     0x2013: "-",  # en dash
     0x2014: "-",  # em dash
@@ -67,11 +69,37 @@ _FOLD_MAP = str.maketrans(
         "پ": "ب",
         "ڤ": "ف",
         "ژ": "ز",
+        # Kurdish (Sorani) letters (ڕ stays distinct: کڕین 'buy' must not fold into كرين 'crane')
+        "ە": "ه",
+        "ێ": "ي",
+        "ۆ": "و",
+        "ۊ": "و",
+        "ڵ": "ل",
+        # Turkish letters (ASCII-fold so "Çin'den", "Bağdat", "İstanbul" match plain spellings)
+        "İ": "i",
+        "ı": "i",
+        "ş": "s",
+        "Ş": "s",
+        "ğ": "g",
+        "Ğ": "g",
+        "ç": "c",
+        "Ç": "c",
+        "ö": "o",
+        "Ö": "o",
+        "ü": "u",
+        "Ü": "u",
+        "â": "a",
+        "î": "i",
+        "û": "u",
     }
 )
 
 _ARABIC_LETTER_RE = re.compile("[ء-يٱ-ۓ]")
-_LATIN_LETTER_RE = re.compile("[A-Za-z]")
+_LATIN_LETTER_RE = re.compile("[A-Za-zÀ-ɏ]")
+_HAN_LETTER_RE = re.compile("[㐀-䶿一-鿿豈-﫿]")
+_LATIN_WORD = "A-Za-zÀ-ɏ"
+# Turkish case suffixes after an apostrophe become direction markers: Basra'ya -> "to Basra".
+_TR_SUFFIX_RE = re.compile(rf"(?<![{_LATIN_WORD}])([{_LATIN_WORD}]{{3,}})['’](y?[ae]|[dt][ae]n?)(?![{_LATIN_WORD}])")
 _SPACES_RE = re.compile(r"\s+")
 
 TokenKind = Literal["num", "word", "sym"]
@@ -88,7 +116,18 @@ def clean_text(raw: str) -> str:
     text = unicodedata.normalize("NFKC", raw)
     text = _DIACRITICS_RE.sub("", text)
     text = text.translate(_CHAR_MAP)
+    text = _TR_SUFFIX_RE.sub(_turkish_marker, text)
+    if _HAN_LETTER_RE.search(text):
+        from ff_assistant.domain import han  # lazy: han reads the lexicon data
+
+        text = han.segment(han.digits(text))
     return _SPACES_RE.sub(" ", text).strip()
+
+
+def _turkish_marker(m: re.Match[str]) -> str:
+    suffix = m.group(2).lower()
+    role = "from" if suffix.endswith("n") else "in" if suffix[0] in "dt" else "to"
+    return f"{role} {m.group(1)}"
 
 
 def fold(clean: str) -> str:
@@ -109,7 +148,9 @@ def normalize(raw: str) -> str:
 def detect_language(clean: str) -> Literal["ar", "en"]:
     arabic = len(_ARABIC_LETTER_RE.findall(clean))
     latin = len(_LATIN_LETTER_RE.findall(clean))
-    return "en" if latin > arabic else "ar"
+    han = len(_HAN_LETTER_RE.findall(clean))
+    # Arabic-script text (Arabic, Persian, Kurdish) -> ar; Latin (incl. Turkish) and Chinese -> en templates
+    return "en" if latin + han > arabic else "ar"
 
 
 def is_arabic(word: str) -> bool:

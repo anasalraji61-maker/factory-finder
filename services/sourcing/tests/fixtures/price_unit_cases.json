@@ -1,0 +1,875 @@
+{
+ "_doc": "Price/unit/condition/year normalization cases (domain/pricing.py). kind=price: text(+country) -> price_min/price_max (Decimal STRINGS or null), currency (null when ambiguous), unit (canonical or null), optional moq/pack_qty/is_from/is_up_to/candidates/tiers [[min_qty,max_qty,price_min]...] and flags (must all be present; ambiguity is flagged, never guessed). kind=condition: text -> condition|null + flags. kind=year: text -> year|null + flags (now_year fixed at 2026). Deterministic, no network.",
+ "now_year": 2026,
+ "cases": [
+  {
+   "kind": "price",
+   "text": "US$10.00 (100-499 pieces); US$8.00 (500+ pieces)",
+   "price_min": "8.00",
+   "price_max": "10.00",
+   "currency": "USD",
+   "unit": "pc",
+   "moq": 100,
+   "tiers": [
+    [
+     100,
+     499,
+     "10.00"
+    ],
+    [
+     500,
+     null,
+     "8.00"
+    ]
+   ],
+   "flags": [
+    "unit_inferred_from_qty"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "100-499 pcs: $10, 500-999 pcs: $9, 1000+ pcs: $8",
+   "price_min": "8",
+   "price_max": "10",
+   "currency": "USD",
+   "unit": "pc",
+   "moq": 100,
+   "tiers": [
+    [
+     100,
+     499,
+     "10"
+    ],
+    [
+     500,
+     999,
+     "9"
+    ],
+    [
+     1000,
+     null,
+     "8"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "1-99 件 ¥12; 100-499 件 ¥10; 500件以上 ¥8",
+   "price_min": "8",
+   "price_max": "12",
+   "currency": null,
+   "unit": "pc",
+   "moq": 1,
+   "candidates": [
+    "CNY",
+    "JPY"
+   ],
+   "flags": [
+    "ambiguous_currency_symbol"
+   ],
+   "tiers": [
+    [
+     1,
+     99,
+     "12"
+    ],
+    [
+     100,
+     499,
+     "10"
+    ],
+    [
+     500,
+     null,
+     "8"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "1-99 件 12元; 100+ 件 10元",
+   "price_min": "10",
+   "price_max": "12",
+   "currency": "CNY",
+   "unit": "pc",
+   "tiers": [
+    [
+     1,
+     99,
+     "12"
+    ],
+    [
+     100,
+     null,
+     "10"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "≥500 sets $120",
+   "price_min": "120",
+   "price_max": "120",
+   "currency": "USD",
+   "unit": "set",
+   "tiers": [
+    [
+     500,
+     null,
+     "120"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$50 (1-9 tons); $45 (10+ tons)",
+   "price_min": "45",
+   "price_max": "50",
+   "currency": "USD",
+   "unit": "ton",
+   "tiers": [
+    [
+     1,
+     9,
+     "50"
+    ],
+    [
+     10,
+     null,
+     "45"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "2-10 pieces $5; 11-50 pieces $4.5; 51+ pieces $4",
+   "price_min": "4",
+   "price_max": "5",
+   "currency": "USD",
+   "unit": "pc",
+   "tiers": [
+    [
+     2,
+     10,
+     "5"
+    ],
+    [
+     11,
+     50,
+     "4.5"
+    ],
+    [
+     51,
+     null,
+     "4"
+    ]
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$10 (1-99 pieces); $9 (50-499 pieces)",
+   "price_min": "9",
+   "price_max": "10",
+   "currency": "USD",
+   "unit": "pc",
+   "flags": [
+    "overlapping_tiers"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$10 (1-99 pieces); $9 (200-499 pieces)",
+   "price_min": "9",
+   "price_max": "10",
+   "currency": "USD",
+   "unit": "pc",
+   "flags": [
+    "tier_gap"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$8 (1-99 pieces); $9 (100+ pieces)",
+   "price_min": "8",
+   "price_max": "9",
+   "currency": "USD",
+   "unit": "pc",
+   "flags": [
+    "non_monotonic_tiers"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$8 / m²; MOQ 50",
+   "price_min": "8",
+   "price_max": "8",
+   "currency": "USD",
+   "unit": "m2",
+   "moq": 50
+  },
+  {
+   "kind": "price",
+   "text": "US $12.50 - 15 / piece",
+   "price_min": "12.50",
+   "price_max": "15",
+   "currency": "USD",
+   "unit": "pc"
+  },
+  {
+   "kind": "price",
+   "text": "MOQ: 200 pcs; $3.2",
+   "price_min": "3.2",
+   "price_max": "3.2",
+   "currency": "USD",
+   "unit": null,
+   "moq": 200
+  },
+  {
+   "kind": "price",
+   "text": "12-15",
+   "price_min": "12",
+   "price_max": "15",
+   "currency": null,
+   "unit": null
+  },
+  {
+   "kind": "price",
+   "text": "15-12",
+   "price_min": "12",
+   "price_max": "15",
+   "currency": null,
+   "unit": null,
+   "flags": [
+    "reversed_range"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "from $3.5 / kg",
+   "price_min": "3.5",
+   "price_max": "3.5",
+   "currency": "USD",
+   "unit": "kg",
+   "is_from": true
+  },
+  {
+   "kind": "price",
+   "text": "Starting at US$1,200 per set",
+   "price_min": "1200",
+   "price_max": "1200",
+   "currency": "USD",
+   "unit": "set",
+   "is_from": true,
+   "flags": [
+    "per_set_pack_unknown"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "as low as 0.85 USD/pc",
+   "price_min": "0.85",
+   "price_max": "0.85",
+   "currency": "USD",
+   "unit": "pc",
+   "is_from": true
+  },
+  {
+   "kind": "price",
+   "text": "12 元起",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "CNY",
+   "unit": null,
+   "is_from": true
+  },
+  {
+   "kind": "price",
+   "text": "ابتداء من 50 دولار للطن",
+   "price_min": "50",
+   "price_max": "50",
+   "currency": "USD",
+   "unit": "ton",
+   "is_from": true
+  },
+  {
+   "kind": "price",
+   "text": "up to $90 / unit",
+   "price_min": "90",
+   "price_max": "90",
+   "currency": "USD",
+   "unit": "pc",
+   "is_up_to": true
+  },
+  {
+   "kind": "price",
+   "text": "US $2.5 per pair",
+   "price_min": "2.5",
+   "price_max": "2.5",
+   "currency": "USD",
+   "unit": "pair"
+  },
+  {
+   "kind": "price",
+   "text": "$18 / dozen",
+   "price_min": "18",
+   "price_max": "18",
+   "currency": "USD",
+   "unit": "dozen"
+  },
+  {
+   "kind": "price",
+   "text": "$24 / carton",
+   "price_min": "24",
+   "price_max": "24",
+   "currency": "USD",
+   "unit": "carton"
+  },
+  {
+   "kind": "price",
+   "text": "€1.234,50 per set (12 pcs)",
+   "price_min": "1234.50",
+   "price_max": "1234.50",
+   "currency": "EUR",
+   "unit": "set",
+   "pack_qty": 12
+  },
+  {
+   "kind": "price",
+   "text": "$30 / set",
+   "price_min": "30",
+   "price_max": "30",
+   "currency": "USD",
+   "unit": "set",
+   "flags": [
+    "per_set_pack_unknown"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$3/pc",
+   "price_min": "3",
+   "price_max": "3",
+   "currency": "USD",
+   "unit": "pc"
+  },
+  {
+   "kind": "price",
+   "text": "$450 / metric ton",
+   "price_min": "450",
+   "price_max": "450",
+   "currency": "USD",
+   "unit": "ton"
+  },
+  {
+   "kind": "price",
+   "text": "$450 / MT",
+   "price_min": "450",
+   "price_max": "450",
+   "currency": "USD",
+   "unit": "ton"
+  },
+  {
+   "kind": "price",
+   "text": "$0.45 / kg",
+   "price_min": "0.45",
+   "price_max": "0.45",
+   "currency": "USD",
+   "unit": "kg"
+  },
+  {
+   "kind": "price",
+   "text": "$12 / m2",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "USD",
+   "unit": "m2"
+  },
+  {
+   "kind": "price",
+   "text": "$12 per square meter",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "USD",
+   "unit": "m2"
+  },
+  {
+   "kind": "price",
+   "text": "$95 / cbm",
+   "price_min": "95",
+   "price_max": "95",
+   "currency": "USD",
+   "unit": "m3"
+  },
+  {
+   "kind": "price",
+   "text": "0.9 USD per liter",
+   "price_min": "0.9",
+   "price_max": "0.9",
+   "currency": "USD",
+   "unit": "liter"
+  },
+  {
+   "kind": "price",
+   "text": "$6/m",
+   "price_min": "6",
+   "price_max": "6",
+   "currency": "USD",
+   "unit": "m"
+  },
+  {
+   "kind": "price",
+   "text": "$7 / short ton",
+   "price_min": "7",
+   "price_max": "7",
+   "currency": "USD",
+   "unit": "short_ton"
+  },
+  {
+   "kind": "price",
+   "text": "$7 / long ton",
+   "price_min": "7",
+   "price_max": "7",
+   "currency": "USD",
+   "unit": "long_ton"
+  },
+  {
+   "kind": "price",
+   "text": "12元/吨",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "CNY",
+   "unit": "ton"
+  },
+  {
+   "kind": "price",
+   "text": "每吨3500元",
+   "price_min": "3500",
+   "price_max": "3500",
+   "currency": "CNY",
+   "unit": "ton"
+  },
+  {
+   "kind": "price",
+   "text": "RMB 80/套",
+   "price_min": "80",
+   "price_max": "80",
+   "currency": "CNY",
+   "unit": "set",
+   "flags": [
+    "per_set_pack_unknown"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "¥12/件",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": null,
+   "unit": "pc",
+   "candidates": [
+    "CNY",
+    "JPY"
+   ],
+   "flags": [
+    "ambiguous_currency_symbol"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "¥12/件",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "JPY",
+   "unit": "pc",
+   "country": "JP",
+   "flags": [
+    "currency_from_country"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "¥12/件",
+   "price_min": "12",
+   "price_max": "12",
+   "currency": "CNY",
+   "unit": "pc",
+   "country": "CN",
+   "flags": [
+    "currency_from_country"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "¥5 RMB",
+   "price_min": "5",
+   "price_max": "5",
+   "currency": "CNY",
+   "unit": null
+  },
+  {
+   "kind": "price",
+   "text": "￥5000 円",
+   "price_min": "5000",
+   "price_max": "5000",
+   "currency": "JPY",
+   "unit": null
+  },
+  {
+   "kind": "price",
+   "text": "CN¥15.8/米",
+   "price_min": "15.8",
+   "price_max": "15.8",
+   "currency": "CNY",
+   "unit": "m"
+  },
+  {
+   "kind": "price",
+   "text": "50 دولار للطن",
+   "price_min": "50",
+   "price_max": "50",
+   "currency": "USD",
+   "unit": "ton"
+  },
+  {
+   "kind": "price",
+   "text": "١٢٫٥ دولار / متر مربع",
+   "price_min": "12.5",
+   "price_max": "12.5",
+   "currency": "USD",
+   "unit": "m2"
+  },
+  {
+   "kind": "price",
+   "text": "٣ دولار لكل كيلو",
+   "price_min": "3",
+   "price_max": "3",
+   "currency": "USD",
+   "unit": "kg"
+  },
+  {
+   "kind": "price",
+   "text": "5 دولار للقطعة",
+   "price_min": "5",
+   "price_max": "5",
+   "currency": "USD",
+   "unit": "pc"
+  },
+  {
+   "kind": "price",
+   "text": "2500 دينار عراقي للمتر",
+   "price_min": "2500",
+   "price_max": "2500",
+   "currency": "IQD",
+   "unit": "m"
+  },
+  {
+   "kind": "price",
+   "text": "100 دينار للقطعة",
+   "price_min": "100",
+   "price_max": "100",
+   "currency": null,
+   "unit": "pc",
+   "candidates": [
+    "IQD",
+    "KWD",
+    "JOD",
+    "DZD",
+    "TND",
+    "BHD",
+    "LYD"
+   ],
+   "flags": [
+    "ambiguous_currency_symbol"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "200 ريال لكل طقم",
+   "price_min": "200",
+   "price_max": "200",
+   "currency": null,
+   "unit": "set",
+   "candidates": [
+    "SAR",
+    "QAR",
+    "OMR",
+    "YER",
+    "IRR"
+   ],
+   "flags": [
+    "ambiguous_currency_symbol",
+    "per_set_pack_unknown"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$12.500/ton",
+   "price_min": "12.500",
+   "price_max": "12.500",
+   "currency": "USD",
+   "unit": "ton",
+   "flags": [
+    "ambiguous_number_separator"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$0.125 / pc",
+   "price_min": "0.125",
+   "price_max": "0.125",
+   "currency": "USD",
+   "unit": "pc"
+  },
+  {
+   "kind": "price",
+   "text": "$1,234.50",
+   "price_min": "1234.50",
+   "price_max": "1234.50",
+   "currency": "USD",
+   "unit": null
+  },
+  {
+   "kind": "price",
+   "text": "€12,5 / kg",
+   "price_min": "12.5",
+   "price_max": "12.5",
+   "currency": "EUR",
+   "unit": "kg",
+   "flags": [
+    "decimal_comma"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$1,234,567",
+   "price_min": "1234567",
+   "price_max": "1234567",
+   "currency": "USD",
+   "unit": null
+  },
+  {
+   "kind": "price",
+   "text": "$5 12 pcs",
+   "price_min": null,
+   "price_max": null,
+   "currency": "USD",
+   "unit": null,
+   "flags": [
+    "ambiguous_multiple_numbers",
+    "no_price"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "negotiable",
+   "price_min": null,
+   "price_max": null,
+   "currency": null,
+   "unit": null,
+   "flags": [
+    "no_price"
+   ]
+  },
+  {
+   "kind": "price",
+   "text": "$0",
+   "price_min": null,
+   "price_max": null,
+   "currency": "USD",
+   "unit": null,
+   "flags": [
+    "non_positive_price"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "Brand new CNC lathe",
+   "condition": "new",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "全新数控车床",
+   "condition": "new",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "ماكينة جديدة",
+   "condition": "new",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "Used injection molding machine",
+   "condition": "used",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "二手注塑机",
+   "condition": "used",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "ماكينة حقن مستعملة",
+   "condition": "used",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "second-hand press",
+   "condition": "used",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "Refurbished CNC",
+   "condition": "refurbished",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "reconditioned gearbox",
+   "condition": "refurbished",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "翻新设备",
+   "condition": "refurbished",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "مكينة مجددة",
+   "condition": "refurbished",
+   "flags": []
+  },
+  {
+   "kind": "condition",
+   "text": "Like new compressor",
+   "condition": null,
+   "flags": [
+    "ambiguous_like_new"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "unused stock",
+   "condition": null,
+   "flags": [
+    "ambiguous_like_new"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "95% new extruder",
+   "condition": null,
+   "flags": [
+    "ambiguous_like_new"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "new and used parts",
+   "condition": null,
+   "flags": [
+    "ambiguous_conflicting_condition"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "not new",
+   "condition": null,
+   "flags": [
+    "ambiguous_negated_new"
+   ]
+  },
+  {
+   "kind": "condition",
+   "text": "PP granules",
+   "condition": null,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "2015 year used machine",
+   "year": 2015,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "Year of manufacture: 2012",
+   "year": 2012,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "manufactured in 2018",
+   "year": 2018,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "2016年出厂",
+   "year": 2016,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "موديل 2014",
+   "year": 2014,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "سنة الصنع 2010",
+   "year": 2010,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "MFG 2019",
+   "year": 2019,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "made in 2008, refurbished 2020",
+   "year": 2008,
+   "flags": []
+  },
+  {
+   "kind": "year",
+   "text": "year 2015-2018",
+   "year": null,
+   "flags": [
+    "ambiguous_year_range"
+   ]
+  },
+  {
+   "kind": "year",
+   "text": "mfg 1920",
+   "year": null,
+   "flags": [
+    "implausible_year"
+   ]
+  },
+  {
+   "kind": "year",
+   "text": "year 2031",
+   "year": null,
+   "flags": [
+    "implausible_year"
+   ]
+  },
+  {
+   "kind": "year",
+   "text": "PP 2015 granules",
+   "year": null,
+   "flags": []
+  }
+ ]
+}

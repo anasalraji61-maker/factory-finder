@@ -9,7 +9,7 @@ IRAQ = ["Baghdad", "Basra", "Erbil", "Mosul", "Najaf", "Karbala", "Sulaymaniyah"
 
 def test_sizes_and_uniqueness():
     ds = get_dataset()
-    assert len(ds.countries) >= 60 and len(ds.cities) >= 300 and len(ds.hubs) >= 200
+    assert len(ds.countries) >= 60 and len(ds.cities) >= 900 and len(ds.hubs) >= 200
     assert len({h.id for h in ds.hubs}) == len(ds.hubs)
     assert len({c.id for c in ds.cities}) == len(ds.cities)
 
@@ -82,3 +82,31 @@ def test_new_data_quality():
         if item.country_code in box:
             la0, la1, lo0, lo1 = box[item.country_code]
             assert la0 <= item.point.lat <= la1 and lo0 <= item.point.lon <= lo1, item.id
+
+
+def test_gazetteer_breadth():
+    ds = get_dataset()
+    by_cc: dict[str, set[str]] = {}
+    for c in ds.cities:
+        by_cc.setdefault(c.country_code, set()).add(c.name_en)
+    assert {"Yiwu", "Shenzhen", "Guangzhou", "Foshan", "Ningbo", "Qingdao", "Tianjin", "Dongguan",
+            "Zhongshan", "Suzhou", "Hangzhou", "Wenzhou"} <= by_cc["CN"]
+    assert len(by_cc["CN"]) >= 100 and len(by_cc["IN"]) >= 45 and len(by_cc["US"]) >= 55
+    assert {"Mecca", "Khobar", "Al Ain", "Ras Laffan", "Hurghada", "Fez", "Agadir", "Sidon", "Hama"} <= {
+        n for s in by_cc.values() for n in s}
+    assert {"Rasht", "Yazd", "Gebze", "Manisa"} <= {n for cc in ("IR", "TR") for n in by_cc[cc]}
+    assert {"Wolfsburg", "Venlo", "Gioia Tauro", "Algeciras", "Le Havre"} <= {
+        n for cc in ("DE", "NL", "IT", "ES", "FR") for n in by_cc[cc]}
+
+
+def test_aliases_valid_and_arabic_script():
+    ds = get_dataset()
+    ids = {c.id for c in ds.cities}
+    assert len(ds.aliases) >= 300 and set(ds.aliases) <= ids
+    for cid, names in ds.aliases.items():
+        assert names and all(n.strip() for n in names), cid
+        assert len(set(names)) == len(names), cid
+    with pytest.raises(DatasetError):
+        Dataset(ds.countries, ds.cities, ds.hubs, {"NOPE": ["x"]})
+    with pytest.raises(DatasetError):
+        Dataset(ds.countries, ds.cities, ds.hubs, {ds.cities[0].id: [" "]})

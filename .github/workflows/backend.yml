@@ -3,7 +3,7 @@ on:
   push:
     paths: ["services/**", "packages/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
   pull_request:
-    paths: ["services/**", "scripts/**", "ruff.toml"]
+    paths: ["services/**", "packages/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
@@ -28,6 +28,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            services/*/pyproject.toml
+            packages/*/pyproject.toml
       - run: python scripts/install_service.py services/${{ matrix.service }} --editable --extras dev
       - run: pip install ruff pytest pytest-asyncio
       - run: ruff check services/${{ matrix.service }}
@@ -36,7 +40,7 @@ jobs:
         working-directory: services/${{ matrix.service }}
         run: |
           set +e
-          python -m pytest -q -rfE --tb=short 2>&1 | tee /tmp/pytest.out
+          python -m pytest -q -p no:cacheprovider -rfE --tb=short --junitxml=junit.xml 2>&1 | tee /tmp/pytest.out
           code=${PIPESTATUS[0]}
           if [ "$code" != "0" ]; then
             grep -E "^(FAILED|ERROR)|Error:|^E  " /tmp/pytest.out | head -15 | while IFS= read -r line; do
@@ -44,6 +48,14 @@ jobs:
             done
           fi
           exit $code
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ matrix.service }}
+          path: services/${{ matrix.service }}/junit.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
   py-common:
     runs-on: ubuntu-latest
@@ -55,6 +67,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            services/*/pyproject.toml
+            packages/*/pyproject.toml
       - run: pip install -e packages/py-common[dev] pytest pytest-asyncio ruff || pip install -e packages/py-common pytest pytest-asyncio ruff
       - run: ruff check packages/py-common
-      - run: python -m pytest -q packages/py-common
+      - run: python -m pytest -q -p no:cacheprovider packages/py-common --junitxml=junit-py-common.xml
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-py-common
+          path: junit-py-common.xml
+          if-no-files-found: ignore
+          retention-days: 7

@@ -69,3 +69,54 @@ def test_sea_lanes():
     ja = next(h for h in ds.hubs if h.id == "AEJEA").point
     u = compute_distance(ds, ny.lat, ny.lon, ja.lat, ja.lon, "sea")
     assert 13000 < u.distance_km < 17500 and "Strait of Gibraltar" in u.via
+
+
+def _top(q, cc=None):
+    r = search_cities(ds, q, cc)
+    return r[0].name_en if r else None
+
+
+def test_normalize_extended():
+    assert normalize("Xi'an") == normalize("Xian") == "xian"
+    assert normalize("Düsseldorf") == normalize("Dusseldorf")
+    assert normalize("Saint-Etienne") == normalize("saint etienne")
+    assert normalize("شنغهاى") == normalize("شنغهاي")  # ى/ي
+    assert normalize("هولير") == "هولير"
+    assert normalize("کرج") == normalize("كرج")  # Persian kaf
+
+
+def test_search_aliases_and_old_names():
+    for q, want in [("Hewler", "Erbil"), ("Canton", "Guangzhou"), ("Bombay", "Mumbai"), ("Saigon", "Ho Chi Minh City"),
+                    ("Kiev", "Kyiv"), ("Tsingtao", "Qingdao"), ("Peking", "Beijing"), ("Calcutta", "Kolkata"),
+                    ("Izmit", "Kocaeli"), ("Koln", "Cologne"), ("Makkah", "Mecca"), ("Dohuk", "Duhok"),
+                    ("Sulaimani", "Sulaymaniyah"), ("كانتون", "Guangzhou"), ("ذي قار", "Nasiriyah"),
+                    ("بابل", "Hillah"), ("Xi'an", "Xi'an"), ("Habur", "Silopi")]:
+        assert _top(q) == want, q
+
+
+def test_search_arabic_normalisation_and_article():
+    assert _top("اسطنبول") == _top("استنبول") == "Istanbul"
+    assert _top("البصره") == _top("البصرة") == _top("بصره") == "Basra"
+    assert _top("الحله") == "Hillah"
+    assert _top("أربيل") == _top("اربيل") == _top("إربيل") == "Erbil"
+    assert _top("ابوظبي") == "Abu Dhabi"
+
+
+def test_search_typos():
+    for q, want in [("bagdhad", "Baghdad"), ("shangahi", "Shanghai"), ("dubay", "Dubai"), ("Guangzhuo", "Guangzhou"),
+                    ("Shenzen", "Shenzhen"), ("istanbl", "Istanbul")]:
+        assert _top(q) == want, q
+    assert search_cities(ds, "qqqzzzx") == []  # gibberish still returns nothing
+    assert search_cities(ds, "baghdd", "CN") == []  # country filter respected for fuzzy hits
+
+
+def test_search_ranking_order():
+    names = [c.name_en for c in search_cities(ds, "tangier")]
+    assert names[0] == "Tangier"
+    r = search_cities(ds, "ba")  # short query: only name/word prefixes, no mid-word substring noise
+    assert r
+    for c in r:
+        names = [normalize(x) for x in [c.name_en, c.name_ar, *ds.aliases.get(c.id, [])]]
+        assert any(w.startswith("ba") for n in names for w in n.split()), c.name_en
+    assert search_cities(ds, "yiwu")[0].name_en == "Yiwu"
+    assert [c.name_en for c in search_cities(ds, "iraq")] == []

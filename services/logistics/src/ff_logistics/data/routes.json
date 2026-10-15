@@ -24,6 +24,16 @@
      6
     ],
     "label": "Jebel Ali + truck via Safwan"
+   },
+   {
+    "hub": "JOAQJ",
+    "via": "IQTRB",
+    "border_fee": 400,
+    "extra_days": [
+     3,
+     7
+    ],
+    "label": "Aqaba + truck via Trebil"
    }
   ],
   "JO": [
@@ -53,5 +63,7 @@
    "per_wm": 20,
    "note": "port congestion / war-risk surcharges"
   }
- }
+ },
+ "confidence": "low",
+ "as_of": "2026-10"
 }

@@ -200,6 +200,9 @@ bool _matches(Listing l, ListingQuery q) {
   }
   if (q.maxMoq != null && (l.moq ?? 0) > q.maxMoq!) return false;
   if (q.verifiedOnly && !l.supplier.verified) return false;
+  // Overlap test on the unit price range (mock prices are compared as-is).
+  if (q.minPrice != null && l.price.max.value < q.minPrice!) return false;
+  if (q.maxPrice != null && l.price.min.value > q.maxPrice!) return false;
   if (q.category != null && l.category != q.category) return false;
   if (q.supplierId != null && l.supplier.id != q.supplierId) return false;
   final text = q.query.trim().toLowerCase();

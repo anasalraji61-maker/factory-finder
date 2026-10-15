@@ -57,6 +57,10 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
   int _uploadSeq = 0;
 
   OwnedListing? _existing;
+
+  /// Id of a listing this screen already created (publish failed afterwards):
+  /// retries update it instead of creating a duplicate.
+  String? _createdId;
   bool _loading = false;
   String? _loadErrorKey;
   bool _busy = false;
@@ -181,9 +185,11 @@ class _ProductEditorScreenState extends ConsumerState<ProductEditorScreen> {
     final repo = ref.read(myListingsRepositoryProvider);
     final draft = _collect();
     try {
-      return _isEdit
-          ? await repo.update(widget.listingId!, draft)
-          : await repo.create(draft);
+      final id = widget.listingId ?? _createdId;
+      if (id != null) return await repo.update(id, draft);
+      final created = await repo.create(draft);
+      _createdId = created.id;
+      return created;
     } catch (e) {
       if (mounted) showMyProductsSnack(context, context.tr(myProductsErrorKey(e)));
       return null;

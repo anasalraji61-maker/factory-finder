@@ -11,7 +11,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable, Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -22,10 +22,10 @@ from ff_tracking.domain.models import (
     GeoPoint,
     Location,
     TrackingEvent,
-    VesselRef,
 )
 from ff_tracking.domain.places import find_place
 from ff_tracking.domain.progress import PROGRESS
+from ff_tracking.domain.validators import parse_vessel
 
 _STATUS_FILE = Path(__file__).resolve().parent.parent / "data" / "status_map.json"
 
@@ -89,7 +89,8 @@ def parse_ts(value: Any) -> datetime | None:
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             v = float(value) / (1000 if value > 1e11 else 1)
             return datetime.fromtimestamp(v, UTC)
-        dt = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+        text = re.sub(r"\s*(?:UTC|GMT)$", "Z", str(value).strip(), flags=re.IGNORECASE)
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except (ValueError, OverflowError, OSError):
         return None
     return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
@@ -136,6 +137,21 @@ def _event_id(source: str, code: str, ts: datetime, hub: str, raw_id: Any) -> st
 
 
 MAX_EVENTS = 300  # a provider cannot grow the stored aggregate without bound
+DEDUPE_WINDOW = timedelta(seconds=120)  # same status + place within this window = the same real-world event
+CLOCK_SKEW = timedelta(minutes=15)  # an explicit actual event this far ahead of ``now`` is provider clock skew
+_FLIGHT = re.compile(r"^([A-Z0-9]{2})\s*0*([0-9]{1,4}[A-Z]?)$")
+
+
+def parse_flight(value: Any) -> FlightRef | None:
+    """``"ek 306"`` / ``"EK0306"`` -> ``EK306``; anything that is not an IATA designator + number is dropped."""
+    m = _FLIGHT.match(str(value or "").strip().upper())
+    return FlightRef(number=m.group(1) + m.group(2), carrier_code=m.group(1)) if m else None
+
+
+def _planned_rank(raw: Mapping[str, Any]) -> tuple:
+    """Which planned arrival wins: an estimate (EST) beats a plan (PLN), then the most recently created."""
+    est = 1 if str(raw.get("classifier") or "").upper().startswith("EST") else 0
+    return est, parse_ts(raw.get("created")) or datetime.min.replace(tzinfo=UTC)
 
 
 def normalize_events(
@@ -145,45 +161,61 @@ def normalize_events(
     """Return ``(events, planned_arrival_eta, milestones, skipped_count)``.
 
     * unknown codes / unparsable timestamps are skipped (counted)
-    * non-actual (planned) events never enter the timeline; a planned arrival becomes the ETA
-    * duplicates (same status, hub, minute) collapse; output is ordered by (time, progress)
+    * non-actual (planned) events never enter the timeline; a planned arrival **at the destination** (any
+      planned arrival when the destination is unknown, the last one then) becomes the ETA; an estimate
+      (``classifier`` EST) supersedes a plan (PLN), then the latest ``created``
+    * an explicit ``actual: true`` event up to 15 minutes ahead of ``now`` is accepted (provider clock skew)
+    * duplicates collapse: the same provider ``event_id`` (latest poll wins) or the same status + place within
+      2 minutes; output is ordered by (time, progress)
     * a discharge/arrival at a hub other than the known destination becomes TRANSSHIPMENT
     """
-    seen: dict[tuple, TrackingEvent] = {}
-    gate_out: list[datetime] = []
-    eta: datetime | None = None
-    skipped = 0
+    by_id: dict[str, Mapping[str, Any]] = {}
+    anon: list[Mapping[str, Any]] = []
     for raw in raw_events:
+        if raw.get("event_id"):
+            by_id[str(raw["event_id"])] = raw  # same event seen again in a later poll: the last copy wins
+        else:
+            anon.append(raw)
+    kept: dict[tuple, list[TrackingEvent]] = {}
+    gate_out: list[datetime] = []
+    plans: list[tuple[tuple, datetime, str | None]] = []
+    skipped = 0
+    for raw in (*by_id.values(), *anon):
         code = norm_code(raw.get("code"))
         status = map_status(code, carrier_code)
         ts = parse_ts(raw.get("timestamp"))
         if status is None or ts is None:
             skipped += 1
             continue
-        if raw.get("actual") is False or ts > now:
-            if status in (S.ARRIVED, S.DISCHARGED) and (eta is None or ts < eta):
-                eta = ts
-            continue
         loc = resolve_location(raw.get("hub"), raw.get("name"), raw.get("country"), raw.get("lat"), raw.get("lon"))
         hub_id = loc.hub_id if loc else None
+        future = ts > now and not (raw.get("actual") is True and ts <= now + CLOCK_SKEW)
+        if raw.get("actual") is False or future:
+            if status in (S.ARRIVED, S.DISCHARGED) and (not destination_hub or not hub_id or hub_id == destination_hub):
+                plans.append((_planned_rank(raw), ts, hub_id))
+            continue
         if status in (S.ARRIVED, S.DISCHARGED) and destination_hub and hub_id and hub_id != destination_hub:
             status = S.TRANSSHIPMENT
         if _GATE_OUT.match(code):
             gate_out.append(ts)
-        key = (status, hub_id or (loc.name if loc else ""), ts.replace(second=0, microsecond=0))
-        if key in seen:
+        place = hub_id or (loc.name if loc else "")
+        if any(abs(e.timestamp - ts) <= DEDUPE_WINDOW for e in kept.get((status, place), ())):
             continue
-        v, f = raw.get("vessel"), raw.get("flight")
-        vessel = VesselRef(name=str(v["name"]), imo=v.get("imo") or None, voyage=v.get("voyage")) \
-            if isinstance(v, Mapping) and v.get("name") else None
-        flight = FlightRef(number=str(f), carrier_code=str(f)[:2]) if isinstance(f, str) and f else None
+        vessel = parse_vessel(raw.get("vessel"))
+        flight = parse_flight(raw.get("flight"))
         desc = str(raw.get("description") or "").strip()[:300] or DESC_EN[status]
-        seen[key] = TrackingEvent(
+        kept.setdefault((status, place), []).append(TrackingEvent(
             id=_event_id(source, code, ts, hub_id or "", raw.get("event_id")), status=status,
             description=desc, description_ar=DESC_AR[status], location=loc, timestamp=ts,
-            vessel=vessel, flight=flight, source=source)
-    events = sorted(seen.values(), key=lambda e: (e.timestamp, PROGRESS[e.status], e.id))[-MAX_EVENTS:]
+            vessel=vessel, flight=flight, source=source))
+    events = sorted((e for group in kept.values() for e in group),
+                    key=lambda e: (e.timestamp, PROGRESS.get(e.status, 0), e.id))[-MAX_EVENTS:]
     milestones = detect_milestones(events, gate_out)
+    eta = None
+    if plans:
+        best = max(rank for rank, _, _ in plans)
+        at_best = [(ts, hub) for rank, ts, hub in plans if rank == best]
+        eta = min(ts for ts, _ in at_best) if destination_hub else max(ts for ts, _ in at_best)
     return events, eta, milestones, skipped
 
 

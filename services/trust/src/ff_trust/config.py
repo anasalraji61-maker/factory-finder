@@ -63,6 +63,11 @@ class ScoringConfig(BaseModel):
     platform_review_prior_weight: float = 8.0  # pseudo-reviews at the prior mean for the rfq review summary
     platform_review_full_n: int = 10  # below this many reviews the signal is linearly dampened
     platform_review_sub_share: float = 0.3  # share of the sub-ratings mean inside the signal
+    deal_cancel_min_deals: int = 20  # cancellation caps apply from this many on-platform deals (completed + cancelled)
+    deal_cancel_high_share: float = 0.3  # cancelled / (completed + cancelled) at or above this -> capped below green
+    deal_cancel_high_cap: int = 69
+    deal_cancel_severe_share: float = 0.5
+    deal_cancel_severe_cap: int = 59
     deal_prior_rate: float = 0.85
     deal_prior_weight: float = 8.0
     dispute_recent_weight: float = 0.6  # weight of the last-90-day dispute rate vs the lifetime rate

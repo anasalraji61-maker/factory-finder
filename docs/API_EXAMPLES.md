@@ -1,0 +1,115 @@
+# API examples (curl through the gateway)
+
+All calls go to the gateway (`http://localhost:8000`); never to a service port. Field names are taken from `contracts/openapi/*.yaml` and
+`scripts/e2e*.py`. Start a stack with `python scripts/serve_stack.py` or `make dev`. Examples use `jq`.
+
+```
+GW=http://localhost:8000
+```
+
+## 1. Register, login, refresh (`gateway.yaml`)
+Register needs `password` and `name` plus `email` or `phone`; the response (201) has `access_token`, `refresh_token` and `user`.
+```
+curl -s $GW/v1/auth/register -H 'Content-Type: application/json' \
+  -d '{"email":"buyer@example.com","password":"Passw0rd!x","name":"Buyer One"}'
+curl -s $GW/v1/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"buyer@example.com","password":"Passw0rd!x"}' | tee /tmp/login.json
+TOKEN=$(jq -r .access_token /tmp/login.json); REFRESH=$(jq -r .refresh_token /tmp/login.json)
+curl -s $GW/v1/auth/refresh -H 'Content-Type: application/json' -d "{\"refresh_token\":\"$REFRESH\"}"   # new tokens, no user
+curl -s -X PATCH $GW/v1/me -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"role":"buyer","default_destination":{"country_code":"IQ","city":"Baghdad"}}'
+```
+Access tokens last 15 minutes; refresh tokens 30 days. Use `-H "Authorization: Bearer $TOKEN"` on every non-public call below.
+
+## 2. Search (`sourcing.yaml`, public)
+Query params: `q, kind, condition, origin_country, category, min_price, max_price, moq_max, verified_only, sort, page, page_size`.
+The response has `items` (each with `id`, `unit_price`, `supplier.trust_band`) and `facets`.
+```
+curl -s -G $GW/v1/search --data-urlencode 'q=injection molding machine' -d sort=price_asc -d page_size=20
+curl -s $GW/v1/listings/LISTING_ID          # LISTING_ID from items[].id
+```
+
+## 3. Landed cost (`logistics.yaml`, public)
+Required: `goods`, `origin`, `destination`. Optional: `supplier_incoterm`, `modes`, `display_currency`, `insurance`, `freight_override`.
+The response has `options[]` (each with `mode`, `lines[]`, `total` as a `{min,max}` range) and `assumptions[]`; every non-goods line is an estimate with `as_of` and `source`.
+```
+curl -s $GW/v1/quotes/landed-cost -H 'Content-Type: application/json' -d '{
+  "goods":{"description":"chairs","quantity":500,"total_value":{"amount":"5000","currency":"USD"},
+           "total_weight_kg":3000,"total_volume_m3":30},
+  "origin":{"country_code":"CN","city":"Shanghai"},
+  "destination":{"country_code":"IQ","city":"Baghdad"},
+  "display_currency":"USD"}'
+```
+
+## 4. Track a shipment: validate, then add (`tracking.yaml`)
+`reference_type` is one of `container | bl | awb | vessel_imo`. Validation returns `valid`, `reason` (e.g. `check_digit`) and `suggestions` for typos.
+```
+curl -s $GW/v1/validate/container/CSQU3054383 -H "Authorization: Bearer $TOKEN"        # {"valid":true,...}
+curl -s $GW/v1/validate/container/CSQU3O54383 -H "Authorization: Bearer $TOKEN"        # valid:false + suggestions
+curl -s $GW/v1/shipments -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"reference":"CSQU3054383","reference_type":"container","label":"chairs"}'      # 201, has id; 409 if already tracked
+curl -s $GW/v1/shipments/SHIPMENT_ID -H "Authorization: Bearer $TOKEN"                   # timeline in events[]
+curl -s -X POST $GW/v1/shipments/SHIPMENT_ID/refresh -H "Authorization: Bearer $TOKEN"  # throttled: may answer 429
+```
+
+## 5. Create an RFQ, offer, accept (`rfq.yaml`)
+Request requires `kind`, `title`, `quantity`; offer requires `price` and `supplier_name` and is sent by a second user (role `supplier`).
+Accepting creates a deal with `commission`. Only the request owner can accept or read the offers.
+```
+curl -s $GW/v1/requests -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{
+  "kind":"product","title":"Plastic chairs 500","quantity":500,"unit":"piece",
+  "target_price":{"amount":"8","currency":"USD"},"destination":{"country_code":"IQ","city":"Erbil"}}'   # 201 -> id
+curl -s $GW/v1/requests/REQUEST_ID/offers -H "Authorization: Bearer $SUPPLIER_TOKEN" -H 'Content-Type: application/json' -d '{
+  "price":{"amount":"7.5","currency":"USD"},"supplier_name":"Supplier One","moq":100,"lead_time_days":20,"incoterm":"FOB"}'   # 201 -> id
+curl -s $GW/v1/requests/REQUEST_ID/offers -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $GW/v1/offers/OFFER_ID/accept -H "Authorization: Bearer $TOKEN"   # deal (with commission), id is the deal id
+curl -s $GW/v1/deals/DEAL_ID -H "Authorization: Bearer $TOKEN"
+```
+
+## 6. Freight request and quote (`freight.yaml`)
+A forwarder first applies (`POST /v1/freight/applications`: `company_name, country_code, lanes[], modes[], incoterms[]`, optional
+`description, certifications`; 409 on a duplicate) and an admin approves it with `X-Admin-Token` (admin approval is not available to users).
+```
+curl -s $GW/v1/freight/applications -H "Authorization: Bearer $FWD_TOKEN" -H 'Content-Type: application/json' -d '{
+  "company_name":"Fast Cargo","country_code":"CN","description":"Sea freight",
+  "lanes":[{"origin_country":"CN","destination_country":"IQ"}],"modes":["sea"],"incoterms":["FOB","CIF"]}'
+curl -s -X POST $GW/v1/admin/freight/applications/APPLICATION_ID/approve -H "X-Admin-Token: $ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' -d '{"note":"ok"}'
+# buyer: required origin_country, origin_place, destination_country, destination_place, cargo_description, mode, incoterm, ready_date
+curl -s $GW/v1/freight/requests -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{
+  "origin_country":"CN","origin_place":"Shenzhen","destination_country":"IQ","destination_place":"Umm Qasr",
+  "cargo_description":"Ceramic planters","weight_kg":"4200","volume_cbm":"18","mode":"sea","container_type":"40HC",
+  "container_count":1,"incoterm":"FOB","ready_date":"2026-11-01","currency":"USD","quote_deadline_days":7}'
+# approved forwarder: required amount, currency, transit_days
+curl -s $GW/v1/freight/requests/REQUEST_ID/quotes -H "Authorization: Bearer $FWD_TOKEN" -H 'Content-Type: application/json' -d '{
+  "amount":"3100","currency":"USD","transit_days":24,"valid_days":10,"inclusions":["THC"],
+  "breakdown":[{"label":"Ocean freight","amount":"2800"},{"label":"THC","amount":"300"}]}'
+curl -s $GW/v1/freight/requests/REQUEST_ID/comparison -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $GW/v1/freight/quotes/QUOTE_ID/accept -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"revision":1}'
+```
+`revision` must match the quote's current revision (a stale one is refused); revising a quote with `PUT /v1/freight/quotes/{id}` bumps it.
+
+## 7. Invoice (mock provider) (`payments.yaml`)
+The deal owner sends only `deal_id` and `kind` (`commission | deal_payment`); payer, payee and amount derive from the deal.
+Repeating the call returns the same invoice (200 instead of 201). Status is one of `pending, awaiting_payment, confirming, paid, expired, failed, refunded`.
+With `FF_PAYMENTS_PROVIDER=mock`, payment is confirmed by a signed webhook on the payments port (see `scripts/e2e.py`, `deal_lifecycle`), not through the gateway.
+```
+curl -s $GW/v1/invoices -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"deal_id":"DEAL_ID","kind":"commission"}'
+curl -s $GW/v1/invoices/INVOICE_ID -H "Authorization: Bearer $TOKEN"
+curl -s $GW/v1/invoices -H "Authorization: Bearer $TOKEN"
+```
+
+## 8. Assistant (`assistant.yaml`)
+Body: `text` (required), `locale` (`ar` | `en`), optional `destination`. The response has `answer_text`, and depending on the question `listings`, `quote`/`quotes`
+or `cards[]` (types such as `shipment_status`, `deal_status`, `listing_comparison`, `hs_code`, `notice`; each card has `title` and `title_ar`).
+A per-user daily quota answers 429 with `Retry-After`.
+```
+curl -s $GW/v1/assistant/query -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"text":"ابي ٥٠٠ كرسي بلاستك من الصين الى اربيل","locale":"ar"}'
+curl -s $GW/v1/assistant/query -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"text":"where is my container CSQU3054383","locale":"en"}'
+```
+
+## Errors
+Failures use the shared error shape (`error.code`, e.g. `not_found`, `deal_not_reviewable`); 401 without a token, 422 for invalid bodies, 429 with `Retry-After`.

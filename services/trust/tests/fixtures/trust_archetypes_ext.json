@@ -1,0 +1,1178 @@
+[
+ {
+  "id": "j01_trader_posing_as_factory",
+  "archetype": "x",
+  "desc": "trading company claims factory; registry says trading co",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.04,
+   "price_vs_market_ratio": 0.85,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.4,
+   "country_risk": 0.3,
+   "business_license_status": "mismatch",
+   "years_in_business": 6,
+   "transactions_count": 200,
+   "rating_avg": 4.4,
+   "reviews_count": 80,
+   "domain_age_years": 5
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "neg": [
+    "business_license_status",
+    "contact_consistency"
+   ],
+   "score_max": 74
+  }
+ },
+ {
+  "id": "j02_real_factory_old_register",
+  "archetype": "x",
+  "desc": "old registered factory, young website, modest reviews",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 25,
+   "transactions_count": 120,
+   "rating_avg": 4.6,
+   "reviews_count": 40,
+   "domain_age_years": 2,
+   "storefront_age_years": 5,
+   "certifications": [
+    "ISO9001"
+   ],
+   "third_party_audit": true,
+   "deals_completed": 30,
+   "deals_cancelled": 1
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "pos": [
+    "years_in_business",
+    "business_license_status"
+   ]
+  }
+ },
+ {
+  "id": "j03_new_but_verified",
+  "archetype": "x",
+  "desc": "1-year-old audited licensed account, almost no deals",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 0.6,
+   "transactions_count": 3,
+   "third_party_audit": true,
+   "rating_avg": 5,
+   "reviews_count": 2,
+   "verification": {
+    "documents": [
+     {
+      "doc_type": "business_license",
+      "approved_on": "2026-03-01",
+      "expires_on": "2028-03-01"
+     },
+     {
+      "doc_type": "company_registry_reference",
+      "approved_on": "2026-03-01",
+      "expires_on": "2028-03-01"
+     },
+     {
+      "doc_type": "factory_photos",
+      "approved_on": "2026-03-01",
+      "expires_on": "2028-03-01"
+     },
+     {
+      "doc_type": "bank_reference",
+      "approved_on": "2026-03-01",
+      "expires_on": "2028-03-01"
+     }
+    ]
+   }
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "flags": [
+    "new_account"
+   ],
+   "caps": [
+    "new_account_cap"
+   ],
+   "level": "audited"
+  }
+ },
+ {
+  "id": "j04_fake_certificates",
+  "archetype": "x",
+  "desc": "every certificate expired, licence mismatch, unverified",
+  "signals": {
+   "verified": false,
+   "sanctions_hit": false,
+   "dispute_rate": 0.05,
+   "price_vs_market_ratio": 0.65,
+   "years_in_business": 3,
+   "certification_records": [
+    {
+     "name": "ISO9001",
+     "expires_on": "2022-01-01"
+    },
+    {
+     "name": "CE",
+     "expires_on": "2021-06-01"
+    }
+   ],
+   "business_license_status": "mismatch",
+   "contact_consistency": 0.4,
+   "has_physical_address": false
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "flags": [
+    "certification_expired"
+   ],
+   "neg": [
+    "certifications",
+    "business_license_status",
+    "verified"
+   ],
+   "level": "none"
+  }
+ },
+ {
+  "id": "j05_review_farm",
+  "archetype": "x",
+  "desc": "2000 perfect reviews on 40 transactions",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 3,
+   "transactions_count": 40,
+   "rating_avg": 5.0,
+   "reviews_count": 2000
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "red"
+   ],
+   "flags": [
+    "review_pattern_suspicious"
+   ],
+   "score_max": 74
+  }
+ },
+ {
+  "id": "j06_high_volume_low_quality",
+  "archetype": "x",
+  "desc": "huge volume, mediocre rating, many disputes and refunds",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.09,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 9,
+   "transactions_count": 20000,
+   "rating_avg": 3.2,
+   "reviews_count": 5000,
+   "refund_rate": 0.1
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "neg": [
+    "dispute_rate",
+    "refund_rate"
+   ],
+   "score_max": 69
+  }
+ },
+ {
+  "id": "j07_strong_niche_manufacturer",
+  "archetype": "x",
+  "desc": "small audited specialist, near-perfect genuine feedback",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 12,
+   "transactions_count": 60,
+   "rating_avg": 4.9,
+   "reviews_count": 25,
+   "third_party_audit": true,
+   "certifications": [
+    "ISO9001",
+    "AS9100"
+   ],
+   "repeat_buyer_rate": 0.7,
+   "response_time_hours": 2,
+   "refund_rate": 0.0,
+   "domain_age_years": 9
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "not_flags": [
+    "review_pattern_suspicious"
+   ],
+   "pos": [
+    "third_party_audit",
+    "repeat_buyer_rate"
+   ]
+  }
+ },
+ {
+  "id": "j08_used_machinery_dealer",
+  "archetype": "x",
+  "desc": "used-equipment dealer: no certs, premium price, decent history",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.03,
+   "price_vs_market_ratio": 1.2,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 10,
+   "transactions_count": 25,
+   "rating_avg": 4.3,
+   "reviews_count": 30,
+   "domain_age_years": 7
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "not_has": [
+    "certifications"
+   ]
+  }
+ },
+ {
+  "id": "j09_alibaba_gold_thin",
+  "archetype": "x",
+  "desc": "gold-badge supplier with thin data",
+  "signals": {
+   "verified": true,
+   "years_in_business": 5,
+   "rating_avg": 4.5,
+   "reviews_count": 12,
+   "sanctions_hit": false
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "unknown"
+   ],
+   "conf_max": 55,
+   "not_green": true
+  }
+ },
+ {
+  "id": "j10_gold_thin_veteran",
+  "archetype": "x",
+  "desc": "18-year gold supplier, only badge + age + rating known",
+  "signals": {
+   "verified": true,
+   "years_in_business": 18,
+   "rating_avg": 4.7,
+   "reviews_count": 300,
+   "transactions_count": 900
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "conf_max": 79,
+   "gap_keys": [
+    "sanctions_hit",
+    "dispute_rate",
+    "price_vs_market_ratio"
+   ]
+  }
+ },
+ {
+  "id": "j11_too_cheap_scam",
+  "archetype": "x",
+  "desc": "price 0.3x market from a new storefront",
+  "signals": {
+   "verified": false,
+   "years_in_business": 0.3,
+   "price_vs_market_ratio": 0.3,
+   "sanctions_hit": false,
+   "dispute_rate": 0.0,
+   "has_physical_address": false,
+   "contact_consistency": 0.3,
+   "transactions_count": 0
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "flags": [
+    "price_anomaly",
+    "new_account"
+   ],
+   "score_max": 30
+  }
+ },
+ {
+  "id": "j12_sanctioned_but_polished",
+  "archetype": "x",
+  "desc": "everything perfect except a sanctions hit",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": true,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 20,
+   "transactions_count": 2000,
+   "rating_avg": 4.9,
+   "reviews_count": 500,
+   "third_party_audit": true
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "caps": [
+    "sanctions_hit"
+   ],
+   "score_max": 20,
+   "flags": [
+    "sanctions_hit"
+   ],
+   "level": "none"
+  }
+ },
+ {
+  "id": "j13_blocked_by_compliance",
+  "archetype": "x",
+  "desc": "platform block overrides good metrics",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 10,
+   "transactions_count": 500,
+   "rating_avg": 4.6,
+   "reviews_count": 100,
+   "blocked": true
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "caps": [
+    "blocked_flag"
+   ],
+   "score_max": 20,
+   "flags": [
+    "blocked_flag"
+   ]
+  }
+ },
+ {
+  "id": "j14_recent_dispute_spike",
+  "archetype": "x",
+  "desc": "clean history, sudden spike in the last 90 days",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.02,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 8,
+   "transactions_count": 400,
+   "rating_avg": 4.5,
+   "reviews_count": 100,
+   "dispute_rate_recent": 0.25
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "caps": [
+    "dispute_rate_cap"
+   ],
+   "score_max": 49
+  }
+ },
+ {
+  "id": "j15_old_disputes_recovered",
+  "archetype": "x",
+  "desc": "lifetime 10% disputes, recent 1%: cap stays",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.1,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 8,
+   "transactions_count": 400,
+   "rating_avg": 4.5,
+   "reviews_count": 100,
+   "dispute_rate_recent": 0.01
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "caps": [
+    "dispute_rate_cap"
+   ],
+   "score_max": 69
+  }
+ },
+ {
+  "id": "j16_risky_country_strong_factory",
+  "archetype": "x",
+  "desc": "good factory in a high-risk country",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.9,
+   "business_license_status": "verified",
+   "years_in_business": 14,
+   "transactions_count": 800,
+   "rating_avg": 4.7,
+   "reviews_count": 300,
+   "third_party_audit": true,
+   "certifications": [
+    "ISO9001",
+    "CE"
+   ],
+   "domain_age_years": 10
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "neg": [
+    "country_risk"
+   ]
+  }
+ },
+ {
+  "id": "j17_only_expired_documents",
+  "archetype": "x",
+  "desc": "approved documents all lapsed",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 4,
+   "transactions_count": 60,
+   "rating_avg": 4.2,
+   "reviews_count": 30,
+   "verification": {
+    "documents": [
+     {
+      "doc_type": "business_license",
+      "approved_on": "2021-01-01",
+      "expires_on": "2022-01-01"
+     },
+     {
+      "doc_type": "factory_photos",
+      "approved_on": "2021-01-01",
+      "expires_on": "2022-01-01"
+     }
+    ]
+   }
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "flags": [
+    "verification_document_expired"
+   ],
+   "level": "none",
+   "not_has": [
+    "document_verification",
+    "facility_evidence"
+   ]
+  }
+ },
+ {
+  "id": "j18_documents_expiring_soon",
+  "archetype": "x",
+  "desc": "strong factory whose documents are about to lapse",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 11,
+   "transactions_count": 500,
+   "rating_avg": 4.6,
+   "reviews_count": 150,
+   "third_party_audit": true,
+   "verification": {
+    "documents": [
+     {
+      "doc_type": "business_license",
+      "approved_on": "2024-11-01",
+      "expires_on": "2026-11-01"
+     },
+     {
+      "doc_type": "export_license",
+      "approved_on": "2024-11-01",
+      "expires_on": "2026-11-01"
+     },
+     {
+      "doc_type": "factory_photos",
+      "approved_on": "2024-11-01",
+      "expires_on": "2026-11-01"
+     }
+    ]
+   }
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "flags": [
+    "verification_document_expiring"
+   ],
+   "level": "audited"
+  }
+ },
+ {
+  "id": "j19_repeat_buyer_champion",
+  "archetype": "x",
+  "desc": "buyers keep coming back, replies within hours",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 7,
+   "transactions_count": 350,
+   "rating_avg": 4.7,
+   "reviews_count": 120,
+   "repeat_buyer_rate": 0.85,
+   "response_time_hours": 1,
+   "refund_rate": 0.005
+  },
+  "expect": {
+   "band": [
+    "green"
+   ],
+   "pos": [
+    "repeat_buyer_rate",
+    "response_time_hours"
+   ]
+  }
+ },
+ {
+  "id": "j20_slow_unresponsive",
+  "archetype": "x",
+  "desc": "real but hard to reach",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.3,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 7,
+   "transactions_count": 100,
+   "rating_avg": 4.0,
+   "reviews_count": 40,
+   "response_time_hours": 200
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "neg": [
+    "response_rate",
+    "response_time_hours"
+   ]
+  }
+ },
+ {
+  "id": "j21_anonymous_storefront",
+  "archetype": "x",
+  "desc": "no address, inconsistent contacts, young site",
+  "signals": {
+   "verified": false,
+   "years_in_business": 1.5,
+   "domain_age_years": 0.3,
+   "has_physical_address": false,
+   "contact_consistency": 0.2,
+   "sanctions_hit": false,
+   "dispute_rate": 0.0,
+   "price_vs_market_ratio": 0.9
+  },
+  "expect": {
+   "band": [
+    "red"
+   ],
+   "neg": [
+    "has_physical_address",
+    "contact_consistency",
+    "verified"
+   ]
+  }
+ },
+ {
+  "id": "j22_licence_pending_decent",
+  "archetype": "x",
+  "desc": "good operator, registry check still pending",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "pending",
+   "years_in_business": 9,
+   "transactions_count": 300,
+   "rating_avg": 4.4,
+   "reviews_count": 90
+  },
+  "expect": {
+   "band": [
+    "green"
+   ]
+  }
+ },
+ {
+  "id": "j23_honest_trader",
+  "archetype": "x",
+  "desc": "reseller that does not pretend to be a factory",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.85,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 7,
+   "transactions_count": 250,
+   "rating_avg": 4.3,
+   "reviews_count": 70,
+   "domain_age_years": 6
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "not_flags": [
+    "review_pattern_suspicious"
+   ]
+  }
+ },
+ {
+  "id": "j24_price_gouger",
+  "archetype": "x",
+  "desc": "fine metrics but quotes 3x market",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 3.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 9,
+   "transactions_count": 300,
+   "rating_avg": 4.4,
+   "reviews_count": 90
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "flags": [
+    "price_anomaly"
+   ],
+   "neg": [
+    "price_vs_market_ratio"
+   ]
+  }
+ },
+ {
+  "id": "j25_two_confirmed_reports",
+  "archetype": "x",
+  "desc": "solid supplier with two accepted buyer reports",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 9,
+   "transactions_count": 300,
+   "rating_avg": 4.5,
+   "reviews_count": 90,
+   "confirmed_reports": 2
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "neg": [
+    "confirmed_reports"
+   ]
+  }
+ },
+ {
+  "id": "j26_high_cancellation",
+  "archetype": "x",
+  "desc": "audited but cancels most deals",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 9,
+   "transactions_count": 300,
+   "rating_avg": 4.4,
+   "reviews_count": 90,
+   "third_party_audit": true,
+   "deals_completed": 15,
+   "deals_cancelled": 35
+  },
+  "expect": {
+   "band": [
+    "yellow"
+   ],
+   "neg": [
+    "deal_outcomes"
+   ],
+   "caps": [
+    "deal_cancellation_cap"
+   ],
+   "score_max": 59
+  }
+ },
+ {
+  "id": "j27_platform_reviews_strong",
+  "archetype": "x",
+  "desc": "40 verified-purchase reviews backed by deals",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 5,
+   "transactions_count": 80,
+   "review_summary": {
+    "count": 40,
+    "average": 4.8,
+    "completed_deals": 40
+   }
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "pos": [
+    "platform_reviews"
+   ]
+  }
+ },
+ {
+  "id": "j28_platform_review_bombing",
+  "archetype": "x",
+  "desc": "300 five-star platform reviews, 5 deals",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 5,
+   "transactions_count": 80,
+   "review_summary": {
+    "count": 300,
+    "average": 5.0,
+    "completed_deals": 5
+   }
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "pos": [
+    "platform_reviews"
+   ],
+   "same_as": {
+    "review_summary": {
+     "count": 5,
+     "average": 5.0,
+     "completed_deals": 5
+    }
+   }
+  }
+ },
+ {
+  "id": "j29_empty_profile",
+  "archetype": "x",
+  "desc": "nothing known",
+  "signals": {},
+  "expect": {
+   "band": [
+    "unknown"
+   ],
+   "conf_max": 0
+  }
+ },
+ {
+  "id": "j30_junk_certificate_stuffing",
+  "archetype": "x",
+  "desc": "200 junk certificate names on a mediocre profile",
+  "signals": {
+   "verified": true,
+   "sanctions_hit": false,
+   "dispute_rate": 0.01,
+   "price_vs_market_ratio": 1.0,
+   "response_rate": 0.95,
+   "has_physical_address": true,
+   "contact_consistency": 0.9,
+   "country_risk": 0.3,
+   "business_license_status": "verified",
+   "years_in_business": 4,
+   "transactions_count": 40,
+   "rating_avg": 4.1,
+   "reviews_count": 20,
+   "certifications": [
+    "CERT0",
+    "CERT1",
+    "CERT2",
+    "CERT3",
+    "CERT4",
+    "CERT5",
+    "CERT6",
+    "CERT7",
+    "CERT8",
+    "CERT9",
+    "CERT10",
+    "CERT11",
+    "CERT12",
+    "CERT13",
+    "CERT14",
+    "CERT15",
+    "CERT16",
+    "CERT17",
+    "CERT18",
+    "CERT19",
+    "CERT20",
+    "CERT21",
+    "CERT22",
+    "CERT23",
+    "CERT24",
+    "CERT25",
+    "CERT26",
+    "CERT27",
+    "CERT28",
+    "CERT29",
+    "CERT30",
+    "CERT31",
+    "CERT32",
+    "CERT33",
+    "CERT34",
+    "CERT35",
+    "CERT36",
+    "CERT37",
+    "CERT38",
+    "CERT39",
+    "CERT40",
+    "CERT41",
+    "CERT42",
+    "CERT43",
+    "CERT44",
+    "CERT45",
+    "CERT46",
+    "CERT47",
+    "CERT48",
+    "CERT49",
+    "CERT50",
+    "CERT51",
+    "CERT52",
+    "CERT53",
+    "CERT54",
+    "CERT55",
+    "CERT56",
+    "CERT57",
+    "CERT58",
+    "CERT59",
+    "CERT60",
+    "CERT61",
+    "CERT62",
+    "CERT63",
+    "CERT64",
+    "CERT65",
+    "CERT66",
+    "CERT67",
+    "CERT68",
+    "CERT69",
+    "CERT70",
+    "CERT71",
+    "CERT72",
+    "CERT73",
+    "CERT74",
+    "CERT75",
+    "CERT76",
+    "CERT77",
+    "CERT78",
+    "CERT79",
+    "CERT80",
+    "CERT81",
+    "CERT82",
+    "CERT83",
+    "CERT84",
+    "CERT85",
+    "CERT86",
+    "CERT87",
+    "CERT88",
+    "CERT89",
+    "CERT90",
+    "CERT91",
+    "CERT92",
+    "CERT93",
+    "CERT94",
+    "CERT95",
+    "CERT96",
+    "CERT97",
+    "CERT98",
+    "CERT99",
+    "CERT100",
+    "CERT101",
+    "CERT102",
+    "CERT103",
+    "CERT104",
+    "CERT105",
+    "CERT106",
+    "CERT107",
+    "CERT108",
+    "CERT109",
+    "CERT110",
+    "CERT111",
+    "CERT112",
+    "CERT113",
+    "CERT114",
+    "CERT115",
+    "CERT116",
+    "CERT117",
+    "CERT118",
+    "CERT119",
+    "CERT120",
+    "CERT121",
+    "CERT122",
+    "CERT123",
+    "CERT124",
+    "CERT125",
+    "CERT126",
+    "CERT127",
+    "CERT128",
+    "CERT129",
+    "CERT130",
+    "CERT131",
+    "CERT132",
+    "CERT133",
+    "CERT134",
+    "CERT135",
+    "CERT136",
+    "CERT137",
+    "CERT138",
+    "CERT139",
+    "CERT140",
+    "CERT141",
+    "CERT142",
+    "CERT143",
+    "CERT144",
+    "CERT145",
+    "CERT146",
+    "CERT147",
+    "CERT148",
+    "CERT149",
+    "CERT150",
+    "CERT151",
+    "CERT152",
+    "CERT153",
+    "CERT154",
+    "CERT155",
+    "CERT156",
+    "CERT157",
+    "CERT158",
+    "CERT159",
+    "CERT160",
+    "CERT161",
+    "CERT162",
+    "CERT163",
+    "CERT164",
+    "CERT165",
+    "CERT166",
+    "CERT167",
+    "CERT168",
+    "CERT169",
+    "CERT170",
+    "CERT171",
+    "CERT172",
+    "CERT173",
+    "CERT174",
+    "CERT175",
+    "CERT176",
+    "CERT177",
+    "CERT178",
+    "CERT179",
+    "CERT180",
+    "CERT181",
+    "CERT182",
+    "CERT183",
+    "CERT184",
+    "CERT185",
+    "CERT186",
+    "CERT187",
+    "CERT188",
+    "CERT189",
+    "CERT190",
+    "CERT191",
+    "CERT192",
+    "CERT193",
+    "CERT194",
+    "CERT195",
+    "CERT196",
+    "CERT197",
+    "CERT198",
+    "CERT199"
+   ]
+  },
+  "expect": {
+   "band": [
+    "yellow",
+    "green"
+   ],
+   "same_band_as_certs": [
+    "ISO9001",
+    "CE"
+   ]
+  }
+ }
+]

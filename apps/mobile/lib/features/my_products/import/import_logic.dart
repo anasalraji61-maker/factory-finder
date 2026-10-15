@@ -158,7 +158,8 @@ ListingKind? _kindOf(String s) {
 }
 
 ItemCondition? _conditionOf(String s) {
-  final t = s.trim().toLowerCase();
+  final t = s.trim().toLowerCase().replaceAll(_headerSeparators, '_');
+  if (t == 'brand_new') return ItemCondition.brandNew;
   for (final v in ItemCondition.values) {
     if (v.json == t) return v;
   }
@@ -457,6 +458,17 @@ Future<ImportRunResult> runImportBatches(
         <Map<String, dynamic>>[for (final r in chunk) r.body!],
         dryRun,
       );
+      for (var k = 0; k < chunk.length; k++) {
+        // A row the server did not answer for must not vanish silently.
+        final r = chunk[k];
+        byRow[r.rowNumber] = ImportOutcome(
+          rowNumber: r.rowNumber,
+          externalRef: r.externalRef,
+          title: r.title,
+          action: 'rejected',
+          reason: 'missing_result',
+        );
+      }
       for (final res in resp.results) {
         if (res.index < 0 || res.index >= chunk.length) continue;
         final row = chunk[res.index];

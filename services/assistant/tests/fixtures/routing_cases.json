@@ -1243,6 +1243,426 @@
     "intent": "hs_lookup",
     "numeric_guard": true
    }
+  },
+  {
+   "id": "rc126",
+   "category": "search",
+   "text": "Çin'den Basra'ya 5 ton plastik granül almak istiyorum",
+   "expect": {
+    "intent": "search",
+    "quantity": "5",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Basra",
+    "kind": "raw_material"
+   }
+  },
+  {
+   "id": "rc127",
+   "category": "search",
+   "text": "Erbil'e ikinci el dikiş makinesi lazım",
+   "expect": {
+    "intent": "search",
+    "condition": "used",
+    "dest_city": "Erbil"
+   }
+  },
+  {
+   "id": "rc128",
+   "category": "quote",
+   "text": "Çin'den Basra'ya 20 ton demir nakliye maliyeti ne kadar",
+   "expect": {
+    "intent": "quote",
+    "quantity": "20",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Basra"
+   }
+  },
+  {
+   "id": "rc129",
+   "category": "quote",
+   "text": "Şanghay'dan Bağdat'a FOB 12 ton seramik karo toplam maliyet",
+   "expect": {
+    "intent": "quote",
+    "quantity": "12",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Baghdad",
+    "incoterm": "FOB"
+   }
+  },
+  {
+   "id": "rc130",
+   "category": "track",
+   "text": "MSKU1234567 konteyner takibi",
+   "expect": {
+    "intent": "track",
+    "reference": "MSKU1234567",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc131",
+   "category": "track",
+   "text": "OOLU8765432 konteyneri nerede",
+   "expect": {
+    "intent": "shipment_status",
+    "reference": "OOLU8765432",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc132",
+   "category": "trust",
+   "text": "sup_cn_001 tedarikçisi güvenilir mi",
+   "expect": {
+    "intent": "trust",
+    "supplier_id": "sup_cn_001"
+   }
+  },
+  {
+   "id": "rc133",
+   "category": "duties",
+   "text": "Irak'a seramik ithalat vergisi ne kadar",
+   "expect": {
+    "intent": "hs_lookup",
+    "dest_cc": "IQ",
+    "numeric_guard": true
+   }
+  },
+  {
+   "id": "rc134",
+   "category": "rfq",
+   "text": "Teklif iste: 100 adet ofis koltuğu",
+   "expect": {
+    "intent": "create_rfq_draft",
+    "quantity": "100",
+    "unit": "piece"
+   }
+  },
+  {
+   "id": "rc135",
+   "category": "message",
+   "text": "sup_cn_002 tedarikçisine özel mesaj gönder",
+   "expect": {
+    "intent": "help",
+    "message_blocked": true
+   }
+  },
+  {
+   "id": "rc136",
+   "category": "search",
+   "text": "می‌خواهم ۵ تن پلاستیک از چین به بصره",
+   "expect": {
+    "intent": "search",
+    "quantity": "5",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Basra"
+   }
+  },
+  {
+   "id": "rc137",
+   "category": "search",
+   "text": "ماشین خیاطی دست دوم از چین برای اربیل",
+   "expect": {
+    "intent": "search",
+    "condition": "used",
+    "origin_cc": "CN",
+    "dest_city": "Erbil"
+   }
+  },
+  {
+   "id": "rc138",
+   "category": "quote",
+   "text": "هزینه حمل ۲۰ تن برنج از هند به بصره چقدر است",
+   "expect": {
+    "intent": "quote",
+    "quantity": "20",
+    "unit": "ton",
+    "origin_cc": "IN",
+    "dest_city": "Basra"
+   }
+  },
+  {
+   "id": "rc139",
+   "category": "quote",
+   "text": "قیمت تمام شده ۳ تن شکر از برزیل تا بغداد FOB",
+   "expect": {
+    "intent": "quote",
+    "quantity": "3",
+    "unit": "ton",
+    "origin_cc": "BR",
+    "dest_city": "Baghdad",
+    "incoterm": "FOB"
+   }
+  },
+  {
+   "id": "rc140",
+   "category": "track",
+   "text": "ردیابی کانتینر MSKU1234567",
+   "expect": {
+    "intent": "track",
+    "reference": "MSKU1234567",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc141",
+   "category": "trust",
+   "text": "آیا تامین‌کننده sup_cn_003 معتبر است",
+   "expect": {
+    "intent": "trust",
+    "supplier_id": "sup_cn_003"
+   }
+  },
+  {
+   "id": "rc142",
+   "category": "hs",
+   "text": "کد تعرفه 392690 چیست",
+   "expect": {
+    "intent": "hs_lookup",
+    "hs_code": "392690"
+   }
+  },
+  {
+   "id": "rc143",
+   "category": "duties",
+   "text": "حقوق گمرکی گوشی موبایل در عراق",
+   "expect": {
+    "intent": "hs_lookup",
+    "dest_cc": "IQ",
+    "numeric_guard": true
+   }
+  },
+  {
+   "id": "rc144",
+   "category": "rfq",
+   "text": "درخواست خرید ثبت کن ۲۰۰۰ کیلو پنبه",
+   "expect": {
+    "intent": "create_rfq_draft",
+    "quantity": "2000",
+    "unit": "kg"
+   }
+  },
+  {
+   "id": "rc145",
+   "category": "message",
+   "text": "پیام خصوصی به تامین‌کننده sup_cn_001 بفرست",
+   "expect": {
+    "intent": "help",
+    "message_blocked": true
+   }
+  },
+  {
+   "id": "rc146",
+   "category": "search",
+   "text": "دەمەوێت ٥ تەن پلاستیک لە چینەوە بۆ هەولێر",
+   "expect": {
+    "intent": "search",
+    "quantity": "5",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Erbil"
+   }
+  },
+  {
+   "id": "rc147",
+   "category": "search",
+   "text": "ماکینەی دروومانی بەکارهاتوو بۆ سلێمانی دەوێت",
+   "expect": {
+    "intent": "search",
+    "condition": "used",
+    "dest_city": "Sulaymaniyah"
+   }
+  },
+  {
+   "id": "rc148",
+   "category": "quote",
+   "text": "نرخی گواستنەوەی ١٠ تەن شەکر لە بەرازیل بۆ بەسرە چەندە",
+   "expect": {
+    "intent": "quote",
+    "quantity": "10",
+    "unit": "ton",
+    "origin_cc": "BR",
+    "dest_city": "Basra"
+   }
+  },
+  {
+   "id": "rc149",
+   "category": "quote",
+   "text": "تێچووی تەواوی ٢٠٠٠ کیلۆ قوماش لە چین بۆ بەغدا",
+   "expect": {
+    "intent": "quote",
+    "quantity": "2000",
+    "unit": "kg",
+    "origin_cc": "CN",
+    "dest_city": "Baghdad"
+   }
+  },
+  {
+   "id": "rc150",
+   "category": "track",
+   "text": "شوێنکەوتنی کۆنتەینەر MSKU1234567",
+   "expect": {
+    "intent": "track",
+    "reference": "MSKU1234567",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc151",
+   "category": "track",
+   "text": "کۆنتەینەر OOLU8765432 لەکوێیە",
+   "expect": {
+    "intent": "track",
+    "reference": "OOLU8765432",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc152",
+   "category": "trust",
+   "text": "ئایا دابینکەری sup_cn_002 متمانەپێکراوە",
+   "expect": {
+    "intent": "trust",
+    "supplier_id": "sup_cn_002"
+   }
+  },
+  {
+   "id": "rc153",
+   "category": "hs",
+   "text": "باجی گومرگی کاشی سیرامیک چەندە",
+   "expect": {
+    "intent": "hs_lookup",
+    "numeric_guard": true
+   }
+  },
+  {
+   "id": "rc154",
+   "category": "rfq",
+   "text": "داواکاری کڕین ببڵاوبکەوە بۆ ١٠٠ کورسی",
+   "expect": {
+    "intent": "create_rfq_draft",
+    "quantity": "100",
+    "unit": "piece"
+   }
+  },
+  {
+   "id": "rc155",
+   "category": "message",
+   "text": "نامەی تایبەت بنێرە بۆ دابینکەری sup_cn_001",
+   "expect": {
+    "intent": "help",
+    "message_blocked": true
+   }
+  },
+  {
+   "id": "rc156",
+   "category": "search",
+   "text": "我想买五吨塑料颗粒，从中国运到巴士拉",
+   "expect": {
+    "intent": "search",
+    "quantity": "5",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Basra",
+    "kind": "raw_material"
+   }
+  },
+  {
+   "id": "rc157",
+   "category": "search",
+   "text": "二手缝纫机，从中国发到埃尔比勒",
+   "expect": {
+    "intent": "search",
+    "condition": "used",
+    "origin_cc": "CN",
+    "dest_city": "Erbil"
+   }
+  },
+  {
+   "id": "rc158",
+   "category": "quote",
+   "text": "从上海到巴格达，20吨瓷砖的运费多少钱",
+   "expect": {
+    "intent": "quote",
+    "quantity": "20",
+    "unit": "ton",
+    "origin_cc": "CN",
+    "dest_city": "Baghdad"
+   }
+  },
+  {
+   "id": "rc159",
+   "category": "quote",
+   "text": "FOB 广州到巴士拉 3000公斤手机 到岸价",
+   "expect": {
+    "intent": "quote",
+    "quantity": "3000",
+    "unit": "kg",
+    "origin_cc": "CN",
+    "dest_city": "Basra",
+    "incoterm": "FOB"
+   }
+  },
+  {
+   "id": "rc160",
+   "category": "track",
+   "text": "追踪集装箱 MSKU1234567",
+   "expect": {
+    "intent": "track",
+    "reference": "MSKU1234567",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc161",
+   "category": "track",
+   "text": "集装箱 OOLU8765432 在哪里",
+   "expect": {
+    "intent": "shipment_status",
+    "reference": "OOLU8765432",
+    "reference_type": "container"
+   }
+  },
+  {
+   "id": "rc162",
+   "category": "trust",
+   "text": "供应商 sup_cn_001 可靠吗",
+   "expect": {
+    "intent": "trust",
+    "supplier_id": "sup_cn_001"
+   }
+  },
+  {
+   "id": "rc163",
+   "category": "hs",
+   "text": "海关编码 392690 是什么",
+   "expect": {
+    "intent": "hs_lookup",
+    "hs_code": "392690"
+   }
+  },
+  {
+   "id": "rc164",
+   "category": "rfq",
+   "text": "发布采购需求：100张办公椅，收集报价",
+   "expect": {
+    "intent": "create_rfq_draft",
+    "quantity": "100",
+    "unit": "piece"
+   }
+  },
+  {
+   "id": "rc165",
+   "category": "message",
+   "text": "给供应商 sup_cn_002 发私信",
+   "expect": {
+    "intent": "help",
+    "message_blocked": true
+   }
   }
  ]
 }

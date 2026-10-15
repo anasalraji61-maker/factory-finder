@@ -22,6 +22,8 @@ Map<String, dynamic> savedSearchPayload(ListingQuery q) {
     if (q.originCountry != null) 'origin_country': q.originCountry,
     if (slug != null) 'category': slug,
     if (q.maxMoq != null) 'moq_max': q.maxMoq,
+    if (q.minPrice != null) 'min_price': priceParam(q.minPrice!),
+    if (q.maxPrice != null) 'max_price': priceParam(q.maxPrice!),
     if (q.verifiedOnly) 'verified_only': true,
   };
 }

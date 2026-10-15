@@ -12,13 +12,20 @@ class DatasetError(ValueError):
     pass
 
 
-def _load(name: str) -> list[dict]:
+def _load(name: str) -> list[dict] | dict:
     return json.loads(resources.files("ff_geo.data").joinpath(f"{name}.json").read_text("utf-8"))
 
 
 class Dataset:
-    def __init__(self, countries: list[Country], cities: list[City], hubs: list[Hub]):
+    def __init__(
+        self,
+        countries: list[Country],
+        cities: list[City],
+        hubs: list[Hub],
+        aliases: dict[str, list[str]] | None = None,
+    ):
         self.countries = countries
+        self.aliases = aliases or {}
         self.cities = cities
         self.hubs = hubs
         self.country_by_code = {c.iso2: c for c in countries}
@@ -38,6 +45,12 @@ class Dataset:
                     raise DatasetError(f"{kind} {i.id}: unknown country {i.country_code}")
                 if not i.name_ar.strip() or not i.name_en.strip():
                     raise DatasetError(f"{kind} {i.id}: missing name")
+        city_ids = {c.id for c in self.cities}
+        for cid, names in self.aliases.items():
+            if cid not in city_ids:
+                raise DatasetError(f"aliases: unknown city {cid}")
+            if not names or any(not isinstance(n, str) or not n.strip() for n in names):
+                raise DatasetError(f"aliases: bad entry for {cid}")
         for h in self.hubs:
             if h.type == "sea" and not (h.unlocode and re.fullmatch(r"[A-Z]{5}", h.unlocode)):
                 raise DatasetError(f"sea hub {h.id}: bad UN/LOCODE")
@@ -53,4 +66,5 @@ def get_dataset() -> Dataset:
         [Country(**c) for c in _load("countries")],
         [City(**c) for c in _load("cities")],
         [Hub(**h) for h in _load("hubs")],
+        _load("aliases"),
     )
