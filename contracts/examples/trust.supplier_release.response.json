@@ -1,0 +1,6 @@
+{
+  "spec": "trust.yaml",
+  "pointer": "#/paths/~1v1~1admin~1trust~1verification~1suppliers~1{supplier_id}~1release/post/responses/200/content/application~1json/schema",
+  "description": "POST /v1/admin/trust/verification/suppliers/sup_demo_1/release (X-Admin-Token, optional X-Reviewer, optional body {\"reason\":\"claim revoked\"}). A repeat call returns zero counts.",
+  "value": {"supplier_id": "sup_demo_1", "released_documents": 3, "withdrawn_documents": 2, "verification_level": "none"}
+}

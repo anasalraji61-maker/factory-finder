@@ -69,9 +69,11 @@ paths:
         - {name: kind, in: query, schema: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}}
         - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: cursor, in: query, description: "Opaque keyset cursor from a previous response's next_cursor. When given, page is ignored; order is created_at desc, id asc. Malformed -> 422 (invalid_cursor).", schema: {type: string, maxLength: 256}}
       responses:
         "200": {$ref: "#/components/responses/RequestPage"}
         "401": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/requests/{id}:
     get:
       summary: Request detail (link-accessible, including private ones)
@@ -451,6 +453,7 @@ components:
               - type: object
                 properties:
                   items: {type: array, items: {$ref: "#/components/schemas/Request"}}
+                  next_cursor: {type: [string, "null"], description: "Pass as ?cursor= for the next page; null on the last page"}
   schemas:
     RequestStatus: {type: string, enum: [open, negotiating, awarded, closed, expired, cancelled]}
     OfferStatus: {type: string, enum: [active, withdrawn, accepted, rejected, expired]}

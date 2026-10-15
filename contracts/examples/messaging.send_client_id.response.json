@@ -1,0 +1,6 @@
+{
+  "spec": "messaging.yaml",
+  "pointer": "#/components/schemas/Message",
+  "description": "Response (201 first send, 200 on replay - identical body). client_id echoes client_message_id.",
+  "value": {"id": "msg_5c0d8e2a91f24b0c", "conversation_id": "conv_1a2b3c4d", "seq": 12, "sender_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db", "type": "text", "text": "Is 500 units possible by December?", "attachment": null, "attachments": [], "offer_ref": null, "event": null, "event_data": null, "flags": [], "flagged": false, "client_message_id": "app-7f3a9c1e-0001", "client_id": "app-7f3a9c1e-0001", "created_at": "2026-10-15T17:50:00Z", "read_by": []}
+}

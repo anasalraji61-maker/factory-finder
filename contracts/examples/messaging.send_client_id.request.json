@@ -1,0 +1,6 @@
+{
+  "spec": "messaging.yaml",
+  "pointer": "#/components/schemas/MessageCreate",
+  "description": "POST /v1/conversations/{id}/messages. Retrying with the same client_id returns the original message with 200 (first send is 201); client_id is an alias of client_message_id.",
+  "value": {"type": "text", "text": "Is 500 units possible by December?", "client_id": "app-7f3a9c1e-0001"}
+}

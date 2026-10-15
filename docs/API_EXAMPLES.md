@@ -102,13 +102,65 @@ curl -s $GW/v1/invoices -H "Authorization: Bearer $TOKEN"
 
 ## 8. Assistant (`assistant.yaml`)
 Body: `text` (required), `locale` (`ar` | `en`), optional `destination`. The response has `answer_text`, and depending on the question `listings`, `quote`/`quotes`
-or `cards[]` (types such as `shipment_status`, `deal_status`, `listing_comparison`, `hs_code`, `notice`; each card has `title` and `title_ar`).
+or `cards[]` (types such as `shipment_status`, `deal_status`, `listing_comparison`, `hs_code`, `rfq_draft`, `notice`; each card has `title` and `title_ar`).
 A per-user daily quota answers 429 with `Retry-After`.
 ```
 curl -s $GW/v1/assistant/query -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"text":"ابي ٥٠٠ كرسي بلاستك من الصين الى اربيل","locale":"ar"}'
 curl -s $GW/v1/assistant/query -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"text":"where is my container CSQU3054383","locale":"en"}'
+```
+
+## 9. Recent additions
+Each response body below is a validated file in `contracts/examples/` (checked by `make contract-examples`). Admin calls need `X-Admin-Token`
+(`$ADMIN_TOKEN`); an optional `X-Reviewer` (charset `[A-Za-z0-9_.:-]`, max 64, default `admin`) is recorded in the audit logs.
+
+**Payments needing review (admin, `gateway.yaml`).** Invoices flagged `late_payment_review` or `amount_mismatch_review`, oldest first.
+Only `limit` (maps to `page_size`, max 100), `cursor`, `page`, `page_size` are accepted (others 422); 404 when the admin tokens are unset,
+502/504 when payments is down/slow. Response: `payments.review_page.response.json` (`items, total, page, page_size`).
+```
+curl -s "$GW/v1/admin/payments/review?limit=20" -H "X-Admin-Token: $ADMIN_TOKEN" -H 'X-Reviewer: ops.anas'
+```
+
+**Supplier claim revoke and audit (admin, `gateway.yaml`).** Revoking a verified claim needs a `reason` (422 without; 409 `claim_not_verified`
+otherwise); the response is the `SupplierClaim` (`supplier_id: null`, `supplier_claim_status: none`) and the old supplier id is released in trust.
+The audit log lists `approve|reject|revoke|self_release` decisions, newest first (`user_id`, `limit` 1..500 filters).
+Examples: `gateway.supplier_claim_revoke.response.json`, `gateway.supplier_claim_audit.response.json`.
+```
+curl -s -X POST $GW/v1/admin/supplier-claims/USER_ID/revoke -H "X-Admin-Token: $ADMIN_TOKEN" -H 'X-Reviewer: ops.anas' \
+  -H 'Content-Type: application/json' -d '{"reason":"Documents found to be forged"}'
+curl -s "$GW/v1/admin/supplier-claims/audit?user_id=USER_ID&limit=50" -H "X-Admin-Token: $ADMIN_TOKEN"
+```
+
+**Trust release (service-to-service, `trust.yaml`).** The gateway calls this on reject/revoke/`PATCH /v1/me` supplier change (best effort, only when
+`FF_TRUST_ADMIN_TOKEN` is set), on the trust port, not through a public route. Live documents become withdrawn, all rows are hidden from the next
+claimant; a repeat call returns zero counts. Example: `trust.supplier_release.response.json`.
+```
+curl -s -X POST $TRUST/v1/admin/trust/verification/suppliers/sup_demo_1/release -H "X-Admin-Token: $TRUST_ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' -d '{"reason":"claim revoked"}'
+```
+
+**Assistant RFQ draft (`assistant.yaml`).** A text such as "post a purchase request for 2000 kg of cotton delivered to Basra, target price 4 USD" gives
+`intent: create_rfq_draft` and a card of `type: rfq_draft`. Nothing is created: `refs.deep_link` is `/requests/new`, `refs.draft` is `"true"`,
+`refs.missing` lists the required keys still absent (`product, quantity, destination`, plus `unit`), and `refs.prefill_*` carry only values from the user's
+text. Example: `assistant.create_rfq_draft.response.json`.
+```
+curl -s $GW/v1/assistant/query -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"text":"post a purchase request for 2000 kg of cotton delivered to Basra, target price 4 USD","locale":"en"}' | jq '.cards[0].refs'
+```
+
+**Message idempotency (`messaging.yaml`).** `client_id` (alias of `client_message_id`, `[A-Za-z0-9_.:-]`, max 64) makes a send idempotent per sender and
+conversation: first send 201, a retry returns the original message with 200, and the message echoes `client_id`. Examples:
+`messaging.send_client_id.request.json`, `messaging.send_client_id.response.json`.
+```
+curl -s -X POST $GW/v1/conversations/CONV_ID/messages -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"type":"text","text":"Is 500 units possible by December?","client_id":"app-7f3a9c1e-0001"}'
+```
+
+**Offer `comparable` (`rfq.yaml`).** On offers: `true` when the offer currency equals the request target currency, `false` when it differs (prices are
+never converted implicitly), `null` when the request has no target price. Example: `rfq.offer_comparable.response.json` (CNY offer vs a USD target).
+```
+curl -s $GW/v1/requests/REQUEST_ID/offers -H "Authorization: Bearer $TOKEN"   # each offer has price and comparable
 ```
 
 ## Errors

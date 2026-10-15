@@ -3,9 +3,7 @@ import 'dart:convert';
 
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
-import 'package:factory_finder/core/providers.dart' show localeProvider;
 import 'package:factory_finder/core/storage/key_value_store.dart';
-import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -326,6 +324,7 @@ class AuthController extends StateNotifier<Me?> {
   Future<void> login({String? email, String? phone, required String password}) async {
     state = await _repo.login(email: email, phone: phone, password: password);
     _setRevokedNotice(false);
+    _registerPush();
   }
 
   Future<void> register({
@@ -341,6 +340,7 @@ class AuthController extends StateNotifier<Me?> {
       name: name,
     );
     _setRevokedNotice(false);
+    _registerPush();
   }
 
   DateTime? _lastRefresh;
@@ -431,6 +431,7 @@ class AuthController extends StateNotifier<Me?> {
         _wipeUserState();
       } else {
         state = me;
+        _registerPush();
       }
     } catch (e) {
       if (!mounted) return;
@@ -475,16 +476,13 @@ class AuthController extends StateNotifier<Me?> {
     await logout();
   }
 
-  Future<void> _reRegisterPush() async {
-    try {
-      await _ref
-          .read(pushRegistrationProvider)
-          .onLogin(locale: _ref.read(localeProvider).languageCode, prompt: false)
-          .timeout(kPushUnregisterTimeout);
-    } catch (_) {
-      // Best effort.
-    }
+  /// Fire-and-forget push registration (never blocks or fails a sign-in).
+  void _registerPush() {
+    if (!mounted) return;
+    unawaited(registerPushDeviceBestEffort(_ref));
   }
+
+  Future<void> _reRegisterPush() => registerPushDeviceBestEffort(_ref);
 }
 
 final authProvider = StateNotifierProvider<AuthController, Me?>(

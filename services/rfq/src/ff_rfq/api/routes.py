@@ -92,10 +92,11 @@ async def create_request(body: RequestCreate, user: User, s: Svc) -> dict[str, A
 async def list_requests(
     user: User, supplier: Supplier, s: Svc, scope: Annotated[str, Query(pattern="^(mine|public)$")] = "mine",
     status: RequestStatus | None = None, kind: ListingKind | None = None, page: Page = 1, page_size: Size = 20,
+    cursor: Annotated[str | None, Query(max_length=256)] = None,
 ) -> dict[str, Any]:
     return await s.list_requests(user, scope=scope, status=status.value if status else None,
                                  kind=kind.value if kind else None, p=page, size=page_size,
-                                 supplier_id=supplier)
+                                 supplier_id=supplier, cursor=cursor)
 
 
 @router.get("/requests/{request_id}")

@@ -7,6 +7,7 @@ import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
 import 'package:factory_finder/features/logistics/screens/results_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,14 +17,19 @@ Map<String, dynamic> _fixture() => Map<String, dynamic>.from(
     jsonDecode(File('test/fixtures/live/quote_sensitivity.json').readAsStringSync()) as Map);
 
 Future<void> _pumpResults(WidgetTester tester, LandedCostQuote quote, String lang) async {
-  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.physicalSize = const Size(1080, 4800);
   tester.view.devicePixelRatio = 2.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [lastQuoteProvider.overrideWith((ref) => quote)],
-      child: MaterialApp(locale: Locale(lang), home: const ResultsScreen()),
+      child: MaterialApp(
+        locale: Locale(lang),
+        supportedLocales: const [Locale('ar'), Locale('en')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: const ResultsScreen(),
+      ),
     ),
   );
   await settle(tester, frames: 3);
@@ -125,6 +131,20 @@ void main() {
       (j['options'] as List).first.remove('sensitivity');
       await _pumpResults(tester, LandedCostQuote.fromJson(j), 'ar');
       expect(find.text('ماذا لو؟ (حساسية الكلفة)'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Arabic renders RTL with the what-if section (540x2400)', (tester) async {
+      final q = LandedCostQuote.fromJson(_fixture());
+      await _pumpResults(tester, q, 'ar');
+      expect(
+        Directionality.of(tester.element(find.byType(ResultsScreen))),
+        TextDirection.rtl,
+      );
+      final title = find.text('ماذا لو؟ (حساسية الكلفة)');
+      await tester.scrollUntilVisible(title, 200);
+      expect(title, findsOneWidget);
+      expect(find.text('What if? (cost sensitivity)'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

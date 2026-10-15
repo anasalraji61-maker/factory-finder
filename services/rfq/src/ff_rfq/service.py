@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import json
+import re
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -92,6 +95,33 @@ def deal_dict(d: DealRow) -> dict[str, Any]:
         "delivered_at": _iso(d.delivered_at), "completed_at": _iso(d.completed_at),
         "created_at": _iso(d.created_at), "updated_at": _iso(d.updated_at),
     }
+
+
+_CURSOR_ID_RE = re.compile(r"[A-Za-z0-9_\-]{1,64}")
+
+
+def encode_cursor(created_at: datetime, row_id: str) -> str:
+    raw = json.dumps([created_at.astimezone(UTC).isoformat(), row_id], separators=(",", ":"))
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def decode_cursor(cursor: str) -> tuple[datetime, str]:
+    """Opaque keyset cursor -> (created_at, id). Any malformation raises 422 (no signature: it carries no authority)."""
+    bad = ValidationFailed("Invalid cursor", code="invalid_cursor")
+    try:
+        if len(cursor) > 256 or not re.fullmatch(r"[A-Za-z0-9_\-]+", cursor):
+            raise bad
+        val = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
+        if not (isinstance(val, list) and len(val) == 2 and all(isinstance(x, str) for x in val)):
+            raise bad
+        ts = datetime.fromisoformat(val[0])
+        if ts.tzinfo is None or not _CURSOR_ID_RE.fullmatch(val[1]):
+            raise bad
+        return ts.astimezone(UTC), val[1]
+    except ValidationFailed:
+        raise
+    except (ValueError, TypeError, UnicodeDecodeError):
+        raise bad from None
 
 
 def page(items: list, total: int, p: int, size: int) -> dict[str, Any]:
@@ -244,7 +274,9 @@ class RfqService:
         return bool(invites) and (supplier_id is None or supplier_id not in invites)
 
     async def list_requests(self, user: str, *, scope: str, status: str | None, kind: str | None,
-                            p: int, size: int, supplier_id: str | None = None) -> dict[str, Any]:
+                            p: int, size: int, supplier_id: str | None = None,
+                            cursor: str | None = None) -> dict[str, Any]:
+        after = decode_cursor(cursor) if cursor else None
         has_invites = exists().where(RequestInviteRow.request_id == RequestRow.id)
         invited_me = exists().where(RequestInviteRow.request_id == RequestRow.id,
                                     RequestInviteRow.supplier_id == (supplier_id or ""))
@@ -259,8 +291,15 @@ class RfqService:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, self.clock())
             total = (await s.execute(select(func.count()).select_from(RequestRow).where(*cond))).scalar_one()
-            rows = (await s.execute(select(RequestRow).where(*cond).order_by(
-                RequestRow.created_at.desc(), RequestRow.id).offset((p - 1) * size).limit(size))).scalars().all()
+            q = select(RequestRow).where(*cond)
+            if after:  # keyset: strictly after (created_at desc, id asc); page/offset ignored
+                q = q.where(or_(RequestRow.created_at < after[0],
+                                and_(RequestRow.created_at == after[0], RequestRow.id > after[1])))
+            q = q.order_by(RequestRow.created_at.desc(), RequestRow.id)
+            q = q.limit(size + 1) if after else q.offset((p - 1) * size).limit(size + 1)
+            rows = list((await s.execute(q)).scalars().all())
+            more = len(rows) > size
+            rows = rows[:size]
             counts = await self._counts(s, [r.id for r in rows])
             own = [r.id for r in rows if r.owner_id == user]
             invited: dict[str, list[str]] = {rid: [] for rid in own}
@@ -269,7 +308,9 @@ class RfqService:
                         RequestInviteRow.request_id.in_(own)).order_by(RequestInviteRow.supplier_id))).all():
                     invited[rid].append(sid)
             items = [request_dict(r, counts.get(r.id, 0), invited[r.id] if r.owner_id == user else None) for r in rows]
-        return page(items, total, p, size)
+        out = page(items, total, 1 if after else p, size)
+        out["next_cursor"] = encode_cursor(rows[-1].created_at, rows[-1].id) if more and rows else None
+        return out
 
     async def get_request(self, user: str, request_id: str, supplier_id: str | None = None) -> dict[str, Any]:
         async with self._sessions() as s, s.begin():

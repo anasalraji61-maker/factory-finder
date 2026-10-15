@@ -1,0 +1,105 @@
+{
+  "spec": "assistant.yaml",
+  "pointer": "#/components/schemas/AssistantResponse",
+  "description": "POST /v1/assistant/query {\"text\":\"post a purchase request for 2000 kg of cotton delivered to Basra, target price 4 USD\"} - output of the mock assistant. The card only pre-fills /requests/new; nothing is created. Null fields are omitted (parsed_query, quote, trust) as the API does.",
+  "value": {
+    "intent": "create_rfq_draft",
+    "parsed_query": {
+      "intent": "create_rfq_draft",
+      "language": "en",
+      "kind": "raw_material",
+      "keywords": [
+        "cotton"
+      ],
+      "query": "cotton",
+      "category": "textiles",
+      "quantity": "2000",
+      "unit": "kg",
+      "budget": {
+        "amount": "4",
+        "currency": "USD",
+        "bound": "max"
+      },
+      "destination": {
+        "country_code": "IQ",
+        "city": "Basra",
+        "point": null
+      },
+      "listing_ids": [],
+      "confidence": 0.8
+    },
+    "answer_text": "I prepared your purchase request draft from the details you gave. Review it and publish it from the Requests tab (nothing was posted).",
+    "listings": [],
+    "cards": [
+      {
+        "type": "rfq_draft",
+        "title": "Purchase request draft",
+        "title_ar": "مسودة طلب شراء",
+        "severity": "info",
+        "rows": [
+          {
+            "key": "product",
+            "label": "Product",
+            "label_ar": "المنتج",
+            "value": "cotton",
+            "value_ar": "cotton",
+            "values": null,
+            "highlight": null
+          },
+          {
+            "key": "quantity",
+            "label": "Quantity",
+            "label_ar": "الكمية",
+            "value": "2000",
+            "value_ar": "2000",
+            "values": null,
+            "highlight": null
+          },
+          {
+            "key": "unit",
+            "label": "Unit",
+            "label_ar": "الوحدة",
+            "value": "kg",
+            "value_ar": "كغم",
+            "values": null,
+            "highlight": null
+          },
+          {
+            "key": "destination",
+            "label": "Delivery to",
+            "label_ar": "جهة التسليم",
+            "value": "Basra",
+            "value_ar": "البصرة",
+            "values": null,
+            "highlight": null
+          },
+          {
+            "key": "target_price",
+            "label": "Target price",
+            "label_ar": "السعر المستهدف",
+            "value": "4 USD",
+            "value_ar": "4 USD",
+            "values": null,
+            "highlight": null
+          }
+        ],
+        "columns": null,
+        "refs": {
+          "deep_link": "/requests/new",
+          "draft": "true",
+          "missing": "",
+          "prefill_product": "cotton",
+          "prefill_quantity": "2000",
+          "prefill_unit": "kg",
+          "prefill_destination": "Basra",
+          "prefill_target_price": "4 USD",
+          "prefill_destination_cc": "IQ",
+          "prefill_destination_city": "Basra"
+        },
+        "footnote": "Draft only: nothing has been posted. Review and publish it from the Requests tab.",
+        "footnote_ar": "مسودة فقط: لم يُنشر شيء. راجعها وانشرها من تبويب الطلبات."
+      }
+    ],
+    "warnings": []
+  }
+}

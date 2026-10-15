@@ -1,0 +1,31 @@
+{
+  "spec": "payments.yaml",
+  "pointer": "#/components/schemas/InvoicePage",
+  "description": "GET /v1/admin/payments/review?limit=20 on the gateway (X-Admin-Token) returns the payments InvoicePage unchanged: invoices whose status_reason is late_payment_review or amount_mismatch_review, oldest first. limit maps to page_size.",
+  "value": {
+    "items": [{
+      "id": "inv_48453497e5d541249f38",
+      "deal_id": "deal_a8011169d3ad4111b7b26b0f3e1782c2",
+      "payer_user_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+      "payee": "platform",
+      "kind": "commission",
+      "amount": {"amount": "112.50", "currency": "USD"},
+      "status": "expired",
+      "status_reason": "late_payment_review",
+      "expires_at": "2026-10-15T18:46:25.223455Z",
+      "provider": "mock",
+      "provider_ref": "mock_inv_48453497e5d541249f38",
+      "pay_address": "mock-address-inv_48453497e5d541249f38",
+      "pay_url": "https://pay.invalid/mock/inv_48453497e5d541249f38",
+      "pay_amount": {"amount": "112.50", "currency": "USD"},
+      "memo": "FF-REAGWDXDOU",
+      "user_memo": null,
+      "tx_ref": "mock_tx_1",
+      "confirmations": 1,
+      "paid_at": null,
+      "created_at": "2026-10-15T17:46:25.223455Z",
+      "updated_at": "2026-10-15T19:10:00.000000Z"
+    }],
+    "total": 1, "page": 1, "page_size": 20
+  }
+}

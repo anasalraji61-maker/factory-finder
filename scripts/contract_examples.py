@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate every `example` / `examples` in contracts/openapi/*.yaml against the schema it documents.
+"""Validate every `example` / `examples` in contracts/openapi/*.yaml, plus contracts/examples/*.json, against the schema it documents.
 
 Offline and deterministic (no services are started). Examples are found anywhere in a spec:
   * schema-level  `example: {...}` / `examples: [...]`  -> validated against that schema node
   * media-type / parameter `example` / `examples: {name: {value: ...}}` -> validated against its `schema`
+contracts/examples/*.json files are `{spec, pointer, description, value}`: `pointer` is a `#/...` JSON pointer into contracts/openapi/<spec>.
 `$ref` is resolved across `#/components/...` and `../schemas/common.schema.json` (JSON Schema 2020-12).
 
     python scripts/contract_examples.py        # exit 1 on any invalid example
@@ -24,6 +25,7 @@ from referencing.jsonschema import DRAFT202012
 
 ROOT = Path(__file__).resolve().parent.parent
 OPENAPI = ROOT / "contracts" / "openapi"
+EXAMPLES = ROOT / "contracts" / "examples"
 COMMON_ID = "https://factory-finder.dev/schemas/common.schema.json"
 VERBOSE = "-v" in sys.argv
 
@@ -93,12 +95,36 @@ def check_file(spec_path: Path) -> tuple[int, list[str]]:
     return n, errors
 
 
+def check_example_files() -> tuple[int, list[str]]:
+    """contracts/examples/*.json: {"spec": "x.yaml", "pointer": "#/...", "value": ...} validated against that schema node."""
+    n, errors = 0, []
+    for f in sorted(EXAMPLES.glob("*.json")):
+        n += 1
+        try:
+            doc = json.loads(f.read_text())
+            ref = (OPENAPI / doc["spec"]).as_uri() + doc["pointer"].replace("{", "%7B").replace("}", "%7D")
+            errs = sorted(Draft202012Validator({"$ref": ref}, registry=REGISTRY).iter_errors(doc["value"]),
+                          key=lambda e: list(e.absolute_path))
+        except Exception as exc:
+            errors.append(f"examples/{f.name}: cannot validate ({type(exc).__name__}: {exc})")
+            continue
+        for e in errs[:5]:
+            loc = "/".join(str(x) for x in e.absolute_path) or "<root>"
+            errors.append(f"examples/{f.name}: at {loc}: {e.message[:200]}")
+        if VERBOSE and not errs:
+            print(f"ok  examples/{f.name}")
+    return n, errors
+
+
 def main() -> int:
     total, errors = 0, []
     for p in sorted(OPENAPI.glob("*.yaml")):
         n, errs = check_file(p)
         total += n
         errors += errs
+    n, errs = check_example_files()
+    total += n
+    errors += errs
     for e in errors:
         print("FAIL", e)
     print(f"contract examples: {total} checked, {len(errors)} problem(s)")

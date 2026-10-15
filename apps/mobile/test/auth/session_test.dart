@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -86,6 +87,31 @@ class _RecordingDevices extends MockDeviceRepository {
     if (fail) throw ApiException(status: 500, code: 'x', message: 'x');
     return super.unregister(deviceId);
   }
+}
+
+class _UndecidedSource extends NoopPushTokenSource {
+  _UndecidedSource() {
+    last = this;
+  }
+  static late _UndecidedSource last;
+  int asked = 0;
+  @override
+  Future<PushPermission> permission() async => PushPermission.unknown;
+  @override
+  Future<PushPermission> requestPermission() async {
+    asked++;
+    return PushPermission.granted;
+  }
+}
+
+class _HangingTokenSource extends _GrantedSource {
+  @override
+  Future<String?> token() => Completer<String?>().future;
+}
+
+class _ThrowingTokenSource extends _GrantedSource {
+  @override
+  Future<String?> token() async => throw StateError('no fcm');
 }
 
 String _ar(String key) => AppStrings.lookup('ar', key);
@@ -451,6 +477,78 @@ void main() {
       expect(c.read(authProvider), isNotNull);
       expect(devices.unregistered, ['dev_1']);
       expect(devices.devices.values, ['tok_1']);
+    });
+  });
+
+  group('push registration on login / restore', () {
+    late _GrantedSource source;
+    late MockDeviceRepository devices;
+
+    ProviderContainer build({PushTokenSource? src, Map<String, String>? saved}) {
+      source = _GrantedSource();
+      devices = MockDeviceRepository();
+      final c = ProviderContainer(overrides: [
+        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        secureStoreProvider.overrideWithValue(MemoryStore(saved)),
+        apiClientProvider.overrideWith((ref) =>
+            ApiClient(baseUrl: 'http://fake', isMock: true, tokens: ref.watch(tokenStoreProvider))),
+        pushRegistrationProvider.overrideWith(
+            (ref) => PushRegistrationController(src ?? source, devices)),
+      ]);
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    Future<void> drain() async {
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('login registers the device and publishes the permission', () async {
+      final c = build();
+      await c
+          .read(authProvider.notifier)
+          .login(email: 'a@b.co', password: 'secret123');
+      await drain();
+      expect(devices.devices.values, ['tok_1']);
+      expect(c.read(pushPermissionProvider), PushPermission.granted);
+    });
+
+    test('login does not prompt when permission is undecided', () async {
+      final c = build(src: _UndecidedSource());
+      await c
+          .read(authProvider.notifier)
+          .login(email: 'a@b.co', password: 'secret123');
+      await drain();
+      expect(devices.devices, isEmpty);
+      expect((_UndecidedSource.last).asked, 0);
+    });
+
+    test('session restore registers the device', () async {
+      final c = build(saved: <String, String>{kRefreshTokenKey: 'saved'});
+      await c.read(authProvider.notifier).restore();
+      await drain();
+      expect(c.read(authProvider), isNotNull);
+      expect(devices.devices.values, ['tok_1']);
+    });
+
+    test('a hanging push source never blocks login', () async {
+      final c = build(src: _HangingTokenSource());
+      await c
+          .read(authProvider.notifier)
+          .login(email: 'a@b.co', password: 'secret123')
+          .timeout(const Duration(seconds: 3));
+      expect(c.read(authProvider), isNotNull);
+    });
+
+    test('a throwing push source never fails login', () async {
+      final c = build(src: _ThrowingTokenSource());
+      await c
+          .read(authProvider.notifier)
+          .login(email: 'a@b.co', password: 'secret123');
+      await drain();
+      expect(c.read(authProvider), isNotNull);
     });
   });
 

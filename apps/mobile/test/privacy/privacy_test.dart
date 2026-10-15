@@ -7,6 +7,7 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/privacy/privacy_models.dart';
 import 'package:factory_finder/features/privacy/privacy_repository.dart';
@@ -61,7 +62,8 @@ class _FakeAuth extends AuthController {
 
 /// Repo whose outcome the test controls.
 class _FakeRepo implements PrivacyRepository {
-  _FakeRepo({this.exportResult, this.deleteResult, this.error});
+  _FakeRepo({this.exportResult, this.deleteResult, this.error, this.onDelete});
+  final void Function()? onDelete;
   final ExportResult? exportResult;
   final DeletionResult? deleteResult;
   final Object? error;
@@ -76,6 +78,7 @@ class _FakeRepo implements PrivacyRepository {
   @override
   Future<DeletionResult> deleteAccount({String? password, String? refreshToken}) async {
     passwords.add(password);
+    onDelete?.call();
     if (error != null) throw error!;
     return deleteResult!;
   }
@@ -92,6 +95,7 @@ Future<void> _pump(
   Locale locale = const Locale('ar'),
   double textScale = 1.0,
   Size size = const Size(360, 2400),
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size * 2.0;
   tester.view.devicePixelRatio = 2.0;
@@ -104,6 +108,7 @@ Future<void> _pump(
       secureStoreProvider.overrideWithValue(MemoryStore()),
       authProvider.overrideWith((ref) => _FakeAuth(ref, me)),
       onboardingCompletedProvider.overrideWith((ref) => true),
+      ...overrides,
     ],
     child: MaterialApp(
       locale: locale,
@@ -117,6 +122,25 @@ Future<void> _pump(
     ),
   ));
   await settle(tester, frames: 2);
+}
+
+class _GrantedPushSource extends NoopPushTokenSource {
+  int deleted = 0;
+  @override
+  Future<PushPermission> permission() async => PushPermission.granted;
+  @override
+  Future<String?> token() async => 'tok_1';
+  @override
+  Future<void> deleteToken() async => deleted++;
+}
+
+class _CountingDevices extends MockDeviceRepository {
+  int unregistered = 0;
+  @override
+  Future<void> unregister(String deviceId) async {
+    unregistered++;
+    return super.unregister(deviceId);
+  }
 }
 
 Finder _k(String key) => find.byKey(ValueKey<String>(key));
@@ -359,6 +383,65 @@ void main() {
       await settle(tester, frames: 3);
       expect(gone, 1);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('delete unregisters the push device before the server call',
+        (tester) async {
+      final devices = _CountingDevices();
+      final source = _GrantedPushSource();
+      final seen = <int>[];
+      final repo = _FakeRepo(
+        deleteResult: DeletionResult.fromJson(_load('me_delete_deleted')),
+        onDelete: () => seen.add(devices.unregistered),
+      );
+      final overrides = [
+        pushRegistrationProvider.overrideWith(
+            (ref) => PushRegistrationController(source, devices)),
+      ];
+      await _pump(tester, repo,
+          store: MemoryStore(),
+          onGone: () {},
+          locale: const Locale('en'),
+          overrides: overrides);
+      final container = ProviderScope.containerOf(
+          tester.element(find.byType(PrivacyScreen)));
+      await container.read(pushRegistrationProvider).onLogin();
+      expect(devices.devices, isNotEmpty);
+
+      await tester.enterText(_k('privacy-password'), 'secret123');
+      await tester.pump();
+      await tester.tap(_k('privacy-delete'));
+      await settle(tester, frames: 3);
+      await tester.tap(_k('privacy-confirm-delete'));
+      await settle(tester, frames: 3);
+      expect(seen, [1]);
+      expect(source.deleted, greaterThanOrEqualTo(1));
+      expect(devices.devices, isEmpty);
+    });
+
+    testWidgets('a failed delete puts the push device back', (tester) async {
+      final devices = _CountingDevices();
+      final source = _GrantedPushSource();
+      final repo = _FakeRepo(error: ApiException(status: 403, code: 'reauth_required', message: 'x'));
+      await _pump(tester, repo,
+          store: MemoryStore(),
+          onGone: () {},
+          locale: const Locale('en'),
+          overrides: [
+            pushRegistrationProvider.overrideWith(
+                (ref) => PushRegistrationController(source, devices)),
+          ]);
+      final container = ProviderScope.containerOf(
+          tester.element(find.byType(PrivacyScreen)));
+      await container.read(pushRegistrationProvider).onLogin();
+      await tester.enterText(_k('privacy-password'), 'secret123');
+      await tester.pump();
+      await tester.tap(_k('privacy-delete'));
+      await settle(tester, frames: 3);
+      await tester.tap(_k('privacy-confirm-delete'));
+      await settle(tester, frames: 3);
+      expect(devices.unregistered, 1);
+      expect(devices.devices.values, ['tok_1']);
     });
 
     testWidgets('partial 202 shows the pending notice', (tester) async {

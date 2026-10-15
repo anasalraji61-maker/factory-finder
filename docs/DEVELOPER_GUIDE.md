@@ -87,6 +87,7 @@ AWB / vessel-ETA providers and falls back to the mock with a warning. Official o
 ```
 make test | make test-<svc>        # unit/service tests, mocks only
 make lint                          # ruff over services and scripts
+make contract-examples             # offline: openapi examples + contracts/examples/*.json validate against their schemas
 python scripts/contract_check.py   # code routes vs contract paths
 python scripts/contract_validate.py  # response bodies vs schemas; allowlist: scripts/contract_validate.allow.json
 make e2e                           # scripts/e2e.py: boots the stack locally, scenario through the gateway
@@ -95,6 +96,8 @@ make e2e-scenarios                 # five focused edge scenarios
 make compose-e2e                   # docker compose up, run e2e against http://localhost:8000, tear down
 FF_E2E_BASE_URL=https://api.example.com make smoke   # read-only post-deploy checks
 ```
+Example files in `contracts/examples/` are `{spec, pointer, description, value}`: `pointer` is a `#/...` JSON pointer into `contracts/openapi/<spec>`
+(`{`/`}` in path keys are fine; `/` is `~1`). Add one per new endpoint and copy its shape from code or tests, not from memory.
 `pip install pyyaml jsonschema referencing` is needed for the contract scripts. The e2e harnesses use well-known test secrets and refuse
 to run with `FF_ENV=production|prod|staging`.
 

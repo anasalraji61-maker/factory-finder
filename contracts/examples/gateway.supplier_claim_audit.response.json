@@ -1,0 +1,9 @@
+{
+  "spec": "gateway.yaml",
+  "pointer": "#/paths/~1v1~1admin~1supplier-claims~1audit/get/responses/200/content/application~1json/schema",
+  "description": "GET /v1/admin/supplier-claims/audit?user_id=...&limit=100 (X-Admin-Token) -> append-only decisions, newest first.",
+  "value": {"items": [
+    {"id": 2, "user_id": "ba63eccd-e25d-4eab-bb50-cd14ccd6fb3d", "supplier_id": "sup_demo_1", "action": "revoke", "previous_status": "verified", "new_status": "none", "reviewer": "ops.anas", "reason": "Documents found to be forged", "created_at": "2026-10-15T18:02:11Z"},
+    {"id": 1, "user_id": "ba63eccd-e25d-4eab-bb50-cd14ccd6fb3d", "supplier_id": "sup_demo_1", "action": "approve", "previous_status": "pending", "new_status": "verified", "reviewer": "admin", "reason": null, "created_at": "2026-10-14T09:30:00Z"}
+  ]}
+}

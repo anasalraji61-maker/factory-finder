@@ -1,0 +1,6 @@
+{
+  "spec": "rfq.yaml",
+  "pointer": "#/components/schemas/Offer",
+  "description": "Offer on a request whose target price is in USD, offered in CNY: comparable=false (prices are never converted implicitly). true = same currency; null = request has no target price.",
+  "value": {"id": "off_938f68277266433c8253ef15a214ba4d", "request_id": "req_1fb16b8fcdf04fc1a0a11559f2eaac0c", "supplier_user_id": "ba63eccd-e25d-4eab-bb50-cd14ccd6fb3d", "supplier_ref": null, "supplier_name": "Supplier One", "supplier_verified": false, "price": {"amount": "54", "currency": "CNY"}, "moq": 100, "lead_time_days": 20, "incoterm": "FOB", "valid_until": null, "notes": null, "comparable": false, "status": "active", "created_at": "2026-10-15T17:46:24Z", "updated_at": "2026-10-15T17:46:24Z"}
+}

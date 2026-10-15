@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
@@ -7,6 +9,7 @@ import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:factory_finder/core/storage/read_cache.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/privacy/privacy_models.dart';
 import 'package:factory_finder/features/privacy/privacy_repository.dart';
@@ -103,6 +106,8 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final destination = ref.read(destinationProvider.notifier);
     final currency = ref.read(displayCurrencyProvider.notifier);
     final cache = ref.read(readCacheProvider);
+    final push = ref.read(pushRegistrationProvider);
+    final locale = ref.read(localeProvider).languageCode;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -131,9 +136,14 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       _deleteError = null;
     });
     DeletionResult result;
+    // Before the delete: the device DELETE needs the session the server is
+    // about to revoke. Best effort, bounded, never throws.
+    await unregisterPushController(push);
     try {
       result = await repo.deleteAccount(password: _password.text);
     } catch (e) {
+      // Still signed in (wrong password, offline...): put the device back.
+      unawaited(registerPushController(push, locale: locale));
       if (!mounted) return;
       setState(() {
         _deleting = false;
@@ -144,7 +154,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
 
     // Server revoked every session: drop tokens, persisted state, sign out.
     if (mounted) setState(() => _gone = true);
-    auth.logout();
+    await auth.logout();
     // In-memory state first, so persistence listeners cannot write it back
     // after the keys below were removed.
     await clearSignedOutUserState(

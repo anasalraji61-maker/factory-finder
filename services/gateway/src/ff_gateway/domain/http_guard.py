@@ -9,7 +9,6 @@ import time
 from ff_gateway.domain.routing import resolve_upstream
 
 NO_STORE_PREFIXES = ("/v1/auth", "/v1/me", "/v1/ws-ticket", "/v1/admin")
-_BODY_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 class _TooLarge(Exception):
@@ -69,8 +68,7 @@ class HttpGuardMiddleware:
             await send_wrapper({"type": "http.response.body", "body": b})
             rejected = True
 
-        if scope["method"] not in _BODY_METHODS:
-            return await self.app(scope, receive, send_wrapper)
+        # every method is guarded: the proxy buffers the body of GET/HEAD/OPTIONS requests too
         limit, timeout = self._limits(scope["path"])
         for k, v in scope["headers"]:
             if k == b"content-length":

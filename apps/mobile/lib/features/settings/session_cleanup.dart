@@ -79,8 +79,56 @@ Future<void> unregisterPushDeviceBestEffort(
   Duration timeout = kPushUnregisterTimeout,
 }) async {
   try {
-    await ref.read(pushRegistrationProvider).onLogout().timeout(timeout);
+    await unregisterPushController(ref.read(pushRegistrationProvider),
+        timeout: timeout);
   } catch (_) {
-    // Provider scope disposed, timeout or any failure: sign-out goes on.
+    // Provider scope disposed: sign-out goes on.
+  }
+}
+
+/// Same as [unregisterPushDeviceBestEffort] for a controller captured earlier
+/// (widgets that must not touch `ref` after an await).
+Future<void> unregisterPushController(
+  PushRegistrationController push, {
+  Duration timeout = kPushUnregisterTimeout,
+}) async {
+  try {
+    await push.onLogout().timeout(timeout);
+  } catch (_) {
+    // Timeout or any failure: sign-out goes on.
+  }
+}
+
+/// Registers this device for push after a login / session restore without
+/// showing the OS permission dialog (only an existing grant registers) and
+/// publishes the resulting permission. Best effort: never throws and never
+/// blocks longer than [timeout]. Callers must not await it on the login path.
+Future<void> registerPushDeviceBestEffort(
+  Ref ref, {
+  Duration timeout = kPushUnregisterTimeout,
+}) async {
+  try {
+    final perm = await registerPushController(
+      ref.read(pushRegistrationProvider),
+      locale: ref.read(localeProvider).languageCode,
+      timeout: timeout,
+    );
+    if (perm != null) ref.read(pushPermissionProvider.notifier).state = perm;
+  } catch (_) {
+    // Provider scope disposed: nothing to publish.
+  }
+}
+
+/// Controller-level variant of [registerPushDeviceBestEffort]. Returns the
+/// permission, or null on timeout / failure.
+Future<PushPermission?> registerPushController(
+  PushRegistrationController push, {
+  required String locale,
+  Duration timeout = kPushUnregisterTimeout,
+}) async {
+  try {
+    return await push.onLogin(locale: locale, prompt: false).timeout(timeout);
+  } catch (_) {
+    return null;
   }
 }
