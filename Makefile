@@ -1,5 +1,5 @@
 SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight
-.PHONY: venv test lint dev down compose-e2e e2e e2e-extended smoke audit $(addprefix test-,$(SERVICES))
+.PHONY: venv test lint dev down compose-e2e e2e e2e-extended e2e-scenarios smoke audit $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml pillow python-multipart
 test:
@@ -19,6 +19,8 @@ e2e:
 	.venv/bin/python scripts/e2e.py
 e2e-extended:  # extra flows: moderation, media attachments, email verify, tracking relay, deals, assistant, reviews, prod guard
 	.venv/bin/python scripts/e2e_extended.py
+e2e-scenarios:  # 5 focused edge scenarios: landed-cost labels + geo avoid, tracking typo, concurrent invoice, freight dup, feed hidden unlike
+	.venv/bin/python scripts/e2e_scenarios.py
 smoke:  # post-deploy read-only checks: FF_E2E_BASE_URL=https://api.example.com make smoke
 	.venv/bin/python scripts/smoke_prod.py
 audit:  # dependency vulnerability scan; non-fatal and skipped if pip-audit is not installed

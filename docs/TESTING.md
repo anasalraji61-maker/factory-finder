@@ -50,8 +50,11 @@ ports (X-User-Id injection) are skipped in remote mode.
 
 ```
 python scripts/e2e_extended.py        # or: make e2e-extended  (boots 12+1 local services, ~30 s)
+python scripts/e2e_scenarios.py       # or: make e2e-scenarios (boots the local stack, ~15 s; 5 focused edge scenarios, mocks only)
 FF_E2E_BASE_URL=https://stack python scripts/smoke_prod.py   # or: make smoke
 ```
+`e2e_scenarios.py` pins five cross-service edge cases: landed cost Shanghai->Baghdad with labelled estimates (as_of/source/range, duty-table confidence) plus geo `avoid=suez` changing the sea route; tracking validate returning suggestions for a typo'd container; concurrent duplicate invoice creates yielding one invoice; duplicate freight application -> 409; unlike on a hidden feed post -> 404.
+
 `e2e_extended.py` covers what `e2e.py` does not: listing moderation (2 reports -> `pending_review` -> admin hide ->
 restore through `/v1/admin/moderation/*`), messaging media attachments, email verification (in-process gateway with the
 mock mailer, because the outbox is not reachable over HTTP), tracking outbox -> relay -> notifications alert (a row is
