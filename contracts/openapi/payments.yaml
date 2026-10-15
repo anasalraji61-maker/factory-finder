@@ -107,6 +107,26 @@ paths:
         "200": {description: Entries, content: {application/json: {schema: {$ref: "#/components/schemas/LedgerPage"}}}}
         "403": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/ledger/deals/{deal_id}/commission:
+    get:
+      operationId: dealCommission
+      description: Admin only. Platform commission booked for a deal (revenue:commission credits minus refund reversals), per currency, exact decimal strings.
+      parameters: [{name: deal_id, in: path, required: true, schema: {type: string}}]
+      responses:
+        "200":
+          description: Totals
+          content: {application/json: {schema: {type: object, required: [deal_id, items], properties: {deal_id: {type: string}, items: {type: array, items: {type: object, required: [currency, earned, refunded, net], properties: {currency: {type: string}, earned: {type: string}, refunded: {type: string}, net: {type: string}}}}}}}}
+        "403": {$ref: "#/components/responses/Error"}
+  /v1/payments/review:
+    get:
+      operationId: listPaymentReview
+      description: Admin only. Invoices that need a human, oldest first - money arrived after expiry / cancel (`late_payment_review`) or with the wrong amount (`amount_mismatch_review`). Refund or settle manually; sweep also scans invoices expired in the last 7 days for late transfers.
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/InvoicePage"}}}}
+        "403": {$ref: "#/components/responses/Error"}
   /v1/payments/sweep:
     post:
       operationId: sweepPayments
@@ -116,7 +136,7 @@ paths:
       responses:
         "200":
           description: Report
-          content: {application/json: {schema: {type: object, properties: {expired: {type: integer}, polled: {type: integer}, updated: {type: integer}, outbox_delivered: {type: integer}, outbox_retry: {type: integer}, outbox_dead: {type: integer}}}}}
+          content: {application/json: {schema: {type: object, properties: {expired: {type: integer}, late_flagged: {type: integer}, polled: {type: integer}, updated: {type: integer}, outbox_delivered: {type: integer}, outbox_retry: {type: integer}, outbox_dead: {type: integer}}}}}
         "403": {$ref: "#/components/responses/Error"}
   /v1/payments/outbox:
     get:
@@ -150,13 +170,13 @@ paths:
       description: |
         Signed provider event (no X-User-Id). Body: {event_id, type: payment.confirming|payment.confirmed|payment.failed|payment.expired,
         invoice_id or provider_ref, tx_ref?, confirmations?, amount?}. Idempotent: a repeated event_id answers 200 duplicate and changes
-        nothing; an event that no longer fits the status machine is acknowledged as ignored.
+        nothing; an event that no longer fits the status machine is acknowledged as ignored. Money for an expired / cancelled invoice, or a `paid` event with the wrong amount, answers `review`: the invoice keeps its status, status_reason becomes `late_payment_review` / `amount_mismatch_review` and it is listed by GET /v1/payments/review (never auto-settled, never silently dropped).
       parameters: [{name: provider, in: path, required: true, schema: {type: string, enum: [mock, usdt_tron]}}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/WebhookEvent"}}}}
       responses:
         "200":
           description: Accepted
-          content: {application/json: {schema: {type: object, required: [status], properties: {status: {type: string, enum: [applied, duplicate, ignored]}, invoice_id: {type: [string, "null"]}, invoice_status: {type: [string, "null"]}}}}}
+          content: {application/json: {schema: {type: object, required: [status], properties: {status: {type: string, enum: [applied, duplicate, ignored, review]}, invoice_id: {type: [string, "null"]}, invoice_status: {type: [string, "null"]}}}}}
         "400": {$ref: "#/components/responses/Error"}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
@@ -222,6 +242,10 @@ components:
     InvoiceKind: {type: string, enum: [commission, deal_payment]}
     InvoiceStatus: {type: string, enum: [pending, awaiting_payment, confirming, paid, expired, failed, refunded]}
     InvoiceCreate:
+      example: {
+        "deal_id": "deal_a8011169d3ad4111b7b26b0f3e1782c2",
+        "kind": "commission"
+      }
       type: object
       required: [deal_id, kind]
       additionalProperties: false
@@ -253,6 +277,35 @@ components:
         created_at: {type: string, format: date-time}
         delivered_at: {type: [string, "null"], format: date-time}
     Invoice:
+      example: {
+        "id": "inv_48453497e5d541249f38",
+        "deal_id": "deal_a8011169d3ad4111b7b26b0f3e1782c2",
+        "payer_user_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+        "payee": "platform",
+        "kind": "commission",
+        "amount": {
+          "amount": "112.50",
+          "currency": "USD"
+        },
+        "status": "awaiting_payment",
+        "status_reason": null,
+        "expires_at": "2026-10-15T18:46:25.223455Z",
+        "provider": "mock",
+        "provider_ref": "mock_inv_48453497e5d541249f38",
+        "pay_address": "mock-address-inv_48453497e5d541249f38",
+        "pay_url": "https://pay.invalid/mock/inv_48453497e5d541249f38",
+        "pay_amount": {
+          "amount": "112.50",
+          "currency": "USD"
+        },
+        "memo": "FF-REAGWDXDOU",
+        "user_memo": null,
+        "tx_ref": null,
+        "confirmations": 0,
+        "paid_at": null,
+        "created_at": "2026-10-15T17:46:25.223455Z",
+        "updated_at": "2026-10-15T17:46:25.300537Z"
+      }
       type: object
       required: [id, deal_id, payer_user_id, payee, kind, amount, status, expires_at, provider, created_at, updated_at]
       properties:

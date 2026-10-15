@@ -24,8 +24,16 @@ def _parse_range(header: str | None, size: int) -> tuple[int, int] | None | str:
         return None
     spec = header[6:].strip()
     a, sep, b = spec.partition("-")
-    if not sep or not (a.isascii() and b.isascii()) or not (a.isdigit() or a == "") or not (b.isdigit() or b == "") or (a == "" and b == ""):
+    if (
+        not sep
+        or not (a.isascii() and b.isascii())
+        or not (a.isdigit() or a == "")
+        or not (b.isdigit() or b == "")
+        or (a == "" and b == "")
+    ):
         return None
+    # a number longer than 18 digits exceeds any real size; clamp it (int() raises past 4300 digits -> would be a 500)
+    a, b = ("9" * 18 if len(a) > 18 else a), ("9" * 18 if len(b) > 18 else b)
     if a == "":  # suffix
         n = int(b)
         if n == 0:
@@ -38,18 +46,26 @@ def _parse_range(header: str | None, size: int) -> tuple[int, int] | None | str:
     return start, end
 
 
-def _body_response(request: Request, data: bytes, media_type: str, headers: dict[str, str]) -> Response:
+def _body_response(
+    request: Request, data: bytes, media_type: str, headers: dict[str, str]
+) -> Response:
     """200/206/416 with HEAD support (headers only, true Content-Length) and single-range handling."""
     headers = {**headers, "Accept-Ranges": "bytes"}
     rng = _parse_range(request.headers.get("range"), len(data))
     status, body = 200, data
     if rng == "bad":
-        return Response(status_code=416, headers={**headers, "Content-Range": f"bytes */{len(data)}"})
+        return Response(
+            status_code=416, headers={**headers, "Content-Range": f"bytes */{len(data)}"}
+        )
     if isinstance(rng, tuple):
         status, body = 206, data[rng[0] : rng[1] + 1]
         headers["Content-Range"] = f"bytes {rng[0]}-{rng[1]}/{len(data)}"
     if request.method == "HEAD":
-        return Response(status_code=status, media_type=media_type, headers={**headers, "Content-Length": str(len(body))})
+        return Response(
+            status_code=status,
+            media_type=media_type,
+            headers={**headers, "Content-Length": str(len(body))},
+        )
     return Response(body, status_code=status, media_type=media_type, headers=headers)
 
 
@@ -71,7 +87,9 @@ async def upload_image(request: Request, response: Response) -> MediaImage:
     await svc.charge_hourly(owner)
     up = await read_upload(request, svc.settings.max_upload_bytes)
     if up.kind is not None and up.kind not in KINDS:
-        raise BadRequest("`kind` must be listing, avatar, attachment or verification", {"allowed": list(KINDS)})
+        raise BadRequest(
+            "`kind` must be listing, avatar, attachment or verification", {"allowed": list(KINDS)}
+        )
     kind = up.kind or "listing"
     if up.visibility is not None and up.visibility not in VISIBILITIES:
         raise BadRequest("`visibility` must be public or private", {"allowed": list(VISIBILITIES)})
@@ -139,7 +157,11 @@ async def sign_private(media_id: str, request: Request) -> Response:
     if not ID_RE.fullmatch(media_id):
         raise NotFound("File not found")
     signed = await _svc(request).sign_url(owner, media_id)
-    return Response(signed.model_dump_json(), media_type="application/json", headers={"Cache-Control": "private, no-store"})
+    return Response(
+        signed.model_dump_json(),
+        media_type="application/json",
+        headers={"Cache-Control": "private, no-store"},
+    )
 
 
 @router.head("/v1/media/private/{filename}", operation_id="headPrivateFile")
@@ -180,4 +202,9 @@ async def export_user(user_id: str, request: Request) -> dict:
 
 @router.delete("/v1/internal/users/{user_id}/data")
 async def erase_user(user_id: str, request: Request) -> dict:
-    return {"service": "media", "user_id": user_id, "status": "done", "counts": await _svc(request).erase_owner(user_id)}
+    return {
+        "service": "media",
+        "user_id": user_id,
+        "status": "done",
+        "counts": await _svc(request).erase_owner(user_id),
+    }

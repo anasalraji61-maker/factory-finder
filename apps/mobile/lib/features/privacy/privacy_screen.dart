@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:factory_finder/core/storage/read_cache.dart';
@@ -9,6 +10,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/privacy/privacy_models.dart';
 import 'package:factory_finder/features/privacy/privacy_repository.dart';
+import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -98,6 +100,9 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final store = ref.read(keyValueStoreProvider);
     final onboarding = ref.read(onboardingCompletedProvider.notifier);
     final role = ref.read(userRoleProvider.notifier);
+    final destination = ref.read(destinationProvider.notifier);
+    final currency = ref.read(displayCurrencyProvider.notifier);
+    final cache = ref.read(readCacheProvider);
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -140,6 +145,14 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     // Server revoked every session: drop tokens, persisted state, sign out.
     if (mounted) setState(() => _gone = true);
     auth.logout();
+    // In-memory state first, so persistence listeners cannot write it back
+    // after the keys below were removed.
+    await clearSignedOutUserState(
+      cache: cache,
+      destination: destination,
+      currency: currency,
+      role: role,
+    );
     for (final k in kLocalStateKeys) {
       try {
         await store.remove(k);
@@ -148,7 +161,6 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       }
     }
     onboarding.state = false;
-    role.state = UserRole.buyer;
     if (!mounted) return;
 
     await showDialog<void>(

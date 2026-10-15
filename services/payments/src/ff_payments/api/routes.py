@@ -91,6 +91,16 @@ async def list_ledger(s: Svc, invoice_id: Annotated[str, Query(min_length=1)]) -
     return await s.list_ledger(invoice_id)
 
 
+@router.get("/ledger/deals/{deal_id}/commission", dependencies=[Depends(admin_only)])
+async def deal_commission(deal_id: str, s: Svc) -> dict[str, Any]:
+    return await s.commission_for_deal(deal_id)
+
+
+@router.get("/payments/review", dependencies=[Depends(admin_only)])
+async def list_review(s: Svc, page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
+    return await s.list_review(page, page_size)
+
+
 @router.post("/payments/sweep", dependencies=[Depends(admin_only)])
 async def sweep(s: Svc) -> dict[str, int]:
     return await s.sweep()

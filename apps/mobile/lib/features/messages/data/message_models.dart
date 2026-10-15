@@ -2,6 +2,8 @@
 
 const String currentUserId = 'me';
 
+int _nonNegative(int? n) => n == null || n < 0 ? 0 : n;
+
 enum MessageKind { text, attachment, system }
 
 enum SendStatus { sent, sending, failed }
@@ -198,7 +200,7 @@ class Conversation {
       lastMessage: (lastText ?? '').toString(),
       lastAttachments: parseAttachments(last is Map ? last['attachments'] : null),
       lastAt: updated,
-      unread: (j['unread_count'] as num?)?.toInt() ?? 0,
+      unread: _nonNegative((j['unread_count'] as num?)?.toInt()),
       muted: j['muted'] == true,
       archived: j['archived'] == true,
     );
@@ -312,4 +314,15 @@ class ChatMessage {
           'attachments': [for (final a in attachments) a.toJson()],
         'created_at': createdAt.toUtc().toIso8601String(),
       };
+}
+
+/// Oldest-first copy of [list]. Dart's `List.sort` is not stable, so messages
+/// sharing a timestamp are kept in their original relative order explicitly.
+List<ChatMessage> sortedByTime(Iterable<ChatMessage> list) {
+  final indexed = list.toList().asMap().entries.toList();
+  indexed.sort((a, b) {
+    final c = a.value.createdAt.compareTo(b.value.createdAt);
+    return c != 0 ? c : a.key.compareTo(b.key);
+  });
+  return [for (final e in indexed) e.value];
 }

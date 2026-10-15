@@ -5,6 +5,7 @@ import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/reco/widgets/recent_settings.dart';
+import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -210,6 +211,7 @@ Future<void> _confirmLogoutAll(BuildContext context, WidgetRef ref) async {
   final failed = context.tr('auth.logout_all.failed');
   try {
     await ref.read(authProvider.notifier).logoutAll();
+    await clearSignedOutUserStateOf(ref);
   } catch (_) {
     messenger.showSnackBar(SnackBar(content: Text(failed)));
   }

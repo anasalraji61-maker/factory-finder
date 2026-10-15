@@ -52,6 +52,10 @@ PLATFORM = "platform"
 EVENT_TARGET = {"payment.confirming": S.CONFIRMING, "payment.confirmed": S.PAID,
                 "payment.failed": S.FAILED, "payment.expired": S.EXPIRED}
 REORG_GRACE = timedelta(minutes=30)
+LATE_WINDOW = timedelta(days=7)  # how long after expiry the sweep keeps looking for a late transfer
+REVIEW_LATE = "late_payment_review"  # money arrived for an expired / cancelled invoice: a human decides
+REVIEW_AMOUNT = "amount_mismatch_review"  # a provider says "paid" with an amount that is not the invoice's
+REVIEW_REASONS = (REVIEW_LATE, REVIEW_AMOUNT)
 KNOWN_PROVIDERS = ("mock", "usdt_tron")
 
 
@@ -164,6 +168,8 @@ class PaymentsService:
             r.confirmations = confirmations
         if target == S.PAID:
             r.paid_at = now
+            if r.status_reason in REVIEW_REASONS:
+                r.status_reason = None
             await self._post(s, r, ledger.payment_legs(provider=r.provider, payee=r.payee, kind=r.kind,
                                                        amount=Decimal(r.amount), currency=r.currency), "payment")
         elif target == S.REFUNDED:
@@ -276,7 +282,8 @@ class PaymentsService:
         out = {"webhook_events": 0, "outbox_delivered": 0, "payment_attempts": 0}
         async with self.sessions() as s:
             if c.webhook_event_retention_days > 0:
-                money = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.PAID.value, S.REFUNDED.value]))
+                money = select(InvoiceRow.id).where(or_(InvoiceRow.status.in_([S.PAID.value, S.REFUNDED.value]),
+                                                        InvoiceRow.status_reason.in_(REVIEW_REASONS)))
                 r = await s.execute(delete(WebhookEventRow).where(
                     WebhookEventRow.received_at < now - timedelta(days=c.webhook_event_retention_days),
                     or_(WebhookEventRow.invoice_id.is_(None), WebhookEventRow.invoice_id.not_in(money))))
@@ -287,7 +294,9 @@ class PaymentsService:
                     OutboxEventRow.delivered_at < now - timedelta(days=c.outbox_delivered_retention_days)))
                 out["outbox_delivered"] = int(r.rowcount or 0)
             if c.attempt_retention_days > 0:
-                dead = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.EXPIRED.value, S.FAILED.value]))
+                dead = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.EXPIRED.value, S.FAILED.value]),
+                                                  or_(InvoiceRow.status_reason.is_(None),
+                                                      InvoiceRow.status_reason.not_in(REVIEW_REASONS)))
                 r = await s.execute(delete(PaymentAttemptRow).where(
                     PaymentAttemptRow.updated_at < now - timedelta(days=c.attempt_retention_days),
                     PaymentAttemptRow.invoice_id.in_(dead)))
@@ -515,10 +524,73 @@ class PaymentsService:
                         await s.rollback()
         async with self.sessions() as s:
             expired = await self._expire_due(s)
+        flagged = await self._scan_late()
         box = await self.drain_outbox()
         pruned = await self.prune()
-        return {"pruned": sum(pruned.values()), "expired": expired, "polled": polled, "updated": updated, "outbox_delivered": box["delivered"],
+        return {"pruned": sum(pruned.values()), "expired": expired, "polled": polled, "updated": updated, "late_flagged": flagged, "outbox_delivered": box["delivered"],
                 "outbox_retry": box["retry"], "outbox_dead": box["dead"]}
+
+    async def _scan_late(self) -> int:
+        """Funds for an invoice that already expired are never silently lost: flag it for manual review."""
+        if self.provider is None:
+            return 0
+        now = self.clock()
+        async with self.sessions() as s:
+            ids = (await s.execute(select(InvoiceRow.id).where(
+                InvoiceRow.provider == self.provider.name, InvoiceRow.status == S.EXPIRED.value,
+                InvoiceRow.status_reason == "expired", InvoiceRow.updated_at >= now - LATE_WINDOW)
+                .order_by(InvoiceRow.updated_at).limit(200))).scalars().all()
+        n = 0
+        for iid in ids:
+            async with self.sessions() as s:
+                r = await s.get(InvoiceRow, iid)
+                if r is None or r.status != S.EXPIRED.value or r.status_reason != "expired":
+                    continue
+                try:
+                    obs = await self.provider.poll(TrackedInvoice(
+                        r.provider_ref, r.memo, r.pay_address, Decimal(r.pay_amount) if r.pay_amount else None,
+                        int(r.created_at.timestamp() * 1000)))
+                except Exception:  # noqa: BLE001
+                    continue
+                if obs is None or (obs.tx_ref and await self._tx_taken(s, r, obs.tx_ref)):
+                    continue
+                self._flag_review(r, REVIEW_LATE, obs.tx_ref, obs.confirmations)
+                await s.commit()
+                n += 1
+        return n
+
+    def _flag_review(self, r: InvoiceRow, reason: str, tx_ref: str | None, confirmations: int | None) -> None:
+        r.status_reason, r.updated_at = reason, self.clock()
+        if tx_ref:
+            r.tx_ref = tx_ref
+        if confirmations is not None:
+            r.confirmations = confirmations
+
+    async def list_review(self, page: int, size: int) -> dict[str, Any]:
+        async with self.sessions() as s:
+            cond = InvoiceRow.status_reason.in_(REVIEW_REASONS)
+            total = (await s.execute(select(func.count()).select_from(InvoiceRow).where(cond))).scalar_one()
+            rows = (await s.execute(select(InvoiceRow).where(cond).order_by(InvoiceRow.updated_at, InvoiceRow.id)
+                                    .limit(size).offset((page - 1) * size))).scalars().all()
+            return {"items": [invoice_dict(r) for r in rows], "total": total, "page": page, "page_size": size}
+
+    async def commission_for_deal(self, deal_id: str) -> dict[str, Any]:
+        """Platform commission booked for one deal, net of refunds, per currency (from the immutable ledger)."""
+        async with self.sessions() as s:
+            rows = (await s.execute(select(LedgerEntryRow.direction, LedgerEntryRow.amount, LedgerEntryRow.currency)
+                                    .join(InvoiceRow, InvoiceRow.id == LedgerEntryRow.invoice_id)
+                                    .where(InvoiceRow.deal_id == deal_id,
+                                           LedgerEntryRow.account == "revenue:commission"))).all()
+        earned: dict[str, Decimal] = {}
+        refunded: dict[str, Decimal] = {}
+        for direction, amount, cur in rows:
+            bucket = earned if direction == Direction.CREDIT.value else refunded
+            bucket[cur] = bucket.get(cur, Decimal(0)) + Decimal(amount)
+        items = [{"currency": c, "earned": format(earned.get(c, Decimal(0)), "f"),
+                  "refunded": format(refunded.get(c, Decimal(0)), "f"),
+                  "net": format(earned.get(c, Decimal(0)) - refunded.get(c, Decimal(0)), "f")}
+                 for c in sorted(set(earned) | set(refunded))]
+        return {"deal_id": deal_id, "items": items}
 
     async def _revert_vanished(self, s: AsyncSession, r: InvoiceRow) -> bool:
         try:
@@ -534,7 +606,8 @@ class PaymentsService:
     async def _tx_taken(s: AsyncSession, r: InvoiceRow, tx_ref: str) -> bool:
         return (await s.execute(select(InvoiceRow.id).where(
             InvoiceRow.tx_ref == tx_ref, InvoiceRow.id != r.id, InvoiceRow.provider == r.provider,
-            InvoiceRow.status.in_([S.CONFIRMING.value, S.PAID.value])).limit(1))).first() is not None
+            or_(InvoiceRow.status.in_([S.CONFIRMING.value, S.PAID.value]),
+                InvoiceRow.status_reason == REVIEW_LATE)).limit(1))).first() is not None
 
     async def _apply_observation(self, s: AsyncSession, r: InvoiceRow, obs: Observation) -> bool:
         target = S.PAID if obs.status == "paid" else S.CONFIRMING
@@ -574,6 +647,8 @@ class PaymentsService:
             if r is None:
                 raise NotFound("Invoice not found", code="invoice_not_found")  # not recorded: provider may retry
             rid = r.id
+            if EVENT_TARGET[ev.type] in (S.CONFIRMING, S.PAID):
+                await self._expire_if_due(s, r)  # money arriving past the TTL is reviewed, never auto-settled
             try:
                 outcome = await self._apply_event(s, r, ev)
                 s.add(WebhookEventRow(provider=provider, event_id=ev.event_id, invoice_id=rid,
@@ -613,11 +688,20 @@ class PaymentsService:
         target = EVENT_TARGET[ev.type]
         if r.provider == "usdt_tron" and target in (S.CONFIRMING, S.PAID):
             return "ignored"  # on-chain settlement is proven only by our own explorer poll, never by a callback
+        cur = S(r.status)
         if target == S.PAID and ev.amount is not None:
             want = Decimal(r.pay_amount or r.amount)
             if ev.amount.value != want or ev.amount.currency != (r.pay_currency or r.currency):
-                return "ignored"  # wrong amount never settles an invoice
-        cur = S(r.status)
+                if cur in (S.PENDING, S.AWAITING_PAYMENT, S.CONFIRMING, S.EXPIRED, S.FAILED):
+                    # wrong amount never settles, but it is money we must not lose track of
+                    self._flag_review(r, REVIEW_AMOUNT, ev.tx_ref if cur not in state.OPEN else None, None)
+                    return "review"
+                return "ignored"
+        if target in (S.CONFIRMING, S.PAID) and cur in (S.EXPIRED, S.FAILED):
+            if ev.tx_ref and await self._tx_taken(s, r, ev.tx_ref):
+                return "ignored"
+            self._flag_review(r, REVIEW_LATE, ev.tx_ref, ev.confirmations)  # paid after expiry / cancel
+            return "review"
         if cur == target:
             return "ignored"
         if not state.can(cur, target):

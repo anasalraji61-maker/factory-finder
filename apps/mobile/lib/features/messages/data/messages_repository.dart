@@ -131,7 +131,7 @@ class LiveMessagingRepository implements MessagingRepository {
   Future<int> unreadTotal() async {
     final data = await _api.get('/v1/conversations/unread-total');
     final n = data is Map ? data['unread_total'] : null;
-    return n is num ? n.toInt() : 0;
+    return n is num && n > 0 ? n.toInt() : 0;
   }
 
   @override

@@ -15,4 +15,8 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app \
     && chown -R app:app /app
 USER app
-CMD ["sh", "-c", "uvicorn ff_${SERVICE}.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# --no-server-header: hide "Server: uvicorn". --timeout-keep-alive 5: drop idle keep-alive sockets quickly.
+# --no-proxy-headers: deliberate; the gateway resolves X-Forwarded-For itself (FF_GATEWAY_TRUSTED_PROXIES) and
+# internal services only ever see the gateway, so uvicorn must not rewrite client addresses.
+# `exec` makes uvicorn the direct child of the init process so SIGTERM gives a graceful shutdown.
+CMD ["sh", "-c", "exec uvicorn ff_${SERVICE}.main:app --host 0.0.0.0 --port ${PORT:-8000} --no-server-header --timeout-keep-alive 5 --no-proxy-headers"]

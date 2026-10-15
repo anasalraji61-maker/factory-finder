@@ -9,6 +9,18 @@ from ff_rfq.domain.enums import ListingKind
 from ff_rfq.domain.errors import UnsupportedCurrency
 
 CENT = Decimal("0.01")
+# Minor-unit exponent per currency; absent = 2. IQD/JPY are handled as whole units (no fractional dinars/yen).
+ZERO_DECIMAL = frozenset({"IQD", "JPY"})
+
+
+def money_quantum(currency: str) -> Decimal:
+    return Decimal("1") if currency in ZERO_DECIMAL else CENT
+
+
+def quantize_money(value: Decimal, currency: str) -> Decimal:
+    """Round half-up to the currency's minor unit."""
+    return value.quantize(money_quantum(currency), rounding=ROUND_HALF_UP)
+
 DEFAULT_RATES: dict[ListingKind, Decimal] = {
     ListingKind.PRODUCT: Decimal("0.03"),
     ListingKind.RAW_MATERIAL: Decimal("0.02"),
@@ -39,8 +51,9 @@ def compute_commission(
     if currency not in usd_rates:
         raise UnsupportedCurrency(f"Currency {currency} is not supported", details={"currency": currency})
     rate = rates[kind]
-    pct = (subtotal * rate).quantize(CENT, rounding=ROUND_HALF_UP)
-    floor = (min_fee_usd / usd_rates[currency]).quantize(CENT, rounding=ROUND_CEILING)
+    quantum = money_quantum(currency)
+    pct = (subtotal * rate).quantize(quantum, rounding=ROUND_HALF_UP)
+    floor = (min_fee_usd / usd_rates[currency]).quantize(quantum, rounding=ROUND_CEILING)
     if pct < floor:
         return Commission(rate, floor, currency, True)
     return Commission(rate, pct, currency, False)

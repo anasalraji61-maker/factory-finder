@@ -131,7 +131,10 @@ class _FreightRequestDetailScreenState
         key == 'freight.err.request_not_open' ||
         key == 'freight.err.quote_not_available' ||
         key == 'freight.err.request_expired' ||
-        key == 'freight.err.quote_expired';
+        key == 'freight.err.quote_expired' ||
+        key == 'freight.err.state_changed' ||
+        key == 'freight.err.quote_changed' ||
+        key == 'freight.err.quote_final';
   }
 
   Future<void> acceptQuote(Quote q) async {
@@ -289,9 +292,9 @@ class _FreightRequestDetailScreenState
             label: Text(context.tr('freight.complete.cta')),
           ),
         ],
-        if (r.isCompleted && awarded != null) ...[
+        if (r.isCompleted) ...[
           const SizedBox(height: AppSpacing.md),
-          FreightRateCard(requestId: r.id, forwarderName: awarded.forwarder?.companyName),
+          FreightRateCard(requestId: r.id, forwarderName: awarded?.forwarder?.companyName),
         ],
         FreightSectionHeader(
           title: context.tr('freight.quotes_title'),

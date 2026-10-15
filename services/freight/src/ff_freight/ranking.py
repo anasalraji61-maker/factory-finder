@@ -9,7 +9,7 @@ For each comparable quote (same currency as the request, not expired, visible, f
 The rating is shrunk toward a neutral prior (3.0 stars worth 2 ratings), so a forwarder without
 ratings scores 0.600 and a single 5-star rating cannot dominate. ``score`` is
 100 * (w_price * price_score + w_transit * transit_score + w_rating * rating_score) with weights
-normalised to sum to 1. Ties are broken by lower price, shorter transit, earlier submission, id.
+normalised to sum to 1. ``top_rated`` needs >= LOW_RATING_COUNT ratings. Ties are broken by lower price, shorter transit, earlier submission, id.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ PRIOR_STARS = Decimal(3)
 PRIOR_WEIGHT = Decimal(2)
 Q3 = Decimal("0.001")
 Q1 = Decimal("0.1")
+LOW_RATING_COUNT = 5  # fewer ratings than this -> "low" confidence; the top_rated badge needs at least this many
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,12 @@ class Candidate:
 
 def shrunk_rating(rating_sum: int, rating_count: int) -> Decimal:
     return (Decimal(rating_sum) + PRIOR_STARS * PRIOR_WEIGHT) / (Decimal(rating_count) + PRIOR_WEIGHT)
+
+
+def rating_confidence(rating_count: int) -> str:
+    if rating_count <= 0:
+        return "unrated"
+    return "low" if rating_count < LOW_RATING_COUNT else "established"
 
 
 def normalise_weights(wp: int, wt: int, wr: int) -> tuple[Decimal, Decimal, Decimal]:
@@ -60,9 +67,14 @@ def rank(cands: list[Candidate], weights: tuple[Decimal, Decimal, Decimal], sort
         sr = shrunk_rating(c.rating_sum, c.rating_count)
         rs = sr / 5
         score = (Decimal(100) * (wp * ps + wt * ts + wr * rs)).quantize(Q1, ROUND_HALF_UP)
+        cheaper = sorted((x for x in cands if x.amount < c.amount), key=lambda x: (x.amount, x.quote_id))
         rows.append(
             {
                 "quote_id": c.quote_id,
+                "price_delta": c.amount - cheapest,
+                "cheaper_quote_ids": [x.quote_id for x in cheaper],
+                "rating_count": c.rating_count,
+                "rating_confidence": rating_confidence(c.rating_count),
                 "score": score,
                 "breakdown": {
                     "price": {"value": ps.quantize(Q3, ROUND_HALF_UP), "weight": wp.quantize(Q3, ROUND_HALF_UP)},
@@ -75,7 +87,7 @@ def rank(cands: list[Candidate], weights: tuple[Decimal, Decimal, Decimal], sort
                     for b, on in (
                         ("cheapest", c.amount == cheapest),
                         ("fastest", c.transit_days == fastest),
-                        ("top_rated", sr == best_rating and c.rating_count > 0),
+                        ("top_rated", sr == best_rating and c.rating_count >= LOW_RATING_COUNT),
                     )
                     if on
                 ],
@@ -109,4 +121,8 @@ def _explain(r: dict, cheapest: Decimal, fastest: int) -> list[str]:
     ]
     if r["badges"]:
         out.append("best " + ", ".join(r["badges"]).replace("_", " "))
+    if r["cheaper_quote_ids"]:
+        out.append(f"{len(r['cheaper_quote_ids'])} cheaper quote(s) exist; price is +{r['price_delta']} over the cheapest")
+    if r["rating_confidence"] != "established":
+        out.append(f"rating based on {r['rating_count']} review(s): {r['rating_confidence']} confidence")
     return out

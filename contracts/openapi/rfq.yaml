@@ -457,6 +457,20 @@ components:
     DealStatus: {type: string, enum: [pending_payment, paid, in_fulfilment, completed, disputed, cancelled, refunded]}
     Money: {$ref: ../schemas/common.schema.json#/$defs/Money}
     RequestCreate:
+      example: {
+        "kind": "product",
+        "title": "Plastic chairs 500",
+        "quantity": 500,
+        "unit": "piece",
+        "target_price": {
+          "amount": "8",
+          "currency": "USD"
+        },
+        "destination": {
+          "country_code": "IQ",
+          "city": "Erbil"
+        }
+      }
       type: object
       required: [kind, title, quantity]
       additionalProperties: false
@@ -474,6 +488,32 @@ components:
         visibility: {type: string, enum: [public, private], default: public}
         invited_supplier_ids: {type: array, items: {type: string, pattern: "^[A-Za-z0-9_.:-]{1,64}$"}, maxItems: 50, default: [], description: "Optional. Non-empty = invite-only: only these verified supplier ids (gateway-set X-Supplier-Id) and the buyer can see the request or create offers; everyone else gets 404. Duplicates are dropped."}
     Request:
+      example: {
+        "id": "req_1fb16b8fcdf04fc1a0a11559f2eaac0c",
+        "owner_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+        "kind": "product",
+        "title": "Plastic chairs 500",
+        "description": null,
+        "quantity": "500",
+        "unit": "piece",
+        "condition": "any",
+        "target_price": {
+          "amount": "8",
+          "currency": "USD"
+        },
+        "destination": {
+          "country_code": "IQ",
+          "city": "Erbil"
+        },
+        "deadline": null,
+        "attachments": [],
+        "visibility": "public",
+        "status": "open",
+        "offers_count": 0,
+        "created_at": "2026-10-15T17:46:24Z",
+        "updated_at": "2026-10-15T17:46:24Z",
+        "invited_supplier_ids": []
+      }
       type: object
       required: [kind, title, quantity, id, owner_id, status, offers_count, created_at, updated_at]
       properties:
@@ -496,6 +536,16 @@ components:
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
     OfferCreate:
+      example: {
+        "price": {
+          "amount": "7.5",
+          "currency": "USD"
+        },
+        "supplier_name": "Supplier One",
+        "moq": 100,
+        "lead_time_days": 20,
+        "incoterm": "FOB"
+      }
       type: object
       required: [price, supplier_name]
       additionalProperties: false
@@ -509,6 +559,27 @@ components:
         valid_until: {type: string, format: date-time}
         notes: {type: string}
     Offer:
+      example: {
+        "comparable": true,
+        "id": "off_938f68277266433c8253ef15a214ba4d",
+        "request_id": "req_1fb16b8fcdf04fc1a0a11559f2eaac0c",
+        "supplier_user_id": "ba63eccd-e25d-4eab-bb50-cd14ccd6fb3d",
+        "supplier_ref": null,
+        "supplier_name": "Supplier One",
+        "supplier_verified": false,
+        "price": {
+          "amount": "7.5",
+          "currency": "USD"
+        },
+        "moq": 100,
+        "lead_time_days": 20,
+        "incoterm": "FOB",
+        "valid_until": null,
+        "notes": null,
+        "status": "active",
+        "created_at": "2026-10-15T17:46:24Z",
+        "updated_at": "2026-10-15T17:46:24Z"
+      }
       type: object
       required: [price, supplier_name, id, request_id, supplier_user_id, status, created_at, updated_at]
       properties:
@@ -524,10 +595,50 @@ components:
         request_id: {type: string}
         supplier_user_id: {type: string}
         supplier_verified: {type: boolean, description: "true when supplier_ref came from a gateway-verified X-Supplier-Id"}
+        comparable: {type: [boolean, "null"], description: "true when the offer price currency equals the request target currency (prices are never converted implicitly); null when the request has no target price"}
         status: {$ref: "#/components/schemas/OfferStatus"}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
     Deal:
+      example: {
+        "id": "deal_a8011169d3ad4111b7b26b0f3e1782c2",
+        "request_id": "req_1fb16b8fcdf04fc1a0a11559f2eaac0c",
+        "offer_id": "off_938f68277266433c8253ef15a214ba4d",
+        "buyer_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+        "supplier_user_id": "ba63eccd-e25d-4eab-bb50-cd14ccd6fb3d",
+        "kind": "product",
+        "quantity": "500",
+        "unit_price": {
+          "amount": "7.5",
+          "currency": "USD"
+        },
+        "subtotal": {
+          "amount": "3750.00",
+          "currency": "USD"
+        },
+        "commission": {
+          "rate": "0.03",
+          "amount": {
+            "amount": "112.50",
+            "currency": "USD"
+          },
+          "min_fee_applied": false,
+          "is_estimate": false
+        },
+        "supplier_net": {
+          "amount": "3637.50",
+          "currency": "USD"
+        },
+        "status": "pending_payment",
+        "payment": {
+          "commission": null,
+          "deal_payment": null
+        },
+        "delivered_at": null,
+        "completed_at": null,
+        "created_at": "2026-10-15T17:46:24Z",
+        "updated_at": "2026-10-15T17:46:24Z"
+      }
       type: object
       required: [id, request_id, offer_id, buyer_id, supplier_user_id, kind, quantity, unit_price, subtotal, commission, supplier_net, status]
       properties:

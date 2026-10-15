@@ -139,6 +139,30 @@ paths:
           content:
             application/json:
               schema:
+                examples: [
+                  {
+                    "reference": "CSQU3054383",
+                    "reference_type": "container",
+                    "valid": true,
+                    "normalized": "CSQU3054383",
+                    "reason": null,
+                    "mode": "sea",
+                    "carrier": null,
+                    "suggestions": [],
+                    "carrier_suggestion": null
+                  },
+                  {
+                    "reference": "CSQU3054384",
+                    "reference_type": "container",
+                    "valid": false,
+                    "normalized": "CSQU3054384",
+                    "reason": "check_digit",
+                    "mode": "sea",
+                    "carrier": null,
+                    "suggestions": [],
+                    "carrier_suggestion": null
+                  }
+                ]
                 type: object
                 required: [reference, reference_type, valid, normalized]
                 properties:
@@ -233,6 +257,11 @@ components:
       type: string
       enum: [booked, gate_in, loaded, departed, in_transit, transshipment, arrived, discharged, customs_hold, released, out_for_delivery, delivered, exception]
     ShipmentCreate:
+      example: {
+        "reference": "CSQU3054383",
+        "reference_type": "container",
+        "label": "chairs"
+      }
       type: object
       required: [reference, reference_type]
       additionalProperties: false
@@ -274,6 +303,222 @@ components:
         flight: {type: [object, "null"], properties: {number: {type: string}, carrier_code: {type: [string, "null"]}}}
         source: {type: string}
     Shipment:
+      example: {
+        "id": "shp_c05fd09ff0ff404ab4462bc9f7a6a1d7",
+        "owner_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+        "reference": "CSQU3054383",
+        "reference_type": "container",
+        "carrier": null,
+        "label": "chairs",
+        "status": "in_transit",
+        "eta": "2026-10-23T10:23:10.862116Z",
+        "origin": {
+          "country_code": "CN",
+          "city": "Shenzhen",
+          "point": {
+            "lat": 22.574,
+            "lon": 114.278
+          }
+        },
+        "origin_hub_id": "CNYTN",
+        "destination": {
+          "country_code": "IQ",
+          "city": "Basra",
+          "point": {
+            "lat": 30.5085,
+            "lon": 47.7804
+          }
+        },
+        "destination_hub_id": "IQUQR",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "events": [
+          {
+            "id": "evt_30564911a50a99eb_00",
+            "status": "booked",
+            "description": "Booking confirmed",
+            "description_ar": "تم تأكيد الحجز",
+            "location": {
+              "name": "Shenzhen (Yantian)",
+              "name_ar": "شنتشن (يانتيان)",
+              "country_code": "CN",
+              "hub_id": "CNYTN",
+              "point": {
+                "lat": 22.574,
+                "lon": 114.278
+              }
+            },
+            "timestamp": "2026-10-05T22:46:23.494457Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_01",
+            "status": "gate_in",
+            "description": "Container gated in at terminal",
+            "description_ar": "دخلت الحاوية المحطة",
+            "location": {
+              "name": "Shenzhen (Yantian)",
+              "name_ar": "شنتشن (يانتيان)",
+              "country_code": "CN",
+              "hub_id": "CNYTN",
+              "point": {
+                "lat": 22.574,
+                "lon": 114.278
+              }
+            },
+            "timestamp": "2026-10-07T10:46:23.494457Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_02",
+            "status": "loaded",
+            "description": "Loaded on vessel",
+            "description_ar": "تم التحميل على السفينة",
+            "location": {
+              "name": "Shenzhen (Yantian)",
+              "name_ar": "شنتشن (يانتيان)",
+              "country_code": "CN",
+              "hub_id": "CNYTN",
+              "point": {
+                "lat": 22.574,
+                "lon": 114.278
+              }
+            },
+            "timestamp": "2026-10-08T16:46:23.494457Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_03",
+            "status": "departed",
+            "description": "Vessel departed",
+            "description_ar": "غادرت السفينة",
+            "location": {
+              "name": "Shenzhen (Yantian)",
+              "name_ar": "شنتشن (يانتيان)",
+              "country_code": "CN",
+              "hub_id": "CNYTN",
+              "point": {
+                "lat": 22.574,
+                "lon": 114.278
+              }
+            },
+            "timestamp": "2026-10-09T02:46:23.494457Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_04",
+            "status": "in_transit",
+            "description": "Vessel under way",
+            "description_ar": "السفينة في الطريق",
+            "location": {
+              "name": "South China Sea",
+              "name_ar": "بحر الصين الجنوبي",
+              "country_code": null,
+              "hub_id": null,
+              "point": {
+                "lat": 14.5,
+                "lon": 112.5
+              }
+            },
+            "timestamp": "2026-10-11T03:51:38.832694Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_05",
+            "status": "in_transit",
+            "description": "Vessel under way",
+            "description_ar": "السفينة في الطريق",
+            "location": {
+              "name": "Singapore Strait",
+              "name_ar": "مضيق سنغافورة",
+              "country_code": null,
+              "hub_id": null,
+              "point": {
+                "lat": 1.2,
+                "lon": 103.9
+              }
+            },
+            "timestamp": "2026-10-13T04:56:54.170931Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          },
+          {
+            "id": "evt_30564911a50a99eb_06",
+            "status": "in_transit",
+            "description": "Vessel under way",
+            "description_ar": "السفينة في الطريق",
+            "location": {
+              "name": "Strait of Malacca",
+              "name_ar": "مضيق ملقا",
+              "country_code": null,
+              "hub_id": null,
+              "point": {
+                "lat": 4.8,
+                "lon": 99.2
+              }
+            },
+            "timestamp": "2026-10-15T06:02:09.509168Z",
+            "vessel": {
+              "name": "Maersk Sentosa",
+              "imo": null,
+              "voyage": "77W"
+            },
+            "flight": null,
+            "source": "mock"
+          }
+        ],
+        "provider": "mock",
+        "warning": null,
+        "milestones": {},
+        "initial_eta": "2026-10-23T10:23:10.862116Z",
+        "delayed": false,
+        "delay_hours": null,
+        "last_refreshed_at": "2026-10-15T17:46:23.494457Z",
+        "last_refresh_attempt_at": null,
+        "created_at": "2026-10-15T17:46:23.494457Z",
+        "updated_at": "2026-10-15T17:46:23.494457Z",
+        "mode": "sea",
+        "progress_percent": 55
+      }
       type: object
       required: [id, owner_id, reference, reference_type, mode, status, progress_percent, events, created_at, updated_at]
       properties:

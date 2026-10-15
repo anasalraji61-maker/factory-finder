@@ -533,7 +533,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   Widget _body(BuildContext context, List<ChatItem> items) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null && _messages.isEmpty) {
-      return ErrorState(message: _error.toString(), onRetry: _load);
+      return ErrorState(error: _error, onRetry: _load);
     }
     if (items.isEmpty) {
       return EmptyState(
@@ -811,7 +811,10 @@ class _Bubble extends StatelessWidget {
   }
 
   Widget _attachments(BuildContext context, Color fg) {
-    final images = [for (final a in message.attachments) if (a.isImage) a];
+    final images = [
+      for (final a in message.attachments)
+        if (a.isImage && safeAttachmentUrl(baseUrl, a.url) != null) a,
+    ];
     final docs = [for (final a in message.attachments) if (!a.isImage) a];
     final single = images.length == 1;
     final side = single ? 180.0 : 88.0;
@@ -827,7 +830,7 @@ class _Bubble extends StatelessWidget {
               for (var i = 0; i < images.length; i++)
                 GestureDetector(
                   key: ValueKey('chat-img-${message.id}-$i'),
-                  onTap: () => onOpenImage(resolveMediaUrl(baseUrl, images[i].url)),
+                  onTap: () => onOpenImage(safeAttachmentUrl(baseUrl, images[i].url)!),
                   child: AppNetworkImage(
                     url: mediaThumbUrl(baseUrl, images[i].url, width: single ? 400 : 200),
                     width: side,

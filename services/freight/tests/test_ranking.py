@@ -35,7 +35,7 @@ def test_rank_math_is_exact_and_explained():
     assert [r["quote_id"] for r in rows] == ["c", "b", "a"] and [r["rank"] for r in rows] == [1, 2, 3]
     assert by["b"]["badges"] == ["cheapest"] and by["c"]["badges"] == ["fastest", "top_rated"] and by["a"]["badges"] == []
     assert by["c"]["breakdown"]["rating"]["weight"] == Decimal("0.200")
-    assert len(by["a"]["explanation"]) == 3 and "price 80% of best" in by["a"]["explanation"][0]
+    assert len(by["a"]["explanation"]) == 5 and "price 80% of best" in by["a"]["explanation"][0]
     assert "best fastest, top rated" in by["c"]["explanation"][3]
 
 
@@ -102,7 +102,7 @@ def test_ratings_move_the_ranking(client):
     qg = make_quote(client, req["id"], "good")
     items = client.get(f"/v1/freight/requests/{req['id']}/comparison", headers=uh("buyer1")).json()["items"]
     assert items[0]["quote"]["id"] == qg["id"] and items[0]["adjusted_rating"] > items[1]["adjusted_rating"]
-    assert "top_rated" in items[0]["badges"]
+    assert "top_rated" not in items[0]["badges"] and items[0]["rating_confidence"] == "low"  # one rating is not enough
 
 
 def test_comparison_after_award_keeps_accepted_only(client):

@@ -83,11 +83,11 @@ class _ForwarderRequestScreenState extends ConsumerState<ForwarderRequestScreen>
     super.dispose();
   }
 
-  Future<_QuoteContext> _fetch() async {
+  Future<_QuoteContext> _fetch({bool refill = true}) async {
     final repo = ref.read(freightRepositoryProvider);
     final r = await repo.getRequest(widget.requestId);
     final q = await findMyQuoteForRequest(repo, widget.requestId);
-    _fill(q);
+    if (refill) _fill(q);
     return _QuoteContext(r, q);
   }
 
@@ -208,8 +208,25 @@ class _ForwarderRequestScreenState extends ConsumerState<ForwarderRequestScreen>
       setState(() {
         _busy = false;
         _error = context.freightError(e);
+        // The quote / request changed under us (e.g. quote_exists after a
+        // double submit): re-read it so the button flips to "revise" or the
+        // form locks, but keep what the user typed.
+        if (_isStale(e)) _future = _fetch(refill: false);
       });
     }
+  }
+
+  bool _isStale(Object e) {
+    const stale = {
+      'freight.err.quote_exists',
+      'freight.err.quote_changed',
+      'freight.err.state_changed',
+      'freight.err.quote_final',
+      'freight.err.quote_expired',
+      'freight.err.request_expired',
+      'freight.err.request_not_open',
+    };
+    return stale.contains(freightErrorKey(e));
   }
 
   Future<void> _report(ShipmentRequest r) async {

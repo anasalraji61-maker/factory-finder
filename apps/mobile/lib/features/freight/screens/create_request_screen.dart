@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/freight/data/freight_decimal.dart';
 import 'package:factory_finder/features/freight/data/freight_drafts.dart';
 import 'package:factory_finder/features/freight/data/freight_errors.dart';
 import 'package:factory_finder/features/freight/data/freight_models.dart';
@@ -101,7 +102,7 @@ class _CreateFreightRequestScreenState
         mode: _mode,
         containerType: _containerAllowed ? _container : null,
         containerCount: _containerAllowed && _container != null
-            ? (int.tryParse(_containerCount.text.trim()) ?? 1)
+            ? (int.tryParse(FreightDecimal.normalize(_containerCount.text) ?? '') ?? 1)
             : null,
         incoterm: _incoterm,
         readyDate: _ready,
@@ -112,12 +113,21 @@ class _CreateFreightRequestScreenState
 
   Future<void> _pickDate() async {
     final n = _now();
-    final today = DateTime(n.year, n.month, n.day);
+    final localToday = DateTime(n.year, n.month, n.day);
+    // The server window is UTC based (today .. +365 days): never offer a
+    // date it would reject, whatever the device time zone.
+    final u = n.toUtc();
+    final utcToday = DateTime(u.year, u.month, u.day);
+    final today = localToday.isAfter(utcToday) ? localToday : utcToday;
+    final last = utcToday.add(const Duration(days: 365));
+    final initial = _ready.isBefore(today)
+        ? today
+        : (_ready.isAfter(last) ? last : _ready);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _ready.isBefore(today) ? today : _ready,
+      initialDate: initial,
       firstDate: today,
-      lastDate: today.add(const Duration(days: 365)),
+      lastDate: last,
     );
     if (picked != null && mounted) setState(() => _ready = picked);
   }
@@ -226,7 +236,7 @@ class _CreateFreightRequestScreenState
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: textInputFormatters,
               decoration: InputDecoration(labelText: context.tr('freight.form.weight')),
-              validator: (v) => _v(() => FreightValidators.weightOrVolume(v ?? '', _volume.text)),
+              validator: (v) => _v(() => FreightValidators.weightField(v ?? '', _volume.text)),
             ),
             _gap(),
             TextFormField(
@@ -235,7 +245,7 @@ class _CreateFreightRequestScreenState
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: textInputFormatters,
               decoration: InputDecoration(labelText: context.tr('freight.form.volume')),
-              validator: (v) => _v(() => FreightValidators.weightOrVolume(_weight.text, v ?? '')),
+              validator: (v) => _v(() => FreightValidators.volumeField(_weight.text, v ?? '')),
             ),
             SectionHeader(title: context.tr('freight.form.shipping')),
             Wrap(

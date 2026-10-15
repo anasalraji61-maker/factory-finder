@@ -251,6 +251,135 @@ components:
     Error: {description: Error, content: {application/json: {schema: {$ref: "../schemas/common.schema.json#/$defs/Error"}}}}
   schemas:
     TrustScoreV2:
+      example: {
+        "supplier_id": "adhoc",
+        "score": 88,
+        "band": "green",
+        "factors": [
+          {
+            "key": "years_in_business",
+            "impact": 6,
+            "explanation": "Years in business (8.0) raises the score.",
+            "explanation_ar": "سنوات العمل (8.0) يرفع الدرجة."
+          },
+          {
+            "key": "verified",
+            "impact": 8,
+            "explanation": "Platform verification (True) raises the score.",
+            "explanation_ar": "التوثيق على المنصة (True) يرفع الدرجة."
+          },
+          {
+            "key": "third_party_audit",
+            "impact": 8,
+            "explanation": "Third-party factory audit (True) raises the score.",
+            "explanation_ar": "تدقيق مصنع من طرف ثالث (True) يرفع الدرجة."
+          },
+          {
+            "key": "transactions_count",
+            "impact": 5,
+            "explanation": "Completed transactions (240) raises the score.",
+            "explanation_ar": "عدد الصفقات المنجزة (240) يرفع الدرجة."
+          },
+          {
+            "key": "response_rate",
+            "impact": 4,
+            "explanation": "Response rate (0.93) raises the score.",
+            "explanation_ar": "معدل الاستجابة (0.93) يرفع الدرجة."
+          },
+          {
+            "key": "rating_avg",
+            "impact": 5,
+            "explanation": "Average rating (4.6 from 120 reviews, adjusted 4.54) raises the score.",
+            "explanation_ar": "متوسط التقييم (4.6 from 120 reviews, adjusted 4.54) يرفع الدرجة."
+          },
+          {
+            "key": "reviews_count",
+            "impact": 3,
+            "explanation": "Number of reviews (120) raises the score.",
+            "explanation_ar": "عدد التقييمات (120) يرفع الدرجة."
+          },
+          {
+            "key": "dispute_rate",
+            "impact": 3,
+            "explanation": "Dispute rate (0.010) raises the score.",
+            "explanation_ar": "نسبة النزاعات (0.010) يرفع الدرجة."
+          },
+          {
+            "key": "certifications",
+            "impact": 2,
+            "explanation": "Certifications (ISO9001) raises the score.",
+            "explanation_ar": "الشهادات (ISO9001) يرفع الدرجة."
+          },
+          {
+            "key": "has_physical_address",
+            "impact": 4,
+            "explanation": "Verifiable physical address (True) raises the score.",
+            "explanation_ar": "عنوان فعلي قابل للتحقق (True) يرفع الدرجة."
+          }
+        ],
+        "computed_at": "2026-10-15T17:46:26.182645Z",
+        "confidence": 60,
+        "model_version": "trust-v2",
+        "data_gaps": [
+          {
+            "key": "price_vs_market_ratio",
+            "label": "Missing: Price vs market median",
+            "label_ar": "غير متوفر: السعر مقابل متوسط السوق"
+          },
+          {
+            "key": "country_risk",
+            "label": "Missing: Country risk",
+            "label_ar": "غير متوفر: مخاطر البلد"
+          },
+          {
+            "key": "business_license_status",
+            "label": "Missing: Business licence / registry check",
+            "label_ar": "غير متوفر: التحقق من الترخيص التجاري والسجل"
+          },
+          {
+            "key": "contact_consistency",
+            "label": "Missing: Contact details consistency",
+            "label_ar": "غير متوفر: اتساق بيانات التواصل"
+          },
+          {
+            "key": "deal_outcomes",
+            "label": "Missing: On-platform deal outcomes",
+            "label_ar": "غير متوفر: نتائج الصفقات على المنصة"
+          },
+          {
+            "key": "domain_age_years",
+            "label": "Missing: Website age (years)",
+            "label_ar": "غير متوفر: عمر الموقع (سنوات)"
+          },
+          {
+            "key": "refund_rate",
+            "label": "Missing: Refund rate",
+            "label_ar": "غير متوفر: نسبة الاسترجاع"
+          },
+          {
+            "key": "repeat_buyer_rate",
+            "label": "Missing: Repeat-buyer rate",
+            "label_ar": "غير متوفر: نسبة المشترين المتكررين"
+          },
+          {
+            "key": "response_time_hours",
+            "label": "Missing: Typical response time (hours)",
+            "label_ar": "غير متوفر: زمن الاستجابة المعتاد (ساعات)"
+          },
+          {
+            "key": "storefront_age_years",
+            "label": "Missing: Storefront age (years)",
+            "label_ar": "غير متوفر: عمر المتجر (سنوات)"
+          },
+          {
+            "key": "sanctions_hit",
+            "label": "Sanctions screening not run",
+            "label_ar": "لم يتم فحص قوائم العقوبات"
+          }
+        ],
+        "flags": [],
+        "verification_level": "none"
+      }
       description: TrustScore plus v2 fields (all additive/optional for consumers).
       allOf:
         - $ref: "../schemas/common.schema.json#/$defs/TrustScore"
@@ -395,6 +524,20 @@ components:
         created_at: {type: string, format: date-time}
         score_effect: {type: string, const: none_until_reviewed}
     SupplierSignals:
+      example: {
+        "years_in_business": 8,
+        "verified": true,
+        "third_party_audit": true,
+        "transactions_count": 240,
+        "response_rate": 0.93,
+        "rating_avg": 4.6,
+        "reviews_count": 120,
+        "dispute_rate": 0.01,
+        "certifications": [
+          "ISO9001"
+        ],
+        "has_physical_address": true
+      }
       type: object
       additionalProperties: false
       description: All fields optional; missing = unknown.

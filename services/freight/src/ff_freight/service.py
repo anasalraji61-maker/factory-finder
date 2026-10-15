@@ -209,6 +209,7 @@ class FreightService:
             "country_code": r.country_code,
             "rating": {"average": avg, "count": r.rating_count},
             "completed_jobs": r.completed_count,
+            "verified": r.verified_at is not None,
         }
 
     @staticmethod
@@ -829,6 +830,15 @@ class FreightService:
         rows = await c.execute(select(forwarders).where(forwarders.c.id.in_(set(ids))))
         return {r.id: r for r in rows}
 
+    @staticmethod
+    def _excluded(x, f, reason: str) -> dict:
+        """An excluded quote is still shown with its terms so a cheaper offer is never hidden silently."""
+        return {
+            "quote_id": x.id, "reason": reason, "amount": x.amount, "currency": x.currency,
+            "transit_days": x.transit_days, "valid_until": _iso(x.valid_until), "forwarder_id": f.id,
+            "company_name": f.company_name,
+        }
+
     async def comparison(self, user: str, rid: str, sort: str = "score") -> dict:
         t = self.clock()
         async with self.engine.begin() as c:
@@ -851,11 +861,11 @@ class FreightService:
         for x in rows:
             f = fw[x.forwarder_id]
             if f.status != "active":
-                excluded.append({"quote_id": x.id, "reason": "forwarder_suspended"})
+                excluded.append(self._excluded(x, f, "forwarder_suspended"))
             elif x.currency != r.currency:
-                excluded.append({"quote_id": x.id, "reason": "currency_mismatch"})
+                excluded.append(self._excluded(x, f, "currency_mismatch"))
             elif r.status == "open" and x.valid_until <= t:
-                excluded.append({"quote_id": x.id, "reason": "quote_expired"})
+                excluded.append(self._excluded(x, f, "quote_expired"))
             else:
                 by_id[x.id] = x
                 cands.append(
@@ -864,10 +874,21 @@ class FreightService:
         w = normalise_weights(self.s.weight_price, self.s.weight_transit, self.s.weight_rating)
         ranked = rank(cands, w, sort)
         items = []
+        incl_union = sorted({i for x in by_id.values() for i in (x.inclusions or [])})
         for row in ranked:
             x = by_id[row["quote_id"]]
+            mine = set(x.inclusions or [])
+            others = [set(y.inclusions or []) for k, y in by_id.items() if k != x.id]
             items.append(
                 {
+                    "price_delta": _f(row["price_delta"]),
+                    "cheaper_quote_ids": row["cheaper_quote_ids"],
+                    "rating_count": row["rating_count"],
+                    "rating_confidence": row["rating_confidence"],
+                    "verified": fw[x.forwarder_id].verified_at is not None,
+                    "valid_until": _iso(x.valid_until),
+                    "inclusions_missing": [i for i in incl_union if i not in mine],
+                    "inclusions_unique": sorted(i for i in mine if not any(i in o for o in others)),
                     "rank": row["rank"],
                     "score": _f(row["score"]),
                     "breakdown": {

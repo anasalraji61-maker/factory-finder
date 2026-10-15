@@ -8,6 +8,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/utils/digits.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
+import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -178,7 +179,10 @@ class ProfileScreen extends ConsumerWidget {
             )
           else
             OutlinedButton.icon(
-              onPressed: () => ref.read(authProvider.notifier).logout(),
+              onPressed: () {
+                ref.read(authProvider.notifier).logout();
+                clearSignedOutUserStateOf(ref);
+              },
               icon: const Icon(Icons.logout),
               label: Text(context.tr('auth.logout')),
             ),

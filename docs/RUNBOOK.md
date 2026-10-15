@@ -231,3 +231,10 @@ Defaults and the exact scope are in `docs/OPS.md` (Retention and limits). Short 
 - **Suspected admin-token guessing**: the gateway throttles failed `/v1/admin` attempts per IP; rotate `FF_GATEWAY_ADMIN_TOKEN` anyway and check logs for 401s on `/v1/admin`.
 - **Payment received but deal not marked paid**: look at the payments outbox for `pending`/`dead` events and requeue (section 2, step 6); check `docker compose logs rfq`.
 - **Security finding follow-up**: open items are tracked in `docs/fixes/*.md` (blocks a phase until fixed).
+
+## Container hardening notes (infra)
+
+- Every service starts with `uvicorn ... --no-server-header --timeout-keep-alive 5 --no-proxy-headers` (Dockerfile.service, via `exec` so SIGTERM is graceful). `--no-proxy-headers` is deliberate: the gateway resolves `X-Forwarded-For` itself (`FF_GATEWAY_TRUSTED_PROXIES`); internal services only see the gateway.
+- Networks: `internal` (`internal: true`, no outbound internet) holds all services and postgres; only the gateway publishes a port. `egress` is attached to the gateway and to services whose real adapters call external APIs (sourcing, logistics, tracking, notifications, assistant, payments). A service not listed there cannot reach the internet; add `networks: [internal, egress]` if a new adapter needs it. Postgres is never published.
+- Healthchecks use a 2 s timeout; json-file logs rotate at 10 MB x 3 (postgres included); postgres runs with all capabilities dropped except those its entrypoint needs.
+- Not done (needs a runtime test with Docker): `read_only: true` for services that default to SQLite in `/app` (dev mode); ship a reverse proxy/TLS in front of the gateway and bind `8000` to loopback there; pin base image digests (see `docs/fixes/supply-chain-review-2026-10.md`).

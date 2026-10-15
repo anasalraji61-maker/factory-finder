@@ -1,6 +1,7 @@
 # Shared hardening for every service (merged with `<<: *hardening`): no capabilities, no privilege gain,
 # PID/memory/CPU caps, bounded logs. Override a key per service if needed (e.g. media mem_limit).
 x-hardening: &hardening
+  networks: [internal]
   cap_drop: [ALL]
   security_opt: ["no-new-privileges:true"]
   init: true
@@ -13,6 +14,7 @@ x-hardening: &hardening
 services:
   gateway:
     <<: *hardening
+    networks: [internal, egress]
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -66,13 +68,14 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8000/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8000/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
       start_period: 20s
   sourcing:
     <<: *hardening
+    networks: [internal, egress]
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -104,7 +107,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8101/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8101/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -113,6 +116,7 @@ services:
     - '8101'
   logistics:
     <<: *hardening
+    networks: [internal, egress]
     read_only: true
     tmpfs:
     - /tmp
@@ -137,7 +141,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8102/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8102/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -163,7 +167,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8103/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8103/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -190,7 +194,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8104/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8104/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -218,7 +222,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8105/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8105/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -247,7 +251,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8106/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8106/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -256,6 +260,7 @@ services:
     - '8106'
   tracking:
     <<: *hardening
+    networks: [internal, egress]
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -290,7 +295,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8107/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8107/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -299,6 +304,7 @@ services:
     - '8107'
   notifications:
     <<: *hardening
+    networks: [internal, egress]
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -329,7 +335,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8108/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8108/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -338,6 +344,7 @@ services:
     - '8108'
   assistant:
     <<: *hardening
+    networks: [internal, egress]
     read_only: true
     tmpfs:
     - /tmp
@@ -367,7 +374,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8109/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8109/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -397,7 +404,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8110/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8110/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -406,6 +413,7 @@ services:
     - '8110'
   payments:
     <<: *hardening
+    networks: [internal, egress]
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -433,7 +441,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8111/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8111/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -475,7 +483,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8112/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8112/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -504,7 +512,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8113/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8113/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -532,7 +540,7 @@ services:
       - CMD
       - python
       - -c
-      - import urllib.request;urllib.request.urlopen('http://localhost:8114/health')
+      - import urllib.request;urllib.request.urlopen('http://localhost:8114/health',timeout=2)
       interval: 15s
       timeout: 3s
       retries: 5
@@ -548,6 +556,14 @@ services:
     - pg
     image: postgres:16-alpine
     security_opt: ["no-new-privileges:true"]
+    # postgres entrypoint needs these to chown PGDATA and drop to the postgres user; everything else is dropped.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID, FOWNER, DAC_OVERRIDE]
+    init: true
+    networks: [internal]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
     mem_limit: 1g
     pids_limit: 512
     environment:
@@ -566,6 +582,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+# internal: no published ports, no outbound internet (DB + services). egress: the gateway (only published
+# service) and services whose real adapters call external APIs (FX, freight, tracking, FCM/SMTP, LLM, payments).
+networks:
+  internal: {internal: true}
+  egress: {}
 volumes:
   pgdata: {}
   media-data: {}

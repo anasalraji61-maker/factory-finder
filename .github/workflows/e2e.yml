@@ -45,3 +45,5 @@ jobs:
         run: python scripts/e2e_extended.py
       - name: Business scenarios (sequential, after the flows above)
         run: python scripts/e2e_scenarios.py
+      - name: Privacy export and erasure (sequential, last)
+        run: python scripts/e2e_privacy.py

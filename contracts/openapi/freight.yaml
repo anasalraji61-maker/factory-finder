@@ -1144,7 +1144,24 @@ components:
         country_code: *id005
         rating: {$ref: '#/components/schemas/Rating'}
         completed_jobs: {type: integer, minimum: 0}
+        verified: {type: boolean, description: 'Additive: the forwarder company is admin-verified'}
     RequestCreate:
+      example: {
+        "origin_country": "CN",
+        "origin_place": "Shenzhen",
+        "destination_country": "IQ",
+        "destination_place": "Umm Qasr",
+        "cargo_description": "Ceramic planters",
+        "weight_kg": "4200",
+        "volume_cbm": "18",
+        "mode": "sea",
+        "container_type": "40HC",
+        "container_count": 1,
+        "incoterm": "FOB",
+        "ready_date": "2026-11-01",
+        "currency": "USD",
+        "quote_deadline_days": 7
+      }
       type: object
       additionalProperties: false
       required: [origin_country, origin_place, destination_country, destination_place, cargo_description, mode, incoterm, ready_date]
@@ -1181,6 +1198,33 @@ components:
           pattern: ^[A-Za-z0-9_.:\-]{1,64}$
           description: opaque id of a logistics landed-cost quote; not checked
     ShipmentRequest:
+      example: {
+        "id": "shp_0037f28e112147e7a83df3153dc4d9f1",
+        "origin_country": "CN",
+        "origin_place": "Shenzhen",
+        "destination_country": "IQ",
+        "destination_place": "Umm Qasr",
+        "cargo_description": "Ceramic planters",
+        "hs_code": null,
+        "weight_kg": "4200.000",
+        "volume_cbm": "18.000",
+        "mode": "sea",
+        "container_type": "40HC",
+        "container_count": 1,
+        "incoterm": "FOB",
+        "ready_date": "2026-11-01",
+        "currency": "USD",
+        "landed_cost_ref": null,
+        "status": "open",
+        "outcome": null,
+        "quote_count": 0,
+        "expires_at": "2026-10-22T17:46:27.479578Z",
+        "awarded_at": null,
+        "awarded_quote_id": null,
+        "buyer_id": "eb4ad84e-14a5-4681-bcb2-91db2490c1db",
+        "closed_at": null,
+        "created_at": "2026-10-15T17:46:27.479578Z"
+      }
       type: object
       required: [id, origin_country, origin_place, destination_country, destination_place, cargo_description, hs_code, weight_kg, volume_cbm, mode, container_type, container_count, incoterm, ready_date,
         currency, landed_cost_ref, status, outcome, quote_count, expires_at, awarded_at, awarded_quote_id, buyer_id, closed_at, created_at]
@@ -1259,6 +1303,25 @@ components:
         label: {type: string, minLength: 2, maxLength: 60}
         amount: {type: string, pattern: '^\d+(\.\d{1,2})?$', description: 'exact decimal string, up to 2 decimals'}
     QuoteCreate:
+      example: {
+        "amount": "3100",
+        "currency": "USD",
+        "transit_days": 24,
+        "valid_days": 10,
+        "inclusions": [
+          "THC"
+        ],
+        "breakdown": [
+          {
+            "label": "Ocean freight",
+            "amount": "2800"
+          },
+          {
+            "label": "THC",
+            "amount": "300"
+          }
+        ]
+      }
       type: object
       additionalProperties: false
       required: [amount, currency, transit_days]
@@ -1293,6 +1356,46 @@ components:
           type: [string, 'null']
           maxLength: 1000
     Quote:
+      example: {
+        "id": "qte_9d9bac7c52bc4d1ca558095208fa561b",
+        "request_id": "shp_0037f28e112147e7a83df3153dc4d9f1",
+        "forwarder_id": "fwd_18080323d6004fcda1a2c8140f6923fb",
+        "amount": "3100.00",
+        "currency": "USD",
+        "transit_days": 24,
+        "valid_until": "2026-10-25T17:46:27.754081Z",
+        "valid": true,
+        "inclusions": [
+          "THC"
+        ],
+        "exclusions": [],
+        "breakdown": [
+          {
+            "label": "Ocean freight",
+            "amount": "2800.00"
+          },
+          {
+            "label": "THC",
+            "amount": "300.00"
+          }
+        ],
+        "terms": null,
+        "status": "submitted",
+        "revision": 1,
+        "created_at": "2026-10-15T17:46:27.754081Z",
+        "updated_at": "2026-10-15T17:46:27.754081Z",
+        "forwarder": {
+          "id": "fwd_18080323d6004fcda1a2c8140f6923fb",
+          "company_name": "Fast Cargo",
+          "country_code": "CN",
+          "rating": {
+            "average": null,
+            "count": 0
+          },
+          "completed_jobs": 0,
+          "verified": true
+        }
+      }
       type: object
       required: [id, request_id, forwarder_id, amount, currency, transit_days, valid_until, valid, inclusions, exclusions, breakdown, terms, status, revision, created_at, updated_at]
       properties:
@@ -1365,6 +1468,101 @@ components:
         request: {$ref: '#/components/schemas/ShipmentRequest'}
         quote: {$ref: '#/components/schemas/Quote'}
     Comparison:
+      example: {
+        "request_id": "shp_0037f28e112147e7a83df3153dc4d9f1",
+        "request_status": "open",
+        "currency": "USD",
+        "sort": "score",
+        "weights": {
+          "price": 0.5,
+          "transit": 0.3,
+          "rating": 0.2
+        },
+        "formula": "score = 100 x (w_price x cheapest/price + w_transit x fastest/transit + w_rating x adjusted_rating/5); adjusted_rating = (sum of stars + 3 x 2) / (rating count + 2)",
+        "items": [
+          {
+            "price_delta": 0.0,
+            "cheaper_quote_ids": [],
+            "rating_count": 0,
+            "rating_confidence": "unrated",
+            "verified": true,
+            "valid_until": "2026-10-25T17:46:27.754081Z",
+            "inclusions_missing": [],
+            "inclusions_unique": [
+              "THC"
+            ],
+            "rank": 1,
+            "score": 92.0,
+            "breakdown": {
+              "price": {
+                "value": 1.0,
+                "weight": 0.5
+              },
+              "transit": {
+                "value": 1.0,
+                "weight": 0.3
+              },
+              "rating": {
+                "value": 0.6,
+                "weight": 0.2
+              }
+            },
+            "adjusted_rating": 3.0,
+            "badges": [
+              "cheapest",
+              "fastest"
+            ],
+            "explanation": [
+              "price 100% of best (weight 50%)",
+              "transit 100% of best (weight 30%)",
+              "rating 3.00/5 after shrinking toward 3.0 (weight 20%)",
+              "rating based on 0 review(s): unrated confidence",
+              "best cheapest, fastest"
+            ],
+            "quote": {
+              "id": "qte_9d9bac7c52bc4d1ca558095208fa561b",
+              "request_id": "shp_0037f28e112147e7a83df3153dc4d9f1",
+              "forwarder_id": "fwd_18080323d6004fcda1a2c8140f6923fb",
+              "amount": "3100.00",
+              "currency": "USD",
+              "transit_days": 24,
+              "valid_until": "2026-10-25T17:46:27.754081Z",
+              "valid": true,
+              "inclusions": [
+                "THC"
+              ],
+              "exclusions": [],
+              "breakdown": [
+                {
+                  "label": "Ocean freight",
+                  "amount": "2800.00"
+                },
+                {
+                  "label": "THC",
+                  "amount": "300.00"
+                }
+              ],
+              "terms": null,
+              "status": "submitted",
+              "revision": 1,
+              "created_at": "2026-10-15T17:46:27.754081Z",
+              "updated_at": "2026-10-15T17:46:27.754081Z",
+              "forwarder": {
+                "id": "fwd_18080323d6004fcda1a2c8140f6923fb",
+                "company_name": "Fast Cargo",
+                "country_code": "CN",
+                "rating": {
+                  "average": null,
+                  "count": 0
+                },
+                "completed_jobs": 0,
+                "verified": true
+              }
+            }
+          }
+        ],
+        "excluded": []
+      }
       type: object
       required: [request_id, request_status, currency, sort, weights, formula, items, excluded]
       properties:
@@ -1420,6 +1618,14 @@ components:
                 type: array
                 items: {type: string}
               quote: {$ref: '#/components/schemas/Quote'}
+              price_delta: {type: number, description: 'Additive: amount minus the cheapest ranked amount (request currency)'}
+              cheaper_quote_ids: {type: array, items: {type: string}, description: 'Additive: ranked quotes that are cheaper than this one'}
+              rating_count: {type: integer, minimum: 0}
+              rating_confidence: {type: string, enum: [unrated, low, established], description: 'Additive: low under 5 ratings; top_rated badge needs established'}
+              verified: {type: boolean}
+              valid_until: {type: [string, 'null']}
+              inclusions_missing: {type: array, items: {type: string}, description: 'Additive: inclusions offered by other ranked quotes but not this one'}
+              inclusions_unique: {type: array, items: {type: string}, description: 'Additive: inclusions only this quote offers'}
         excluded:
           type: array
           items:
@@ -1430,6 +1636,12 @@ components:
               reason:
                 type: string
                 enum: [forwarder_suspended, currency_mismatch, quote_expired]
+              amount: {type: string, description: 'Additive: excluded quotes keep their terms visible'}
+              currency: {type: string}
+              transit_days: {type: integer}
+              valid_until: {type: [string, 'null']}
+              forwarder_id: {type: string}
+              company_name: {type: string}
       description: 'Only submitted (and, once awarded, accepted) visible quotes of active forwarders in the request currency, not past validity, are ranked. score = 100 x (w_price x cheapest/price + w_transit
         x fastest/transit + w_rating x adjusted_rating/5); weights default 0.5/0.3/0.2 (FF_FREIGHT_WEIGHT_*). Ties: lower price, shorter transit, earlier submission.'
     RatingCreate:

@@ -64,6 +64,8 @@ class DeliveryPipeline:
         for device in await self.store.list_devices(owner_id):
             if not device.active:
                 continue
+            if await self._push_cap_reached(owner_id, device.id, now):
+                continue  # the alerts stay in the inbox; only the push is capped
             d = Delivery(
                 id=delivery_id("alerts", PUSH, device.id, *wanted),
                 owner_id=owner_id,
@@ -76,6 +78,21 @@ class DeliveryPipeline:
             )
             created += int(await self.store.insert_delivery(d))
         return created
+
+    async def _push_cap_reached(self, owner_id: str, device_id: str, now: datetime) -> bool:
+        cap = self.settings.push_daily_cap_per_user
+        if cap <= 0:
+            return False
+        since = now - timedelta(hours=24)
+        recent = [
+            d
+            for d in await self.store.list_deliveries(owner_id, limit=500)
+            if d.channel == PUSH
+            and d.device_id == device_id
+            and d.created_at >= since
+            and d.status is not DeliveryStatus.SKIPPED
+        ]
+        return len(recent) >= cap
 
     async def enqueue_digests(self) -> int:
         if self.email is None:

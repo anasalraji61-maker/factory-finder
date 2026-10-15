@@ -34,7 +34,16 @@ double _d(Object? v, [double d = 0]) {
   return double.tryParse('$v') ?? d;
 }
 
-DateTime? _dt(Object? v) => v is String ? DateTime.tryParse(v) : null;
+/// Parses a wire timestamp. The server speaks UTC: a value without a zone
+/// designator is read as UTC, not as device-local time.
+DateTime? _dt(Object? v) {
+  if (v is! String) return null;
+  final s = v.trim();
+  final hasTime = s.contains(RegExp(r'[T ]'));
+  final hasZone = RegExp(r'(Z|[+-]\d{2}(:?\d{2})?)$', caseSensitive: false).hasMatch(s);
+  return DateTime.tryParse(hasTime && !hasZone ? '${s}Z' : s);
+}
+
 List<String> _sl(Object? v) =>
     v is List ? [for (final e in v) e.toString()] : const <String>[];
 List<Map<String, dynamic>> _ml(Object? v) =>
@@ -681,7 +690,8 @@ List<ComparisonItem> sortComparisonItems(
     final ca = a.quote.createdAt;
     final cb = b.quote.createdAt;
     if (ca != null && cb != null) return ca.compareTo(cb);
-    return 0;
+    if (ca == null && cb == null) return 0;
+    return ca == null ? 1 : -1; // unknown submission time sorts last
   }
 
   int tie(ComparisonItem a, ComparisonItem b) {

@@ -882,4 +882,63 @@ void main() {
       await expectLater(repo.acceptQuote('fq_100_1'), _apiError(409, 'request_expired'));
     });
   });
+
+  group('audit regressions', () {
+    test('timestamps without a zone are read as UTC', () {
+      DateTime? exp(String v) =>
+          ShipmentRequest.fromJson({'id': 'x', 'expires_at': v}).expiresAt;
+      expect(exp('2026-10-15T10:00:00'), DateTime.utc(2026, 10, 15, 10));
+      expect(exp('2026-10-15T10:00:00Z'), DateTime.utc(2026, 10, 15, 10));
+      expect(exp('2026-10-15T10:00:00+00:00'), DateTime.utc(2026, 10, 15, 10));
+      expect(exp('2026-10-15T13:00:00+03:00'), DateTime.utc(2026, 10, 15, 10));
+      expect(exp('2026-10-15T10:00:00.123456'), DateTime.utc(2026, 10, 15, 10, 0, 0, 123, 456));
+      expect(exp('garbage'), isNull);
+    });
+
+    test('contract-only 409/429 codes have their own message', () {
+      for (final code in ['quote_changed', 'rating_too_early', 'rating_pair_limit']) {
+        expect(kFreightErrorCodes, contains(code));
+        expect(
+          freightErrorKey(ApiException(status: 409, code: code, message: code)),
+          'freight.err.$code',
+        );
+      }
+    });
+
+    test('weight / volume errors land on the right field', () {
+      expect(FreightValidators.weightField('', ''), 'freight.v.weight_or_volume');
+      expect(FreightValidators.volumeField('', ''), 'freight.v.weight_or_volume');
+      // A bad volume must not flag a valid weight.
+      expect(FreightValidators.weightField('10', '1.2345'), isNull);
+      expect(FreightValidators.volumeField('10', '1.2345'), 'freight.v.number_scale_3');
+      expect(FreightValidators.weightField('0', '5'), 'freight.v.number_scale_3');
+      expect(FreightValidators.weightField('١٢٫٥', ''), isNull);
+      expect(FreightValidators.volumeField('', '2,5'), isNull);
+    });
+
+    test('container count accepts Arabic-Indic digits like the validator', () {
+      expect(FreightValidators.intRange('٣', 1, 500, 'k'), isNull);
+      expect(int.tryParse(FreightDecimal.normalize('٣') ?? ''), 3);
+      expect(FreightValidators.intRange('501', 1, 500, 'k'), 'k');
+      expect(FreightValidators.intRange('0', 1, 500, 'k'), 'k');
+    });
+
+    test('ready date window is UTC based around midnight', () {
+      // 23:30 UTC on 15 Oct: a UTC-5 device is still on 15 Oct, a UTC+3 one is on 16 Oct.
+      final now = DateTime.utc(2026, 10, 15, 23, 30);
+      expect(FreightValidators.readyDate(DateTime(2026, 10, 15), now), isNull);
+      expect(FreightValidators.readyDate(DateTime(2026, 10, 16), now), isNull);
+      expect(FreightValidators.readyDate(DateTime(2026, 10, 14), now), 'freight.v.ready_date');
+      // 01:00 UTC on 16 Oct: 15 Oct is already yesterday for the server.
+      final later = DateTime.utc(2026, 10, 16, 1);
+      expect(FreightValidators.readyDate(DateTime(2026, 10, 15), later), 'freight.v.ready_date');
+    });
+
+    test('all incoterms and modes in contract are offered', () {
+      for (final i in ['EXW', 'FCA', 'FAS', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP']) {
+        expect(kFreightIncoterms, contains(i));
+      }
+      expect(kFreightModes.toSet(), {'sea', 'air', 'road', 'rail'});
+    });
+  });
 }

@@ -323,7 +323,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: Text(
-                            '${c.unread}',
+                            unreadBadgeLabel(c.unread),
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,

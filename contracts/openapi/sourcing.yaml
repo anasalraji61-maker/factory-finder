@@ -68,6 +68,122 @@ paths:
           content:
             application/json:
               schema:
+                example: {
+                  "items": [
+                    {
+                      "id": "lst_0082",
+                      "source": "mock",
+                      "source_url": "https://example.com/mock/listings/lst_0082",
+                      "kind": "production_line",
+                      "condition": "used",
+                      "title": "Used Nissei Injection Molding Machine 180 Ton (2011)",
+                      "title_ar": "ماكينة حقن بلاستيك مستعملة Nissei 180 طن (2011)",
+                      "category": "plastics_machinery",
+                      "images": [
+                        "https://picsum.photos/seed/lst_0082/600/600",
+                        "https://picsum.photos/seed/lst_0082_2/600/600"
+                      ],
+                      "price": {
+                        "min": {
+                          "amount": "9500.00",
+                          "currency": "USD"
+                        },
+                        "max": {
+                          "amount": "16000.00",
+                          "currency": "USD"
+                        }
+                      },
+                      "unit": "set",
+                      "moq": 1,
+                      "incoterm": "FOB",
+                      "unit_weight_kg": 6500.0,
+                      "unit_volume_m3": 14.0,
+                      "hs_code": "8477.10",
+                      "lead_time_days": {
+                        "min": 20,
+                        "max": 35
+                      },
+                      "supplier": {
+                        "id": "sup_jp_002",
+                        "name": "Osaka Kikai Trading Co.",
+                        "name_ar": "أوساكا كيكاي للماكينات المستعملة",
+                        "location": {
+                          "country_code": "JP",
+                          "city": "Osaka",
+                          "point": {
+                            "lat": 34.69,
+                            "lon": 135.5
+                          }
+                        },
+                        "years_in_business": 29,
+                        "verified": true,
+                        "trust_score": 36,
+                        "trust_band": "red"
+                      },
+                      "origin": {
+                        "country_code": "JP",
+                        "city": "Osaka",
+                        "point": {
+                          "lat": 34.69,
+                          "lon": 135.5
+                        }
+                      }
+                    }
+                  ],
+                  "total": 4,
+                  "page": 1,
+                  "page_size": 2,
+                  "sources": [
+                    {
+                      "source": "mock",
+                      "status": "ok",
+                      "count": 4
+                    },
+                    {
+                      "source": "native",
+                      "status": "ok",
+                      "count": 0
+                    }
+                  ],
+                  "facets": {
+                    "kind": [
+                      {
+                        "value": "production_line",
+                        "count": 4
+                      }
+                    ],
+                    "condition": [
+                      {
+                        "value": "used",
+                        "count": 3
+                      },
+                      {
+                        "value": "new",
+                        "count": 1
+                      }
+                    ],
+                    "origin_country": [
+                      {
+                        "value": "JP",
+                        "count": 2
+                      },
+                      {
+                        "value": "CN",
+                        "count": 1
+                      },
+                      {
+                        "value": "DE",
+                        "count": 1
+                      }
+                    ],
+                    "category": [
+                      {
+                        "value": "plastics_machinery",
+                        "count": 4
+                      }
+                    ]
+                  }
+                }
                 allOf:
                   - $ref: ../schemas/common.schema.json#/$defs/Page
                   - type: object

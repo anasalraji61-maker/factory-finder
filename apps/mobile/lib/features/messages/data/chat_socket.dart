@@ -65,11 +65,32 @@ ChatMessage? parseMessageFrame(
 }
 
 /// Appends [incoming] unless a message with the same id exists; keeps time order.
+///
+/// The server echo of my own message can arrive before the REST reply: it then
+/// replaces the matching optimistic (`sending`) copy instead of showing twice.
 List<ChatMessage> appendIncoming(List<ChatMessage> list, ChatMessage incoming) {
   if (list.any((m) => m.id == incoming.id)) return list;
-  final out = [...list, incoming];
-  out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return out;
+  if (incoming.isMine) {
+    final i = list.indexWhere((m) =>
+        m.status == SendStatus.sending &&
+        m.isMine &&
+        m.body == incoming.body &&
+        _sameAttachments(m, incoming));
+    if (i >= 0) {
+      final out = [...list];
+      out[i] = incoming;
+      return sortedByTime(out);
+    }
+  }
+  return sortedByTime([...list, incoming]);
+}
+
+bool _sameAttachments(ChatMessage a, ChatMessage b) {
+  if (a.attachments.length != b.attachments.length) return false;
+  for (var i = 0; i < a.attachments.length; i++) {
+    if (a.attachments[i].url != b.attachments[i].url) return false;
+  }
+  return true;
 }
 
 /// Push-only realtime channel; REST stays the source of truth for sending.

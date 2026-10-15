@@ -67,6 +67,7 @@ class Settings(BaseSettings):
 
     # delivery pipeline
     max_devices_per_user: int = Field(default=10, ge=1)
+    push_daily_cap_per_user: int = Field(default=20, ge=0)  # push summaries / device / 24h; 0 = off
     delivery_max_attempts: int = Field(default=5, ge=1)
     delivery_backoff_base_seconds: float = Field(default=30.0, ge=0)
     delivery_backoff_max_seconds: float = Field(default=3600.0, ge=0)

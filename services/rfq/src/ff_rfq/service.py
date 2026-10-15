@@ -8,14 +8,14 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, localcontext
 from typing import Any
 
-from sqlalchemy import and_, exists, func, not_, or_, select, update
+from sqlalchemy import and_, event, exists, func, not_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from ff_rfq.clients.sourcing import SourcingClient
 from ff_rfq.config import Settings
 from ff_rfq.db import Base, DealRow, OfferRow, RequestInviteRow, RequestRow
-from ff_rfq.domain.commission import DEFAULT_USD_RATES, compute_commission
+from ff_rfq.domain.commission import DEFAULT_USD_RATES, compute_commission, quantize_money
 from ff_rfq.domain.enums import DealStatus, ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Conflict, Forbidden, InvalidTransition, NotFound, ValidationFailed
 from ff_rfq.domain.state import offer_transition, request_transition
@@ -57,8 +57,11 @@ def request_dict(r: RequestRow, offers_count: int = 0, invited: list[str] | None
     return d
 
 
-def offer_dict(o: OfferRow) -> dict[str, Any]:
+def offer_dict(o: OfferRow, target_currency: str | None = None) -> dict[str, Any]:
+    # `comparable`: price is in the request's target currency (no implicit conversion is ever done);
+    # null when the request has no target price.
     return {
+        "comparable": None if target_currency is None else o.price_currency == target_currency,
         "id": o.id, "request_id": o.request_id, "supplier_user_id": o.supplier_user_id,
         "supplier_ref": o.supplier_ref, "supplier_name": o.supplier_name,
         "supplier_verified": o.supplier_ref is not None,
@@ -134,9 +137,17 @@ class RfqService:
             or_(OfferRow.valid_until.is_not(None) & (OfferRow.valid_until < now),
                 OfferRow.request_id.in_(select(RequestRow.id).where(
                     RequestRow.status == RequestStatus.EXPIRED.value)))))).scalars()
+        touched = set()
         for o in stale:
             o.status = offer_transition(OfferStatus(o.status), "expire", o.id).value
             o.updated_at = now
+            touched.add(o.request_id)
+        await s.flush()
+        for rid in touched:  # last active offer lapsed: the request is open for offers again
+            r = await s.get(RequestRow, rid)
+            if r is not None and r.status == RequestStatus.NEGOTIATING.value and await self._active_count(s, rid) == 0:
+                r.status = request_transition(RequestStatus.NEGOTIATING, "release", rid).value
+                r.updated_at = now
         await s.flush()
         due = [d for d in (
             (await s.execute(select(func.min(RequestRow.deadline)).where(
@@ -144,8 +155,14 @@ class RfqService:
             (await s.execute(select(func.min(OfferRow.valid_until)).where(
                 OfferRow.status == OfferStatus.ACTIVE.value, OfferRow.valid_until.is_not(None)))).scalar_one(),
         ) if d is not None]
-        self._next_due = min(d if d.tzinfo else d.replace(tzinfo=UTC) for d in due) if due else None
-        self._swept_at, self._dirty = now, False
+        next_due = min(d if d.tzinfo else d.replace(tzinfo=UTC) for d in due) if due else None
+
+        def _committed(_session: Any) -> None:
+            # Only a committed sweep counts: a request that then fails (409/403/404) rolls the sweep back,
+            # and the next call must sweep again instead of serving stale "open/negotiating" rows.
+            self._next_due, self._swept_at, self._dirty = next_due, now, False
+
+        event.listen(s.sync_session, "after_commit", _committed, once=True)
 
     async def _request(self, s: AsyncSession, request_id: str, lock: bool = False) -> RequestRow:
         """``lock`` = SELECT ... FOR UPDATE (serialises writers on PostgreSQL; a no-op on SQLite)."""
@@ -318,7 +335,7 @@ class RfqService:
             s.add(o)
             if o.valid_until is not None:
                 self._dirty = True
-            return offer_dict(o)
+            return offer_dict(o, r.target_currency)
 
     async def list_offers(self, user: str, request_id: str, status: str | None, p: int, size: int,
                           supplier_id: str | None = None) -> dict[str, Any]:
@@ -335,7 +352,7 @@ class RfqService:
             total = (await s.execute(select(func.count()).select_from(OfferRow).where(*cond))).scalar_one()
             rows = (await s.execute(select(OfferRow).where(*cond).order_by(
                 OfferRow.created_at.desc(), OfferRow.id).offset((p - 1) * size).limit(size))).scalars().all()
-            return page([offer_dict(o) for o in rows], total, p, size)
+            return page([offer_dict(o, r.target_currency) for o in rows], total, p, size)
 
     async def _offer_action(self, user: str, offer_id: str, action: str) -> dict[str, Any]:
         now = self.clock()
@@ -354,7 +371,7 @@ class RfqService:
             if await self._active_count(s, r.id) == 0 and r.status == RequestStatus.NEGOTIATING.value:
                 r.status = request_transition(RequestStatus(r.status), "release", r.id).value
                 r.updated_at = now
-            return offer_dict(o)
+            return offer_dict(o, r.target_currency)
 
     async def withdraw_offer(self, user: str, offer_id: str) -> dict[str, Any]:
         return await self._offer_action(user, offer_id, "withdraw")
@@ -389,7 +406,9 @@ class RfqService:
             with localcontext() as ctx:  # qty (18 digits) x price (18 digits) overflows the default 28-digit context
                 ctx.prec = 80
                 qty, unit_price = Decimal(r.quantity), Decimal(o.price_amount)
-                subtotal = (qty * unit_price).quantize(Decimal("0.01"))
+                subtotal = quantize_money(qty * unit_price, o.price_currency)
+                if subtotal <= 0:  # e.g. 0.0001 kg x 0.0001 USD rounds to nothing: never create a free deal
+                    raise ValidationFailed("Deal total rounds to zero", code="amount_too_small")
                 fee = compute_commission(subtotal, o.price_currency, kind, rates=self.rates,
                                          min_fee_usd=self.settings.min_commission_usd)
             if max(len(format(subtotal, "f")), len(format(fee.amount, "f"))) > 32:  # deals.subtotal is String(32)

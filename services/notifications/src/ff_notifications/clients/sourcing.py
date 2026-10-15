@@ -86,11 +86,17 @@ class HttpSourcingClient:
             raise SourcingUnavailableError(f"sourcing returned {resp.status_code}")
         try:
             body = resp.json()
-            items = tuple(listing_from_json(i) for i in body.get("items", []))
+            raw_items = body.get("items")
+            if not isinstance(raw_items, list):
+                # a 200 without an item list is a failure, never "no results"
+                raise SourcingUnavailableError("malformed search payload: items missing")
+            items = tuple(listing_from_json(i) for i in raw_items)
             total = int(body.get("total", len(items)))
         except (ValueError, TypeError, AttributeError) as exc:
             raise SourcingUnavailableError(f"malformed search payload: {exc}") from exc
-        return SearchPage(items=items, total=total, degraded=_is_degraded(body))
+        # total > 0 but no items on page 1 is inconsistent: treat as degraded, not as empty
+        degraded = _is_degraded(body) or (not items and total > 0)
+        return SearchPage(items=items, total=total, degraded=degraded)
 
     async def aclose(self) -> None:
         await self._client.aclose()

@@ -86,16 +86,16 @@ def test_lookup_by_provider_ref_and_status_progression(client):
 def test_wrong_amount_never_settles(client):
     inv = mk(client).json()
     r = post_event(client, _ev(inv, amount={"amount": "374.99", "currency": "USD"}))
-    assert r.json()["status"] == "ignored" and _status(client, inv)["status"] == "awaiting_payment"
+    assert r.json()["status"] == "review" and _status(client, inv)["status"] == "awaiting_payment"  # flagged, not settled
     r = post_event(client, _ev(inv, eid="e2", amount={"amount": "375.00", "currency": "EUR"}))
-    assert r.json()["status"] == "ignored"
+    assert r.json()["status"] == "review"
 
 
 def test_illegal_transitions_are_acknowledged_not_applied(client):
     inv = mk(client).json()
     client.post(f"/v1/invoices/{inv['id']}/cancel", headers=BUYER)
     r = post_event(client, _ev(inv))  # paid after cancel: cannot move a failed invoice
-    assert r.status_code == 200 and r.json()["status"] == "ignored"
+    assert r.status_code == 200 and r.json()["status"] == "review"  # money after cancel: flagged for a human
     assert _status(client, inv)["status"] == "failed"
     assert client.get("/v1/ledger", params={"invoice_id": inv["id"]}, headers=ADMIN).json()["total"] == 0
 

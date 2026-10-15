@@ -67,8 +67,7 @@ List<ChatMessage> confirmSent(List<ChatMessage> list, String localId, ChatMessag
     }
   }
   if (!replaced) out.add(sent);
-  out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return out;
+  return sortedByTime(out);
 }
 
 List<ChatMessage> markFailed(List<ChatMessage> list, String localId) => [
@@ -79,16 +78,56 @@ List<ChatMessage> markFailed(List<ChatMessage> list, String localId) => [
 List<ChatMessage> removeMessage(List<ChatMessage> list, String id) =>
     [for (final m in list) if (m.id != id) m];
 
-/// Merge a polled server list with local state, keeping unsent local messages.
+/// Merge a polled server list with local state, keeping unsent local messages
+/// and messages pushed over the socket that a slightly stale poll lacks.
 List<ChatMessage> mergeServer(List<ChatMessage> local, List<ChatMessage> server) {
   final ids = {for (final m in server) m.id};
-  final out = <ChatMessage>[
+  DateTime? newest;
+  for (final m in server) {
+    if (newest == null || m.createdAt.isAfter(newest)) newest = m.createdAt;
+  }
+  bool keep(ChatMessage m) {
+    if (ids.contains(m.id)) return false;
+    if (m.status != SendStatus.sent) return true;
+    return newest == null || m.createdAt.isAfter(newest);
+  }
+
+  return sortedByTime([
     ...server,
     for (final m in local)
-      if (m.status != SendStatus.sent && !ids.contains(m.id)) m,
-  ];
-  out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return out;
+      if (keep(m)) m,
+  ]);
+}
+
+/// Unread badge text: never negative, capped at `99+`; empty when nothing unread.
+String unreadBadgeLabel(int unread) {
+  if (unread <= 0) return '';
+  return unread > 99 ? '99+' : '$unread';
+}
+
+/// Absolute http(s) URL for an attachment, or null when it is unsafe.
+///
+/// Server-relative paths resolve against [baseUrl]; any other scheme
+/// (`javascript:`, `file:`, `data:`, `intent:`) and protocol-relative `//`
+/// URLs are rejected.
+String? safeAttachmentUrl(String baseUrl, String url) {
+  final u = url.trim();
+  if (u.isEmpty || u.startsWith('//') || u.startsWith(r'\\')) return null;
+  final scheme = RegExp(r'^([a-zA-Z][a-zA-Z0-9+.\-]*):').firstMatch(u);
+  if (scheme != null) {
+    final s = scheme.group(1)!.toLowerCase();
+    if (s != 'http' && s != 'https') return null;
+    final uri = Uri.tryParse(u);
+    return uri != null && uri.host.isNotEmpty ? u : null;
+  }
+  final base = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+  return u.startsWith('/') ? '$base$u' : '$base/$u';
+}
+
+/// True when [url] may be opened outside the app, after user confirmation.
+bool isConfirmableLink(String url) {
+  final uri = Uri.tryParse(url.trim());
+  return uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
 }
 
 /// Server preview placeholders (`[image]` ...) -> i18n keys.

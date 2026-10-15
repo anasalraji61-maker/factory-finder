@@ -55,6 +55,8 @@ FF_E2E_BASE_URL=https://stack python scripts/smoke_prod.py   # or: make smoke
 ```
 `e2e_scenarios.py` pins five cross-service edge cases: landed cost Shanghai->Baghdad with labelled estimates (as_of/source/range, duty-table confidence) plus geo `avoid=suez` changing the sea route; tracking validate returning suggestions for a typo'd container; concurrent duplicate invoice creates yielding one invoice; duplicate freight application -> 409; unlike on a hidden feed post -> 404.
 
+`e2e_privacy.py` (`make e2e-privacy`, local stack, ~60 s) walks the account export and erasure: a victim with data in rfq, messaging, feed, media, tracking, notifications, payments and trust is exported through `GET /v1/me/export` (every service present, no hashes/tokens/other users' data), then deleted with `DELETE /v1/me` (jobs done, tokens revoked, per-service erasure checked on the internal routes, payments invoices and rfq deals retained without free text, awarded request text kept for the counterparty, bystander data unchanged). Runs last and sequentially in CI.
+
 `e2e_extended.py` covers what `e2e.py` does not: listing moderation (2 reports -> `pending_review` -> admin hide ->
 restore through `/v1/admin/moderation/*`), messaging media attachments, email verification (in-process gateway with the
 mock mailer, because the outbox is not reachable over HTTP), tracking outbox -> relay -> notifications alert (a row is

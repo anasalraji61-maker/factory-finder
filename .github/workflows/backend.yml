@@ -1,9 +1,9 @@
 name: backend
 on:
   push:
-    paths: ["services/**", "packages/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
+    paths: ["services/**", "packages/**", "scripts/**", "contracts/**", "ruff.toml", ".github/workflows/backend.yml"]
   pull_request:
-    paths: ["services/**", "packages/**", "scripts/**", "ruff.toml", ".github/workflows/backend.yml"]
+    paths: ["services/**", "packages/**", "scripts/**", "contracts/**", "ruff.toml", ".github/workflows/backend.yml"]
   workflow_dispatch:
 
 permissions:
@@ -56,6 +56,20 @@ jobs:
           path: services/${{ matrix.service }}/junit.xml
           if-no-files-found: ignore
           retention-days: 7
+
+  contract-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml jsonschema referencing ruff
+      - run: ruff check scripts/contract_examples.py
+      - run: python scripts/contract_examples.py
 
   py-common:
     runs-on: ubuntu-latest

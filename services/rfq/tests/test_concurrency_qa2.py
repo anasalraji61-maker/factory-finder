@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from ff_rfq.clients.sourcing import MockSourcingClient
 from ff_rfq.config import Settings
 from ff_rfq.db import DealRow, OfferRow, make_engine
-from ff_rfq.domain.commission import compute_commission
+from ff_rfq.domain.commission import compute_commission, quantize_money
 from ff_rfq.domain.enums import ListingKind
 from ff_rfq.domain.errors import DomainError
 from ff_rfq.schemas import OfferCreate, RequestCreate
@@ -109,12 +109,12 @@ async def test_duplicate_offers_same_supplier_respect_cap(svcs):
     ("USD", "1000", "1", ListingKind.PRODUCT, ("30.00", False)),         # 3%
     ("USD", "833.33", "1", ListingKind.PRODUCT, ("25.00", False)),       # 24.9999 -> 25.00 half-up
     ("USD", "0.005", "1", ListingKind.PRODUCT, ("25.00", True)),
-    ("IQD", "1", "1", ListingKind.PRODUCT, ("32894.74", True)),          # ceil(25/0.00076)
+    ("IQD", "1", "1", ListingKind.PRODUCT, ("32895", True)),          # ceil(25/0.00076)
     ("USD", "10000.50", "1", ListingKind.PRODUCTION_LINE, ("400.02", False)),  # 400.02 exact
     ("USD", "1666.65", "1", ListingKind.RAW_MATERIAL, ("33.33", False)),
 ])
 def test_commission_precision_lock(cur, amount, qty, kind, expect):
-    sub = (Decimal(amount) * Decimal(qty)).quantize(Decimal("0.01"))
+    sub = quantize_money(Decimal(amount) * Decimal(qty), cur)
     fee = compute_commission(sub, cur, kind)
     assert (format(fee.amount, "f"), fee.min_fee_applied) == expect
 

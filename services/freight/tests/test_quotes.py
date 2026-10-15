@@ -180,7 +180,7 @@ def test_suspended_forwarder_cannot_quote(setup):
     assert c.get("/v1/freight/forwarders/me", headers=uh("fw")).json()["status"] == "suspended"
     # buyer: suspended forwarder's quote is excluded from comparison and cannot be accepted
     cmp_ = c.get(f"/v1/freight/requests/{req['id']}/comparison", headers=uh("buyer1")).json()
-    assert cmp_["items"] == [] and cmp_["excluded"] == [{"quote_id": q["id"], "reason": "forwarder_suspended"}]
+    assert cmp_["items"] == [] and [(e["quote_id"], e["reason"], e["amount"]) for e in cmp_["excluded"]] == [(q["id"], "forwarder_suspended", q["amount"])]
     assert c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=uh("buyer1")).json()["error"]["code"] == "forwarder_suspended"
 
 
@@ -193,7 +193,7 @@ def test_quote_validity_lapses(setup, clock):
     r = c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=uh("buyer1"))
     assert r.status_code == 409 and r.json()["error"]["code"] == "quote_expired"
     cmp_ = c.get(f"/v1/freight/requests/{req['id']}/comparison", headers=uh("buyer1")).json()
-    assert cmp_["excluded"] == [{"quote_id": q["id"], "reason": "quote_expired"}]
+    assert [(e["quote_id"], e["reason"], e["amount"]) for e in cmp_["excluded"]] == [(q["id"], "quote_expired", q["amount"])]
     c.put(f"/v1/freight/quotes/{q['id']}", headers=uh("fw"), json=QUOTE)  # revising renews validity
     assert c.post(f"/v1/freight/quotes/{q['id']}/accept", headers=uh("buyer1")).status_code == 200
     assert ADM

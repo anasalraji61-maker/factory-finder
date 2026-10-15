@@ -32,6 +32,19 @@ class FreightValidators {
     return decimal(weight, 3, required: false) ?? decimal(volume, 3, required: false);
   }
 
+  /// Weight field: its own error first, then the either-or rule.
+  static String? weightField(String weight, String volume) =>
+      decimal(weight, 3, required: false) ?? _eitherOr(weight, volume);
+
+  /// Volume field: its own error first, then the either-or rule.
+  static String? volumeField(String weight, String volume) =>
+      decimal(volume, 3, required: false) ?? _eitherOr(weight, volume);
+
+  static String? _eitherOr(String weight, String volume) =>
+      weight.trim().isEmpty && volume.trim().isEmpty
+          ? 'freight.v.weight_or_volume'
+          : null;
+
   /// 4-10 digits, dots allowed. Empty is fine.
   static String? hs(String raw) {
     final s = raw.trim();

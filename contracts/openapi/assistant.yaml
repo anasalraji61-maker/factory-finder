@@ -126,6 +126,10 @@ components:
           schema: {$ref: ../schemas/common.schema.json#/$defs/Error}
   schemas:
     AssistantRequest:
+      example: {
+        "text": "ابي ٥٠٠ كرسي بلاستك من الصين الى اربيل",
+        "locale": "ar"
+      }
       type: object
       required: [text]
       properties:
@@ -167,6 +171,604 @@ components:
         incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
         confidence: {type: number, minimum: 0, maximum: 1}
     AssistantResponse:
+      example: {
+        "intent": "search",
+        "parsed_query": {
+          "intent": "search",
+          "language": "ar",
+          "keywords": [
+            "plastic chair"
+          ],
+          "query": "plastic chair",
+          "category": "furniture",
+          "quantity": "500",
+          "unit": "piece",
+          "origin": {
+            "country_code": "CN"
+          },
+          "destination": {
+            "country_code": "IQ",
+            "city": "Erbil"
+          },
+          "listing_ids": [],
+          "confidence": 0.85
+        },
+        "answer_text": "لقيت 2 نتيجة، هذي أفضل 2:\n1. كرسي مكتب مريح شبكي | 28 $ - 55 $ / قطعة | Foshan Furniture Export Co. (فوشان) - ثقة: موثوق (أخضر)\n2. طاولة طعام مع كراسي 6 مقاعد | 85 $ - 160 $ / طقم | Foshan Furniture Export Co. (فوشان) - ثقة: موثوق (أخضر)\nالكلفة الكاملة التقديرية لحد أربيل: 25,254 $ إلى 37,484 $ عبر شحن بالقطار، والمدة 29-45 يوم. الأرخص: شحن بحري حاوية 40 قدم من 25,075 $. (تقدير وليس عرض سعر نهائي)\nدرجة الثقة للمورد sup_cn_017: 100/100 - موثوق (أخضر). أهم الأسباب: التوثيق على المنصة (True) يرفع الدرجة.، تدقيق مصنع من طرف ثالث (True) يرفع الدرجة.، عدد الصفقات المنجزة (670) يرفع الدرجة..",
+        "listings": [
+          {
+            "id": "lst_0040",
+            "source": "mock",
+            "source_url": "https://example.com/mock/listings/lst_0040",
+            "kind": "product",
+            "condition": "new",
+            "title": "Ergonomic Mesh Office Chair with Headrest",
+            "title_ar": "كرسي مكتب مريح شبكي",
+            "category": "furniture",
+            "images": [
+              "https://picsum.photos/seed/lst_0040/600/600",
+              "https://picsum.photos/seed/lst_0040_2/600/600"
+            ],
+            "price": {
+              "min": {
+                "amount": "28.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "55.00",
+                "currency": "USD"
+              }
+            },
+            "unit": "piece",
+            "moq": 50,
+            "incoterm": "FOB",
+            "unit_weight_kg": 16.0,
+            "unit_volume_m3": 0.14,
+            "hs_code": "9401.30",
+            "lead_time_days": {
+              "min": 15,
+              "max": 30
+            },
+            "supplier": {
+              "id": "sup_cn_017",
+              "name": "Foshan Furniture Export Co.",
+              "location": {
+                "country_code": "CN",
+                "city": "Foshan",
+                "point": {
+                  "lat": 23.02,
+                  "lon": 113.12
+                }
+              },
+              "years_in_business": 8,
+              "verified": true,
+              "trust_score": 100,
+              "trust_band": "green",
+              "name_ar": "فوشان لتصدير الأثاث"
+            },
+            "origin": {
+              "country_code": "CN",
+              "city": "Foshan",
+              "point": {
+                "lat": 23.02,
+                "lon": 113.12
+              }
+            }
+          }
+        ],
+        "quote": {
+          "id": "qte_def83328884745519269bcd5ad8ff9aa",
+          "currency": "USD",
+          "origin": {
+            "country_code": "CN"
+          },
+          "destination": {
+            "country_code": "IQ",
+            "city": "Erbil"
+          },
+          "options": [
+            {
+              "mode": "sea_fcl_40",
+              "origin_hub": "CNYIK",
+              "destination_hub": "IQUQR",
+              "route_summary": "Yingkou Port -> Umm Qasr Port (sea) -> destination",
+              "lines": [
+                {
+                  "stage": "goods",
+                  "description": "Goods price from supplier",
+                  "amount": {
+                    "amount": "20750.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "20750.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "supplier quote; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": false,
+                  "as_of": "2026-10-15T17:46:25Z"
+                },
+                {
+                  "stage": "origin_inland",
+                  "description": "Truck from factory to Yingkou Port (109 km)",
+                  "amount": {
+                    "amount": "92.65",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "92.65",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. rate table v1; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "74.12",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "111.18",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "origin_handling",
+                  "description": "Terminal handling, export clearance and docs at Yingkou Port",
+                  "amount": {
+                    "amount": "270.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "270.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. rate table v1; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "229.50",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "310.50",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "main_leg",
+                  "description": "Yingkou Port to Umm Qasr Port: 1 x 40' container",
+                  "amount": {
+                    "amount": "2700.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "2700.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. rate table v1; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z; volatility high (+-30%)",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "1890.00",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "3510.00",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "insurance",
+                  "description": "Cargo insurance (110% of goods value)",
+                  "amount": {
+                    "amount": "68.48",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "68.48",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. 0.2-0.35% premium; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "61.63",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "75.33",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "destination_handling",
+                  "description": "Terminal handling and delivery order at Umm Qasr Port (incl. port congestion / war-risk surcharges)",
+                  "amount": {
+                    "amount": "940.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "940.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. rate table v1; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "752.00",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "1128.00",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "duties",
+                  "description": "Import duty on customs value USD 23881: IQ chapter 94: 20% [range 0-30%]",
+                  "amount": {
+                    "amount": "4776.23",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "4776.23",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "0.00",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "9552.46",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "taxes",
+                  "description": "VAT/sales tax 0% on customs value + duty",
+                  "amount": {
+                    "amount": "0.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "0.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "0.00",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "0.00",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "clearance",
+                  "description": "Customs broker / clearance fee",
+                  "amount": {
+                    "amount": "250.00",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "250.00",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "187.50",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "312.50",
+                      "currency": "USD"
+                    }
+                  }
+                },
+                {
+                  "stage": "destination_inland",
+                  "description": "Truck from Umm Qasr Port to destination (1009 km)",
+                  "amount": {
+                    "amount": "1412.60",
+                    "currency": "USD"
+                  },
+                  "original_amount": {
+                    "amount": "1412.60",
+                    "currency": "USD"
+                  },
+                  "fx_rate": "1",
+                  "source": "approx. rate table v1; priced 2026-10-15T17:46:25Z; FX mock 2026-01-01T00:00:00Z",
+                  "estimate": true,
+                  "as_of": "2026-10-15T17:46:25Z",
+                  "range": {
+                    "min": {
+                      "amount": "1130.08",
+                      "currency": "USD"
+                    },
+                    "max": {
+                      "amount": "1695.12",
+                      "currency": "USD"
+                    }
+                  }
+                }
+              ],
+              "total": {
+                "min": {
+                  "amount": "25074.83",
+                  "currency": "USD"
+                },
+                "max": {
+                  "amount": "37445.09",
+                  "currency": "USD"
+                }
+              },
+              "transit_days": {
+                "min": 34,
+                "max": 54
+              },
+              "co2_kg": 1867.4,
+              "recommended": false,
+              "warnings": [
+                "Estimate, confidence low, as of 2026-10: transit 34-54 days and the cost range are indicative, not a quote; verify with a forwarder."
+              ],
+              "sensitivity": {
+                "currency": "USD",
+                "freight": {
+                  "low": {
+                    "amount": "30449.96",
+                    "currency": "USD"
+                  },
+                  "base": {
+                    "amount": "31259.96",
+                    "currency": "USD"
+                  },
+                  "high": {
+                    "amount": "32069.96",
+                    "currency": "USD"
+                  },
+                  "shock_pct": "30"
+                },
+                "fx": {
+                  "low": {
+                    "amount": "31259.96",
+                    "currency": "USD"
+                  },
+                  "base": {
+                    "amount": "31259.96",
+                    "currency": "USD"
+                  },
+                  "high": {
+                    "amount": "31259.96",
+                    "currency": "USD"
+                  },
+                  "shock_pct": "0",
+                  "goods_currency": "USD"
+                },
+                "combined": {
+                  "low": {
+                    "amount": "30449.96",
+                    "currency": "USD"
+                  },
+                  "base": {
+                    "amount": "31259.96",
+                    "currency": "USD"
+                  },
+                  "high": {
+                    "amount": "32069.96",
+                    "currency": "USD"
+                  }
+                },
+                "estimate": true,
+                "note": "Sensitivity is a stress range, not a forecast: freight uses the same main-leg spread as the estimate range; FX uses indicative per-currency volatility buckets (data/fx_volatility.json)."
+              }
+            }
+          ],
+          "assumptions": [
+            "Rates, duties and fees come from an approximate table, verify with a customs broker.",
+            "Duty/VAT table confidence for IQ: low (as of 2026-10); indicative, simplified by 2-digit HS chapter, not verified against live tariff lines.",
+            "Volume not given: estimated from weight at 250 kg/m3.",
+            "Recommended = lowest 0.6*cost + 0.4*time score (both normalised across options).",
+            "sea_lcl not offered: too large for LCL (over 30 m3 / 20 t), use FCL.",
+            "sea_fcl_40hc not offered: cargo too small to justify it (needs ~58 m3 or 40000 kg).",
+            "road not offered: 8630 km is too far for a realistic truck haul (request it explicitly to see an estimate).",
+            "Freight volatility (sea, CN->IQ): high; main leg shown as +-30% around a static table rate; lane exposed to Red Sea / Gulf / tariff disruption. Spot rates can move +-50% within a year.",
+            "Freight volatility (rail, CN->IQ): medium; main leg shown as +-18% around a static table rate. Spot rates can move +-50% within a year.",
+            "Freight volatility (air, CN->IQ): high; main leg shown as +-25% around a static table rate; lane exposed to Red Sea / Gulf / tariff disruption. Spot rates can move +-50% within a year.",
+            "FX: mock rates as of 2026-01-01T00:00:00Z; 1 USD = 1 USD."
+          ],
+          "created_at": "2026-10-15T17:46:25Z",
+          "warnings": [],
+          "compliance_hint": {
+            "destination_country": "IQ",
+            "covered": true,
+            "product_group": "furniture",
+            "required_programs": [
+              "coc_cosqc"
+            ],
+            "restriction_flags": 0,
+            "highest_severity": null,
+            "clearance_days": {
+              "min": 3,
+              "max": 14
+            },
+            "pre_shipment_days": {
+              "min": 5,
+              "max": 22
+            },
+            "confidence": "low",
+            "as_of": "2026-10",
+            "label_en": "Indicative, verify with a licensed customs broker",
+            "label_ar": "إرشادي، تحقّق من مخلّص جمركي مرخّص",
+            "details": "POST /v1/compliance/checklist"
+          }
+        },
+        "trust": {
+          "supplier_id": "sup_cn_017",
+          "score": 100,
+          "band": "green",
+          "factors": [
+            {
+              "key": "years_in_business",
+              "impact": 7,
+              "explanation": "Years in business (12.9) raises the score.",
+              "explanation_ar": "سنوات العمل (12.9) يرفع الدرجة."
+            },
+            {
+              "key": "verified",
+              "impact": 8,
+              "explanation": "Platform verification (True) raises the score.",
+              "explanation_ar": "التوثيق على المنصة (True) يرفع الدرجة."
+            },
+            {
+              "key": "third_party_audit",
+              "impact": 8,
+              "explanation": "Third-party factory audit (True) raises the score.",
+              "explanation_ar": "تدقيق مصنع من طرف ثالث (True) يرفع الدرجة."
+            },
+            {
+              "key": "transactions_count",
+              "impact": 8,
+              "explanation": "Completed transactions (670) raises the score.",
+              "explanation_ar": "عدد الصفقات المنجزة (670) يرفع الدرجة."
+            },
+            {
+              "key": "response_rate",
+              "impact": 4,
+              "explanation": "Response rate (0.88) raises the score.",
+              "explanation_ar": "معدل الاستجابة (0.88) يرفع الدرجة."
+            },
+            {
+              "key": "rating_avg",
+              "impact": 6,
+              "explanation": "Average rating (4.7 from 198 reviews, adjusted 4.66) raises the score.",
+              "explanation_ar": "متوسط التقييم (4.7 from 198 reviews, adjusted 4.66) يرفع الدرجة."
+            },
+            {
+              "key": "reviews_count",
+              "impact": 3,
+              "explanation": "Number of reviews (198) raises the score.",
+              "explanation_ar": "عدد التقييمات (198) يرفع الدرجة."
+            },
+            {
+              "key": "dispute_rate",
+              "impact": 3,
+              "explanation": "Dispute rate (0.007 recency-weighted) raises the score.",
+              "explanation_ar": "نسبة النزاعات (0.007 recency-weighted) يرفع الدرجة."
+            },
+            {
+              "key": "certifications",
+              "impact": 5,
+              "explanation": "Certifications (CE, ISO14001, ISO9001) raises the score.",
+              "explanation_ar": "الشهادات (CE, ISO14001, ISO9001) يرفع الدرجة."
+            },
+            {
+              "key": "domain_age_years",
+              "impact": 4,
+              "explanation": "Website age (years) (11.6) raises the score.",
+              "explanation_ar": "عمر الموقع (سنوات) (11.6) يرفع الدرجة."
+            },
+            {
+              "key": "has_physical_address",
+              "impact": 4,
+              "explanation": "Verifiable physical address (True) raises the score.",
+              "explanation_ar": "عنوان فعلي قابل للتحقق (True) يرفع الدرجة."
+            },
+            {
+              "key": "contact_consistency",
+              "impact": 4,
+              "explanation": "Contact details consistency (0.89) raises the score.",
+              "explanation_ar": "اتساق بيانات التواصل (0.89) يرفع الدرجة."
+            },
+            {
+              "key": "price_vs_market_ratio",
+              "impact": 4,
+              "explanation": "Price vs market median (1.19) raises the score.",
+              "explanation_ar": "السعر مقابل متوسط السوق (1.19) يرفع الدرجة."
+            },
+            {
+              "key": "country_risk",
+              "impact": -2,
+              "explanation": "Country risk (0.49) lowers the score.",
+              "explanation_ar": "مخاطر البلد (0.49) يخفض الدرجة."
+            },
+            {
+              "key": "business_license_status",
+              "impact": 5,
+              "explanation": "Business licence / registry check (verified) raises the score.",
+              "explanation_ar": "التحقق من الترخيص التجاري والسجل (verified) يرفع الدرجة."
+            },
+            {
+              "key": "storefront_age_years",
+              "impact": 2,
+              "explanation": "Storefront age (years) (10.1) raises the score.",
+              "explanation_ar": "عمر المتجر (سنوات) (10.1) يرفع الدرجة."
+            },
+            {
+              "key": "repeat_buyer_rate",
+              "impact": 3,
+              "explanation": "Repeat-buyer rate (0.53) raises the score.",
+              "explanation_ar": "نسبة المشترين المتكررين (0.53) يرفع الدرجة."
+            },
+            {
+              "key": "response_time_hours",
+              "impact": 0,
+              "explanation": "Typical response time (hours) (13.4) does not change the score.",
+              "explanation_ar": "زمن الاستجابة المعتاد (ساعات) (13.4) لا يؤثر على الدرجة."
+            },
+            {
+              "key": "refund_rate",
+              "impact": 1,
+              "explanation": "Refund rate (0.007) raises the score.",
+              "explanation_ar": "نسبة الاسترجاع (0.007) يرفع الدرجة."
+            },
+            {
+              "key": "deal_outcomes",
+              "impact": 4,
+              "explanation": "On-platform deal outcomes (349 completed / 3 cancelled) raises the score.",
+              "explanation_ar": "نتائج الصفقات على المنصة (349 completed / 3 cancelled) يرفع الدرجة."
+            }
+          ],
+          "computed_at": "2026-10-15T17:46:25.902425Z",
+          "confidence": 100,
+          "model_version": "trust-v2",
+          "data_gaps": [],
+          "flags": [],
+          "verification_level": "none"
+        },
+        "cards": [],
+        "warnings": []
+      }
       type: object
       required: [intent, parsed_query, answer_text, listings, warnings]
       properties:
