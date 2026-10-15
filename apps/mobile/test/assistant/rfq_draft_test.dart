@@ -107,6 +107,40 @@ void main() {
       expect(back.destination!.city, 'Baghdad');
     });
 
+    test('structured destination refs win over the display name', () {
+      final p = RfqPrefill.fromRefs({
+        'prefill_destination': 'Istanbul',
+        'prefill_destination_cc': 'iq',
+        'prefill_destination_city': ' Basra ',
+      });
+      expect(p.destination!.countryCode, 'IQ');
+      expect(p.destination!.city, 'Basra');
+      final countryOnly = RfqPrefill.fromRefs({
+        'prefill_destination_cc': 'TR',
+        'prefill_destination_city': '',
+      });
+      expect(countryOnly.destination!.countryCode, 'TR');
+      expect(countryOnly.destination!.city, isNull);
+    });
+
+    test('invalid country code falls back to the display name', () {
+      final p = RfqPrefill.fromRefs({
+        'prefill_destination': 'بغداد',
+        'prefill_destination_cc': 'ZZ',
+        'prefill_destination_city': 'Nowhere',
+      });
+      expect(p.destination!.countryCode, 'IQ');
+      expect(p.destination!.city, 'Baghdad');
+    });
+
+    test('units: exact ones kept, container and liter dropped', () {
+      for (final u in ['piece', 'kg', 'ton', 'set', 'm', 'line']) {
+        expect(RfqPrefill.fromRefs({'prefill_unit': u}).unit, u);
+      }
+      expect(RfqPrefill.fromRefs({'prefill_unit': 'container'}).unit, isNull);
+      expect(RfqPrefill.fromRefs({'prefill_unit': 'liter'}).unit, isNull);
+    });
+
     test('unknown card type still parses', () {
       final c = AssistantCard.tryParse({'type': 'future_thing', 'refs': {'a': 1}})!;
       expect(c.isKnownType, isFalse);

@@ -92,6 +92,19 @@ class RfqPrefill {
     return null;
   }
 
+  /// Structured destination from `prefill_destination_cc` (ISO code) and the
+  /// optional English `prefill_destination_city`. Null when the code is not
+  /// a supported country, so the caller can fall back to the display name.
+  static Location? _structuredDestination(String? cc, String? city) {
+    final code = (cc ?? '').trim().toUpperCase();
+    if (!_countryCodes.contains(code)) return null;
+    final c = (city ?? '').trim();
+    return Location(
+      countryCode: code,
+      city: (c.isEmpty || c.length > 60) ? null : c,
+    );
+  }
+
   /// `city.<Name>` keys use capitalised words ("Abu Dhabi").
   static String _cityKey(String lower) => lower
       .split(' ')
@@ -99,7 +112,10 @@ class RfqPrefill {
       .join(' ');
 
   /// From assistant card refs (`prefill_product`, `prefill_quantity`,
-  /// `prefill_unit`, `prefill_destination`, `prefill_target_price`).
+  /// `prefill_unit`, `prefill_destination_cc`, `prefill_destination_city`,
+  /// `prefill_destination`, `prefill_target_price`). Structured destination
+  /// refs win over the display name. Units the form lacks (container, liter)
+  /// have no exact equivalent and are dropped by [_unit].
   factory RfqPrefill.fromRefs(Map<String, String> refs) {
     String? amount;
     String? currency;
@@ -120,7 +136,11 @@ class RfqPrefill {
       unit: _unit(refs['prefill_unit']),
       targetPrice: amount,
       currency: currency,
-      destination: parseDestination(refs['prefill_destination']),
+      destination: _structuredDestination(
+            refs['prefill_destination_cc'],
+            refs['prefill_destination_city'],
+          ) ??
+          parseDestination(refs['prefill_destination']),
     );
   }
 
