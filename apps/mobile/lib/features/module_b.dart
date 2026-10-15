@@ -10,6 +10,7 @@ import 'package:factory_finder/features/logistics/screens/calculator_screen.dart
 import 'package:factory_finder/features/logistics/screens/logistics_screen.dart';
 import 'package:factory_finder/features/logistics/screens/results_screen.dart';
 import 'package:factory_finder/features/messages/messages_strings.dart';
+import 'package:factory_finder/features/messages/screens/blocked_users_screen.dart';
 import 'package:factory_finder/features/messages/screens/chat_screen.dart';
 import 'package:factory_finder/features/messages/screens/conversations_screen.dart';
 import 'package:factory_finder/features/messages/screens/new_conversation_screen.dart';
@@ -77,6 +78,10 @@ final FeatureModule featureModuleB = FeatureModule(
     ],
   },
   overlayRoutes: [
+    GoRoute(
+      path: '/settings/privacy/blocked',
+      builder: (context, state) => const BlockedUsersScreen(),
+    ),
     GoRoute(
       path: '/chat/:id',
       builder: (context, state) =>

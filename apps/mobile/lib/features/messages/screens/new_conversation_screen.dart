@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -46,7 +47,7 @@ class _NewConversationScreenState extends ConsumerState<NewConversationScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = e.toString();
+        _error = localizedError(context, e);
       });
     }
   }

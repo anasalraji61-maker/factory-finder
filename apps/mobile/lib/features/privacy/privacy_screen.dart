@@ -224,6 +224,18 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           AppCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              key: const ValueKey<String>('privacy-blocked'),
+              leading: const Icon(Icons.block_outlined),
+              title: Text(context.tr('messages.blocked.tile')),
+              subtitle: Text(context.tr('messages.blocked.tile_sub')),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => context.push('/settings/privacy/blocked'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppCard(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: SizedBox(
               width: double.infinity,

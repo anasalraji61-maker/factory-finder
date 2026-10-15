@@ -73,6 +73,7 @@ const Map<String, (String, String)> _pairs = {
   'error.daily_invoice_limit': ('بلغت الحد اليومي للفواتير. حاول مجدداً غداً.', 'You have reached the daily invoice limit. Try again tomorrow.'),
   'error.conversation_limit_reached': ('بلغت الحد الأقصى للمحادثات. أغلق بعضها لبدء محادثة جديدة.', 'You have reached the conversation limit. Close some to start a new one.'),
   'error.conversation_full': ('هذه المحادثة وصلت إلى الحد الأقصى للرسائل.', 'This conversation has reached its message limit.'),
+  'error.user_blocked': ('لا يمكنك بدء محادثة مع مستخدم قمت بحظره. ألغِ الحظر أولاً.', 'You cannot start a conversation with a user you blocked. Unblock them first.'),
   'error.upstream_timeout': ('استغرقت الخدمة وقتاً أطول من المتوقع. حاول مجدداً بعد قليل.', 'The service took too long to respond. Please try again shortly.'),
   'error.rate_limited': ('طلبات كثيرة. حاول مجدداً بعد قليل.', 'Too many requests. Please try again shortly.'),
   'error.rate_limited_wait': ('طلبات كثيرة. حاول مجدداً بعد {n} دقيقة.', 'Too many requests. Try again in {n} min.'),

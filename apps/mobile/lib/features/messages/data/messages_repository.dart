@@ -5,7 +5,8 @@ import 'package:factory_finder/features/messages/data/message_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class MessagingRepository {
-  Future<List<Conversation>> conversations();
+  /// Visible conversations; [archived] true lists only the archived ones.
+  Future<List<Conversation>> conversations({bool archived = false});
   Future<List<ChatMessage>> messages(String conversationId);
   Future<ChatMessage> send(
     String conversationId,
@@ -20,6 +21,16 @@ abstract class MessagingRepository {
     String? listingId,
     String? firstMessage,
   });
+
+  /// Per-user mute/archive (omitted fields are unchanged).
+  Future<void> setPreferences(String conversationId, {bool? muted, bool? archived});
+
+  /// Badge count: unread messages excluding muted and archived conversations.
+  Future<int> unreadTotal();
+
+  Future<List<BlockedUser>> blockedUsers();
+  Future<void> blockUser(String userId);
+  Future<void> unblockUser(String userId);
 }
 
 List<T> _items<T>(dynamic data, T Function(Map<String, dynamic>) parse) {
@@ -42,8 +53,11 @@ class LiveMessagingRepository implements MessagingRepository {
   String? get _me => _myId?.call();
 
   @override
-  Future<List<Conversation>> conversations() async {
-    final data = await _api.get('/v1/conversations');
+  Future<List<Conversation>> conversations({bool archived = false}) async {
+    final data = await _api.get(
+      '/v1/conversations',
+      query: archived ? <String, dynamic>{'archived': true} : null,
+    );
     final me = _me;
     final list = _items(data, (m) => Conversation.fromJson(m, myUserId: me));
     list.sort((a, b) => b.lastAt.compareTo(a.lastAt));
@@ -103,6 +117,42 @@ class LiveMessagingRepository implements MessagingRepository {
       return conv.copyWith(lastMessage: firstMessage.trim(), lastAt: DateTime.now());
     }
     return conv;
+  }
+
+  @override
+  Future<void> setPreferences(String id, {bool? muted, bool? archived}) async {
+    await _api.put('/v1/conversations/$id/preferences', body: {
+      if (muted != null) 'muted': muted,
+      if (archived != null) 'archived': archived,
+    });
+  }
+
+  @override
+  Future<int> unreadTotal() async {
+    final data = await _api.get('/v1/conversations/unread-total');
+    final n = data is Map ? data['unread_total'] : null;
+    return n is num ? n.toInt() : 0;
+  }
+
+  @override
+  Future<List<BlockedUser>> blockedUsers() async {
+    final data = await _api.get('/v1/blocks');
+    final raw = data is Map ? data['items'] : data;
+    if (raw is! List) return <BlockedUser>[];
+    return [
+      for (final e in raw)
+        if (BlockedUser.tryParse(e) case final b?) b,
+    ];
+  }
+
+  @override
+  Future<void> blockUser(String userId) async {
+    await _api.put('/v1/blocks/${Uri.encodeComponent(userId)}');
+  }
+
+  @override
+  Future<void> unblockUser(String userId) async {
+    await _api.delete('/v1/blocks/${Uri.encodeComponent(userId)}');
   }
 }
 
@@ -234,12 +284,52 @@ class MockMessagingRepository implements MessagingRepository {
   final bool _autoReply;
   final Map<String, Conversation> _convs = {};
   final Map<String, List<ChatMessage>> _messages = {};
+  final Map<String, DateTime> _blocked = {};
   int _seq = 0;
 
+  bool _visible(Conversation c) => !_blocked.containsKey(c.participantId);
+
   @override
-  Future<List<Conversation>> conversations() async {
-    final list = _convs.values.toList()..sort((a, b) => b.lastAt.compareTo(a.lastAt));
+  Future<List<Conversation>> conversations({bool archived = false}) async {
+    final list = [
+      for (final c in _convs.values)
+        if (_visible(c) && c.archived == archived) c,
+    ]..sort((a, b) => b.lastAt.compareTo(a.lastAt));
     return list;
+  }
+
+  @override
+  Future<void> setPreferences(String id, {bool? muted, bool? archived}) async {
+    final c = _convs[id];
+    if (c == null || !_visible(c)) {
+      throw ApiException(
+          status: 404, code: 'conversation_not_found', message: 'conversation not found');
+    }
+    _convs[id] = c.copyWith(muted: muted, archived: archived);
+  }
+
+  @override
+  Future<int> unreadTotal() async {
+    var total = 0;
+    for (final c in _convs.values) {
+      if (_visible(c) && !c.muted && !c.archived) total += c.unread;
+    }
+    return total;
+  }
+
+  @override
+  Future<List<BlockedUser>> blockedUsers() async => [
+        for (final e in _blocked.entries) BlockedUser(userId: e.key, blockedAt: e.value),
+      ];
+
+  @override
+  Future<void> blockUser(String userId) async {
+    _blocked[userId] = _clock();
+  }
+
+  @override
+  Future<void> unblockUser(String userId) async {
+    _blocked.remove(userId);
   }
 
   /// Delayed mock replies only become visible once their time has come.
@@ -314,6 +404,10 @@ class MockMessagingRepository implements MessagingRepository {
     String? listingId,
     String? firstMessage,
   }) async {
+    if (_blocked.containsKey(supplierId)) {
+      throw ApiException(
+          status: 422, code: 'user_blocked', message: 'You blocked this user');
+    }
     for (final c in _convs.values) {
       if (c.participantId == supplierId &&
           (listingId == null || c.context?.id == listingId)) {
@@ -349,6 +443,22 @@ final messagingRepositoryProvider = Provider<MessagingRepository>((ref) {
       : LiveMessagingRepository(api, () => ref.read(authProvider)?.id);
 });
 
+/// True while the conversation list shows the archived filter.
+final showArchivedProvider = StateProvider<bool>((ref) => false);
+
 final conversationsProvider = FutureProvider.autoDispose<List<Conversation>>(
-  (ref) => ref.watch(messagingRepositoryProvider).conversations(),
+  (ref) => ref
+      .watch(messagingRepositoryProvider)
+      .conversations(archived: ref.watch(showArchivedProvider)),
+);
+
+/// Unread badge for the Messages tab (muted and archived excluded).
+final unreadTotalProvider = FutureProvider.autoDispose<int>((ref) {
+  // Re-fetch whenever the conversation list is refreshed (poll, read, send).
+  ref.watch(conversationsProvider);
+  return ref.watch(messagingRepositoryProvider).unreadTotal();
+});
+
+final blockedUsersProvider = FutureProvider.autoDispose<List<BlockedUser>>(
+  (ref) => ref.watch(messagingRepositoryProvider).blockedUsers(),
 );

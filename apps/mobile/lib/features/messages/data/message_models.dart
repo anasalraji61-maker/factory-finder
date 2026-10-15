@@ -110,6 +110,8 @@ class Conversation {
     this.lastAttachments = const <MessageAttachment>[],
     required this.lastAt,
     this.unread = 0,
+    this.muted = false,
+    this.archived = false,
   });
 
   final String id;
@@ -124,11 +126,17 @@ class Conversation {
   final DateTime lastAt;
   final int unread;
 
+  /// The caller's own preferences (never visible to the counterparty).
+  final bool muted;
+  final bool archived;
+
   Conversation copyWith({
     String? lastMessage,
     List<MessageAttachment>? lastAttachments,
     DateTime? lastAt,
     int? unread,
+    bool? muted,
+    bool? archived,
   }) =>
       Conversation(
         id: id,
@@ -140,6 +148,8 @@ class Conversation {
         lastAttachments: lastAttachments ?? this.lastAttachments,
         lastAt: lastAt ?? this.lastAt,
         unread: unread ?? this.unread,
+        muted: muted ?? this.muted,
+        archived: archived ?? this.archived,
       );
 
   /// [myUserId] (live mode) is used to pick the *other* participant of the
@@ -189,6 +199,8 @@ class Conversation {
       lastAttachments: parseAttachments(last is Map ? last['attachments'] : null),
       lastAt: updated,
       unread: (j['unread_count'] as num?)?.toInt() ?? 0,
+      muted: j['muted'] == true,
+      archived: j['archived'] == true,
     );
   }
 
@@ -204,8 +216,30 @@ class Conversation {
           'created_at': lastAt.toUtc().toIso8601String(),
         },
         'unread_count': unread,
+        'muted': muted,
+        'archived': archived,
         'updated_at': lastAt.toUtc().toIso8601String(),
       };
+}
+
+/// An entry of `GET /v1/blocks`.
+class BlockedUser {
+  const BlockedUser({required this.userId, this.blockedAt});
+
+  final String userId;
+  final DateTime? blockedAt;
+
+  /// Tolerant: returns null when there is no user id.
+  static BlockedUser? tryParse(Object? json) {
+    if (json is! Map) return null;
+    final id = (json['user_id'] ?? '').toString();
+    if (id.isEmpty) return null;
+    final at = json['blocked_at'];
+    return BlockedUser(
+      userId: id,
+      blockedAt: at is String ? DateTime.tryParse(at)?.toLocal() : null,
+    );
+  }
 }
 
 class ChatMessage {

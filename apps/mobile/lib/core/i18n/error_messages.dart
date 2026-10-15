@@ -11,6 +11,7 @@ const Map<String, String> kApiErrorKeys = {
   'daily_invoice_limit': 'error.daily_invoice_limit',
   'conversation_limit_reached': 'error.conversation_limit_reached',
   'conversation_full': 'error.conversation_full',
+  'user_blocked': 'error.user_blocked',
   'upstream_timeout': 'error.upstream_timeout',
   'rate_limited': 'error.rate_limited',
   'invalid_token': 'error.invalid_token',

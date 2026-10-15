@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -37,6 +38,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   int _uploadSeq = 0;
   List<ChatMessage> _messages = const [];
   Conversation? _conversation;
+  Set<String> _blockedIds = const <String>{};
   bool _loading = true;
   Object? _error;
   Timer? _poll;
@@ -141,6 +143,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
       for (final c in convs) {
         if (c.id == widget.conversationId) _conversation = c;
       }
+      if (_conversation == null) {
+        // Opened from the Archived filter: the default list hides it.
+        try {
+          for (final c in await _repo.conversations(archived: true)) {
+            if (c.id == widget.conversationId) _conversation = c;
+          }
+        } catch (_) {
+          // Header details are optional.
+        }
+      }
+      try {
+        final blocked = await _repo.blockedUsers();
+        _blockedIds = {for (final b in blocked) b.userId};
+      } catch (_) {
+        // Block state is optional; the menu falls back to "Block user".
+      }
       final msgs = await _repo.messages(widget.conversationId);
       try {
         await _repo.markRead(widget.conversationId);
@@ -181,6 +199,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
     } finally {
       _polling = false;
     }
+  }
+
+  Future<void> _toggleBlock(Conversation conv) async {
+    final blocked = _blockedIds.contains(conv.participantId);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr(blocked ? 'messages.unblock.title' : 'messages.block.title')),
+        content: Text(ctx.tr(
+          blocked ? 'messages.unblock.body' : 'messages.block.body',
+          {'name': conv.title},
+        )),
+        actions: [
+          TextButton(
+            key: const ValueKey<String>('chat-block-cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(ctx.tr('common.cancel')),
+          ),
+          FilledButton(
+            key: const ValueKey<String>('chat-block-confirm'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(ctx.tr(blocked ? 'messages.unblock.confirm' : 'messages.block.confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final doneText = context.tr(blocked ? 'messages.unblock.done' : 'messages.block.done');
+    try {
+      if (blocked) {
+        await _repo.unblockUser(conv.participantId);
+      } else {
+        await _repo.blockUser(conv.participantId);
+      }
+    } catch (e) {
+      if (mounted) _snack(localizedError(context, e));
+      return;
+    }
+    ref.invalidate(conversationsProvider);
+    ref.invalidate(blockedUsersProvider);
+    if (!mounted) return;
+    if (blocked) {
+      setState(() => _blockedIds = {..._blockedIds}..remove(conv.participantId));
+      _snack(doneText);
+      return;
+    }
+    // A blocked thread disappears from the list: leave the chat.
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(doneText)));
+    if (navigator.canPop()) navigator.pop();
+  }
+
+  Widget _menu(BuildContext context) {
+    final conv = _conversation;
+    if (conv == null || conv.participantId.isEmpty) return const SizedBox.shrink();
+    final blocked = _blockedIds.contains(conv.participantId);
+    return PopupMenuButton<String>(
+      key: const ValueKey<String>('chat-menu'),
+      tooltip: context.tr('messages.more'),
+      onSelected: (v) {
+        if (v == 'block') _toggleBlock(conv);
+      },
+      itemBuilder: (ctx) => [
+        PopupMenuItem<String>(
+          key: const ValueKey<String>('chat-menu-block'),
+          value: 'block',
+          child: Text(ctx.tr(blocked ? 'messages.unblock.menu' : 'messages.block.menu')),
+        ),
+      ],
+    );
   }
 
   void _snack(String text) {
@@ -386,7 +477,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
             ),
           ],
         ),
-        actions: [_statusChip(context)],
+        actions: [_statusChip(context), _menu(context)],
       ),
       body: Column(
         children: [

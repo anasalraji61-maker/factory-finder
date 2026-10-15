@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
@@ -106,11 +107,98 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
     return ymd(d);
   }
 
+  void _snack(String text, {SnackBarAction? action}) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(SnackBar(content: Text(text), action: action));
+  }
+
+  void _refreshLists() {
+    ref.invalidate(conversationsProvider);
+    ref.invalidate(unreadTotalProvider);
+  }
+
+  Future<void> _setPrefs(Conversation c, {bool? muted, bool? archived}) async {
+    final repo = ref.read(messagingRepositoryProvider);
+    try {
+      await repo.setPreferences(c.id, muted: muted, archived: archived);
+    } catch (e) {
+      if (mounted) _snack(localizedError(context, e));
+      return;
+    }
+    if (!mounted) return;
+    _refreshLists();
+    if (archived != null) {
+      _snack(
+        context.tr(archived ? 'messages.archived_done' : 'messages.unarchived_done'),
+        action: SnackBarAction(
+          key: const ValueKey<String>('conv-undo'),
+          label: context.tr('messages.undo'),
+          onPressed: () async {
+            try {
+              await repo.setPreferences(c.id, archived: !archived);
+            } catch (_) {
+              return;
+            }
+            if (mounted) _refreshLists();
+          },
+        ),
+      );
+    } else if (muted != null) {
+      _snack(context.tr(muted ? 'messages.muted_done' : 'messages.unmuted_done'));
+    }
+  }
+
+  Future<void> _showMenu(Conversation c) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const ValueKey<String>('conv-menu-mute'),
+              leading: Icon(c.muted
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_off_outlined),
+              title: Text(ctx.tr(c.muted ? 'messages.unmute' : 'messages.mute')),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _setPrefs(c, muted: !c.muted);
+              },
+            ),
+            ListTile(
+              key: const ValueKey<String>('conv-menu-archive'),
+              leading: Icon(c.archived ? Icons.unarchive_outlined : Icons.archive_outlined),
+              title: Text(ctx.tr(c.archived ? 'messages.unarchive' : 'messages.archive')),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _setPrefs(c, archived: !c.archived);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(conversationsProvider);
+    final archived = ref.watch(showArchivedProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('messages.title'))),
+      appBar: AppBar(
+        title: Text(context.tr(archived ? 'messages.archived_title' : 'messages.title')),
+        actions: [
+          IconButton(
+            key: const ValueKey<String>('conv-archived-toggle'),
+            tooltip: context.tr(archived ? 'messages.show_inbox' : 'messages.show_archived'),
+            icon: Icon(archived ? Icons.inbox_outlined : Icons.archive_outlined),
+            onPressed: () => ref.read(showArchivedProvider.notifier).state = !archived,
+          ),
+        ],
+      ),
       body: async.when(
         // Background polling reloads the provider; keep the list on screen.
         skipLoadingOnReload: true,
@@ -123,8 +211,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
           if (list.isEmpty) {
             return EmptyState(
               icon: Icons.chat_bubble_outline,
-              title: context.tr('messages.empty_title'),
-              message: context.tr('messages.empty_msg'),
+              title: context.tr(archived ? 'messages.archived_empty' : 'messages.empty_title'),
+              message: archived ? null : context.tr('messages.empty_msg'),
             );
           }
           return RefreshIndicator(
@@ -154,6 +242,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
     }
     return InkWell(
       onTap: () => context.push('/chat/${c.id}'),
+      onLongPress: () => _showMenu(c),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -180,6 +269,15 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
                           ),
                         ),
                       ),
+                      if (c.muted) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          key: ValueKey<String>('conv-muted-${c.id}'),
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
                       const SizedBox(width: AppSpacing.sm),
                       Text(
                         _time(context, c.lastAt),
@@ -221,7 +319,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
                           constraints: const BoxConstraints(minWidth: 22),
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: c.muted ? AppColors.textSecondary : AppColors.primary,
                             borderRadius: BorderRadius.circular(11),
                           ),
                           child: Text(
