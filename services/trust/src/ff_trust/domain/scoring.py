@@ -13,6 +13,7 @@ cannot swing the score. Expired certificates do not count.
 """
 
 import math
+import re
 from datetime import UTC, date, datetime, timedelta
 
 from ff_trust.config import ScoringConfig
@@ -94,7 +95,12 @@ def _response_time_f(h: float) -> float:
     return _clip(-(h - 12) / 36)
 
 
+_CERT_YEAR = re.compile(r"[\s:/\-_]+(?:19|20)\d{2}$")
+
+
 def _norm_cert(name: str) -> str:
+    """Normalised identity of a certificate: edition years ("ISO 9001:2015") collapse onto the base standard."""
+    name = _CERT_YEAR.sub("", name.strip())
     return "".join(ch for ch in name.upper() if ch.isalnum())
 
 
@@ -146,26 +152,45 @@ def adjusted_rating(avg: float, n: int | None, cfg: ScoringConfig) -> float:
 
 
 def _summary_average(rs: ReviewSummary) -> float | None:
-    if rs.average is not None:
-        return rs.average
     h = rs.histogram or {}
     n = sum(v for k, v in h.items() if k in "12345" and v > 0)
-    return sum(int(k) * v for k, v in h.items() if k in "12345" and v > 0) / n if n else None
+    hist_avg = sum(int(k) * v for k, v in h.items() if k in "12345" and v > 0) / n if n else None
+    if rs.average is None:
+        return hist_avg
+    if hist_avg is not None and hist_avg < rs.average - 0.5:
+        return hist_avg  # a headline average the raw histogram contradicts: trust the lower, harder-to-fake figure
+    return rs.average
+
+
+def _summary_count(rs: ReviewSummary) -> int:
+    """Verified-purchase reviews cannot outnumber completed deals: the excess is not counted (either direction)."""
+    return rs.count if rs.completed_deals is None else min(rs.count, rs.completed_deals)
 
 
 def platform_reviews_f(rs: ReviewSummary, cfg: ScoringConfig) -> float | None:
     """Shrunk average (+ sub-ratings), then linearly dampened below `platform_review_full_n` reviews."""
     avg = _summary_average(rs)
-    if rs.count <= 0 or avg is None:
+    count = _summary_count(rs)
+    if count <= 0 or avg is None:
         return None
     w = cfg.platform_review_prior_weight
-    adj = (rs.count * avg + w * cfg.review_prior_mean) / (rs.count + w)
+    adj = (count * avg + w * cfg.review_prior_mean) / (count + w)
     f = _clip((adj - cfg.review_prior_mean) / 1.2)
     subs = [v for v in (rs.sub_ratings or {}).values() if v is not None and 0 <= v <= 5]
     if subs:
-        sub_adj = (rs.count * (sum(subs) / len(subs)) + w * cfg.review_prior_mean) / (rs.count + w)
+        sub_adj = (count * (sum(subs) / len(subs)) + w * cfg.review_prior_mean) / (count + w)
         f = (1 - cfg.platform_review_sub_share) * f + cfg.platform_review_sub_share * _clip((sub_adj - cfg.review_prior_mean) / 1.2)
-    return _clip(f) * min(1.0, rs.count / max(1, cfg.platform_review_full_n))
+    return _clip(f) * min(1.0, count / max(1, cfg.platform_review_full_n))
+
+
+def is_new_account(s: SupplierSignals, cfg: ScoringConfig) -> bool:
+    """Explicitly young (known age under the threshold) AND no track record. Unknown age is never treated as new."""
+    ages = [a for a in (s.years_in_business, s.storefront_age_years) if a is not None]
+    if not ages or min(ages) >= cfg.new_account_years:
+        return False
+    dr = _deal_rate(s, cfg)
+    track = max(s.transactions_count or 0, dr[1] if dr else 0)
+    return track < cfg.new_account_min_deals
 
 
 def review_pattern_suspicious(s: SupplierSignals, cfg: ScoringConfig) -> bool:
@@ -249,7 +274,8 @@ def _value_text(key: str, s: SupplierSignals, cfg: ScoringConfig, today: date) -
     if key == "platform_reviews":
         rs = s.review_summary
         deals = f", deals={rs.completed_deals}" if rs.completed_deals else ""
-        return f"{_summary_average(rs):.2f}/5, n={rs.count}{deals}" + (", small sample dampened" if rs.count < cfg.platform_review_full_n else "")
+        n = _summary_count(rs)
+        return f"{_summary_average(rs):.2f}/5, n={n}{deals}" + (", small sample dampened" if n < cfg.platform_review_full_n else "")
     if key in ("document_verification", "facility_evidence"):
         return ver.value_text(s.verification, key, today, cfg)
     if key == "deal_outcomes":
@@ -359,6 +385,11 @@ def assess(signals: SupplierSignals, cfg: ScoringConfig | None = None, today: da
         apply_cap("dispute_rate_cap", cfg.dispute_high_cap,
                   f"High dispute rate: score capped at {cfg.dispute_high_cap}.",
                   f"نسبة نزاعات مرتفعة: الدرجة محدودة بـ {cfg.dispute_high_cap}.")  # fmt: skip
+    if is_new_account(signals, cfg):  # self-reported claims alone cannot make a brand-new account green
+        flags.append("new_account")
+        apply_cap("new_account_cap", cfg.green_min - 1,
+                  f"New account without a track record: cannot reach the green band (capped at {cfg.green_min - 1}).",
+                  f"حساب جديد بلا سجل صفقات: لا يمكن بلوغ النطاق الأخضر (الدرجة محدودة بـ {cfg.green_min - 1}).")  # fmt: skip
     p = signals.price_vs_market_ratio
     if p is not None and p < cfg.too_cheap_ratio:
         apply_cap("price_too_low_cap", cfg.too_cheap_cap,

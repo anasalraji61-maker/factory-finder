@@ -53,6 +53,8 @@ class ScoringConfig(BaseModel):
     price_anomaly_low: float = 0.6  # price/market below this (or above price_anomaly_high) is flagged
     price_anomaly_high: float = 2.5
     cert_expiring_days: int = 60
+    new_account_years: float = 1.0  # a business/storefront younger than this with a thin deal history cannot reach green
+    new_account_min_deals: int = 10  # transactions (or on-platform deals) that count as a track record
     review_burst_min_reviews: int = 30  # review-pattern check applies from this many marketplace reviews
     review_burst_min_avg: float = 4.9
     review_burst_ratio: float = 2.0  # reviews > ratio x transactions with a near-perfect average = suspicious

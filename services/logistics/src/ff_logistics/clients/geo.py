@@ -1,4 +1,5 @@
 """Client for the geo service: Protocol + httpx implementation + deterministic mock."""
+import asyncio
 import math
 from dataclasses import dataclass
 from decimal import Decimal
@@ -185,7 +186,8 @@ class CachedGeo:
         self.inner, self.ttl_s, self.max_entries = inner, ttl_s, max_entries
         self._now = clock or time.monotonic
         self._data: dict = {}
-        self.hits = self.misses = 0
+        self._inflight: dict = {}  # key -> shared task; removed on completion so bounded by concurrency
+        self.hits = self.misses = self.shared = 0
 
     @property
     def _client(self):  # lets the app lifespan close the wrapped httpx client
@@ -197,8 +199,28 @@ class CachedGeo:
         if hit is not None and hit[0] > now:
             self.hits += 1
             return hit[1]
+        task = self._inflight.get(key)
+        if task is not None:
+            self.shared += 1
+            return await asyncio.shield(task)  # one waiter cancelling must not cancel the others
         self.misses += 1
-        value = await call()
+        if len(self._inflight) >= self.max_entries:  # bound the in-flight table: skip sharing
+            return await self._fill(key, call)
+        task = asyncio.ensure_future(self._fill(key, call))
+        self._inflight[key] = task
+
+        def _done(t, key=key):
+            if self._inflight.get(key) is t:
+                del self._inflight[key]
+            if not t.cancelled():
+                t.exception()  # mark retrieved (no "never retrieved" noise if every waiter left)
+
+        task.add_done_callback(_done)
+        return await asyncio.shield(task)
+
+    async def _fill(self, key, call):
+        value = await call()  # errors propagate to every sharer and are never cached
+        now = self._now()
         if len(self._data) >= self.max_entries:
             for k in [k for k, (exp, _) in self._data.items() if exp <= now] or [next(iter(self._data))]:
                 self._data.pop(k, None)

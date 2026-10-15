@@ -255,6 +255,7 @@ class AppNetworkImage extends StatelessWidget {
     this.height,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.semanticLabel,
   });
 
   final String? url;
@@ -262,6 +263,9 @@ class AppNetworkImage extends StatelessWidget {
   final double? height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+
+  /// Accessible description; null marks the image as decorative.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -287,8 +291,13 @@ class AppNetworkImage extends StatelessWidget {
             placeholder: (context, _) => placeholder,
             errorWidget: (context, _, __) => placeholder,
           );
-    if (borderRadius == null) return image;
-    return ClipRRect(borderRadius: borderRadius!, child: image);
+    final Widget clipped =
+        borderRadius == null ? image : ClipRRect(borderRadius: borderRadius!, child: image);
+    final label = semanticLabel;
+    // Decorative by default so screen readers skip the placeholder icon;
+    // callers pass a label when the image carries meaning.
+    if (label == null || label.isEmpty) return ExcludeSemantics(child: clipped);
+    return Semantics(image: true, label: label, child: ExcludeSemantics(child: clipped));
   }
 }
 

@@ -206,3 +206,49 @@ def test_confirmed_reports_penalty_is_bounded():
 
 def test_weights_cover_scorable():
     assert all(k in CFG.weights for k in SCORABLE)
+
+
+# ---------- gaming: new accounts, review bombing, certificate reuse ----------
+
+_SOLID = dict(verified=True, third_party_audit=True, dispute_rate=0, price_vs_market_ratio=1, sanctions_hit=False,
+              response_rate=1, has_physical_address=True, contact_consistency=1, business_license_status="verified",
+              rating_avg=5, reviews_count=20, repeat_buyer_rate=1, response_time_hours=1, refund_rate=0, country_risk=0.1)
+
+
+def test_new_account_cannot_reach_green_on_self_reported_claims():
+    new = run({**_SOLID, "years_in_business": 0.2, "transactions_count": 0})
+    assert "new_account" in new.flags and "new_account_cap" in new.caps_applied
+    assert new.score < CFG.green_min and new.band is not TrustBand.GREEN
+    old = run({**_SOLID, "years_in_business": 6, "transactions_count": 300})
+    assert old.band is TrustBand.GREEN and "new_account" not in old.flags
+    # a young business that already has a real deal history is not capped; unknown age is never "new"
+    assert "new_account" not in run({**_SOLID, "years_in_business": 0.2, "transactions_count": 40}).flags
+    assert "new_account" not in run(_SOLID).flags
+
+
+def test_platform_reviews_cannot_outnumber_completed_deals():
+    base = {"years_in_business": 6, "verified": True, "dispute_rate": 0, "price_vs_market_ratio": 1, "sanctions_hit": False}
+    none = run({**base, "review_summary": {"count": 0}})
+    for avg in (5.0, 1.0):  # neither a positive nor a negative bomb from reviews no deal backs
+        bomb = run({**base, "review_summary": {"count": 500, "average": avg, "completed_deals": 0}})
+        assert bomb.score == none.score
+    capped = run({**base, "review_summary": {"count": 500, "average": 5.0, "completed_deals": 3}})
+    honest = run({**base, "review_summary": {"count": 3, "average": 5.0, "completed_deals": 3}})
+    assert capped.score == honest.score
+
+
+def test_headline_average_contradicted_by_histogram_is_not_trusted():
+    base = {"years_in_business": 6, "verified": True, "dispute_rate": 0, "price_vs_market_ratio": 1, "sanctions_hit": False}
+    fake = run({**base, "review_summary": {"count": 100, "average": 5.0, "histogram": {"1": 80, "5": 20}, "completed_deals": 100}})
+    real = run({**base, "review_summary": {"count": 100, "histogram": {"1": 80, "5": 20}, "completed_deals": 100}})
+    assert fake.score == real.score
+
+
+def test_certificate_edition_years_count_once():
+    base = dict(BY_ID["a2_mid_audited_factory"]["signals"])
+    one = run({**base, "certifications": ["ISO9001"]})
+    variants = run({**base, "certifications": ["ISO9001", "ISO 9001:2015", "ISO9001:2008", "iso 9001-2015", "ISO 9001 2015"]})
+    assert one.score == variants.score
+    assert run({**base, "certifications": ["ISO 22000:2018"]}).score == run({**base, "certifications": ["ISO22000"]}).score
+    # distinct standards still count separately
+    assert run({**base, "certifications": ["ISO 9001:2015", "ISO 14001:2015"]}).score >= one.score

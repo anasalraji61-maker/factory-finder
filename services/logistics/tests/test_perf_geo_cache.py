@@ -86,3 +86,76 @@ def test_in_process_quote_is_fast():
     for _ in range(20):
         _quote(geo)
     assert (time.perf_counter() - t) / 20 < 0.06
+
+
+class SlowGeo(CountingGeo):
+    def __init__(self, fail=False):
+        super().__init__()
+        self.gate = asyncio.Event()
+        self.fail = fail
+
+    async def resolve_city(self, *a):
+        self.calls += 1
+        await self.gate.wait()
+        if self.fail:
+            raise RuntimeError("upstream down")
+        return await MockGeo.resolve_city(self, *a)
+
+
+def test_inflight_identical_lookups_share_one_upstream_call():
+    async def go():
+        inner = SlowGeo()
+        g = CachedGeo(inner)
+        tasks = [asyncio.create_task(g.resolve_city("CN", "Shanghai")) for _ in range(10)]
+        other = asyncio.create_task(g.resolve_city("CN", "Yiwu"))
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        inner.gate.set()
+        res = await asyncio.gather(*tasks, other)
+        assert inner.calls == 2 and g.shared == 9
+        assert all(r == res[0] for r in res[:10]) and res[0] != res[10]
+        assert not g._inflight
+        await g.resolve_city("CN", "Shanghai")
+        assert inner.calls == 2  # now served from cache
+
+    asyncio.run(go())
+
+
+def test_inflight_errors_propagate_to_all_and_are_not_cached():
+    async def go():
+        inner = SlowGeo(fail=True)
+        g = CachedGeo(inner)
+        ts = [asyncio.create_task(g.resolve_city("CN", "Shanghai")) for _ in range(5)]
+        await asyncio.sleep(0)
+        inner.gate.set()
+        res = await asyncio.gather(*ts, return_exceptions=True)
+        assert all(isinstance(r, RuntimeError) for r in res) and inner.calls == 1
+        assert not g._inflight and not g._data
+        inner.fail = False
+        assert await g.resolve_city("CN", "Shanghai") is not None
+        assert inner.calls == 2
+
+    asyncio.run(go())
+
+
+def test_inflight_waiter_cancellation_does_not_break_others_and_table_bounded():
+    async def go():
+        inner = SlowGeo()
+        g = CachedGeo(inner)
+        a = asyncio.create_task(g.resolve_city("CN", "Shanghai"))
+        b = asyncio.create_task(g.resolve_city("CN", "Shanghai"))
+        await asyncio.sleep(0)
+        a.cancel()
+        inner.gate.set()
+        assert await b is not None and inner.calls == 1
+        # bounded: with max_entries=1 a second distinct key is not tracked in flight
+        inner2 = SlowGeo()
+        g2 = CachedGeo(inner2, max_entries=1)
+        t1 = asyncio.create_task(g2.resolve_city("CN", "Shanghai"))
+        t2 = asyncio.create_task(g2.resolve_city("CN", "Yiwu"))
+        await asyncio.sleep(0)
+        assert len(g2._inflight) <= 1
+        inner2.gate.set()
+        await asyncio.gather(t1, t2)
+
+    asyncio.run(go())
