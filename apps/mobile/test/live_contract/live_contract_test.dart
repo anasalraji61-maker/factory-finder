@@ -263,7 +263,7 @@ Future<void> _suite(ContractReport r, String mode, String baseUrl, LiveInfo info
 
   await r.check(mode, 'assistant: reply cards', (c) async {
     final a = await AssistantRepository(buyer)
-        .ask('ابي ٥٠٠ كرسي بلاستك من الصين الى اربيل');
+        .ask('where is container CSQU3054383');
     c.need(a.intent, 'answer.intent');
     c.need(a.cards, 'answer.cards');
     for (final card in a.cards) {
