@@ -39,3 +39,5 @@ jobs:
         run: python scripts/e2e.py
       - name: Extended end-to-end flows
         run: python scripts/e2e_extended.py
+      - name: Business scenarios (sequential, after the flows above)
+        run: python scripts/e2e_scenarios.py

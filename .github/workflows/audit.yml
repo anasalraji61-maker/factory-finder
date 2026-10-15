@@ -1,0 +1,38 @@
+name: audit
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [gateway, sourcing, logistics, geo, trust, rfq, messaging, tracking, notifications, assistant, demand, payments, media, feed, freight]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install service deps
+        run: |
+          python -m venv .venv
+          .venv/bin/python scripts/install_service.py services/${{ matrix.service }} --deps-only
+      - name: pip-audit
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit --path .venv/lib/python3.12/site-packages --progress-spinner off
