@@ -38,12 +38,13 @@ Future<void> _pump(WidgetTester tester, String location, List<Override> override
 }
 
 Future<void> _expandAll(WidgetTester tester) async {
-  final n = find.byType(ExpansionTile).evaluate().length;
+  // Only tiles on the visible route (the calculator route may still be in
+  // the stack). Expand each once; expanded tiles are tracked by index.
+  final n = find.byType(ExpansionTile).hitTestable().evaluate().length;
   for (var i = 0; i < n; i++) {
-    if (find.byType(ExpansionTile).evaluate().length <= i) break;
-    final tile = find.byType(ExpansionTile).at(i);
-    await tester.ensureVisible(tile);
-    await tester.tap(tile);
+    final tiles = find.byType(ExpansionTile).hitTestable();
+    if (tiles.evaluate().length <= i) break;
+    await tester.tap(tiles.at(i), warnIfMissed: false);
     await settle(tester, frames: 4);
   }
 }
