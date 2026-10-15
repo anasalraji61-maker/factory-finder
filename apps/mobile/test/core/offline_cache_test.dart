@@ -184,8 +184,8 @@ void main() {
       final store = MemoryStore();
       await repo(adapter, store).home();
       adapter.online = false;
-      expect(() => repo(adapter, store, user: 'usr_2').home(), throwsA(isA<ApiException>()));
-      expect(() => repo(adapter, store, user: null).home(), throwsA(isA<ApiException>()));
+      await expectLater(repo(adapter, store, user: 'usr_2').home(), throwsA(isA<ApiException>()));
+      await expectLater(repo(adapter, store, user: null).home(), throwsA(isA<ApiException>()));
 
       final guestStore = MemoryStore();
       adapter.online = true;

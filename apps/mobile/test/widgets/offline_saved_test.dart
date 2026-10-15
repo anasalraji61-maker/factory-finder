@@ -4,7 +4,6 @@ import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
 import 'package:factory_finder/features/discover/data/search_facets.dart';
-import 'package:factory_finder/features/feed/feed_logic.dart';
 import 'package:factory_finder/features/feed/feed_models.dart';
 import 'package:factory_finder/features/feed/feed_repository.dart';
 import 'package:flutter/material.dart';
