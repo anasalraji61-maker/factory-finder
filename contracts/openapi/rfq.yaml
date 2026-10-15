@@ -435,7 +435,7 @@ paths:
         "404": {description: Not an internal caller}
 components:
   parameters:
-    UserId: {name: X-User-Id, in: header, required: true, schema: {type: string}}
+    UserId: {name: X-User-Id, in: header, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_.:@+\-]{1,128}$'}}
     Id: {name: id, in: path, required: true, schema: {type: string}}
   responses:
     Error:

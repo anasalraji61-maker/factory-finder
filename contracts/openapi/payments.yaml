@@ -67,6 +67,7 @@ paths:
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/InvoicePage"}}}}
+        "422": {$ref: "#/components/responses/Error"}
         "401": {$ref: "#/components/responses/Error"}
   /v1/invoices/{id}:
     get:
@@ -79,7 +80,7 @@ paths:
   /v1/invoices/{id}/cancel:
     post:
       operationId: cancelInvoice
-      description: Payer or admin. Only pending / awaiting_payment invoices (status becomes failed, status_reason cancelled).
+      description: Payer or admin. Only pending / awaiting_payment invoices (status becomes failed, status_reason cancelled). 409 when the invoice is in another state, or 409 `concurrent_update` if it changed concurrently (retry). Creating an invoice can also return 409 `concurrent_update` (retry). X-User-Id longer than 64 chars is 401.
       parameters: [{$ref: "#/components/parameters/Id"}]
       responses:
         "200": {description: Cancelled, content: {application/json: {schema: {$ref: "#/components/schemas/Invoice"}}}}

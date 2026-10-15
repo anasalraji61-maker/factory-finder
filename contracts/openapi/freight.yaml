@@ -30,7 +30,9 @@ info: {title: Factory Finder freight, version: 0.1.0, description: 'Freight-forw
 
 
     Caps (defaults): 50 open requests per buyer (409 `request_limit_reached`), 50 quotes per request (409 `quote_limit_reached`), 50 lanes per forwarder, 5 applications per user (409 `application_limit_reached`),
-    one pending application (409 `application_pending`). Rate limits per user per rolling hour (429 `rate_limited` + `Retry-After`): 3 applications, 10 requests, 60 quotes, 20 ratings, 20 reports; screened
+    one pending application (409 `application_pending`, including when two applications race; 409 `already_forwarder` if the account is already approved).
+    Other 409 codes: `request_expired`, `request_not_open`, `state_changed` / `quote_changed` (the row changed while the call ran; re-read and retry), `quote_exists`, `quote_final`, `quote_not_available`, `quote_expired`,
+    `forwarder_suspended`, `not_completed`, `already_rated`, `rating_too_early`, `rating_pair_limit`, `already_reviewed` (admin). `X-User-Id` must match `^[A-Za-z0-9_.:\-]{1,128}$` (else 401); path/query ids match `^[A-Za-z0-9_\-]{1,40}$` (else 422). Rate limits per user per rolling hour (429 `rate_limited` + `Retry-After`): 3 applications, 10 requests, 60 quotes, 20 ratings, 20 reports; screened
     attempts count too.
 
 

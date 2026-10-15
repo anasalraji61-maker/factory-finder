@@ -457,7 +457,7 @@ paths:
   /v1/ws/conversations/{conversation_id}:
     get:
       operationId: wsConversation
-      description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: ?ticket= from POST /v1/ws-ticket (preferred; single use), or (legacy, off by default: FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true) Authorization Bearer access token / ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections (per-user cap FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER, default 5, or the per-IP HTTP rate limit), 1011 upstream unavailable."
+      description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: ?ticket= from POST /v1/ws-ticket (preferred; single use), or (legacy, off by default: FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true) Authorization Bearer access token / ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections (per-user cap FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER, default 5, or the per-IP HTTP rate limit), 1011 upstream unavailable, 1009 client frame too large (oversized frames are never relayed), 1001 session lifetime elapsed (FF_GATEWAY_WS_MAX_SESSION_SECONDS, default 4 h; reconnect with a fresh ticket)."
       parameters:
         - {name: conversation_id, in: path, required: true, schema: {type: string}}
         - {name: ticket, in: query, required: false, schema: {type: string}}

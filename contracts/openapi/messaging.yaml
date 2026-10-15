@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversations and messages between buyers/suppliers. All /v1 routes need X-User-Id (401 if missing); non-participants get 403 (a gateway-set X-Supplier-Id lets the user who claimed that sup_* supplier act as its participant). Realtime: WebSocket /v1/ws/conversations/{id}?user_id= (dev) pushes message.created, read.updated, typing; client frames: ping, typing{is_typing}, read{message_id}. Close codes 4401 unauthenticated, 4403 forbidden, 4429 too many connections."}
+info: {title: Factory Finder messaging, version: 0.1.0, description: "Conversations and messages between buyers/suppliers. All /v1 routes need X-User-Id (401 if missing); non-participants get 403 (a gateway-set X-Supplier-Id lets the user who claimed that sup_* supplier act as its participant). Realtime: WebSocket /v1/ws/conversations/{id}?user_id= (dev) pushes message.created, read.updated, typing; client frames: ping, typing{is_typing}, read{message_id}. Close codes 4401 unauthenticated, 4403 forbidden, 4429 too many connections. The gateway proxy additionally closes with 1009 (oversized client frame), 1001 (session lifetime elapsed) and 1011 (upstream unavailable)."}
 servers: [{url: http://localhost:8106}]
 paths:
   /health:
