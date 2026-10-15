@@ -12,3 +12,4 @@
 2026-10-14 | Caps: 500 posts/supplier, 500 follows/user, 1000 comments/post, page size <= 50, 5 media, 5 tags, post 2000 / comment 500 chars | bounded storage and query cost.
 2026-10-14 | Gateway: `/v1/feed` routed to feed; only `GET /v1/feed/trending` is public (optional identity so `viewer_liked` works); `X-Supplier-Id` forwarded only from the verified claim; `POST /v1/feed/posts` is subject to `require_email_verified` like `/v1/my` writes | minimal additive change; `gateway.yaml` x-proxy documents it.
 2026-10-14 | Datetimes use a `UTCDateTime` type decorator (aware UTC on SQLite too); the migration uses plain `DateTime(timezone=True)` | SQLite drops tzinfo and keyset comparisons must be exact.
+- 2026-10-15: trending cursor carries a snapshot time (additive field); author self-engagement excluded from rank; +3 freshness boost for posts <24h (FRESH_HOURS/FRESH_BOOST). Why: stable pagination, anti self-promotion, newcomer fairness.

@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, delete, func, insert, or_, select, update
+from sqlalchemy import and_, case, delete, func, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -21,6 +21,10 @@ from ff_feed.moderation import redact, screen_fields
 from ff_feed.schemas import SUPPLIER_RE, CommentCreate, PostCreate
 
 MEDIA_PATH_RE = re.compile(r"/v1/media/files/[a-f0-9]{32}\.(?:jpg|png|webp)")
+
+
+FRESH_HOURS = 24  # new-supplier fairness: posts younger than this get a bounded boost in trending
+FRESH_BOOST = 3
 
 
 def _iso(d: datetime) -> str:
@@ -200,7 +204,7 @@ class FeedService:
         )
         return {r[0] for r in rows}
 
-    async def _post_page(self, c, q, user: str | None, limit: int, kind: str, admin=False) -> dict:
+    async def _post_page(self, c, q, user: str | None, limit: int, kind: str, admin=False, as_of=None) -> dict:
         rows = (await c.execute(q.limit(limit + 1))).all()
         more = len(rows) > limit
         rows = rows[:limit]
@@ -208,7 +212,7 @@ class FeedService:
         nxt = None
         if more and rows:
             last = rows[-1]
-            nxt = cur.encode(kind, last.created_at, last.id, last.score if kind == "t" else None)
+            nxt = cur.encode(kind, last.created_at, last.id, last.rank if kind == "t" else None, as_of)
         return {"items": [self._post(r, liked, admin) for r in rows], "next_cursor": nxt}
 
     # ------------------------------------------------------------------ posts
@@ -294,21 +298,42 @@ class FeedService:
 
     # ------------------------------------------------------------------ feeds
     async def trending(self, user: str | None, cursor: str | None, limit: int | None) -> dict:
+        """Rank = engagement at a frozen snapshot time + a small freshness boost, so a paging client sees a
+        stable order (new likes/comments after the first page do not reshuffle later pages). The snapshot
+        (``a``) travels in the cursor. Self-engagement (the author's own likes/comments) never counts."""
         limit = self._limit(limit)
-        since = self.clock() - timedelta(days=self.s.trending_window_days)
-        q = select(posts).where(posts.c.status == "published", posts.c.created_at >= since)
-        if cursor:
-            d = cur.decode(cursor, ("t",))
+        d = cur.decode(cursor, ("t",)) if cursor else None
+        as_of = (d["a"] if d and d["a"] else None) or self.clock()
+        since = as_of - timedelta(days=self.s.trending_window_days)
+        lk = (
+            select(func.count()).select_from(likes)
+            .where(likes.c.post_id == posts.c.id, likes.c.user_id != posts.c.author_user_id, likes.c.created_at <= as_of)
+            .scalar_subquery()
+        )  # fmt: skip
+        cm = (
+            select(func.count()).select_from(comments)
+            .where(comments.c.post_id == posts.c.id, comments.c.status == "published",
+                   comments.c.user_id != posts.c.author_user_id, comments.c.created_at <= as_of)
+            .scalar_subquery()
+        )  # fmt: skip
+        fresh = case((posts.c.created_at > as_of - timedelta(hours=FRESH_HOURS), FRESH_BOOST), else_=0)
+        rank = (lk + 2 * cm + fresh).label("rank")
+        base = select(posts, rank).where(
+            posts.c.status == "published", posts.c.created_at >= since, posts.c.created_at <= as_of
+        )
+        sub = base.subquery()
+        q = select(sub)
+        if d:
             q = q.where(
                 or_(
-                    posts.c.score < d["s"],
-                    and_(posts.c.score == d["s"], posts.c.created_at < d["t"]),
-                    and_(posts.c.score == d["s"], posts.c.created_at == d["t"], posts.c.id < d["i"]),
+                    sub.c.rank < d["s"],
+                    and_(sub.c.rank == d["s"], sub.c.created_at < d["t"]),
+                    and_(sub.c.rank == d["s"], sub.c.created_at == d["t"], sub.c.id < d["i"]),
                 )
             )
-        q = q.order_by(posts.c.score.desc(), posts.c.created_at.desc(), posts.c.id.desc())
+        q = q.order_by(sub.c.rank.desc(), sub.c.created_at.desc(), sub.c.id.desc())
         async with self.engine.connect() as c:
-            page = await self._post_page(c, q, user, limit, "t")
+            page = await self._post_page(c, q, user, limit, "t", as_of=as_of)
         return {**page, "source": "trending"}
 
     async def home(self, user: str, cursor: str | None, limit: int | None) -> dict:
@@ -394,7 +419,7 @@ class FeedService:
         await self._rate(user, "likes")
         try:
             async with self.engine.begin() as c:
-                await self._visible_post(c, post_id)
+                p = await self._visible_post(c, post_id)
                 have = await c.scalar(
                     select(func.count()).select_from(likes).where(likes.c.post_id == post_id, likes.c.user_id == user)
                 )
@@ -402,7 +427,7 @@ class FeedService:
                     await c.execute(insert(likes).values(post_id=post_id, user_id=user, created_at=self.clock()))
                     await c.execute(
                         update(posts).where(posts.c.id == post_id)
-                        .values(like_count=posts.c.like_count + 1, score=posts.c.score + 1)
+                        .values(like_count=posts.c.like_count + 1, score=posts.c.score + (0 if p.author_user_id == user else 1))
                     )  # fmt: skip
         except IntegrityError:
             pass  # concurrent duplicate like: the winner already counted it
@@ -411,12 +436,12 @@ class FeedService:
     async def unlike(self, user: str, post_id: str) -> dict:
         await self._rate(user, "likes")
         async with self.engine.begin() as c:
-            await self._visible_post(c, post_id)  # hidden / held posts answer 404 (no like_count leak)
+            p = await self._visible_post(c, post_id)  # hidden / held posts answer 404 (no like_count leak)
             res = await c.execute(delete(likes).where(likes.c.post_id == post_id, likes.c.user_id == user))
             if res.rowcount:
                 await c.execute(
                     update(posts).where(posts.c.id == post_id, posts.c.like_count > 0)
-                    .values(like_count=posts.c.like_count - 1, score=posts.c.score - 1)
+                    .values(like_count=posts.c.like_count - 1, score=posts.c.score - (0 if p.author_user_id == user else 1))
                 )  # fmt: skip
         return await self._like_state(user, post_id)
 
@@ -450,7 +475,7 @@ class FeedService:
             if not held:  # held comments are not counted until an admin restores them
                 await c.execute(
                     update(posts).where(posts.c.id == post_id)
-                    .values(comment_count=posts.c.comment_count + 1, score=posts.c.score + 2)
+                    .values(comment_count=posts.c.comment_count + 1, score=posts.c.score + (0 if p.author_user_id == user else 2))
                 )  # fmt: skip
             r = (await c.execute(select(comments).where(comments.c.id == cid))).one()
         return self._comment(r)
@@ -498,8 +523,18 @@ class FeedService:
         n = await c.scalar(
             select(func.count()).select_from(comments).where(comments.c.post_id == post_id, comments.c.status == "published")
         )
+        ext = await c.scalar(
+            select(func.count()).select_from(comments).join(posts, posts.c.id == comments.c.post_id).where(
+                comments.c.post_id == post_id, comments.c.status == "published", comments.c.user_id != posts.c.author_user_id
+            )
+        )
+        ext_likes = await c.scalar(
+            select(func.count()).select_from(likes).join(posts, posts.c.id == likes.c.post_id).where(
+                likes.c.post_id == post_id, likes.c.user_id != posts.c.author_user_id
+            )
+        )
         await c.execute(
-            update(posts).where(posts.c.id == post_id).values(comment_count=n or 0, score=posts.c.like_count + 2 * (n or 0))
+            update(posts).where(posts.c.id == post_id).values(comment_count=n or 0, score=(ext_likes or 0) + 2 * (ext or 0))
         )
 
     # ------------------------------------------------------------------ reports

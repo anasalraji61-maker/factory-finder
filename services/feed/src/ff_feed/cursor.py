@@ -14,10 +14,12 @@ MAX_LEN = 300
 _ID = re.compile(r"^[A-Za-z0-9_.:\-]{1,128}$")
 
 
-def encode(kind: str, created_at: datetime, ident: str, score: int | None = None) -> str:
+def encode(kind: str, created_at: datetime, ident: str, score: int | None = None, as_of: datetime | None = None) -> str:
     d: dict = {"k": kind, "t": created_at.astimezone(UTC).isoformat(), "i": ident}
     if score is not None:
         d["s"] = score
+    if as_of is not None:
+        d["a"] = as_of.astimezone(UTC).isoformat()
     raw = json.dumps(d, separators=(",", ":")).encode()
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
@@ -40,6 +42,7 @@ def decode(cursor: str, allowed: tuple[str, ...]) -> dict:
         s = d.get("s")
         if s is not None and (not isinstance(s, int) or isinstance(s, bool) or abs(s) > 2**53):
             ok = False
+        a = datetime.fromisoformat(d["a"]).astimezone(UTC) if d.get("a") else None
         t = t.astimezone(UTC)  # may overflow near year 1 / 9999: caught below as a bad cursor
     except (ValueError, KeyError, TypeError, OverflowError, binascii.Error, UnicodeDecodeError):
         raise bad from None
@@ -47,4 +50,4 @@ def decode(cursor: str, allowed: tuple[str, ...]) -> dict:
         raise bad
     if (d["k"] == "t") != (s is not None):
         raise bad
-    return {"k": d["k"], "t": t, "i": d["i"], "s": s}
+    return {"k": d["k"], "t": t, "i": d["i"], "s": s, "a": a}
