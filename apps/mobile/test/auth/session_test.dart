@@ -9,6 +9,7 @@ import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/auth/password_repository.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +59,33 @@ TokenStore _signedIn() {
   final t = TokenStore();
   t.set('old-access', 'old-refresh');
   return t;
+}
+
+class _GrantedSource extends NoopPushTokenSource {
+  int deleted = 0;
+  @override
+  Future<PushPermission> permission() async => PushPermission.granted;
+  @override
+  Future<String?> token() async => 'tok_1';
+  @override
+  Future<void> deleteToken() async => deleted++;
+}
+
+/// Records unregister calls and the access token present at that moment.
+class _RecordingDevices extends MockDeviceRepository {
+  _RecordingDevices(this.tokens);
+  final TokenStore tokens;
+  final List<String> unregistered = [];
+  final List<String?> accessAtUnregister = [];
+  bool fail = false;
+
+  @override
+  Future<void> unregister(String deviceId) async {
+    unregistered.add(deviceId);
+    accessAtUnregister.add(tokens.accessToken);
+    if (fail) throw ApiException(status: 500, code: 'x', message: 'x');
+    return super.unregister(deviceId);
+  }
 }
 
 String _ar(String key) => AppStrings.lookup('ar', key);
@@ -329,7 +357,7 @@ void main() {
       c.read(authProvider.notifier).state = const Me(id: 'usr_t', name: 'T');
       c.read(tokenStoreProvider).set('a', 'r');
       await seed(c);
-      c.read(authProvider.notifier).logout();
+      await c.read(authProvider.notifier).logout();
       await Future<void>.delayed(Duration.zero);
       await expectWiped(c);
     });
@@ -344,6 +372,85 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(c.read(destinationProvider)?.city, 'Istanbul');
       expect(await c.read(readCacheProvider).get(kSearchCacheSlot, 'q'), isNotNull);
+    });
+  });
+
+  group('push device unregister on sign-out', () {
+    late _GrantedSource source;
+    late _RecordingDevices devices;
+
+    Future<ProviderContainer> build(_Adapter a, {bool signedIn = true}) async {
+      source = _GrantedSource();
+      final tokens = TokenStore();
+      devices = _RecordingDevices(tokens);
+      final c = ProviderContainer(overrides: [
+        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        secureStoreProvider.overrideWithValue(MemoryStore()),
+        tokenStoreProvider.overrideWithValue(tokens),
+        apiClientProvider.overrideWith((ref) => _client(a, tokens)),
+        pushRegistrationProvider.overrideWith(
+            (ref) => PushRegistrationController(source, devices)),
+      ]);
+      addTearDown(c.dispose);
+      if (signedIn) {
+        c.read(authProvider.notifier).state = const Me(id: 'usr_t', name: 'T');
+        tokens.set('acc', 'ref');
+        await c.read(pushRegistrationProvider).onLogin();
+        expect(devices.devices, isNotEmpty);
+      }
+      return c;
+    }
+
+    test('logout unregisters before the tokens are cleared', () async {
+      final c = await build(_Adapter((o) => _json(<String, dynamic>{}, 204)));
+      await c.read(authProvider.notifier).logout();
+      expect(devices.unregistered, ['dev_1']);
+      expect(devices.accessAtUnregister, ['acc']);
+      expect(source.deleted, 1);
+      expect(c.read(tokenStoreProvider).accessToken, isNull);
+      expect(c.read(authProvider), isNull);
+    });
+
+    test('a failing unregister is swallowed and sign-out completes', () async {
+      final c = await build(_Adapter((o) => _json(<String, dynamic>{}, 204)));
+      devices.fail = true;
+      await c.read(authProvider.notifier).logout();
+      expect(devices.unregistered, ['dev_1']);
+      expect(c.read(authProvider), isNull);
+      expect(c.read(tokenStoreProvider).accessToken, isNull);
+      expect(source.deleted, 1);
+    });
+
+    test('forced expiry drops the push token and swallows errors', () async {
+      final c = await build(_Adapter((o) => _json(<String, dynamic>{}, 401)));
+      devices.fail = true;
+      await expectLater(
+          c.read(apiClientProvider).get('/v1/me'), throwsA(isA<ApiException>()));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(c.read(sessionExpiredProvider), isTrue);
+      expect(c.read(authProvider), isNull);
+      expect(source.deleted, 1);
+    });
+
+    test('logout-all unregisters before the server call', () async {
+      final a = _Adapter((o) => _json(<String, dynamic>{}, 204));
+      final c = await build(a);
+      await c.read(authProvider.notifier).logoutAll();
+      expect(devices.unregistered, ['dev_1']);
+      expect(devices.accessAtUnregister.first, 'acc');
+      expect(a.calls.map((o) => o.path), contains('/v1/auth/logout-all'));
+      expect(c.read(authProvider), isNull);
+    });
+
+    test('logout-all failure keeps the session and re-registers the device',
+        () async {
+      final c = await build(_Adapter((o) => _json(<String, dynamic>{}, 500)));
+      await expectLater(
+          c.read(authProvider.notifier).logoutAll(), throwsA(isA<ApiException>()));
+      expect(c.read(authProvider), isNotNull);
+      expect(devices.unregistered, ['dev_1']);
+      expect(devices.devices.values, ['tok_1']);
     });
   });
 

@@ -299,5 +299,7 @@ def facets(listings: list[Listing]) -> dict[str, list[dict]]:
 
 
 def paginate[T](items: list[T], page: int, page_size: int) -> list[T]:
+    if page < 1 or page_size < 1:  # negative slice indexes would silently wrap around and leak items
+        return []
     start = (page - 1) * page_size
     return items[start : start + page_size]

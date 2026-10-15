@@ -31,7 +31,7 @@ void main() {
 
   testWidgets('supplier screen shows confidence, missing info and history fallback',
       (tester) async {
-    await pumpApp(tester, location: '/supplier/sup_cn_004');
+    await pumpApp(tester, logicalSize: const Size(540, 2400), location: '/supplier/sup_cn_004');
     await settle(tester, frames: 8);
 
     expect(find.text('مستوى الثقة بالتقييم'), findsOneWidget);
@@ -132,7 +132,7 @@ void main() {
 
   testWidgets('alerts inbox: shipment alert deep-links to tracking detail',
       (tester) async {
-    await pumpApp(tester, location: '/alerts');
+    await pumpApp(tester, logicalSize: const Size(540, 2400), location: '/alerts');
     await settle(tester, frames: 6);
 
     expect(find.byKey(const Key('alert_icon_shipment_status')), findsOneWidget);

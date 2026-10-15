@@ -1,11 +1,13 @@
 """Data access for one transaction / read scope. Maps rows <-> domain objects."""
 
+import contextlib
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import ColumnElement, and_, delete, exists, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ff_messaging.domain.models import (
@@ -328,6 +330,13 @@ class Repository:
 
     # ---------------------------------------------------------------- blocks
 
+    async def count_blocks(self, blocker_id: str) -> int:
+        return int(
+            (await self.conn.execute(
+                select(func.count()).select_from(blocks_t).where(blocks_t.c.blocker_id == blocker_id)
+            )).scalar_one()
+        )
+
     async def add_block(self, blocker_id: str, blocked_id: str, now: datetime) -> None:
         existing = await self.conn.execute(
             select(blocks_t.c.blocker_id).where(
@@ -335,9 +344,12 @@ class Repository:
             )
         )
         if existing.first() is None:
-            await self.conn.execute(
-                insert(blocks_t).values(blocker_id=blocker_id, blocked_id=blocked_id, created_at=now)
-            )
+            # savepoint: a concurrent identical PUT that won the race is a no-op, never a 500
+            with contextlib.suppress(IntegrityError):
+                async with self.conn.begin_nested():
+                    await self.conn.execute(
+                        insert(blocks_t).values(blocker_id=blocker_id, blocked_id=blocked_id, created_at=now)
+                    )
 
     async def remove_block(self, blocker_id: str, blocked_id: str) -> None:
         await self.conn.execute(

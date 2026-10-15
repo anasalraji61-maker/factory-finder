@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/providers.dart' show localeProvider;
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -285,6 +287,9 @@ class AuthController extends StateNotifier<Me?> {
     _ref.read(tokenStoreProvider).onExpired = () {
       // Forced sign-out: wipe the previous user's caches/choices (device
       // prefs stay), even if this runs while the account was already null.
+      // The tokens are already gone, so the server DELETE may be rejected
+      // (swallowed); the local push token and listeners are dropped anyway.
+      unawaited(unregisterPushDeviceBestEffort(_ref));
       _wipeUserState();
       if (!mounted) return;
       try {
@@ -444,18 +449,41 @@ class AuthController extends StateNotifier<Me?> {
     }
   }
 
-  void logout() {
+  /// Signs out locally. Unregisters the push device first (best effort,
+  /// bounded, never fails the sign-out) because that DELETE needs the tokens
+  /// this call then clears.
+  Future<void> logout() async {
+    await unregisterPushDeviceBestEffort(_ref);
     _repo.logout();
     _setRevokedNotice(false);
-    state = null;
+    if (mounted) state = null;
     _wipeUserState();
   }
 
   /// Signs out of every device, then locally. Throws (staying signed in) when
   /// the server call fails for a reason other than an already-dead session.
   Future<void> logoutAll() async {
-    await _repo.logoutAll();
-    logout();
+    // Before the server revokes the sessions (the device DELETE needs auth).
+    await unregisterPushDeviceBestEffort(_ref);
+    try {
+      await _repo.logoutAll();
+    } catch (_) {
+      // Still signed in: put this device back on push, then report the error.
+      await _reRegisterPush();
+      rethrow;
+    }
+    await logout();
+  }
+
+  Future<void> _reRegisterPush() async {
+    try {
+      await _ref
+          .read(pushRegistrationProvider)
+          .onLogin(locale: _ref.read(localeProvider).languageCode, prompt: false)
+          .timeout(kPushUnregisterTimeout);
+    } catch (_) {
+      // Best effort.
+    }
   }
 }
 

@@ -120,7 +120,7 @@ void main() {
 
   group('settings screen', () {
     testWidgets('changes apply app-wide and persist', (tester) async {
-      await pumpApp(tester, location: '/settings');
+      await pumpApp(tester, logicalSize: const Size(540, 2400), location: '/settings');
       final c = ProviderScope.containerOf(tester.element(find.byType(FactoryFinderApp)));
       final store = c.read(keyValueStoreProvider) as MemoryStore;
 
@@ -326,7 +326,7 @@ void main() {
   group('RTL', () {
     testWidgets('settings screen is right-to-left in Arabic and left-to-right in English',
         (tester) async {
-      await pumpApp(tester, location: '/settings');
+      await pumpApp(tester, logicalSize: const Size(540, 2400), location: '/settings');
       expect(
         Directionality.of(tester.element(find.byKey(const ValueKey('settings-lang-ar')))),
         TextDirection.rtl,

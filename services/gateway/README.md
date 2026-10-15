@@ -16,6 +16,8 @@ Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 `PATCH /v1/me {supplier_id}` records a **pending** claim (`supplier_claim_status`: none|pending|verified); pending/verified ids are unique (409). The gateway forwards `X-Supplier-Id` (HTTP and WS) to messaging only when status is `verified`. Admins (header `X-Admin-Token` == `FF_GATEWAY_ADMIN_TOKEN`, constant-time compare; 404 if unset, 401 if wrong) use `GET /v1/admin/supplier-claims?status=pending|verified`, `POST /v1/admin/supplier-claims/{user_id}/approve|reject`. Reject and `supplier_id: null` release the id and reset status to none. Startup adds the column on existing sqlite DBs; pre-existing claims become pending.
 
 ## Admin payments outbox passthrough
+`GET /v1/admin/payments/review` (same guards and env vars; `limit` -> `page_size`, `cursor`, `page`, `page_size`; `status` and anything else -> 422) proxies payments `GET /v1/payments/review` and returns its `{items, total, page, page_size}` unchanged; `X-Reviewer` is forwarded sanitized (default `admin`) and the call is logged (`ff_gateway.admin`). Payments down -> 502 `upstream_unavailable`, timeout -> 504.
+
 `GET /v1/admin/payments/outbox` (`status` pending|delivered|dead, `limit` -> payments `page_size`, `cursor`, `page`, `page_size`; any other query param -> 422) and `POST /v1/admin/payments/outbox/{id}/requeue` (id `[A-Za-z0-9_-]{1,64}`, no body). Needs `X-Admin-Token` (= `FF_GATEWAY_ADMIN_TOKEN`; 404 unset, 401 wrong) and the gateway-side `FF_PAYMENTS_ADMIN_TOKEN` (404 when unset), which the gateway injects with the internal token and `X-User-Id: admin`; client identity headers and bodies are never forwarded. Upstream status codes (404 unknown, 409 `not_dead`) pass through.
 
 ## Admin demand proxy and console

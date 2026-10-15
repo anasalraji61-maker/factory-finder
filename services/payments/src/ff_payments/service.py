@@ -53,6 +53,7 @@ EVENT_TARGET = {"payment.confirming": S.CONFIRMING, "payment.confirmed": S.PAID,
                 "payment.failed": S.FAILED, "payment.expired": S.EXPIRED}
 REORG_GRACE = timedelta(minutes=30)
 LATE_WINDOW = timedelta(days=7)  # how long after expiry the sweep keeps looking for a late transfer
+DEAD_DEAL_STATES = frozenset({"refunded", "disputed"})
 REVIEW_LATE = "late_payment_review"  # money arrived for an expired / cancelled invoice: a human decides
 REVIEW_AMOUNT = "amount_mismatch_review"  # a provider says "paid" with an amount that is not the invoice's
 REVIEW_REASONS = (REVIEW_LATE, REVIEW_AMOUNT)
@@ -328,6 +329,9 @@ class PaymentsService:
         deal = await self.deals.get_deal(body.deal_id, user)
         if not deal or deal.get("buyer_id") != user:
             raise NotFound("Deal not found", code="deal_not_found")
+        if deal.get("status") in DEAD_DEAL_STATES:  # refunded / disputed: new money could never settle it
+            raise Conflict("This deal can no longer be paid", code="deal_not_payable",
+                           details={"status": deal.get("status")})
         try:
             if body.kind == InvoiceKind.COMMISSION:
                 m = deal["commission"]["amount"]

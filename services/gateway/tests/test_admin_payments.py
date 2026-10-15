@@ -70,3 +70,38 @@ def test_only_allowlisted_methods(make_client):
     c = _c(make_client)
     assert c.delete("/v1/admin/payments/outbox", headers=H).status_code in (404, 405)
     assert c.get("/v1/admin/payments/other", headers=H).status_code in (404, 405)
+
+
+def test_review_list(make_client, mock_upstream, caplog):
+    c = _c(make_client)
+    body = {"items": [{"id": "i1"}], "total": 1, "page": 1, "page_size": 100}
+    route = mock_upstream.route(host="localhost", port=8111, path="/v1/payments/review").mock(
+        return_value=httpx.Response(200, json=body)
+    )
+    assert c.get("/v1/admin/payments/review").status_code == 401
+    assert not route.called
+    with caplog.at_level("INFO", logger="ff_gateway.admin"):
+        r = c.get("/v1/admin/payments/review?limit=500&cursor=abc", headers={**H, "X-Reviewer": "bob@x.com", "X-User-Id": "evil"})
+    assert r.status_code == 200 and r.json() == body
+    h = route.calls.last.request.headers
+    assert h["x-admin-token"] == "pay-adm" and h["x-internal-token"] == "int" and h["x-user-id"] == "admin"
+    assert h["x-reviewer"] == "bobx.com"
+    assert dict(route.calls.last.request.url.params) == {"page_size": "100", "cursor": "abc"}
+    assert "payments_review_list reviewer=bobx.com" in caplog.text
+
+
+@pytest.mark.parametrize("qs", ["status=dead", "foo=1", "limit=0"])
+def test_review_bad_query(make_client, mock_upstream, qs):
+    c = _c(make_client)
+    route = mock_upstream.route(host="localhost", port=8111).mock(return_value=httpx.Response(200, json={}))
+    assert c.get(f"/v1/admin/payments/review?{qs}", headers=H).status_code == 422
+    assert not route.called
+
+
+def test_review_disabled_and_down(make_client, mock_upstream):
+    assert make_client(admin_token="adm").get("/v1/admin/payments/review", headers=H).status_code == 404
+    c = _c(make_client)
+    mock_upstream.route(host="localhost", port=8111, path="/v1/payments/review").mock(side_effect=httpx.ConnectError("x"))
+    assert c.get("/v1/admin/payments/review", headers=H).status_code == 502
+    mock_upstream.route(host="localhost", port=8111, path="/v1/payments/review").mock(side_effect=httpx.ReadTimeout("x"))
+    assert c.get("/v1/admin/payments/review", headers=H).status_code == 504

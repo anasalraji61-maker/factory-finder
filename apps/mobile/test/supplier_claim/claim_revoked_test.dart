@@ -131,7 +131,7 @@ void main() {
     final c = _container(repo, _verified);
     await c.read(authProvider.notifier).refreshMe();
     expect(c.read(supplierClaimRevokedNoticeProvider), isTrue);
-    c.read(authProvider.notifier).logout();
+    await c.read(authProvider.notifier).logout();
     expect(c.read(supplierClaimRevokedNoticeProvider), isFalse);
     expect(c.read(authProvider), isNull);
   });

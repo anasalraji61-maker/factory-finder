@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
 import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/privacy/privacy_screen.dart';
 import 'package:factory_finder/features/settings/session_cleanup.dart';
@@ -91,6 +94,28 @@ void main() {
     });
   });
 
+  group('push unregister helper', () {
+    Future<void> run(PushTokenSource src) async {
+      final c = ProviderContainer(overrides: [
+        pushRegistrationProvider.overrideWith(
+            (ref) => PushRegistrationController(src, MockDeviceRepository())),
+      ]);
+      addTearDown(c.dispose);
+      final p = Provider<Future<void>>((ref) =>
+          unregisterPushDeviceBestEffort(ref,
+              timeout: const Duration(milliseconds: 50)));
+      await c.read(p);
+    }
+
+    test('never throws when the push cleanup fails', () async {
+      await run(_ThrowingSource());
+    });
+
+    test('never blocks longer than the timeout', () async {
+      await run(_HangingSource());
+    });
+  });
+
   group('account deletion key list', () {
     test('covers every persisted setting and cache slot', () {
       expect(kLocalStateKeys, containsAll(<String>[
@@ -105,6 +130,16 @@ void main() {
       ]));
     });
   });
+}
+
+class _HangingSource extends NoopPushTokenSource {
+  @override
+  Future<void> deleteToken() => Completer<void>().future;
+}
+
+class _ThrowingSource extends NoopPushTokenSource {
+  @override
+  Future<void> deleteToken() => throw StateError('boom');
 }
 
 class _ThrowingStore extends MemoryStore {

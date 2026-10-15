@@ -245,7 +245,7 @@ def detect_currency_ex(text: object, country: str | None = None) -> tuple[str | 
 
 
 # --------------------------------------------------------------------------------------- numbers
-_NUM = r"\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?(?![\d])|\d+(?:[.,]\d+)?"
+_NUM = r"\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?(?![\d])|\d+(?:[.,]\d+)?|(?<![\d.,])\.\d+"
 _NUM_RE = re.compile(_NUM)
 
 
@@ -390,6 +390,8 @@ def _find_qty(seg: str, currency_re: re.Pattern[str]) -> tuple[int | None, int |
 
 
 MAX_PRICE_TEXT = 500
+MAX_PRICE_VALUE = Decimal(10) ** 12  # anything above is a parse accident / hostile text, never a unit price
+_NEGATIVE = re.compile(r"(?:^|[\s:(\x01])-\x01?\d")
 
 
 def parse_price_text(text: object, country: str | None = None) -> ParsedPrice:
@@ -463,6 +465,9 @@ def parse_price_text(text: object, country: str | None = None) -> ParsedPrice:
                 a, b = b, a
                 flags.append("reversed_range")
         elif len(nums) == 1:
+            if _NEGATIVE.search(_CCY_RE.sub("\x01", rest)):
+                flags.append("negative_price")  # a leading minus is never silently dropped
+                continue
             a, fa = parse_number(nums[0][0])
             flags += fa
             if a is None:
@@ -474,6 +479,9 @@ def parse_price_text(text: object, country: str | None = None) -> ParsedPrice:
             continue
         if a <= 0:
             flags.append("non_positive_price")
+            continue
+        if b > MAX_PRICE_VALUE:
+            flags.append("price_out_of_range")
             continue
         if is_from:
             out.is_from = True

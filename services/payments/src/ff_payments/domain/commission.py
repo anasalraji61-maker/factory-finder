@@ -13,6 +13,7 @@ from ff_payments.domain.enums import ListingKind
 from ff_payments.domain.errors import ValidationFailed
 
 CENT = Decimal("0.01")
+ZERO_DECIMAL = frozenset({"IQD", "JPY"})  # no minor unit: whole units, exactly like services/rfq
 DEFAULT_RATES: dict[ListingKind, Decimal] = {
     ListingKind.PRODUCT: Decimal("0.03"),
     ListingKind.RAW_MATERIAL: Decimal("0.02"),
@@ -43,8 +44,9 @@ def compute_commission(
         raise ValidationFailed(f"Currency {currency} is not supported", code="unsupported_currency",
                                details={"currency": currency})
     rate = rates[kind]
-    pct = (subtotal * rate).quantize(CENT, rounding=ROUND_HALF_UP)
-    floor = (min_fee_usd / usd_rates[currency]).quantize(CENT, rounding=ROUND_CEILING)
+    quantum = Decimal("1") if currency in ZERO_DECIMAL else CENT
+    pct = (subtotal * rate).quantize(quantum, rounding=ROUND_HALF_UP)
+    floor = (min_fee_usd / usd_rates[currency]).quantize(quantum, rounding=ROUND_CEILING)
     if pct < floor:
         return Commission(rate, floor, currency, True)
     return Commission(rate, pct, currency, False)

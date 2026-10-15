@@ -366,8 +366,11 @@ class MessagingService:
         async with self.db.transaction() as conn:
             repo = Repository(conn)
             # a verified supplier owner blocks as the supplier identity too (threads address sup_*)
+            cap = self.settings.max_blocks_per_user
             for blocker in (caller, supplier_id):
                 if blocker:
+                    if cap and await repo.count_blocks(blocker) >= cap and not await repo.has_blocked([blocker], target):
+                        raise LimitReachedError("Block list is full", code="block_limit_reached")
                     await repo.add_block(blocker, target, self.clock())
 
     async def unblock_user(self, caller: str, target: str, supplier_id: str | None = None) -> None:

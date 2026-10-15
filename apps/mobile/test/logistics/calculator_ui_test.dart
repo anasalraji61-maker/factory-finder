@@ -79,7 +79,11 @@ void main() {
     expect(find.text(_results), findsNothing);
     expect(_container(tester).read(lastQuoteRequestProvider), isNull);
 
-    // Editing the field clears the error.
+    // Editing the field clears the field error (the snackbar with the same
+    // text is dismissed first so only the field error is being checked).
+    ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first)).clearSnackBars();
+    await settle(tester, frames: 6);
+    expect(find.text(_badHs), findsOneWidget);
     await tester.enterText(_fields().at(4), '123456');
     await tester.pump();
     expect(find.text(_badHs), findsNothing);
@@ -130,7 +134,8 @@ void main() {
   });
 
   testWidgets('goods currency and incoterm reach the request', (tester) async {
-    await pumpApp(tester, location: '/logistics/calculator');
+    // Tall surface: the lazy ListView must have built the lower chips.
+    await pumpApp(tester, location: '/logistics/calculator', logicalSize: const Size(540, 3000));
     await _fill(tester);
     await tester.ensureVisible(find.byKey(k('calc_goods_cur_EUR')));
     await tester.tap(find.byKey(k('calc_goods_cur_EUR')));
@@ -150,7 +155,8 @@ void main() {
   });
 
   testWidgets('mode filter reaches the request and the quote', (tester) async {
-    await pumpApp(tester, location: '/logistics/calculator');
+    // Tall surface: the modes section is at the bottom of a lazy ListView.
+    await pumpApp(tester, location: '/logistics/calculator', logicalSize: const Size(540, 3000));
     await _fill(tester);
     await tester.ensureVisible(find.text('جوي'));
     await tester.tap(find.text('جوي'));

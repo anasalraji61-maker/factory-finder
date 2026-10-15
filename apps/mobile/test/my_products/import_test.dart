@@ -60,7 +60,7 @@ void main() {
     });
 
     test('strips a UTF-8 BOM', () {
-      final rows = parseCsv('﻿external_ref,title\nA1,Lamp');
+      final rows = parseCsv('\uFEFFexternal_ref,title\nA1,Lamp');
       expect(rows.first.first, 'external_ref');
     });
 
@@ -112,7 +112,7 @@ void main() {
     });
 
     test('full row with BOM, CRLF, Arabic digits and optional columns', () {
-      final csv = '﻿External Ref,Title,title_ar,Category,price_min,price_max,currency,'
+      final csv = '\uFEFFExternal Ref,Title,title_ar,Category,price_min,price_max,currency,'
           'moq,unit,country,kind,condition,incoterm,hs_code,lead_time_min,lead_time_max,images,city\r\n'
           'A-9,"Solar panel, 400W",لوح شمسي,solar_energy,٣٫٥,٤,eur,١٠,set,tr,'
           'raw_material,used,fob,8541.43,5,9,http://a.io/1.jpg|http://a.io/2.jpg,Izmir\r\n';

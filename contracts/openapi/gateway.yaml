@@ -369,6 +369,22 @@ paths:
         "200": {description: Upstream payments response (requeued OutboxEvent)}
         "401": {$ref: "#/components/responses/Error"}
         "404": {$ref: "#/components/responses/Error"}
+  /v1/admin/payments/review:
+    get:
+      operationId: adminPaymentsReviewList
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_PAYMENTS_ADMIN_TOKEN is unset, 401 wrong). Proxied to payments GET /v1/payments/review (invoices in late_payment_review / amount_mismatch_review, oldest first); gateway injects payments' X-Admin-Token and X-Internal-Token (X-User-Id=admin) and forwards X-Reviewer sanitized (charset [A-Za-z0-9_.:-], max 64, default admin); the action is audit-logged. Client identity headers never forwarded. Only limit/cursor/page/page_size accepted, others 422; limit maps to page_size (max 100). Payments down: 502 upstream_unavailable, timeout: 504."
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1}}
+        - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+      responses:
+        "200": {description: "Upstream payments InvoicePage {items, total, page, page_size} (see payments.yaml listPaymentReview)"}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "502": {$ref: "#/components/responses/Error"}
+        "504": {$ref: "#/components/responses/Error"}
   /v1/admin/media/files/{name}:
     get:
       operationId: adminMediaFileGet

@@ -20,8 +20,8 @@ TRACK_WORDS = word_set(["تتبع", "تعقب", "track", "tracking", "trace", "�
 TRUST_WORDS = word_set(
     ["موثوق", "موثوقه", "ثقه", "trust", "trusted", "trustworthy", "reliable", "legit", "legitimate", "مصداقيه", "سمعه", "نصاب", "scam", "fraud", "امين"]
 ) | word_set(ML["TRUST"])
-SHIP_WORDS = word_set(["شحن", "شحنه", "freight", "shipping", "ship", "landed", "جمارك", "توصيل"]) | word_set(ML["SHIP"])
-COST_WORDS = word_set(["شكد", "كم", "much", "كلفه", "تكلفه", "تكاليف", "اجور", "اجره", "cost", "costs", "landed", "price", "quote", "quotes", "سعر", "اسعار", "عروض"]) | word_set(ML["COST"])
+SHIP_WORDS = word_set(["شحن", "شحنه", "freight", "shipping", "ship", "landed", "جمارك", "توصيل", "اشحن", "نشحن", "استيراد"]) | word_set(ML["SHIP"])
+COST_WORDS = word_set(["شكد", "كم", "much", "كلفه", "تكلفه", "تكاليف", "اجور", "اجره", "cost", "costs", "landed", "price", "quote", "quotes", "سعر", "اسعار", "عروض", "يكلف", "يكلفني", "كلفني", "بيش", "بكم"]) | word_set(ML["COST"])
 HELP_WORDS = word_set(
     ["مساعده", "ساعدني", "help", "شنو", "شكو", "مرحبا", "هلا", "السلام", "اهلا", "hi", "hello", "hey", "تكدر", "تقدر"]
 ) | word_set(ML["HELP"])
@@ -69,7 +69,7 @@ STOPWORDS = word_set(
 KIND_PHRASES: PhraseIndex[str] = PhraseIndex(
     [
         *((p, "production_line") for p in (
-            "خط انتاج", "خط إنتاج", "خطوط انتاج", "خطوط إنتاج", "production line",
+            "خط انتاج", "خط إنتاج", "خطوط انتاج", "خطوط إنتاج", "خط تصنيع", "خطوط تصنيع", "خط تعبئة", "production line",
             "assembly line", "production lines", "معمل كامل", "مصنع كامل", "turnkey plant", *ML["KIND_LINE"],
         )),
         *((p, "raw_material") for p in (
@@ -102,7 +102,7 @@ DEAL_RE = re.compile(r"(?i)\bdeal_[a-z0-9]+(?:_[a-z0-9]+)*\b")
 COMPARE_RE = re.compile(r"(?i)\bcompare\b|\bcomparison\b|\bvs\.?(?=\s|$)|\bversus\b|قارن|مقارن|مقابل|الفرق بين|ايهما|أيهما|اي منهم")
 _HS_RE = re.compile(
     r"(?i)\bhs\b|\bduty (?:rate|on)\b|\bduties (?:on|for)\b|\bwhat (?:import )?duty\b|\bcustoms (?:duty|duties|rate)\b|(?:نسب[ةه]|رسوم)\s+(?:ال)?جمرك(?:ي[ةه])?|(?:ال)?جمرك\s+على|\bhs[- ]?codes?\b|harmoni[sz]ed|\btariff\b|customs code|"
-    r"(?:رمز|كود|رقم|بند)\s+(?:ال)?(?:جمرك[يى]?|جمارك|hs)|تعرف[ةه]\s+(?:ال)?(?:جمرك[يى]?|جمارك)|رمز\s+الـ?\s*hs"
+    r"(?:رمز|كود|رقم|بند)\s+(?:ال)?(?:جمرك[يى]?|جمارك|hs)|تعرف[ةه]\s+(?:ال)?(?:جمرك[يى]?|جمارك)|تعرف[ةه]\s+(?:مال\s+)?(?:ال)?بند|رمز\s+الـ?\s*hs"
 )
 HS_CODE_RE = re.compile(r"(?<![\d.])\d{4}(?:[. ]?\d{2}){1,2}(?![\d])|(?<![\d.])\d{6,10}(?![\d])")
 DEAL_PHRASE_RE = re.compile(

@@ -10,6 +10,7 @@ import 'package:factory_finder/features/logistics/data/saved_quotes.dart';
 import 'package:factory_finder/features/logistics/screens/results_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -73,7 +74,12 @@ Future<ProviderContainer> _pump(
         lastQuoteRequestProvider.overrideWith((ref) => request),
         ...overrides,
       ],
-      child: MaterialApp(locale: Locale(lang), home: const ResultsScreen()),
+      child: MaterialApp(
+        locale: Locale(lang),
+        supportedLocales: const [Locale('ar'), Locale('en')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: const ResultsScreen(),
+      ),
     ),
   );
   await settle(tester, frames: 3);
@@ -93,7 +99,9 @@ void main() {
     expect(find.text('Confidence: low'), findsNWidgets(n));
     expect(find.text('As of 2026-10'), findsNWidgets(n));
     expect(find.byKey(k('est_range_note')), findsNWidgets(n));
-    expect(find.textContaining('not a quote'), findsNWidgets(n));
+    // The option's own warning also says "not a quote", so match the range
+    // note's exact wording instead.
+    expect(find.textContaining('estimated range, not a quote'), findsNWidgets(n));
     expect(find.text('Landed cost (estimate)'), findsNWidgets(n));
     expect(find.byKey(k('est_exact')), findsNothing);
     // The total is a range, never a lone number.

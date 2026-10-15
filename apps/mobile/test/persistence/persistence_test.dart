@@ -133,7 +133,7 @@ void main() {
     c.read(tokenStoreProvider).set('a', 'r1');
     await Future<void>.delayed(Duration.zero);
     expect(secure.data[kRefreshTokenKey], 'r1');
-    c.read(authProvider.notifier).logout();
+    await c.read(authProvider.notifier).logout();
     await Future<void>.delayed(Duration.zero);
     expect(secure.data.containsKey(kRefreshTokenKey), isFalse);
   });

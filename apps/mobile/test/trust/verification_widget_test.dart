@@ -441,6 +441,7 @@ void main() {
     final repo = _FakeRepo()..badgeLevel = 'documented';
     await pumpApp(
       tester,
+      logicalSize: const Size(540, 2400),
       location: '/supplier/sup_cn_004',
       overrides: [verificationRepositoryProvider.overrideWithValue(repo)],
     );
@@ -456,6 +457,7 @@ void main() {
       ..badgeError = ApiException(status: 503, code: 'http_503', message: 'down');
     await pumpApp(
       tester,
+      logicalSize: const Size(540, 2400),
       location: '/supplier/sup_cn_004',
       overrides: [verificationRepositoryProvider.overrideWithValue(repo)],
     );
@@ -467,7 +469,7 @@ void main() {
   });
 
   testWidgets('the /verification route opens the screen with mock data', (tester) async {
-    await pumpApp(tester, location: '/verification');
+    await pumpApp(tester, logicalSize: const Size(540, 2400), location: '/verification');
     await settle(tester, frames: 6);
     expect(find.byKey(const ValueKey<String>('ver-doc-vdoc_mock_1')), findsOneWidget);
     expect(tester.takeException(), isNull);

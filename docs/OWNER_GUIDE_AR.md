@@ -26,6 +26,14 @@
 
 القاعدة: ما يظهر اليوم عرض تجريبي، لا تعطِ منه أسعاراً أو وعوداً لعملاء.
 
+## ماذا تفعل الآن (قائمة مختصرة)
+- [ ] شغّل `make venv` ثم `make compose-e2e` على جهازك (لم يُجرَّب docker compose فعلياً) وأرسل النتيجة.
+- [ ] حمّل APK من GitHub Actions (workflow `mobile`) وجرّبه على هاتف حقيقي بالعربية.
+- [ ] قدّم على حساب بيانات موردين مرخّص ومزوّد أسعار شحن.
+- [ ] احجز موعداً مع مخلّص جمركي (الرسوم/HS) ومحامٍ (الخصوصية، الشروط، العمولة/USDT).
+- [ ] ولّد أسرار الإنتاج وضع `FF_ENV=production` على الخادم، ولا تلصقها في المستودع.
+- [ ] تذكّر: كل ما يظهر اليوم تجريبي (mock)؛ لا تعطِ منه أسعاراً لعملاء.
+
 ## 3) خطوات الإطلاق الفعلية (بالترتيب)
 1. **تشغيل محلي**: `cp .env.example .env`، ولّد 3 أسرار (`python -c "import secrets;print(secrets.token_urlsafe(48))"`) لـ`FF_GATEWAY_JWT_SECRET` و`FF_INTERNAL_TOKEN` و`FF_GATEWAY_ADMIN_TOKEN`، ثم `make venv` و`make compose-e2e`. أخبر Claude بالنتيجة.
 2. **حساب بيانات موردين مرخّص**: Alibaba Open Platform أو مزود مرخّص. تحقق من الترخيص (عرض وتخزين مؤقت للبيانات والصور). المتغيرات: `FF_SOURCING_ADAPTERS`، `FF_SOURCING_ALIBABA_APP_KEY/APP_SECRET/ACCESS_TOKEN`. اختبر على فئة واحدة أولاً.

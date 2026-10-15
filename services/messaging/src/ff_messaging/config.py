@@ -94,6 +94,7 @@ class Settings(BaseSettings):
     # hard caps (0 = unlimited). Conversations counts every thread the creator participates in.
     max_conversations_per_user: int = Field(default=1000, ge=0)
     max_messages_per_conversation: int = Field(default=10_000, ge=0)
+    max_blocks_per_user: int = Field(default=1000, ge=0)  # 0 = unlimited (list_blocks shows at most 1000)
     send_rate_limit: int = Field(default=20, ge=1)
     send_rate_window_seconds: float = Field(default=10.0, gt=0)
 

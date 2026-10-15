@@ -146,7 +146,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
       _volumeError = badVolume ? context.tr('logistics.calc.invalid_volume') : null;
       _hsError = badHs ? context.tr('logistics.calc.invalid_hs') : null;
     });
-    if (badValue || badWeight) {
+    if (valueText == null || weightText == null) {
       _snack(context.tr('logistics.calc.invalid'));
       return;
     }
@@ -156,10 +156,10 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     }
     final volumeText = volNorm == null || isZeroDecimal(volNorm) ? null : volNorm;
     final request = QuoteRequest(
-      goodsValue: double.parse(valueText!),
+      goodsValue: double.parse(valueText),
       goodsValueText: valueText,
       goodsCurrency: _goodsCurrency,
-      weightKg: double.parse(weightText!),
+      weightKg: double.parse(weightText),
       weightText: weightText,
       volumeM3: volumeText == null ? 0 : double.parse(volumeText),
       volumeText: volumeText,

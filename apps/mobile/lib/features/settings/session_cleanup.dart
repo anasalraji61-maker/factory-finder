@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -63,3 +66,21 @@ Future<void> clearSignedOutUserStateOf(WidgetRef ref) =>
       currency: ref.read(displayCurrencyProvider.notifier),
       role: ref.read(userRoleProvider.notifier),
     );
+
+/// Longest a sign-out waits for the push-device cleanup.
+const Duration kPushUnregisterTimeout = Duration(seconds: 5);
+
+/// Unregisters this device's push token (server + local). Best effort: never
+/// throws and never blocks longer than [timeout], so it cannot fail or stall
+/// a sign-out. Call BEFORE the session tokens are cleared (the server DELETE
+/// needs auth).
+Future<void> unregisterPushDeviceBestEffort(
+  Ref ref, {
+  Duration timeout = kPushUnregisterTimeout,
+}) async {
+  try {
+    await ref.read(pushRegistrationProvider).onLogout().timeout(timeout);
+  } catch (_) {
+    // Provider scope disposed, timeout or any failure: sign-out goes on.
+  }
+}

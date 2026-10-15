@@ -65,7 +65,7 @@ Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `paymen
 - Accessibility/RTL on device (RTL send icon, image_picker process death).
 
 ### Engineering backlog
-- Gateway: bcrypt 72-byte truncation (pre-hash + version marker); require `iss`/`aud` after one refresh TTL; uvicorn flags `--no-server-header --timeout-keep-alive 5` (`docs/requests/gateway-uvicorn-flags.md`); gateway still has no Alembic; WS ticket store in-process unless Redis.
+- Gateway: bcrypt 72-byte truncation (pre-hash + version marker); require `iss`/`aud` after one refresh TTL; uvicorn flags `--no-server-header --timeout-keep-alive 5` (`docs/requests/gateway-uvicorn-flags.md`); WS ticket store in-process unless Redis.
 - Per-process state to move to Redis/DB before more than one replica: rate limits (gateway, messaging), assistant quota, sourcing caches.
 - Internal-token guard still fails open when `FF_INTERNAL_TOKEN` is unset and `FF_ENV` is not production.
 - Freight: ratings need payment/tracking evidence; accept `revision` optional (require in v2). Feed: commenter `user_id` exposed; admin actions on feed/freight have no audit log. Messaging legacy single `attachment` allows any https host unless allow-list set.
@@ -80,13 +80,26 @@ Also: `logistics-accuracy-review-2026-10.md`, `media-review-2026-10.md`, `paymen
 - Supply chain: pin base images by digest and actions by SHA (third-party actions still on tags, list in `docs/requests/infra-pin-actions.md`), lock file with hashes, scheduled `pip-audit` in CI (only local `make audit` exists today), commit `pubspec.lock`, `read_only` containers once on Postgres.
 - Cosmetic/ops: gateway sends `X-RateLimit-*` only on 429; no data-consent endpoint beyond export/delete.
 
-## ملخص اليوم (15 أكتوبر)
+## ملخص اليوم (15 أكتوبر 2026)
 
-- **جولات QA للتشديد**: حدود على المدخلات (الصفحات، أطوال المعرّفات، الأرقام الضخمة) في معظم الخدمات، سقف لحجم إطار WebSocket وعمر الاتصال (البوابة تغلق بعد 4 ساعات ثم يعيد العميل المصافحة)، ومقبس الدردشة في التطبيق يعمل بتذكرة (ticket) فقط، مع تجربة واضحة عند انتهاء الجلسة.
-- **التزامن**: فهارس فريدة في المدفوعات، مقارنة-وتبديل (CAS) لقبول عروض الشحن، حجز نشر مسودات الطلب العام قبل الإرسال، قفل سقف العروض في RFQ، وعزل أعمال التتبع الخلفية بحيث لا توقفها دورة فاشلة.
-- **الثقة**: سقف للحسابات الجديدة (لا تصل للأخضر بسجل صفقات رقيق)، كشف تضخيم التقييمات، وعدم احتساب نفس الشهادة بإصدارات سنوية مختلفة كشهادات متعددة.
-- **الاستخدام المشروع**: حراس في المحولات (robots.txt، حد طلب لكل مضيف، تعطيل بالإعدادات، رفض خرائط الأمثلة في الموردين المرخّصين).
-- **الجغرافيا**: اختبار قناع اليابسة للممرات البحرية أظهر 6 حواف تقطع شبه جزر فأُصلحت (182 عقدة)؛ الاختبار شبكة أمان وليس نموذج سواحل، والبيانات ما زالت بثقة منخفضة.
-- **الأداء والبنية**: ذاكرة مؤقتة للجغرافيا في اللوجستيات (عرض السعر من 143 إلى 7.8 مللي ثانية)، إعادة التحقق من PostgreSQL 16، Dependabot و`make audit`، ودليل تشغيل `docs/RUNBOOK.md`، واختبارات دخان لمسارات التطبيق.
-- **أمور مفتوحة بصراحة**: إجراءات GitHub غير مثبّتة بـ SHA؛ حصة المساعد (quota) قفلها لكل عملية فقط؛ مفتاح توقيع الوسائط عشوائي عند عدم ضبطه خارج الإنتاج (وفي الإنتاج يرفض الإقلاع)؛ سباقات تعدد النسخ اختُبرت على SQLite فقط؛ المحولات الحقيقية غير مؤكدة؛ جداول الرسوم الجمركية غير مؤكدة جزئياً؛ و`docker compose` لم يُشغَّل فعلياً.
-- **ما زال مطلوباً منك**: حساب API مرخّص لبيانات الموردين، مزوّد أسعار شحن، تجربة التطبيق على هاتف حقيقي و`make compose-e2e`، مراجعة مخلّص جمركي للبيانات، أسرار الإنتاج.
+**ما أُنجز**
+- **الجغرافيا**: بوابة مدن بحجم ~920 مدينة (عربي/إنكليزي)، واختبار قناع اليابسة للممرات البحرية (أُصلحت 6 حواف). البيانات ما زالت بثقة منخفضة بانتظار مراجعة خبير.
+- **التتبع**: دليل شركات الشحن (carrier directory)، تطبيع الحالات وفق معيار DCSA، واقتراحات تصحيح الأخطاء الإملائية في أرقام الحاويات.
+- **الثقة**: نقطة إدارية لتحرير المطالبة (release claim) تُخفي وثائق المورد المُفرَج عنه (هجرة trust 0003)، وتربطها البوابة بإلغاء/رفض المطالبة.
+- **تصليب RFQ والدفع والشحن**: هجرات Alembic جديدة (rfq 0001-0007، payments 0001-0003، gateway 0001)، فهارس فريدة وقفل للسباقات، تقريب IQD، مراجعة المدفوعات المتأخرة، وشرح ترتيب عروض الشحن.
+- **المساعد**: مجموعة توجيه من 165 حالة (routing_cases.json) مع بطاقة `rfq_draft` (مسودة فقط، لا إرسال).
+- **المراسلة**: `client_id` لمنع تكرار الرسائل (idempotency).
+- **التطبيق**: بوابة المصادقة وإعادة التوجيه، مسح البيانات المحلية عند الخروج، ووسم تقدير اللوجستيات (estimate/range) في الواجهة.
+- **الإدارة**: واجهة المشرف (`apps/admin`) مع سجل تدقيق للمطالبات.
+- **الإنتاج**: حراس تفشل-مغلقة (fail-closed) عند `FF_ENV=production` (التوكنات ومفاتيح التجزئة والتوقيع، وإيقاف صفحات التوثيق)، و`docker-compose.prod.yml`.
+- **الاختبارات**: 4 سكربتات e2e (`e2e`، `e2e-extended`، `e2e-scenarios`، `e2e-privacy`) وأمثلة العقود (`make contract-examples`)، وإعادة التحقق من PostgreSQL (`docs/fixes/postgres-verification-2026-10.md`).
+
+**مفتوح بصراحة**
+- إجراءات GitHub غير مثبّتة بـ SHA (`docs/requests/infra-pin-actions.md`).
+- المحولات الحقيقية هياكل مبنية على بيانات اصطناعية ولم تُجرَّب على واجهات حقيقية.
+- جداول الرسوم الجمركية مؤكدة جزئياً فقط.
+- `docker compose` لم يُشغَّل فعلياً قط: شغّل أنت `make compose-e2e`.
+- سباقات تعدد النسخ اختُبرت على SQLite فقط.
+- بناء Flutter (compile) والتحليل يجريان على GitHub فقط، لا محلياً.
+
+**مطلوب منك**: حساب بيانات موردين مرخّص، مزوّد أسعار شحن، `make compose-e2e` وتجربة APK على هاتف، مراجعة مخلّص جمركي، أسرار الإنتاج. التفاصيل في `docs/OWNER_GUIDE_AR.md`.
