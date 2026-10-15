@@ -251,7 +251,9 @@ async def test_scheduler_loop_survives_failures_and_evaluates(tmp_path):
     for _ in range(100):  # bounded poll instead of a fixed sleep
         await asyncio.sleep(0.02)
         if calls["n"] >= 2:
-            break
+            _, seen, _, _ = await svc.list_alerts("u1", unread_only=False, page=1, page_size=50)
+            if seen >= 1:  # the second (real) evaluation has finished, not merely started
+                break
     task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
         await task
