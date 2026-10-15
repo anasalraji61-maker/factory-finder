@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';

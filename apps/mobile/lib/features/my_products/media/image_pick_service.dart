@@ -56,7 +56,7 @@ class PluginImagePickService implements ImagePickService {
     try {
       final r = await _picker.retrieveLostData();
       if (r.isEmpty || r.file == null) return null;
-      return _toPicked(r.file!);
+      return await _toPicked(r.file!);
     } catch (_) {
       return null; // unsupported platform / plugin error
     }
