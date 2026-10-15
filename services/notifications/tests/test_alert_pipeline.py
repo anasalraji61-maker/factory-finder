@@ -4,6 +4,7 @@ delisting, restarts and concurrency. Offline: scriptable fake sourcing only."""
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
@@ -247,8 +248,13 @@ async def test_scheduler_loop_survives_failures_and_evaluates():
 
     svc.evaluate_all = flaky
     task = asyncio.create_task(svc.run_scheduler())
-    await asyncio.sleep(0.2)
+    for _ in range(100):  # bounded poll instead of a fixed sleep
+        await asyncio.sleep(0.02)
+        if calls["n"] >= 2:
+            break
     task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
     _, total, _, _ = await svc.list_alerts("u1", unread_only=False, page=1, page_size=50)
     assert calls["n"] >= 2 and total == 1
     await ctx.__aexit__(None, None, None)
@@ -272,12 +278,9 @@ async def test_one_failing_watch_does_not_abort_run_or_lose_deliveries():
     await svc.evaluate_all()
     mock.set_price("lst_1", "50")
     real = svc.evaluate_watch
-    first = True
 
     async def bad_first(w, report):
-        nonlocal first
-        if first:
-            first = False
+        if w.owner_id == "u2":  # deterministic: independent of DB iteration order
             raise RuntimeError("db hiccup")
         return await real(w, report)
 

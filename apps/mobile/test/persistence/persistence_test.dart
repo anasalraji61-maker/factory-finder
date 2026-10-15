@@ -30,6 +30,9 @@ class FakeAuth implements AuthRepository {
   void logout() {}
 
   @override
+  Future<void> logoutAll() async {}
+
+  @override
   Future<Me> login({String? email, String? phone, required String password}) =>
       throw UnimplementedError();
 
