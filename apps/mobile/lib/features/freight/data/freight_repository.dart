@@ -2,6 +2,7 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/freight/data/freight_drafts.dart';
 import 'package:factory_finder/features/freight/data/freight_models.dart';
 import 'package:factory_finder/features/freight/data/mock_freight_repository.dart';
+import 'package:factory_finder/features/logistics/data/quote_request.dart' show FreightOverride;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class FreightRepository {
@@ -19,6 +20,10 @@ abstract class FreightRepository {
   Future<ShipmentRequest> closeRequest(String id);
   Future<Comparison> compare(String requestId, {String sort = 'score'});
   Future<AcceptResult> acceptQuote(String quoteId);
+
+  /// The awarded quote as a landed-cost `freight_override` (owner only;
+  /// 409 `quote_not_awarded` otherwise).
+  Future<FreightOverride> landedCostInput(String quoteId);
   Future<RatingItem> rateForwarder(String requestId, int stars, {String? comment});
 
   // Quotes (forwarder)
@@ -141,6 +146,11 @@ class LiveFreightRepository implements FreightRepository {
   @override
   Future<AcceptResult> acceptQuote(String quoteId) async => AcceptResult.fromJson(
         _obj(await _api.post('/v1/freight/quotes/${_enc(quoteId)}/accept')),
+      );
+
+  @override
+  Future<FreightOverride> landedCostInput(String quoteId) async => FreightOverride.fromJson(
+        _obj(await _api.get('/v1/freight/quotes/${_enc(quoteId)}/landed-cost-input')),
       );
 
   @override

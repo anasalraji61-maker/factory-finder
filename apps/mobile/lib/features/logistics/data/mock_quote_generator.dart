@@ -218,6 +218,12 @@ class MockQuoteGenerator {
       if (canRoad && want(TransportMode.road, weight <= 25000)) TransportMode.road,
     ];
 
+    final created = now ?? DateTime.now();
+    final fo = r.freightOverride;
+    final overrideLive =
+        fo != null && fo.validUntil.toUtc().isAfter(created.toUtc());
+    var overrideUsed = false;
+
     final options = <LandedCostOption>[];
     for (final mode in modes) {
       final isSea = mode == TransportMode.seaLcl ||
@@ -256,6 +262,17 @@ class MockQuoteGenerator {
           mainUsd = math.max(250.0, lclCbm * 110 * lf);
         case TransportMode.road:
           mainUsd = math.max(300.0, units * 600 * math.max(lf, 0.4) * 2);
+      }
+
+      // Awarded forwarder quote replaces the estimate (exact, no range).
+      var quotedMain = false;
+      if (fo != null &&
+          overrideLive &&
+          !inclMain &&
+          (fo.modeFamily == null || fo.modeFamily == _family(mode))) {
+        mainUsd = (double.tryParse(fo.amount) ?? 0) / (kUsdRates[fo.currency] ?? 1);
+        quotedMain = true;
+        overrideUsed = true;
       }
 
       // Other stage costs (USD).
@@ -373,15 +390,17 @@ class MockQuoteGenerator {
 
       // Lines.
       final lines = <CostLine>[];
-      void add(String stage, String en, String ar, double usd, {bool estimate = true}) {
+      void add(String stage, String en, String ar, double usd,
+          {bool estimate = true, bool quoted = false}) {
         final v = double.parse(_convert(usd, cur).toStringAsFixed(2));
         lines.add(CostLine(
           stage: stage,
           description: t(en, ar),
           amount: Money(amount: v.toStringAsFixed(2), currency: cur),
           estimate: estimate,
-          source: _kSource,
+          source: quoted ? 'forwarder_quote' : _kSource,
           fxRate: '1 USD = ${fx.toStringAsFixed(4)} $cur',
+          quoted: quoted,
         ));
       }
 
@@ -396,7 +415,8 @@ class MockQuoteGenerator {
           inclOriginHandling ? 0 : originHandling);
       if (inclOriginHandling) lines.last = _withNote(lines.last, incl);
       add('main_leg', 'Main freight (${mode.json})', 'الشحن الرئيسي (${mode.json})',
-          inclMain ? 0 : mainUsd);
+          inclMain ? 0 : mainUsd,
+          estimate: !quotedMain, quoted: quotedMain);
       if (inclMain) lines.last = _withNote(lines.last, incl);
       if (r.insurance) {
         add('insurance', 'Cargo insurance (0.5%)', 'تأمين الشحنة (0.5%)',
@@ -496,7 +516,6 @@ class MockQuoteGenerator {
       );
     }
 
-    final created = now ?? DateTime.now();
     final quoteWarnings = <String>[
       if (goodsUsd > 0 && goodsUsd < 150)
         t('Low-value parcel: a de minimis duty exemption may apply in some countries; this estimate still includes duties.',
@@ -511,6 +530,12 @@ class MockQuoteGenerator {
       destination: r.destination,
       warnings: quoteWarnings,
       assumptions: [
+        if (fo != null && overrideUsed)
+          t('Main freight uses your awarded forwarder quote (${fo.amount} ${fo.currency}); other lines remain estimates.',
+              'الشحن الرئيسي يعتمد عرض شركة الشحن المرسّى (${fo.amount} ${fo.currency})؛ باقي البنود تقديرية.'),
+        if (fo != null && !overrideLive)
+          t('The forwarder quote has expired and was ignored; main freight is an estimate.',
+              'انتهت صلاحية عرض شركة الشحن فتم تجاهله؛ الشحن الرئيسي تقديري.'),
         t('Mock rate table — not a binding quote. All logistics lines are estimates (range −8% / +12%).',
             'جدول أسعار تجريبي — ليس عرض سعر ملزماً. جميع بنود الشحن تقديرية (نطاق −8% / +12%).'),
         t('Duties and taxes are estimated from the HS chapter and a per-country table.',
@@ -523,6 +548,22 @@ class MockQuoteGenerator {
             'سعر الصرف: 1 USD = ${fx.toStringAsFixed(4)} $cur (سعر تجريبي).'),
       ],
     );
+  }
+
+  static String _family(TransportMode m) {
+    switch (m) {
+      case TransportMode.seaLcl:
+      case TransportMode.seaFcl20:
+      case TransportMode.seaFcl40:
+      case TransportMode.seaFcl40hc:
+        return 'sea';
+      case TransportMode.air:
+        return 'air';
+      case TransportMode.rail:
+        return 'rail';
+      case TransportMode.road:
+        return 'road';
+    }
   }
 
   static Money _m(double v, String cur) =>

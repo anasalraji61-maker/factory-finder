@@ -38,6 +38,7 @@ class QuoteComparisonView extends StatelessWidget {
     required this.onReportQuote,
     required this.onReportForwarder,
     this.awardedQuoteId,
+    this.onUseInLandedCost,
   });
 
   final Comparison comparison;
@@ -50,6 +51,9 @@ class QuoteComparisonView extends StatelessWidget {
   final ValueChanged<Quote> onAccept;
   final ValueChanged<Quote> onReportQuote;
   final ValueChanged<Quote> onReportForwarder;
+
+  /// Shown on the awarded quote only; null hides the button.
+  final ValueChanged<Quote>? onUseInLandedCost;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +96,9 @@ class QuoteComparisonView extends StatelessWidget {
                 onAccept: () => onAccept(item.quote),
                 onReportQuote: () => onReportQuote(item.quote),
                 onReportForwarder: () => onReportForwarder(item.quote),
+                onUseInLandedCost: onUseInLandedCost == null
+                    ? null
+                    : () => onUseInLandedCost!(item.quote),
               ),
             ),
         if (comparison.excluded.isNotEmpty)
@@ -152,9 +159,11 @@ class QuoteCompareCard extends StatelessWidget {
     required this.onAccept,
     required this.onReportQuote,
     required this.onReportForwarder,
+    this.onUseInLandedCost,
   });
 
   final ComparisonItem item;
+  final VoidCallback? onUseInLandedCost;
   final String currency;
   final bool canAccept;
   final bool awarded;
@@ -325,6 +334,20 @@ class QuoteCompareCard extends StatelessWidget {
               ],
             ),
           ),
+          if (awarded && onUseInLandedCost != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: ValueKey<String>('freight_use_landed_${q.id}'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48)),
+                  onPressed: onUseInLandedCost,
+                  icon: const Icon(Icons.calculate_outlined),
+                  label: Text(context.tr('freight.use_in_landed')),
+                ),
+              ),
+            ),
           if (canAccept && q.isSubmitted)
             SizedBox(
               width: double.infinity,

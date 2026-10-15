@@ -15,6 +15,7 @@ class QuoteRequest {
     this.displayCurrency = 'USD',
     this.insurance = true,
     this.modes = const {},
+    this.freightOverride,
   });
 
   /// Value of the goods in [goodsCurrency].
@@ -32,6 +33,25 @@ class QuoteRequest {
 
   /// Empty = consider every mode.
   final Set<TransportMode> modes;
+
+  /// Optional awarded forwarder quote used as the exact main-leg price.
+  final FreightOverride? freightOverride;
+
+  /// Copy without the forwarder override.
+  QuoteRequest withoutOverride() => QuoteRequest(
+        goodsValue: goodsValue,
+        weightKg: weightKg,
+        volumeM3: volumeM3,
+        origin: origin,
+        destination: destination,
+        goodsCurrency: goodsCurrency,
+        hsCode: hsCode,
+        dangerousGoods: dangerousGoods,
+        incoterm: incoterm,
+        displayCurrency: displayCurrency,
+        insurance: insurance,
+        modes: modes,
+      );
 
   /// Body of POST /v1/quotes/landed-cost (contracts/openapi/logistics.yaml).
   Map<String, dynamic> toJson() => {
@@ -51,6 +71,65 @@ class QuoteRequest {
         'display_currency': displayCurrency,
         'insurance': insurance,
         'modes': modes.map((m) => m.json).toList(),
+        if (freightOverride != null) 'freight_override': freightOverride!.toJson(),
+        if (freightOverride?.modeFamily != null)
+          'mode_family': freightOverride!.modeFamily,
+      };
+}
+
+/// Calculator starting point handed over from the awarded freight quote screen.
+class CalculatorSeed {
+  const CalculatorSeed({
+    required this.origin,
+    required this.destination,
+    required this.freightOverride,
+  });
+
+  final Location origin;
+  final Location destination;
+  final FreightOverride freightOverride;
+}
+
+/// An awarded forwarder quote as returned by freight
+/// GET /v1/freight/quotes/{id}/landed-cost-input; passed unchanged as
+/// `freight_override` to POST /v1/quotes/landed-cost.
+class FreightOverride {
+  const FreightOverride({
+    required this.amount,
+    required this.currency,
+    required this.quoteId,
+    required this.validUntil,
+    this.modeFamily,
+    this.source = 'forwarder_quote',
+  });
+
+  /// Exact decimal string.
+  final String amount;
+  final String currency;
+  final String quoteId;
+  final DateTime validUntil;
+
+  /// sea | air | rail | road (optional).
+  final String? modeFamily;
+  final String source;
+
+  factory FreightOverride.fromJson(Map<String, dynamic> j) => FreightOverride(
+        amount: (j['amount'] ?? '0').toString(),
+        currency: (j['currency'] as String?) ?? 'USD',
+        quoteId: (j['quote_id'] ?? '').toString(),
+        validUntil: DateTime.tryParse((j['valid_until'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        modeFamily: j['mode_family'] as String?,
+        source: (j['source'] as String?) ?? 'forwarder_quote',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'amount': amount,
+        'currency': currency,
+        'source': source,
+        'quote_id': quoteId,
+        'valid_until': validUntil.toUtc().toIso8601String(),
+        if (modeFamily != null) 'mode_family': modeFamily,
       };
 }
 

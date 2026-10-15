@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/models/models.dart' show Location;
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/freight/data/freight_errors.dart';
@@ -7,8 +8,11 @@ import 'package:factory_finder/features/freight/data/freight_repository.dart';
 import 'package:factory_finder/features/freight/widgets/freight_widgets.dart';
 import 'package:factory_finder/features/freight/widgets/quote_comparison.dart';
 import 'package:factory_finder/features/freight/widgets/report_sheet.dart';
+import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
+import 'package:factory_finder/features/logistics/data/quote_request.dart' show CalculatorSeed;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class _Loaded {
   const _Loaded(this.request, this.comparison, this.comparisonError);
@@ -148,6 +152,32 @@ class _FreightRequestDetailScreenState
     );
   }
 
+  /// Fetches the awarded quote as a landed-cost override and opens the
+  /// calculator with the shipment's origin/destination prefilled.
+  Future<void> _useInLandedCost(ShipmentRequest r, Quote q) async {
+    setState(() {
+      _busy = true;
+      _actionError = null;
+    });
+    try {
+      final input = await ref.read(freightRepositoryProvider).landedCostInput(q.id);
+      if (!mounted) return;
+      ref.read(calculatorSeedProvider.notifier).state = CalculatorSeed(
+        origin: Location(countryCode: r.originCountry, city: r.originPlace),
+        destination: Location(countryCode: r.destinationCountry, city: r.destinationPlace),
+        freightOverride: input,
+      );
+      setState(() => _busy = false);
+      context.push('/logistics/calculator');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _actionError = context.freightError(e);
+      });
+    }
+  }
+
   Future<void> _close(ShipmentRequest r) async {
     final completing = r.isAwarded;
     final ok = await _confirm(
@@ -282,6 +312,8 @@ class _FreightRequestDetailScreenState
             onAccept: acceptQuote,
             onReportQuote: reportQuote,
             onReportForwarder: reportForwarder,
+            onUseInLandedCost:
+                r.isAwarded || r.isCompleted ? (q) => _useInLandedCost(r, q) : null,
           ),
         const SizedBox(height: AppSpacing.xl),
       ],

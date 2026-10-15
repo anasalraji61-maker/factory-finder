@@ -4,6 +4,7 @@ import 'package:factory_finder/features/freight/data/freight_decimal.dart';
 import 'package:factory_finder/features/freight/data/freight_drafts.dart';
 import 'package:factory_finder/features/freight/data/freight_models.dart';
 import 'package:factory_finder/features/freight/data/freight_repository.dart';
+import 'package:factory_finder/features/logistics/data/quote_request.dart' show FreightOverride;
 
 /// Deterministic in-memory freight marketplace for mock mode and tests.
 ///
@@ -601,6 +602,24 @@ class MockFreightRepository implements FreightRepository {
     );
     _requests[r.id] = awarded;
     return AcceptResult(request: _view(awarded), quote: _quotes[quoteId]!);
+  }
+
+  @override
+  Future<FreightOverride> landedCostInput(String quoteId) async {
+    await _wait();
+    final q = _quotes[quoteId];
+    if (q == null) throw _err(404, 'not_found');
+    final r = _mine(q.requestId);
+    if (!q.isAccepted || r.awardedQuoteId != quoteId) {
+      throw _err(409, 'quote_not_awarded');
+    }
+    return FreightOverride(
+      amount: q.amount,
+      currency: q.currency,
+      quoteId: q.id,
+      validUntil: q.validUntil ?? _clock().add(const Duration(days: 30)),
+      modeFamily: r.mode,
+    );
   }
 
   @override

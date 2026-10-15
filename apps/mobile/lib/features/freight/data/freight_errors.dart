@@ -28,6 +28,7 @@ const Set<String> kFreightErrorCodes = {
   'quote_expired',
   'quote_final',
   'quote_not_available',
+  'quote_not_awarded',
   'request_expired',
   'request_not_open',
   'state_changed',

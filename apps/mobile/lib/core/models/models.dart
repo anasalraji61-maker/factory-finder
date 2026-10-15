@@ -359,12 +359,16 @@ class CostLine {
     required this.estimate,
     this.source,
     this.fxRate,
+    this.quoted = false,
   });
 
   final String stage;
   final String description;
   final Money amount;
   final bool estimate;
+
+  /// True when the amount is an exact forwarder quote (never a range).
+  final bool quoted;
   final String? source;
   final String? fxRate;
 
@@ -375,6 +379,7 @@ class CostLine {
         estimate: (j['estimate'] as bool?) ?? true,
         source: j['source'] as String?,
         fxRate: j['fx_rate']?.toString(),
+        quoted: (j['quoted'] as bool?) ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -382,6 +387,7 @@ class CostLine {
         'description': description,
         'amount': amount.toJson(),
         'estimate': estimate,
+        if (quoted) 'quoted': true,
         if (source != null) 'source': source,
         if (fxRate != null) 'fx_rate': fxRate,
       };

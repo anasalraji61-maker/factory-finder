@@ -111,6 +111,18 @@ flutter test
 - `/assistant` (Logistics tools list): chat with `POST /v1/assistant/query`; renders `cards[]` (shipment_status, deal_status, listing_comparison, hs_code, notice; unknown types shown generically), maps 429 to an ar/en message. Mock mode returns sample cards.
 - Calculator results show quote-level `warnings` and a collapsible "what if" section from the optional per-option `sensitivity` bands.
 
+## Forwarder quote in landed cost
+
+On an awarded freight request the quote card has "Use this quote in landed cost". It calls
+`GET /v1/freight/quotes/{id}/landed-cost-input` (owner only, 409 `quote_not_awarded`), then opens
+`/logistics/calculator` prefilled with the shipment origin/destination and the returned
+`freight_override` (shown as a removable banner). `POST /v1/quotes/landed-cost` then carries
+`freight_override` (+ `mode_family`). Result lines with `quoted: true` get a "Forwarder quote" pill,
+an exact amount (no range) and the quote's valid-until date; every other line keeps the Estimate label.
+An expired override is ignored by the backend, which adds an assumption note (shown in Assumptions).
+Mock mode mirrors this (`MockFreightRepository.landedCostInput`, `MockQuoteGenerator`).
+Tests: `test/logistics/freight_override_test.dart`, `test/freight/landed_cost_flow_test.dart`.
+
 ## Bulk product import (My products)
 
 Route `/my-products/import` (upload icon in the My products app bar) lets a

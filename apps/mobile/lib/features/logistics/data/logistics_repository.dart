@@ -98,6 +98,10 @@ final logisticsRepositoryProvider = Provider<LogisticsRepository>(
 /// The most recent quote, shown on the results screen.
 final lastQuoteProvider = StateProvider<LandedCostQuote?>((ref) => null);
 
+/// One-shot hand-over to the calculator (awarded freight quote -> landed cost).
+/// The calculator reads and clears it on open.
+final calculatorSeedProvider = StateProvider<CalculatorSeed?>((ref) => null);
+
 final prefillProvider =
     FutureProvider.autoDispose.family<ListingPrefill?, String>(
   (ref, id) => ref.watch(logisticsRepositoryProvider).prefill(id),

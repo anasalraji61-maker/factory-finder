@@ -2,7 +2,9 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/freight/data/freight_prefill.dart' show lastQuoteRequestProvider;
 import 'package:factory_finder/features/freight/screens/freight_quote_button.dart';
+import 'package:factory_finder/features/freight/widgets/freight_widgets.dart' show formatDate;
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/screens/sensitivity_section.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +49,7 @@ class ResultsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final quote = ref.watch(lastQuoteProvider);
+    final validUntil = ref.watch(lastQuoteRequestProvider)?.freightOverride?.validUntil;
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('logistics.results.title'))),
       body: quote == null
@@ -55,15 +58,16 @@ class ResultsScreen extends ConsumerWidget {
               title: context.tr('logistics.results.none'),
               message: context.tr('logistics.results.none_msg'),
             )
-          : _QuoteView(quote: quote),
+          : _QuoteView(quote: quote, quotedValidUntil: validUntil),
     );
   }
 }
 
 class _QuoteView extends StatelessWidget {
-  const _QuoteView({required this.quote});
+  const _QuoteView({required this.quote, this.quotedValidUntil});
 
   final LandedCostQuote quote;
+  final DateTime? quotedValidUntil;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +102,7 @@ class _QuoteView extends StatelessWidget {
           for (final o in quote.options)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: OptionCard(option: o),
+              child: OptionCard(option: o, quotedValidUntil: quotedValidUntil),
             ),
         FreightQuoteButton(quote: quote),
         const SizedBox(height: AppSpacing.sm),
@@ -127,9 +131,12 @@ class _QuoteView extends StatelessWidget {
 }
 
 class OptionCard extends StatelessWidget {
-  const OptionCard({super.key, required this.option});
+  const OptionCard({super.key, required this.option, this.quotedValidUntil});
 
   final LandedCostOption option;
+
+  /// Expiry of the forwarder quote behind a `quoted` main-leg line (if known).
+  final DateTime? quotedValidUntil;
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +244,9 @@ class OptionCard extends StatelessWidget {
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),
-              children: [for (final l in o.lines) _LineRow(line: l)],
+              children: [
+                for (final l in o.lines) _LineRow(line: l, validUntil: quotedValidUntil),
+              ],
             ),
           ),
           SensitivitySection(sensitivity: o.sensitivity),
@@ -248,9 +257,10 @@ class OptionCard extends StatelessWidget {
 }
 
 class _LineRow extends StatelessWidget {
-  const _LineRow({required this.line});
+  const _LineRow({required this.line, this.validUntil});
 
   final CostLine line;
+  final DateTime? validUntil;
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +292,25 @@ class _LineRow extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    if (line.estimate) ...[
+                    if (line.quoted) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        key: const ValueKey<String>('quoted_pill'),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Text(
+                          context.tr('logistics.quoted'),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ),
+                    ] else if (line.estimate) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -307,6 +335,19 @@ class _LineRow extends StatelessWidget {
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.textSecondary, height: 1.3),
                 ),
+                if (line.quoted)
+                  Text(
+                    validUntil == null
+                        ? context.tr('logistics.quoted_exact')
+                        : '${context.tr('logistics.quoted_exact')} · ${context.tr('logistics.quoted_valid', {
+                              'date': formatDate(context, validUntil),
+                            })}',
+                    key: const ValueKey<String>('quoted_note'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
               ],
             ),
           ),

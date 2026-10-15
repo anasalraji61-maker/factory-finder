@@ -257,6 +257,8 @@ const Map<String, (String, String)> _pairs = {
   'freight.err.quote_exists': ('قدّمت عرضاً على هذا الطلب مسبقاً. عدّل عرضك بدلاً من ذلك.', 'You already quoted on this request. Revise your quote instead.'),
   'freight.err.quote_expired': ('انتهت صلاحية هذا العرض.', 'This quote has expired.'),
   'freight.err.quote_final': ('لا يمكن تغيير هذا العرض بعد الآن.', 'This quote can no longer be changed.'),
+  'freight.err.quote_not_awarded': ('هذا العرض ليس العرض المرسّى عليه.', 'This quote is not the awarded one.'),
+  'freight.use_in_landed': ('استخدم هذا العرض في حساب الكلفة', 'Use this quote in landed cost'),
   'freight.err.quote_not_available': ('هذا العرض لم يعد متاحاً.', 'This quote is no longer available.'),
   'freight.err.request_expired': ('انتهت مهلة هذا الطلب.', 'This request has expired.'),
   'freight.err.request_not_open': ('الطلب لم يعد مفتوحاً.', 'The request is no longer open.'),

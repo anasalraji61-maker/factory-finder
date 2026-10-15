@@ -217,6 +217,43 @@ void main() {
       expect(result.options.length, quote.options.length);
     });
 
+    test('request body includes freight_override and mode_family when set', () async {
+      final override = FreightOverride(
+        amount: '2750.00',
+        currency: 'USD',
+        quoteId: 'fq_1',
+        validUntil: DateTime.utc(2030, 1, 1),
+        modeFamily: 'sea',
+      );
+      final withOverride = QuoteRequest(
+        goodsValue: 10000,
+        weightKg: 2000,
+        volumeM3: 8.5,
+        origin: const Location(countryCode: 'CN', city: 'Guangzhou'),
+        destination: const Location(countryCode: 'IQ', city: 'Baghdad'),
+        freightOverride: override,
+      );
+      final quote = MockQuoteGenerator.generate(withOverride, lang: 'en');
+      final adapter = _FakeAdapter((o) => _json(quote.toJson()));
+      final result = await LogisticsRepository(_client(adapter)).calculate(withOverride);
+      final body = adapter.calls.single.data as Map;
+      expect(body['freight_override'], {
+        'amount': '2750.00',
+        'currency': 'USD',
+        'source': 'forwarder_quote',
+        'quote_id': 'fq_1',
+        'valid_until': '2030-01-01T00:00:00.000Z',
+        'mode_family': 'sea',
+      });
+      expect(body['mode_family'], 'sea');
+      expect(request.toJson().containsKey('freight_override'), isFalse);
+      expect(request.toJson().containsKey('mode_family'), isFalse);
+      final lines = result.options
+          .expand((o) => o.lines)
+          .where((l) => l.stage == 'main_leg' && l.quoted);
+      expect(lines, isNotEmpty);
+    });
+
     test('decimalString has no exponent or trailing zeros', () {
       expect(decimalString(12.5), '12.5');
       expect(decimalString(2000), '2000');

@@ -57,10 +57,20 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   Incoterm _incoterm = Incoterm.fob;
   final Set<TransportMode> _modes = <TransportMode>{};
   ListingPrefill? _prefill;
+  FreightOverride? _freightOverride;
 
   @override
   void initState() {
     super.initState();
+    final seed = ref.read(calculatorSeedProvider);
+    if (seed != null) {
+      _origin = seed.origin;
+      _destination = seed.destination;
+      _freightOverride = seed.freightOverride;
+      Future<void>(() {
+        if (mounted) ref.read(calculatorSeedProvider.notifier).state = null;
+      });
+    }
     final id = widget.listingId;
     if (id != null && id.isNotEmpty) {
       ref.read(logisticsRepositoryProvider).prefill(id).then((p) {
@@ -126,6 +136,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
       displayCurrency: _currency,
       insurance: _insurance,
       modes: Set<TransportMode>.of(_modes),
+      freightOverride: _freightOverride,
     );
     final lang = ref.read(localeProvider).languageCode;
     setState(() => _loading = true);
@@ -212,6 +223,38 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                     child: Text(
                       context.tr('logistics.calc.prefilled', {'title': _prefill!.title}),
                     ),
+                  ),
+                ],
+              ),
+            ),
+          if (_freightOverride != null)
+            Container(
+              key: const ValueKey<String>('calc_override_banner'),
+              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_outlined, size: 18, color: AppColors.success),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      context.tr('logistics.calc.override', {
+                        'amount': Money(
+                          amount: _freightOverride!.amount,
+                          currency: _freightOverride!.currency,
+                        ).format(),
+                      }),
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('calc_override_remove'),
+                    tooltip: context.tr('logistics.calc.override_remove'),
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _freightOverride = null),
                   ),
                 ],
               ),
