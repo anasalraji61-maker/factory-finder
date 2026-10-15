@@ -52,7 +52,8 @@ void main() {
   setUpWidgetTests();
 
   testWidgets('awarded quote -> calculator prefilled -> quoted pill on result', (tester) async {
-    final repo = MockFreightRepository(clock: () => DateTime.utc(2026, 10, 15, 12));
+    // Real clock: the quote generator checks override validity against now.
+    final repo = MockFreightRepository(clock: () => DateTime.now().toUtc());
     await _pump(tester, '/logistics/freight/requests/fr_102', [
       freightRepositoryProvider.overrideWithValue(repo),
     ]);
