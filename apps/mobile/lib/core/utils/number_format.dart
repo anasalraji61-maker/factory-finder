@@ -95,3 +95,8 @@ String _group(String digits) {
   }
   return buffer.toString();
 }
+
+/// Wraps [text] in a left-to-right isolate (LRI ... PDI) so amounts such as
+/// "USD 1,234.50" keep their order when embedded in Arabic (RTL) sentences.
+/// Use only for display; never for ids, parsing or comparisons.
+String isolateLtr(String text) => text.isEmpty ? text : '\u2066$text\u2069';

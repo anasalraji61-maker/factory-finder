@@ -4,6 +4,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:flutter/material.dart';
@@ -236,7 +237,7 @@ class ProfileScreen extends ConsumerWidget {
                     child: Text(me?.supplierId == null
                         ? context.tr('claim.not_linked')
                         : me!.supplierClaimStatus == 'pending'
-                            ? context.tr('claim.pending_short', {'id': me.supplierId!})
+                            ? context.tr('claim.pending_short', {'id': verbatim(me.supplierId!)})
                             : me.supplierId!),
                   ),
                   trailing: const Icon(Icons.chevron_right, size: 20),

@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart' show Location;
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/number_format.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/freight/data/freight_errors.dart';
 import 'package:factory_finder/features/freight/data/freight_models.dart';
@@ -139,7 +140,7 @@ class _FreightRequestDetailScreenState
       title: context.tr('freight.accept.title'),
       body: context.tr('freight.accept.body', {
         'name': name,
-        'price': FreightMoney.format(q.amount, q.currency),
+        'price': isolateLtr(FreightMoney.format(q.amount, q.currency)),
         'days': '${q.transitDays}',
       }),
       yes: context.tr('freight.accept.yes'),

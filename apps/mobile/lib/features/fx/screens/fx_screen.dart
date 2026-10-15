@@ -1,5 +1,7 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/digits.dart';
+import 'package:factory_finder/core/utils/number_format.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/fx/data/fx_models.dart';
 import 'package:factory_finder/features/fx/data/fx_repository.dart';
@@ -97,7 +99,7 @@ class FxScreen extends ConsumerWidget {
                               Directionality(
                                 textDirection: TextDirection.ltr,
                                 child: Text(
-                                  formatFx(fx.rateOf(c)),
+                                  localizeNumber(formatFx(fx.rateOf(c)), DigitStyleScope.of(context)),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w800, fontSize: 16),
                                 ),
@@ -259,7 +261,9 @@ class _FxConverterCardState extends ConsumerState<FxConverterCard> {
             Directionality(
               textDirection: TextDirection.ltr,
               child: Text(
-                '${formatFx(double.tryParse(r.amount) ?? 0)} ${r.currency}',
+                localizeNumber(
+                    '${formatFxString(r.amount)} ${r.currency}',
+                    DigitStyleScope.of(context)),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -272,7 +276,8 @@ class _FxConverterCardState extends ConsumerState<FxConverterCard> {
               context.tr('fx.rate_line', {
                 'from': r.from,
                 'to': r.to,
-                'rate': formatFx(double.tryParse(r.rate) ?? 0),
+                'rate': isolateLtr(
+                    localizeNumber(formatFxString(r.rate), DigitStyleScope.of(context))),
               }),
               style: theme.textTheme.bodySmall,
             ),

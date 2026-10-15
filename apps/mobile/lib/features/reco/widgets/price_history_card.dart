@@ -351,7 +351,7 @@ class _HistoryBody extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            context.tr('reco.suggested', {'price': h.hints!.suggestedTarget.format()}),
+            context.tr('reco.suggested', {'price': h.hints!.suggestedTarget.formatIsolated()}),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: AppColors.secondaryOf(context)),
           ),

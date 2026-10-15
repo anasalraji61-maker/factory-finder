@@ -93,8 +93,8 @@ class _BandRow extends StatelessWidget {
           ),
           Text(
             context.tr('logistics.whatif.range', {
-              'low': band.low.format(),
-              'high': band.high.format(),
+              'low': band.low.formatIsolated(),
+              'high': band.high.formatIsolated(),
             }),
             style: TextStyle(
               fontWeight: FontWeight.w800,
@@ -102,7 +102,7 @@ class _BandRow extends StatelessWidget {
             ),
           ),
           Text(
-            context.tr('logistics.whatif.base', {'base': band.base.format()}),
+            context.tr('logistics.whatif.base', {'base': band.base.formatIsolated()}),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: AppColors.textSecondary),
           ),

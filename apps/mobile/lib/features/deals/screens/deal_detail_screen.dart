@@ -69,7 +69,7 @@ class DealDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${context.tr('deals.detail.commission')}: ${deal.commission.format()}',
+                      '${context.tr('deals.detail.commission')}: ${deal.commission.formatIsolated()}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall,

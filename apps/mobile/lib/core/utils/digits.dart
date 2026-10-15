@@ -8,8 +8,14 @@ const String _arabicIndic = '٠١٢٣٤٥٦٧٨٩';
 String localizeDigits(String text, DigitStyle style) {
   if (style == DigitStyle.western) return text;
   final b = StringBuffer();
+  var verbatimDepth = 0;
   for (final unit in text.codeUnits) {
-    if (unit >= 0x30 && unit <= 0x39) {
+    if (unit == _fsi) {
+      verbatimDepth++;
+    } else if (unit == _pdi && verbatimDepth > 0) {
+      verbatimDepth--;
+    }
+    if (verbatimDepth == 0 && unit >= 0x30 && unit <= 0x39) {
       b.write(_arabicIndic[unit - 0x30]);
     } else {
       b.writeCharCode(unit);
@@ -17,6 +23,14 @@ String localizeDigits(String text, DigitStyle style) {
   }
   return b.toString();
 }
+
+const int _fsi = 0x2068;
+const int _pdi = 0x2069;
+
+/// Marks [id] (container number, HS code, reference, supplier id...) so
+/// [localizeDigits] never converts its digits. Wrap ids before passing them
+/// as `context.tr` args; the FSI/PDI isolate also keeps them from reordering.
+String verbatim(String id) => id.isEmpty ? id : '\u2068$id\u2069';
 
 /// Like [localizeDigits] but for a formatted amount: also swaps the decimal
 /// and thousands separators for their Arabic forms.

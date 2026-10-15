@@ -1,3 +1,5 @@
+import 'package:factory_finder/core/utils/number_format.dart';
+
 /// Currencies offered in the FX screen.
 const List<String> kFxCurrencies = [
   'USD', 'EUR', 'CNY', 'IQD', 'TRY', 'AED', 'SAR', 'GBP', 'IRR',
@@ -114,6 +116,17 @@ String formatFx(double v) {
   var frac = parts.length > 1 ? parts[1] : '';
   frac = frac.replaceFirst(RegExp(r'0+$'), '');
   return frac.isEmpty ? buf.toString() : '${buf.toString()}.$frac';
+}
+
+/// Exact variant of [formatFx] for decimal strings (converted amounts, quoted
+/// rates): rounds half-up on the string, never through `double`.
+String formatFxString(String raw) {
+  final v = double.tryParse(raw.trim());
+  if (v == null || v.isNaN || v.isInfinite) return '-';
+  final decimals = v.abs() >= 100 ? 2 : (v.abs() >= 1 ? 4 : 6);
+  final s = formatDecimalString(raw, fractionDigits: decimals);
+  if (!s.contains('.')) return s;
+  return s.replaceFirst(RegExp(r'\.?0+$'), '');
 }
 
 String formatStamp(DateTime? t) {

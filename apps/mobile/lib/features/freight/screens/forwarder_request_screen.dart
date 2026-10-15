@@ -1,5 +1,6 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/number_format.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/freight/data/freight_decimal.dart';
 import 'package:factory_finder/features/freight/data/freight_drafts.dart';
@@ -440,12 +441,12 @@ class _ForwarderRequestScreenState extends ConsumerState<ForwarderRequestScreen>
                           {
                             'lines': lineUnits == null
                                 ? '?'
-                                : FreightMoney.format(
-                                    FreightDecimal.formatScaled(lineUnits, 2), r.currency),
+                                : isolateLtr(FreightMoney.format(
+                                    FreightDecimal.formatScaled(lineUnits, 2), r.currency)),
                             'total': amountUnits == null
                                 ? '?'
-                                : FreightMoney.format(
-                                    FreightDecimal.formatScaled(amountUnits, 2), r.currency),
+                                : isolateLtr(FreightMoney.format(
+                                    FreightDecimal.formatScaled(amountUnits, 2), r.currency)),
                           },
                         ),
                       ),

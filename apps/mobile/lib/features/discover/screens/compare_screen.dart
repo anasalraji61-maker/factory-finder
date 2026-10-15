@@ -337,7 +337,7 @@ class CompareScreen extends ConsumerWidget {
             MoneyText.range(v.total),
             const SizedBox(height: 2),
             Text(
-              context.tr('compare.landed_unit', {'price': unit.format()}),
+              context.tr('compare.landed_unit', {'price': unit.formatIsolated()}),
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
             Text(

@@ -49,7 +49,7 @@ class ListingCard extends ConsumerWidget {
       onLongPress: () => toggleCompare(context, ref, l),
       semanticLabel: context.tr('a11y.listing_card', {
         'title': l.displayTitle(lang),
-        'price': l.price.format(),
+        'price': l.price.formatIsolated(),
         'trust': trustLabel,
       }),
       semanticActions: {

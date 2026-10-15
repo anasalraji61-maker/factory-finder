@@ -122,6 +122,10 @@ class Money {
     return sym != null ? '$sym$n' : '$currency $n';
   }
 
+  /// [format] wrapped in an LTR isolate, for embedding in translated (RTL)
+  /// sentences so the currency never reorders around the number.
+  String formatIsolated() => isolateLtr(format());
+
   factory Money.fromJson(Map<String, dynamic> j) => Money(
         amount: (j['amount'] ?? '0').toString(),
         currency: (j['currency'] as String?) ?? 'USD',
@@ -142,6 +146,8 @@ class MoneyRange {
     }
     return '${min.format()} – ${max.format()}';
   }
+
+  String formatIsolated() => isolateLtr(format());
 
   factory MoneyRange.fromJson(Map<String, dynamic> j) => MoneyRange(
         min: Money.fromJson(_map(j['min'])),

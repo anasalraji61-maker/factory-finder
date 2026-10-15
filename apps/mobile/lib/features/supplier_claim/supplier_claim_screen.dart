@@ -1,6 +1,7 @@
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
+import 'package:factory_finder/core/utils/digits.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/supplier_claim/supplier_claim_logic.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,7 @@ class _SupplierClaimScreenState extends ConsumerState<SupplierClaimScreen> {
             Text(
               current == null
                   ? context.tr('claim.not_linked')
-                  : context.tr('claim.current', {'id': current}),
+                  : context.tr('claim.current', {'id': verbatim(current)}),
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             if (current != null && me.supplierClaimStatus != 'none') ...[
