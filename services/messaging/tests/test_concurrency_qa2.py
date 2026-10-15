@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 from sqlalchemy import func, select
+from starlette.websockets import WebSocketDisconnect
 
 from ff_messaging.config import Settings
 from ff_messaging.domain.errors import MessagingError
