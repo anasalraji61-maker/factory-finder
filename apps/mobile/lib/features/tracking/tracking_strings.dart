@@ -65,5 +65,7 @@ const Map<String, (String, String)> _pairs = {
   'tracking.err.imo_format': ('رقم IMO يجب أن يكون 7 أرقام', 'IMO number must be 7 digits'),
   'tracking.err.imo_check': ('رقم IMO غير صحيح: فشل فحص رقم التحقق', 'Invalid IMO number: check digit failed'),
   'tracking.err.bl_format': ('رقم بوليصة الشحن يجب أن يكون من 6 إلى 25 حرفاً أو رقماً', 'Bill of lading must be 6–25 letters or digits'),
+  'tracking.did_you_mean': ('هل تقصد؟', 'Did you mean?'),
+  'tracking.carrier_guess': ('شركة الشحن المحتملة (تقديرية):', 'Likely carrier (indicative):'),
   'tracking.err.generic': ('تعذر إضافة الشحنة', 'Could not add the shipment'),
 };

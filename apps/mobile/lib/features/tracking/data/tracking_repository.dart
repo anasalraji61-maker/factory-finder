@@ -8,6 +8,9 @@ abstract class TrackingRepository {
   Future<Shipment> shipment(String id);
   Future<Shipment> add(String reference, ReferenceType type, {String? carrier});
   Future<Shipment> refresh(String id);
+
+  /// Best-effort reference check with did-you-mean and carrier hints.
+  Future<ReferenceCheck> validate(ReferenceType type, String reference);
 }
 
 class LiveTrackingRepository implements TrackingRepository {
@@ -38,6 +41,16 @@ class LiveTrackingRepository implements TrackingRepository {
         'reference_type': type.wire,
         if (carrier != null && carrier.trim().isNotEmpty) 'carrier': carrier.trim(),
       }));
+
+  @override
+  Future<ReferenceCheck> validate(ReferenceType type, String reference) async {
+    final data = await _api.get(
+        '/v1/validate/${type.wire}/${Uri.encodeComponent(normalizeReference(reference))}');
+    if (data is! Map) {
+      throw ApiException(status: 500, code: 'bad_response', message: 'unexpected response');
+    }
+    return ReferenceCheck.fromJson(Map<String, dynamic>.from(data));
+  }
 
   @override
   Future<Shipment> refresh(String id) async {
@@ -223,6 +236,52 @@ class MockTrackingRepository implements TrackingRepository {
     _done[id] = done;
     _journeys[id] = journey;
     return s;
+  }
+
+  static const Map<String, String> _lookalikes = {
+    'O': '0',
+    'I': '1',
+    'L': '1',
+    'B': '8',
+    'S': '5',
+    'Z': '2',
+  };
+
+  static const Map<String, (String, String, String)> _owners = {
+    'MSK': ('MAERSK', 'Maersk', 'ميرسك'),
+    'MSC': ('MSC', 'MSC', 'إم إس سي'),
+    'CMA': ('CMACGM', 'CMA CGM', 'سي إم إيه سي جي إم'),
+    'OOL': ('OOCL', 'OOCL', 'أو أو سي إل'),
+  };
+
+  @override
+  Future<ReferenceCheck> validate(ReferenceType type, String reference) async {
+    final ref = normalizeReference(reference);
+    final err = validateReference(type, reference);
+    final suggestions = <String>[];
+    if (err != null && type == ReferenceType.container && ref.length == 11) {
+      // Digit positions (4..10) written as look-alike letters, e.g. O for 0.
+      for (var i = 4; i < 11 && suggestions.length < 3; i++) {
+        final fix = _lookalikes[ref[i]];
+        if (fix == null) continue;
+        final candidate = ref.replaceRange(i, i + 1, fix);
+        if (validateContainer(candidate) == null) suggestions.add(candidate);
+      }
+    }
+    CarrierSuggestion? carrier;
+    if (type == ReferenceType.container && ref.length >= 3) {
+      final o = _owners[ref.substring(0, 3)];
+      if (o != null) {
+        carrier = CarrierSuggestion(code: o.$1, name: o.$2, nameAr: o.$3, confidence: 'high');
+      }
+    }
+    return ReferenceCheck(
+      valid: err == null,
+      normalized: ref,
+      reason: err == null ? null : 'format',
+      suggestions: suggestions,
+      carrierSuggestion: carrier,
+    );
   }
 
   /// Mock refresh advances the journey by one step until delivered.

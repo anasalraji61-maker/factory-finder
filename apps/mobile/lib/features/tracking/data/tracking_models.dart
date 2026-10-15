@@ -281,3 +281,72 @@ class Shipment {
         if (warning != null) 'warning': warning,
       };
 }
+
+/// Indicative carrier guess returned by `GET /v1/validate/...`
+/// (`carrier_suggestion`). Never authoritative.
+class CarrierSuggestion {
+  const CarrierSuggestion({
+    required this.code,
+    required this.name,
+    this.nameAr,
+    this.confidence = 'low',
+  });
+
+  final String code;
+  final String name;
+  final String? nameAr;
+  final String confidence;
+
+  /// Display name; Arabic when [arabic] and available.
+  String label({bool arabic = false}) {
+    final ar = nameAr;
+    return arabic && ar != null && ar.isNotEmpty ? ar : name;
+  }
+
+  /// Parses tolerantly; returns null when no usable name/code is present.
+  static CarrierSuggestion? tryParse(dynamic raw) {
+    if (raw is! Map) return null;
+    final code = (raw['code'] ?? '').toString();
+    final name = (raw['name'] ?? '').toString();
+    if (code.isEmpty && name.isEmpty) return null;
+    final ar = raw['name_ar']?.toString();
+    return CarrierSuggestion(
+      code: code,
+      name: name.isEmpty ? code : name,
+      nameAr: (ar == null || ar.isEmpty) ? null : ar,
+      confidence: (raw['confidence'] ?? 'low').toString(),
+    );
+  }
+}
+
+/// Result of the server-side (or mock) reference check.
+class ReferenceCheck {
+  const ReferenceCheck({
+    required this.valid,
+    required this.normalized,
+    this.reason,
+    this.suggestions = const [],
+    this.carrierSuggestion,
+  });
+
+  final bool valid;
+  final String normalized;
+  final String? reason;
+  final List<String> suggestions;
+  final CarrierSuggestion? carrierSuggestion;
+
+  factory ReferenceCheck.fromJson(Map<String, dynamic> j) {
+    final rawSugg = j['suggestions'];
+    return ReferenceCheck(
+      valid: j['valid'] == true,
+      normalized: (j['normalized'] ?? '').toString(),
+      reason: j['reason']?.toString(),
+      suggestions: [
+        if (rawSugg is List)
+          for (final s in rawSugg)
+            if (s != null && s.toString().isNotEmpty) s.toString(),
+      ].take(3).toList(),
+      carrierSuggestion: CarrierSuggestion.tryParse(j['carrier_suggestion']),
+    );
+  }
+}

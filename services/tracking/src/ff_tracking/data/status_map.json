@@ -57,9 +57,7 @@
   "RCT": "transshipment",
   "ARR": "arrived",
   "RCF": "discharged",
-  "AWD": "customs_hold",
   "CCD": "released",
-  "NFD": "released",
   "DLV": "delivered",
   "DIS": "exception"
  },
@@ -87,8 +85,7 @@
    "EMPTY_TO_SHIPPER": "booked",
    "EMPTY_RECEIVED_AT_CY": "delivered",
    "FULL_TRANSSHIPMENT_DISCHARGED": "transshipment",
-   "FULL_TRANSSHIPMENT_LOADED": "transshipment",
-   "ESTIMATED_TIME_OF_ARRIVAL": "arrived"
+   "FULL_TRANSSHIPMENT_LOADED": "transshipment"
   },
   "maersk": {
    "CONTAINER_GATE_IN": "gate_in",

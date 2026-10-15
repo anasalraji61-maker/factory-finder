@@ -1,6 +1,6 @@
 """Input signals about a supplier. Every field is optional; missing means "unknown"."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,6 +29,8 @@ class ReviewSummary(BaseModel):
     histogram: dict[str, int] | None = None  # keys "1".."5"
     sub_ratings: dict[str, float | None] | None = None  # quality / communication / shipping
     completed_deals: int | None = Field(default=None, ge=0)
+    first_review_at: datetime | None = None  # optional review timestamps (rfq created_at/updated_at of oldest/newest)
+    last_review_at: datetime | None = None
 
 
 class SupplierSignals(BaseModel):

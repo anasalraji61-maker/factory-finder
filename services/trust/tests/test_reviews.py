@@ -111,3 +111,11 @@ def test_service_integration_and_failure_fallback():
 
     c = TestClient(create_app(Settings(), reviews=Broken()))
     assert c.get("/v1/trust/suppliers/sup_demo_avg").json()["score"] == r_off["score"]
+
+
+def test_review_timestamps_parsed_and_optional():
+    s = parse_summary({**PAYLOAD, "first_review_at": "2026-01-02T03:04:05Z", "last_review_at": "2026-10-01T00:00:00+00:00"})
+    assert s.first_review_at.year == 2026 and s.last_review_at.month == 10 and s.last_review_at.utcoffset().total_seconds() == 0
+    bad = parse_summary({**PAYLOAD, "first_review_at": "nope", "last_review_at": 5})
+    assert bad.first_review_at is None and bad.last_review_at is None
+    assert parse_summary(PAYLOAD).last_review_at is None

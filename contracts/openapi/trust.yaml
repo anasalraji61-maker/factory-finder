@@ -411,6 +411,8 @@ components:
             histogram: {type: object, additionalProperties: {type: integer}}
             sub_ratings: {type: object, additionalProperties: {type: [number, "null"]}}
             completed_deals: {type: [integer, "null"], minimum: 0}
+            first_review_at: {type: [string, "null"], format: date-time, description: "optional: timestamp (UTC) of the oldest review in the aggregate"}
+            last_review_at: {type: [string, "null"], format: date-time, description: "optional: timestamp (UTC) of the newest review in the aggregate"}
         verification:
           type: [object, "null"]
           description: >-

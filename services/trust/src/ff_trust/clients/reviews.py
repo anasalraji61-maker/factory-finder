@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import time
+from datetime import datetime
 from typing import Protocol
 from urllib.parse import quote
 
@@ -41,7 +42,14 @@ def parse_summary(data: object) -> ReviewSummary | None:
         subs = data.get("sub_ratings")
         subs = {str(k): num(v) for k, v in subs.items()} if isinstance(subs, dict) else None
         deals = data.get("completed_deals")
+        def ts(v: object) -> datetime | None:
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00")) if isinstance(v, str) else None
+            except ValueError:
+                return None
+
         return ReviewSummary(
+            first_review_at=ts(data.get("first_review_at")), last_review_at=ts(data.get("last_review_at")),
             count=count, average=num(data.get("average")), histogram=hist, sub_ratings=subs,
             completed_deals=int(deals) if deals is not None else None,
         )  # fmt: skip

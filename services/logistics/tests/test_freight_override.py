@@ -109,3 +109,13 @@ def test_absent_override_unchanged(client):
     q = post(client, modes=["sea_fcl_40"])
     assert not any("Forwarder freight quote" in a for a in q["assumptions"])
     assert "quoted" not in main_leg(sea40(q))
+
+
+def test_quoted_line_matches_common_schema(client):
+    import json
+    from pathlib import Path
+    schema = json.loads((Path(__file__).resolve().parents[3] / "contracts/schemas/common.schema.json").read_text())
+    props = schema["$defs"]["CostLine"]["properties"]
+    assert props["quoted"]["type"] == "boolean" and "quoted" not in schema["$defs"]["CostLine"]["required"]
+    ln = main_leg(sea40(post(client, override=ov(), modes=["sea_fcl_40"])))
+    assert ln["quoted"] is True and set(ln) <= set(props)

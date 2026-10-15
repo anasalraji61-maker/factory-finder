@@ -110,6 +110,7 @@
         "fx_rate": {"type": "string"},
         "source": {"type": "string", "description": "rate table / provider used"},
         "estimate": {"type": "boolean"},
+        "quoted": {"type": "boolean", "description": "optional: true when the line is an exact forwarder quote (not an estimate); absent otherwise"},
         "as_of": {"type": "string", "format": "date-time", "description": "optional: when this line was priced (UTC)"},
         "range": {"$ref": "#/$defs/MoneyRange", "description": "optional: min/max of this line in its currency; present on estimates"}
       }

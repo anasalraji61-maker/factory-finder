@@ -24,6 +24,8 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
   String? _serverError;
   bool _busy = false;
   bool _touched = false;
+  List<String> _suggestions = const [];
+  CarrierSuggestion? _carrierGuess;
 
   @override
   void dispose() {
@@ -35,7 +37,40 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
   void _revalidate() {
     setState(() {
       _serverError = null;
+      _suggestions = const [];
+      _carrierGuess = null;
       _errorKey = _touched ? validateReference(_type, _ref.text) : null;
+    });
+  }
+
+  /// Best-effort did-you-mean / carrier hints; failures are silently ignored.
+  Future<void> _fetchHints() async {
+    final text = _ref.text;
+    final type = _type;
+    if (text.trim().isEmpty) return;
+    try {
+      final check = await ref.read(trackingRepositoryProvider).validate(type, text);
+      if (!mounted || _ref.text != text || _type != type) return;
+      setState(() {
+        _suggestions = check.valid ? const [] : check.suggestions;
+        _carrierGuess = check.carrierSuggestion;
+      });
+    } catch (_) {
+      // Hints are optional.
+    }
+  }
+
+  void _applySuggestion(String value) {
+    _ref.text = value;
+    _touched = true;
+    _revalidate();
+    _fetchHints();
+  }
+
+  void _applyCarrier(CarrierSuggestion c) {
+    setState(() {
+      _carrier.text = c.label();
+      _carrierGuess = null;
     });
   }
 
@@ -44,6 +79,7 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
     final key = validateReference(_type, _ref.text);
     if (key != null) {
       setState(() => _errorKey = key);
+      _fetchHints();
       return;
     }
     setState(() {
@@ -114,6 +150,10 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
                   _touched = true;
                   _revalidate();
                 },
+                onEditingComplete: () {
+                  FocusScope.of(context).nextFocus();
+                  if (validateReference(_type, _ref.text) == null) _fetchHints();
+                },
                 decoration: InputDecoration(
                   labelText: context.tr('tracking.reference'),
                   errorText: error == null ? null : context.tr(error),
@@ -121,11 +161,45 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
                 ),
               ),
             ),
+            if (_suggestions.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(context.tr('tracking.did_you_mean')),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final s in _suggestions)
+                    ActionChip(
+                      key: Key('ref_suggestion_$s'),
+                      label: Text(s, textDirection: TextDirection.ltr),
+                      onPressed: () => _applySuggestion(s),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _carrier,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(labelText: context.tr('tracking.carrier')),
             ),
+            if (_carrierGuess != null && _carrier.text.trim().isEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(context.tr('tracking.carrier_guess')),
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: ActionChip(
+                  key: const Key('carrier_suggestion'),
+                  label: Text(
+                    _carrierGuess!.label(
+                        arabic: Localizations.localeOf(context).languageCode == 'ar'),
+                  ),
+                  onPressed: () => _applyCarrier(_carrierGuess!),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
               label: context.tr('tracking.submit'),

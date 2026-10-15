@@ -86,7 +86,10 @@ def suggest_carrier(reference_type: ReferenceType, prefix: str | None) -> Carrie
         entry, basis = awb.get(prefix), "awb_prefix"
     if entry is None:
         return None
+    # The bundled list is compiled offline and never verified against the BIC registry / IATA: never claim "high".
+    conf = entry.get("confidence", "medium")
+    conf = conf if conf in ("medium", "low") else "medium"
     return CarrierSuggestion(
         code=entry["code"], name=entry["name"], name_ar=entry.get("name_ar"), scac=entry.get("scac"),
         iata_code=entry.get("iata_code"), awb_prefix=entry.get("awb_prefix"), basis=basis,
-        confidence=entry.get("confidence", "high" if reference_type is ReferenceType.AWB else "medium"), as_of=d.as_of)
+        confidence=conf, as_of=d.as_of)
