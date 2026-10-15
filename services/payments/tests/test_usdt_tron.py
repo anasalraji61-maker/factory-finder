@@ -14,8 +14,8 @@ from ff_payments.providers.usdt_tron import (
     amount_with_suffix,
 )
 
-ADDR = "TPublicReceivingAddressForTests000000"
-CONTRACT = "TContractForTests"
+ADDR = "TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL"
+CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 
 
 class Chain:
@@ -46,7 +46,7 @@ def make(chain: Chain, **over):
 
 def tx(value_micro: int, block: int, tid="tx_abc"):
     return {"transaction_id": tid, "value": str(value_micro), "block_number": block,
-            "block_timestamp": 1, "token_info": {"address": CONTRACT}}
+            "block_timestamp": 10**13, "token_info": {"address": CONTRACT}}
 
 
 def test_suffix_is_unique_deterministic_and_bounded():

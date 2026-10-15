@@ -194,6 +194,16 @@ class _MyProductsScreenState extends ConsumerState<MyProductsScreen> {
         actions: [
           if (open)
             IconButton(
+              key: const ValueKey<String>('myp-import'),
+              tooltip: context.tr('myp.imp.open'),
+              icon: const Icon(Icons.upload_file_outlined),
+              onPressed: () async {
+                await context.push<void>('/my-products/import');
+                if (mounted) _load();
+              },
+            ),
+          if (open)
+            IconButton(
               key: const ValueKey<String>('myp-analytics'),
               tooltip: context.tr('ana.open'),
               icon: const Icon(Icons.insights_outlined),

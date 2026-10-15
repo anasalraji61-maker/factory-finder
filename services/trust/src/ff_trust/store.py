@@ -179,9 +179,10 @@ class ReportStore:
             return r
 
     async def accepted_count(self, supplier_id: str) -> int:
+        """Accepted reports counted per DISTINCT reporter: one account cannot multiply its own report."""
         t = reports
         async with self.db.begin() as conn:
-            return (await conn.execute(select(func.count()).select_from(t).where(t.c.supplier_id == supplier_id, t.c.status == "accepted"))).scalar_one()
+            return (await conn.execute(select(func.count(func.distinct(t.c.reporter_id))).where(t.c.supplier_id == supplier_id, t.c.status == "accepted"))).scalar_one()
 
     async def purge(self) -> int:
         """Retention: rejected and stale pending reports older than ``retention_days``. Accepted reports are kept."""

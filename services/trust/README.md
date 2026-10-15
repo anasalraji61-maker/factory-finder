@@ -76,3 +76,6 @@ Every setting in `src/ff_trust/config.py` (`Settings`, case-insensitive env name
 | `FF_INTERNAL_TOKEN` | unset |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_TRUST_VERIFICATION_HASH_KEY` (see `docs/OPS.md`).
+
+## Scoring QA
+`tests/test_archetypes.py` runs 25 synthetic archetypes (`tests/fixtures/trust_archetypes.json`). Rules added by that QA: confidence is capped at 79 when `sanctions_hit` / `dispute_rate` / `price_vs_market_ratio` / `verified` is missing; price < 0.6x market can never be green (`price_anomaly_cap`); `review_pattern_suspicious` (reviews far above transactions with a ~perfect average) removes review credit; accepted reports count per distinct reporter. See `docs/decisions/trust-scoring-qa.md`.

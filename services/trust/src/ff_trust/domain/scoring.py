@@ -59,6 +59,9 @@ LABELS = {
 # platform_reviews is an optional enrichment (only present when the rfq source is on): never a data gap.
 # document_verification / facility_evidence are reward-only evidence (submitted by the supplier): never a data gap.
 EVIDENCE = tuple(k for k in SCORABLE if k not in ("confirmed_reports", "platform_reviews", "document_verification", "facility_evidence"))
+# Without any of these the verdict cannot be trusted: confidence is capped below "high" (see confidence_for).
+CRITICAL_SIGNALS = ("sanctions_hit", "dispute_rate", "price_vs_market_ratio", "verified")
+CONFIDENCE_CAP_MISSING_CRITICAL = 79
 GAP_ONLY = {"sanctions_hit": ("Sanctions screening not run", "لم يتم فحص قوائم العقوبات")}
 _LICENSE_F = {"verified": 1.0, "pending": 0.1, "unverified": -0.3, "expired": -0.6, "mismatch": -1.0}
 
@@ -165,6 +168,15 @@ def platform_reviews_f(rs: ReviewSummary, cfg: ScoringConfig) -> float | None:
     return _clip(f) * min(1.0, rs.count / max(1, cfg.platform_review_full_n))
 
 
+def review_pattern_suspicious(s: SupplierSignals, cfg: ScoringConfig) -> bool:
+    """Marketplace reviews that look bought: near-perfect average on a large count that the supplier's own
+    transaction history cannot explain (far more reviews than transactions)."""
+    n, avg = s.reviews_count, s.rating_avg
+    if n is None or avg is None or n < cfg.review_burst_min_reviews:
+        return False
+    return s.transactions_count is not None and avg >= cfg.review_burst_min_avg and n > cfg.review_burst_ratio * s.transactions_count
+
+
 def _f_values(s: SupplierSignals, cfg: ScoringConfig, today: date) -> dict[str, float]:
     f: dict[str, float] = {}
     if s.years_in_business is not None:
@@ -181,6 +193,9 @@ def _f_values(s: SupplierSignals, cfg: ScoringConfig, today: date) -> dict[str, 
         f["rating_avg"] = _clip((adjusted_rating(s.rating_avg, s.reviews_count, cfg) - cfg.review_prior_mean) / 1.2)
     if s.reviews_count is not None:
         f["reviews_count"] = _curve(s.reviews_count, 100, 0.0)
+    if review_pattern_suspicious(s, cfg):  # bought-looking reviews earn no credit at all, however many there are
+        f["rating_avg"] = min(f.get("rating_avg", 0.0), 0.0)
+        f["reviews_count"] = 0.0
     d = effective_dispute_rate(s, cfg)
     if d is not None:
         f["dispute_rate"] = _clip(0.3 - d * 13, -1.0, 0.3)
@@ -265,6 +280,8 @@ def confidence_for(s: SupplierSignals, fvals: dict[str, float], cfg: ScoringConf
     total_w = sum(cfg.weights.get(k, 0) for k in EVIDENCE) or 1.0
     coverage = sum(cfg.weights.get(k, 0) for k in fvals if k in EVIDENCE) / total_w
     depth_parts = []
+    if s.years_in_business is not None:
+        depth_parts.append(min(1.0, s.years_in_business / 5))  # track record: a glossy brand-new profile is shallow evidence
     if s.reviews_count is not None:
         depth_parts.append(min(1.0, s.reviews_count / 30))
     if s.transactions_count is not None:
@@ -272,8 +289,11 @@ def confidence_for(s: SupplierSignals, fvals: dict[str, float], cfg: ScoringConf
     dr = _deal_rate(s, cfg)
     if dr is not None:
         depth_parts.append(min(1.0, dr[1] / 20))
-    depth = sum(depth_parts) / len(depth_parts) if depth_parts else 0.5
-    return int(round(100 * min(1.0, coverage * (0.7 + 0.3 * depth))))
+    depth = max([0.0, *depth_parts])  # max, not mean: extra evidence can never lower confidence
+    conf = int(round(100 * min(1.0, coverage * (0.6 + 0.4 * depth))))
+    if any(getattr(s, k) is None for k in CRITICAL_SIGNALS):
+        conf = min(conf, CONFIDENCE_CAP_MISSING_CRITICAL)  # a missing critical check is never a high-confidence verdict
+    return conf
 
 
 def data_gaps_for(s: SupplierSignals, fvals: dict[str, float], cfg: ScoringConfig) -> tuple[DataGap, ...]:
@@ -344,6 +364,17 @@ def assess(signals: SupplierSignals, cfg: ScoringConfig | None = None, today: da
         apply_cap("price_too_low_cap", cfg.too_cheap_cap,
                   f"Price far below market (possible scam): capped at {cfg.too_cheap_cap}.",
                   f"السعر أقل بكثير من السوق (احتمال احتيال): الدرجة محدودة بـ {cfg.too_cheap_cap}.")  # fmt: skip
+    if p is not None and p < cfg.price_anomaly_low:  # "too good to be true" is never green, whatever else looks fine
+        apply_cap("price_anomaly_cap", cfg.green_min - 1,
+                  f"Price well below market: cannot reach the green band (capped at {cfg.green_min - 1}).",
+                  f"السعر أقل بكثير من السوق: لا يمكن بلوغ النطاق الأخضر (الدرجة محدودة بـ {cfg.green_min - 1}).")  # fmt: skip
+    if review_pattern_suspicious(signals, cfg):
+        flags.append("review_pattern_suspicious")
+        factors.append(Factor(
+            "review_pattern_suspicious", 0,
+            "Review pattern looks unnatural (too many near-perfect reviews for the transaction history): reviews are not counted.",
+            "نمط التقييمات غير طبيعي (تقييمات شبه كاملة كثيرة مقارنة بسجل الصفقات): لا تُحتسب التقييمات.", FactorKind.INFO,
+        ))  # fmt: skip
     if p is not None and (p < cfg.price_anomaly_low or p > cfg.price_anomaly_high):
         flags.append("price_anomaly")
         factors.append(Factor(

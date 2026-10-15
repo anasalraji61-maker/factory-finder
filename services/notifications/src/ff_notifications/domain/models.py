@@ -192,8 +192,17 @@ class ListingView:
 
 @dataclass(frozen=True, slots=True)
 class SearchPage:
+    """One page of sourcing results.
+
+    ``degraded``: sourcing flagged the answer as incomplete or substituted (top-level
+    ``warning`` such as ``partial_results``, a source with status ``timeout``/``error`` or a
+    source ``warning`` when mock results replaced a failed source). A degraded page says
+    nothing reliable about prices or absence and must never drive alerts.
+    """
+
     items: tuple[ListingView, ...]
     total: int
+    degraded: bool = False
 
 
 @dataclass(frozen=True, slots=True)

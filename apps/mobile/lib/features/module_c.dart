@@ -6,6 +6,7 @@ import 'package:factory_finder/features/assistant/assistant_strings.dart';
 import 'package:factory_finder/features/assistant/screens/assistant_screen.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
 import 'package:factory_finder/features/my_products/my_products_strings.dart';
+import 'package:factory_finder/features/my_products/screens/import_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/product_editor_screen.dart';
 import 'package:factory_finder/features/privacy/privacy_screen.dart';
@@ -39,6 +40,10 @@ final FeatureModule featureModuleC = FeatureModule(
       builder: (context, state) => SupplierAnalyticsScreen(
         initialListingId: state.uri.queryParameters['listing_id'],
       ),
+    ),
+    GoRoute(
+      path: '/my-products/import',
+      builder: (context, state) => const ImportProductsScreen(),
     ),
     GoRoute(
       path: '/my-products/new',

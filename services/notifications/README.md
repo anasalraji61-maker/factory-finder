@@ -13,6 +13,10 @@ Run: `uvicorn ff_notifications.main:app --port 8108` (from `src/`). Test: `../..
 Env (prefix `FF_NOTIFICATIONS_`): `DATABASE_URL`, `SOURCING_BASE_URL`, `USE_MOCK_SOURCING`, `COOLDOWN_HOURS`, `DEFAULT_DROP_THRESHOLD_PCT`, `SCHEDULER_ENABLED`; shared `FF_INTERNAL_TOKEN`.
 
 
+## Partial results, concurrency, restarts
+- A search page is *degraded* when sourcing sets `warning` (e.g. `partial_results`), any `sources[].status` is not `ok`, or a source `warning` shows mock substitution. A degraded saved-search check is reported in `errors` and changes nothing (no false delisting, no phantom `back_in_stock`, no fake drop); a degraded equivalents page only skips `cheaper_equivalent` for that run.
+- Evaluation runs are serialized per process (`_eval_lock`); a failing watch is reported in `errors` and never aborts the run or loses deliveries. Dedupe is persistent (unique `(watch, rule, fingerprint)` + watch state in the DB), so restarts and the scheduler never repeat an alert. Prices compare in one currency only (no FX); thresholds are percentages. See `docs/requests/notifications-sourcing-signals.md`.
+
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
 

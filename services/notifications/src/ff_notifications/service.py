@@ -93,6 +93,7 @@ class NotificationService:
         self.settings = settings
         self.clock = clock
         self._vlock = asyncio.Lock()
+        self._eval_lock = asyncio.Lock()  # one evaluation run at a time (API vs scheduler)
         self.cooldown = CooldownPolicy(default=timedelta(hours=settings.cooldown_hours))
         self.rule_config = RuleConfig(Decimal(settings.equivalent_min_saving_pct))
         self.delivery = DeliveryPipeline(
@@ -166,10 +167,18 @@ class NotificationService:
             equivalents = None
             if listing is not None and (eq := equivalence_query(listing)) is not None:
                 with contextlib.suppress(SourcingUnavailableError):
-                    equivalents = (await self.sourcing.search(eq)).items
+                    eq_page = await self.sourcing.search(eq)
+                    # a partial page may miss the cheaper offer: skip the rule this run
+                    equivalents = None if eq_page.degraded else eq_page.items
             return ListingObservation(listing, equivalents)
         assert watch.search
-        return SearchObservation(await self.sourcing.search(watch.search))
+        page = await self.sourcing.search(watch.search)
+        if page.degraded:
+            # partial / mock-substituted results: absence or prices are not trustworthy, so no
+            # state change and no alert (a vanished result must not look delisted or re-appear
+            # as "back in stock", a substituted price must not look like a drop)
+            raise SourcingUnavailableError("degraded search results (partial_results)")
+        return SearchObservation(page)
 
     async def evaluate_watch(self, watch: Watch, report: EvaluationReport) -> list[Alert]:
         now = self.clock()
@@ -213,6 +222,12 @@ class NotificationService:
     async def evaluate_all(
         self, *, owner_id: str | None = None, watch_id: str | None = None
     ) -> EvaluationReport:
+        async with self._eval_lock:
+            return await self._evaluate_all(owner_id=owner_id, watch_id=watch_id)
+
+    async def _evaluate_all(
+        self, *, owner_id: str | None = None, watch_id: str | None = None
+    ) -> EvaluationReport:
         report = EvaluationReport()
         if watch_id is not None:
             w = await self.store.get_watch(watch_id)
@@ -221,7 +236,11 @@ class NotificationService:
             watches = [w async for w in self.store.iter_active_watches(owner_id)]
         created: dict[str, list[Alert]] = {}
         for watch in watches:
-            alerts = await self.evaluate_watch(watch, report)
+            try:
+                alerts = await self.evaluate_watch(watch, report)
+            except Exception as exc:  # one broken watch never aborts the run or loses deliveries
+                report.errors.append({"watch_id": watch.id, "error": type(exc).__name__})
+                continue
             if alerts:
                 created.setdefault(watch.owner_id, []).extend(alerts)
         for owner, alerts in created.items():

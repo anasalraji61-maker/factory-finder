@@ -22,6 +22,32 @@ from ff_payments.domain.errors import DomainError, UpstreamUnavailable
 from ff_payments.providers.base import Charge, InvoiceSpec, Observation, TrackedInvoice
 
 MICRO = Decimal("0.000001")
+_B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+_TRON_VERSION = 0x41
+
+
+def is_valid_tron_address(addr: object) -> bool:
+    """Base58Check: 34 chars, leading 'T', 25 decoded bytes = 0x41 + 20-byte hash + 4-byte double-SHA256 checksum."""
+    if not isinstance(addr, str) or len(addr) != 34 or addr[0] != "T" or any(c not in _B58 for c in addr):
+        return False
+    n = 0
+    for c in addr:
+        n = n * 58 + _B58.index(c)
+    try:
+        raw = n.to_bytes(25, "big")
+    except OverflowError:
+        return False
+    return raw[0] == _TRON_VERSION and hashlib.sha256(hashlib.sha256(raw[:21]).digest()).digest()[:4] == raw[21:]
+
+
+def parse_micro(value: object) -> Decimal | None:
+    """Explorer ``value`` is an integer string of 6-decimal units. Floats, exponents, fractions, negatives -> None."""
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        return None
+    text = str(value)
+    if not text.isascii() or not text.isdigit():
+        return None
+    return Decimal(int(text)).scaleb(-6).quantize(MICRO)
 
 
 class ProviderNotConfigured(DomainError):
@@ -72,11 +98,14 @@ class UsdtTronProvider:
     def __init__(self, *, address: str | None, contract: str | None, explorer: ExplorerClient | None,
                  min_confirmations: int = 20) -> None:
         self.address, self.contract, self.explorer = address, contract, explorer
-        self.min_confirmations = min_confirmations
+        self.min_confirmations = max(1, min_confirmations)
 
     async def create(self, spec: InvoiceSpec) -> Charge:
         if not (self.address and self.contract and self.explorer):
             raise ProviderNotConfigured("usdt_tron needs FF_PAYMENTS_USDT_RECEIVE_ADDRESS, _CONTRACT and _EXPLORER_URL")
+        if not is_valid_tron_address(self.address) or not is_valid_tron_address(self.contract):
+            raise ProviderNotConfigured("usdt_tron receive address / contract is not a valid TRON address",
+                                        code="invalid_address")
         if spec.currency not in ("USD", "USDT"):
             raise DomainError("usdt_tron invoices must be in USD or USDT", code="unsupported_currency")
         pay = amount_with_suffix(spec.amount, spec.invoice_id, spec.taken_pay_amounts)
@@ -87,18 +116,32 @@ class UsdtTronProvider:
         if not (self.address and self.contract and self.explorer and inv.pay_amount is not None):
             return None
         txs = await self.explorer.incoming_trc20(self.address, self.contract, inv.created_ts_ms)
+        best: tuple[dict, int] | None = None
         for tx in txs:
-            info = tx.get("token_info") or {}
-            if info.get("address") not in (None, self.contract):
+            if not isinstance(tx, dict):
                 continue
-            try:
-                value = Decimal(str(tx["value"])) * MICRO
-            except (KeyError, ArithmeticError):
+            if (tx.get("token_info") or {}).get("address") != self.contract:
                 continue
-            if value != inv.pay_amount:
+            if tx.get("to") not in (None, self.address):
                 continue
-            latest = await self.explorer.latest_block()
-            conf = max(0, latest - int(tx.get("block_number", latest)) + 1)
-            return Observation("paid" if conf >= self.min_confirmations else "confirming",
-                               str(tx.get("transaction_id")), conf)
-        return None
+            value = parse_micro(tx.get("value"))
+            if value is None or value != inv.pay_amount:  # exact match only: under/overpay never settles
+                continue
+            ts = tx.get("block_timestamp")
+            if not isinstance(ts, int) or ts < inv.created_ts_ms:  # older transfer cannot belong to this invoice
+                continue
+            blk = tx.get("block_number")
+            height = blk if isinstance(blk, int) and not isinstance(blk, bool) and blk > 0 else None
+            if not tx.get("transaction_id"):
+                continue
+            h = height or 0
+            if best is None or (h and (best[1] == 0 or h < best[1])):
+                best = (tx, h)  # duplicates of the same amount: the earliest mined block wins
+        if best is None:
+            return None
+        tx, height = best
+        conf = 0
+        if height:
+            conf = max(0, await self.explorer.latest_block() - height + 1)
+        return Observation("paid" if conf >= self.min_confirmations else "confirming",
+                           str(tx["transaction_id"]), conf)

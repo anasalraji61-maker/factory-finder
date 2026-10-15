@@ -2,6 +2,7 @@ import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
+import 'package:factory_finder/features/my_products/import/import_models.dart';
 import 'package:factory_finder/features/my_products/my_products_logic.dart';
 import 'package:factory_finder/features/my_products/my_products_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,6 +91,101 @@ class MockMyListingsBackend {
 
   void delete(String id) {
     items.removeAt(_indexOf(id));
+  }
+
+  /// external_ref -> listing id for items created through bulk import.
+  final Map<String, String> _importRefs = <String, String>{};
+
+  /// Mock of `POST /v1/my/listings/import`: idempotent on `external_ref`.
+  ImportResponse importItems(List<Map<String, dynamic>> payload, {required bool dryRun}) {
+    if (payload.isEmpty || payload.length > 100) {
+      throw ApiException(
+        status: 422,
+        code: 'validation_error',
+        message: 'items must hold 1 to 100 entries',
+      );
+    }
+    final seen = <String>{};
+    final results = <ImportItemResult>[];
+    var created = 0;
+    var updated = 0;
+    var rejected = 0;
+    for (var i = 0; i < payload.length; i++) {
+      final item = payload[i];
+      final ref = (item['external_ref'] ?? '').toString();
+      if (ref.isEmpty) {
+        rejected++;
+        results.add(ImportItemResult(index: i, action: 'rejected', reason: 'invalid_item'));
+        continue;
+      }
+      if (!seen.add(ref)) {
+        rejected++;
+        results.add(ImportItemResult(
+          index: i,
+          externalRef: ref,
+          action: 'rejected',
+          reason: 'duplicate_in_batch',
+        ));
+        continue;
+      }
+      final body = Map<String, dynamic>.of(item)..remove('external_ref');
+      final now = DateTime.now().toUtc();
+      final existingId = _importRefs[ref];
+      final exists = existingId != null && items.any((l) => l.id == existingId);
+      if (exists) {
+        updated++;
+        final old = find(existingId);
+        if (!dryRun) {
+          items[_indexOf(existingId)] = OwnedListing.fromJson(<String, dynamic>{
+            ...body,
+            'id': existingId,
+            'status': old.status.json,
+            'created_at': (old.createdAt ?? now).toIso8601String(),
+            'updated_at': now.toIso8601String(),
+            if (old.publishedAt != null) 'published_at': old.publishedAt!.toIso8601String(),
+          });
+        }
+        results.add(ImportItemResult(
+          index: i,
+          externalRef: ref,
+          action: 'updated',
+          id: existingId,
+          status: dryRun ? null : old.status.json,
+        ));
+      } else {
+        created++;
+        String? id;
+        if (!dryRun) {
+          _seq++;
+          id = 'lst_mock_my_${_seq.toString().padLeft(3, '0')}';
+          _importRefs[ref] = id;
+          items.insert(
+            0,
+            OwnedListing.fromJson(<String, dynamic>{
+              ...body,
+              'id': id,
+              'status': 'draft',
+              'created_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+            }),
+          );
+        }
+        results.add(ImportItemResult(
+          index: i,
+          externalRef: ref,
+          action: 'created',
+          id: id,
+          status: dryRun ? null : 'draft',
+        ));
+      }
+    }
+    return ImportResponse(
+      dryRun: dryRun,
+      created: created,
+      updated: updated,
+      rejected: rejected,
+      results: results,
+    );
   }
 
   /// Test/mock helper: puts a listing into a moderation state.
@@ -181,6 +277,23 @@ class MyListingsRepository {
       return;
     }
     await _api.delete('/v1/my/listings/$id');
+  }
+
+  /// Bulk import (max 100 items per call). Per-item failures come back as
+  /// `rejected` results, not exceptions.
+  Future<ImportResponse> importListings(
+    List<Map<String, dynamic>> items, {
+    bool dryRun = false,
+  }) async {
+    if (_api.isMock) {
+      await mockDelay(300);
+      return _mock.importItems(items, dryRun: dryRun);
+    }
+    final json = await _api.post(
+      '/v1/my/listings/import',
+      body: <String, dynamic>{'items': items, 'dry_run': dryRun},
+    );
+    return ImportResponse.fromJson(json);
   }
 
   Future<OwnedListing> publish(String id) async {

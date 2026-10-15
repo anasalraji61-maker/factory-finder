@@ -49,6 +49,16 @@ def listing_from_json(data: dict[str, Any]) -> ListingView:
         raise SourcingUnavailableError(f"malformed listing payload: {exc}") from exc
 
 
+def _is_degraded(body: dict[str, Any]) -> bool:
+    """True when sourcing says the answer is partial or built from substituted results."""
+    if body.get("warning"):
+        return True
+    for src in body.get("sources") or []:
+        if isinstance(src, dict) and (src.get("status", "ok") != "ok" or src.get("warning")):
+            return True
+    return False
+
+
 class HttpSourcingClient:
     def __init__(
         self, base_url: str, timeout: float = 5.0, client: httpx.AsyncClient | None = None
@@ -74,9 +84,13 @@ class HttpSourcingClient:
             raise SourcingUnavailableError(str(exc)) from exc
         if resp.status_code != 200:
             raise SourcingUnavailableError(f"sourcing returned {resp.status_code}")
-        body = resp.json()
-        items = tuple(listing_from_json(i) for i in body.get("items", []))
-        return SearchPage(items=items, total=int(body.get("total", len(items))))
+        try:
+            body = resp.json()
+            items = tuple(listing_from_json(i) for i in body.get("items", []))
+            total = int(body.get("total", len(items)))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise SourcingUnavailableError(f"malformed search payload: {exc}") from exc
+        return SearchPage(items=items, total=total, degraded=_is_degraded(body))
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -88,6 +102,8 @@ class MockSourcingClient:
     def __init__(self, listings: list[ListingView] | None = None) -> None:
         self.catalog: dict[str, ListingView] = {item.id: item for item in listings or []}
         self.fail = False
+        self.degraded = False
+        """Scripted: searches answer with ``SearchPage.degraded`` set (partial_results)."""
 
     def put(self, listing: ListingView) -> None:
         self.catalog[listing.id] = listing
@@ -126,4 +142,6 @@ class MockSourcingClient:
                 continue
             hits.append(item)
         hits.sort(key=lambda i: (i.price.amount, i.id))
-        return SearchPage(items=tuple(hits[:page_size]), total=len(hits))
+        return SearchPage(
+            items=tuple(hits[:page_size]), total=len(hits), degraded=self.degraded
+        )

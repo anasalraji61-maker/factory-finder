@@ -51,6 +51,7 @@ MICRO = Decimal("0.000001")
 PLATFORM = "platform"
 EVENT_TARGET = {"payment.confirming": S.CONFIRMING, "payment.confirmed": S.PAID,
                 "payment.failed": S.FAILED, "payment.expired": S.EXPIRED}
+REORG_GRACE = timedelta(minutes=30)
 KNOWN_PROVIDERS = ("mock", "usdt_tron")
 
 
@@ -485,7 +486,12 @@ class PaymentsService:
                             int(r.created_at.timestamp() * 1000)))
                     except Exception:  # noqa: BLE001 - one bad lookup must not stop the sweep
                         continue
-                    if obs is not None and await self._apply_observation(s, r, obs):
+                    if obs is None:
+                        # reorg safety: a confirming tx that vanished from the chain goes back to awaiting
+                        # (nothing is posted to the ledger before PAID)
+                        if r.status == S.CONFIRMING.value and await self._revert_vanished(s, r):
+                            updated += 1
+                    elif await self._apply_observation(s, r, obs):
                         updated += 1
                 await s.commit()
             expired = await self._expire_due(s)
@@ -494,9 +500,25 @@ class PaymentsService:
         return {"pruned": sum(pruned.values()), "expired": expired, "polled": polled, "updated": updated, "outbox_delivered": box["delivered"],
                 "outbox_retry": box["retry"], "outbox_dead": box["dead"]}
 
+    async def _revert_vanished(self, s: AsyncSession, r: InvoiceRow) -> bool:
+        try:
+            await self._move(s, r, S.AWAITING_PAYMENT, reason="tx_disappeared", confirmations=0)
+        except Conflict:
+            return False
+        r.tx_ref = None
+        # the payer did pay once: give the re-broadcast/re-mined transfer a grace window before expiry applies
+        r.expires_at = max(r.expires_at, self.clock() + REORG_GRACE)
+        return True
+
     async def _apply_observation(self, s: AsyncSession, r: InvoiceRow, obs: Observation) -> bool:
         target = S.PAID if obs.status == "paid" else S.CONFIRMING
         cur = S(r.status)
+        if obs.tx_ref:  # one on-chain transfer can settle at most one invoice
+            dup = (await s.execute(select(InvoiceRow.id).where(
+                InvoiceRow.tx_ref == obs.tx_ref, InvoiceRow.id != r.id, InvoiceRow.provider == r.provider)
+                .limit(1))).first()
+            if dup is not None:
+                return False
         if cur == target:
             changed = obs.confirmations != r.confirmations
             r.confirmations = obs.confirmations

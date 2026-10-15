@@ -110,3 +110,24 @@ flutter test
 ## Assistant cards and cost sensitivity
 - `/assistant` (Logistics tools list): chat with `POST /v1/assistant/query`; renders `cards[]` (shipment_status, deal_status, listing_comparison, hs_code, notice; unknown types shown generically), maps 429 to an ar/en message. Mock mode returns sample cards.
 - Calculator results show quote-level `warnings` and a collapsible "what if" section from the optional per-option `sensitivity` bands.
+
+## Bulk product import (My products)
+
+Route `/my-products/import` (upload icon in the My products app bar) lets a
+verified supplier paste CSV and call `POST /v1/my/listings/import`.
+
+- Header row required. Required columns: `external_ref`, `title`, `category`,
+  `price_min`, `country`. Optional: `title_ar`, `description`, `description_ar`,
+  `price_max` (defaults to `price_min`), `currency` (USD), `unit` (piece),
+  `moq` (1), `kind` (product), `condition` (new), `incoterm`, `unit_weight_kg`,
+  `unit_volume_m3`, `hs_code`, `lead_time_min`, `lead_time_max`, `images`
+  (URLs separated by `|`), `city`. Comma, tab or semicolon delimited.
+- `lib/features/my_products/import/import_logic.dart` holds the pure-Dart CSV
+  parser (quotes, `""`, newlines in quotes, CRLF, BOM, Arabic text/digits) and
+  per-row validation (reuses `validateProductDraft`). Invalid rows are shown
+  with the failing column and are never sent.
+- Dry run first (nothing saved), then Import. The server accepts 100 items per
+  request, so larger pastes are sent in batches of 100 (up to 1000 rows); the
+  screen announces the batch count and keeps partial results if a batch fails.
+- Mock mode: `MockMyListingsBackend.importItems` is idempotent on `external_ref`.
+- Tests: `test/my_products/import_test.dart`, `test/widgets/import_products_test.dart`.

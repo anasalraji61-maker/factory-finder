@@ -20,7 +20,7 @@ append-only double-entry ledger, provider webhooks. Internal only (reached throu
 - Money is a decimal string everywhere (fiat 2 decimals, USDT 6); JSON numbers are rejected.
 - Expiry is lazy on every read and eager via `POST /v1/payments/sweep` (admin; call it from a scheduler), which also polls the provider.
 - Webhook `POST /v1/payments/webhooks/{provider}`: header `X-FF-Signature: t=<unix>,v1=<hex>` = HMAC-SHA256(secret, `"<t>.<raw body>"`), 300 s tolerance, replay protection by `(provider, event_id)`, wrong amounts never settle. The gateway requires auth for this path, so a public ingress that bypasses the gateway is needed before real providers can call it.
-- Providers (`FF_PAYMENTS_PROVIDER`): `mock` (default, deterministic, test hook `MockProvider.confirm`), `usdt_tron` (UNVERIFIED against a live chain or explorer; invoices get a unique sub-cent amount suffix as the match key, confirmed after N blocks), `off` (creation returns 503).
+- Providers (`FF_PAYMENTS_PROVIDER`): `mock` (default, deterministic, test hook `MockProvider.confirm`), `usdt_tron` (UNVERIFIED against a live chain or explorer (see docs/fixes/payments-usdt-review-2026-10.md); address checked by base58check; a confirming tx that disappears reverts to awaiting; invoices get a unique sub-cent amount suffix as the match key, confirmed after N blocks), `off` (creation returns 503).
 
 | Env | Default |
 |---|---|

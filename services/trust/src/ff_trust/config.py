@@ -53,6 +53,9 @@ class ScoringConfig(BaseModel):
     price_anomaly_low: float = 0.6  # price/market below this (or above price_anomaly_high) is flagged
     price_anomaly_high: float = 2.5
     cert_expiring_days: int = 60
+    review_burst_min_reviews: int = 30  # review-pattern check applies from this many marketplace reviews
+    review_burst_min_avg: float = 4.9
+    review_burst_ratio: float = 2.0  # reviews > ratio x transactions with a near-perfect average = suspicious
     review_prior_mean: float = 3.8  # Bayesian shrinkage prior for the average rating
     review_prior_weight: float = 10.0  # pseudo-reviews at the prior mean
     platform_review_prior_weight: float = 8.0  # pseudo-reviews at the prior mean for the rfq review summary
