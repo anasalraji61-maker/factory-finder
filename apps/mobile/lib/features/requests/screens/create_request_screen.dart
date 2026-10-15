@@ -17,7 +17,13 @@ const List<String> kRfqUnits = ['piece', 'kg', 'ton', 'set', 'm', 'line'];
 const List<String> kRfqCurrencies = ['USD', 'EUR', 'CNY', 'IQD'];
 
 class CreateRequestScreen extends ConsumerStatefulWidget {
-  const CreateRequestScreen({super.key});
+  const CreateRequestScreen({
+    super.key,
+    this.initialInvites = const <InvitedSupplier>[],
+  });
+
+  /// Suppliers pre-added as invitees (e.g. from the supplier profile).
+  final List<InvitedSupplier> initialInvites;
 
   @override
   ConsumerState<CreateRequestScreen> createState() => _CreateRequestScreenState();
@@ -38,10 +44,17 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   DateTime? _deadline;
   String? _deadlineError;
   bool _busy = false;
+  final List<InvitedSupplier> _invites = <InvitedSupplier>[];
 
   @override
   void initState() {
     super.initState();
+    for (final i in widget.initialInvites) {
+      if (_invites.length < kRfqMaxInvites &&
+          !_invites.any((e) => e.id == i.id)) {
+        _invites.add(i);
+      }
+    }
     _destination = ref.read(destinationProvider);
   }
 
@@ -114,6 +127,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       deadline: _deadline == null
           ? null
           : DateTime(_deadline!.year, _deadline!.month, _deadline!.day, 23, 59),
+      invitedSupplierIds: <String>[for (final i in _invites) i.id],
     );
     setState(() => _busy = true);
     try {
@@ -288,6 +302,38 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                   style: const TextStyle(color: AppColors.danger, fontSize: 12),
                 ),
               ),
+            if (_invites.isNotEmpty) ...[
+              _label('req.invite.title'),
+              Text(
+                context.tr('req.invite.count', {
+                  'n': '${_invites.length}',
+                  'max': '$kRfqMaxInvites',
+                }),
+                key: const ValueKey<String>('req-invite-count'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final i in _invites)
+                    InputChip(
+                      key: ValueKey<String>('req-invite-${i.id}'),
+                      label: Text(i.name),
+                      deleteButtonTooltipMessage: context.tr('req.invite.remove'),
+                      onDeleted: () => setState(() => _invites.remove(i)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                context.tr('req.invite.note'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.secondaryOf(context),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: context.tr('req.form.submit'),

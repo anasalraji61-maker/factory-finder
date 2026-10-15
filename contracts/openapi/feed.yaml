@@ -33,6 +33,12 @@ info:
     Moderation: a post or comment reported by 3 distinct users (default) is hidden automatically (hidden items return
     404 / disappear from lists). Repeated reports by one user are accepted silently and counted once. Admins hide or
     restore items; restoring clears the report count and the stored reports for the item.
+    Anti-spam (deterministic, thresholds via `FF_FEED_ANTISPAM_*`, 0 disables): a post or comment that repeats (after
+    Arabic/Latin normalization: tashkeel, hamza, ya, taa marbuta, digits) or closely resembles one of the same author's
+    last 20 is refused with 409 `duplicate_content`. A near duplicate of another author's item from the last 24h, a burst
+    of posts/comments, or obfuscated contact details (digits hidden between letters, spelled-out numbers, "DM me") is
+    accepted (201) but held: `status: needs_review`, hidden from every public feed/list/count, still readable by its
+    author, listed in the admin queue (`status=hidden` or `needs_review`); an admin restore publishes it.
     Follow, like and their inverses are idempotent and return the resulting state.
 servers: [{url: http://localhost:8113}]
 paths:
@@ -239,7 +245,7 @@ paths:
       summary: Posts by status (default hidden), newest first, with moderation fields
       security: [{AdminToken: []}]
       parameters:
-        - {name: status, in: query, schema: {type: string, enum: [published, hidden, all], default: hidden}}
+        - {name: status, in: query, schema: {type: string, enum: [published, hidden, needs_review, all], default: hidden}}
         - {$ref: "#/components/parameters/Cursor"}
         - {$ref: "#/components/parameters/Limit"}
       responses:
@@ -275,7 +281,7 @@ paths:
       summary: Comments by status (default hidden), newest first
       security: [{AdminToken: []}]
       parameters:
-        - {name: status, in: query, schema: {type: string, enum: [published, hidden, all], default: hidden}}
+        - {name: status, in: query, schema: {type: string, enum: [published, hidden, needs_review, all], default: hidden}}
         - {name: post_id, in: query, schema: {type: string}}
         - {$ref: "#/components/parameters/Cursor"}
         - {$ref: "#/components/parameters/Limit"}
@@ -401,13 +407,14 @@ components:
         comment_count: {type: integer, minimum: 0}
         viewer_liked: {type: boolean}
         created_at: {type: string, format: date-time}
+        status: {type: string, enum: [published, hidden, needs_review], description: "Present on admin views, and on a post held by anti-spam (needs_review) when read by its author"}
     AdminPost:
       allOf:
         - $ref: "#/components/schemas/Post"
         - type: object
           required: [status, hidden_reason, report_count, author_user_id]
           properties:
-            status: {type: string, enum: [published, hidden]}
+            status: {type: string, enum: [published, hidden, needs_review]}
             hidden_reason: {type: [string, "null"]}
             report_count: {type: integer, minimum: 0}
             author_user_id: {type: string}
@@ -472,13 +479,14 @@ components:
         user_id: {type: string}
         body: {type: string}
         created_at: {type: string, format: date-time}
+        status: {type: string, enum: [published, hidden, needs_review], description: "Present on admin views, and on a comment held by anti-spam (needs_review) when read by its author"}
     AdminComment:
       allOf:
         - $ref: "#/components/schemas/Comment"
         - type: object
           required: [status, hidden_reason, report_count]
           properties:
-            status: {type: string, enum: [published, hidden]}
+            status: {type: string, enum: [published, hidden, needs_review]}
             hidden_reason: {type: [string, "null"]}
             report_count: {type: integer, minimum: 0}
     CommentPage:

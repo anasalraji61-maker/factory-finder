@@ -19,6 +19,7 @@ from sqlalchemy import (
     delete,
     func,
     insert,
+    literal,
     select,
     update,
 )
@@ -349,7 +350,8 @@ class Store:
         if self.engine.dialect.name == "sqlite":
             new_doc = func.json_patch(alerts.c.doc, patch)
         else:  # PostgreSQL: jsonb merge (JSON column -> jsonb -> JSON)
-            new_doc = cast(cast(alerts.c.doc, JSONB).op("||")(cast(patch, JSONB)), JSON)
+            patch_b = cast(literal(patch, String), JSONB)  # str param, not a JSON string scalar
+            new_doc = cast(cast(alerts.c.doc, JSONB).op("||")(patch_b), JSON)
         async with self._lock, self.engine.begin() as conn:
             res = await conn.execute(update(alerts).where(*cond).values(read=True, doc=new_doc))
         return int(res.rowcount)

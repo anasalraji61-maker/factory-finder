@@ -1,5 +1,18 @@
+# Shared hardening for every service (merged with `<<: *hardening`): no capabilities, no privilege gain,
+# PID/memory/CPU caps, bounded logs. Override a key per service if needed (e.g. media mem_limit).
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  init: true
+  pids_limit: 256
+  mem_limit: 512m
+  cpus: 1.0
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
 services:
   gateway:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -59,6 +72,7 @@ services:
       retries: 5
       start_period: 20s
   sourcing:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -98,6 +112,10 @@ services:
     expose:
     - '8101'
   logistics:
+    <<: *hardening
+    read_only: true
+    tmpfs:
+    - /tmp
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -127,6 +145,10 @@ services:
     expose:
     - '8102'
   geo:
+    <<: *hardening
+    read_only: true
+    tmpfs:
+    - /tmp
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -149,6 +171,7 @@ services:
     expose:
     - '8103'
   trust:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -175,6 +198,7 @@ services:
     expose:
     - '8104'
   rfq:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -202,6 +226,7 @@ services:
     expose:
     - '8105'
   messaging:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -230,6 +255,7 @@ services:
     expose:
     - '8106'
   tracking:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -272,6 +298,7 @@ services:
     expose:
     - '8107'
   notifications:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -310,6 +337,10 @@ services:
     expose:
     - '8108'
   assistant:
+    <<: *hardening
+    read_only: true
+    tmpfs:
+    - /tmp
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -344,6 +375,7 @@ services:
     expose:
     - '8109'
   demand:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -373,6 +405,7 @@ services:
     expose:
     - '8110'
   payments:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -408,6 +441,8 @@ services:
     expose:
     - '8111'
   media:
+    <<: *hardening
+    mem_limit: 1g
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -448,6 +483,7 @@ services:
     expose:
     - '8112'
   feed:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -476,6 +512,7 @@ services:
     expose:
     - '8113'
   freight:
+    <<: *hardening
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.service
@@ -510,6 +547,9 @@ services:
     profiles:
     - pg
     image: postgres:16-alpine
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 512
     environment:
       POSTGRES_USER: ff
       POSTGRES_PASSWORD: ${FF_POSTGRES_PASSWORD:-}

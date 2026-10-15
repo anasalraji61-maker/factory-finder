@@ -172,6 +172,7 @@ class MockRfqBackend {
       targetPrice: d.targetPrice,
       destination: d.destination,
       deadline: d.deadline,
+      invitedSupplierIds: List<String>.of(d.invitedSupplierIds),
       createdAt: DateTime.now().toUtc(),
     );
     requests.insert(0, r);

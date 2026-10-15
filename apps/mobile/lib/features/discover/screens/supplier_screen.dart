@@ -95,6 +95,18 @@ class SupplierScreen extends ConsumerWidget {
                         ),
                         orElse: () => const SizedBox.shrink(),
                       ),
+                      OutlinedButton.icon(
+                        key: const ValueKey<String>('supplier-request-quote'),
+                        onPressed: () => context.push(Uri(
+                          path: '/requests/new',
+                          queryParameters: <String, String>{
+                            'supplier': supplierId,
+                            'supplier_name': s.name,
+                          },
+                        ).toString()),
+                        icon: const Icon(Icons.request_quote_outlined, size: 18),
+                        label: Text(context.tr('req.invite.cta')),
+                      ),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.xs,

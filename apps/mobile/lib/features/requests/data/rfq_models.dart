@@ -59,6 +59,32 @@ int? _leadDays(Object? v) {
   return _intOrNull(v);
 }
 
+/// Max invited suppliers on one request (contracts/openapi/rfq.yaml).
+const int kRfqMaxInvites = 50;
+
+final RegExp _supplierIdPattern = RegExp(r'^[A-Za-z0-9_.:-]{1,64}$');
+
+/// True when [id] is acceptable as an `invited_supplier_ids` entry.
+bool isValidInviteId(String id) => _supplierIdPattern.hasMatch(id);
+
+/// A supplier picked as an invitee (only [id] is sent to the backend).
+class InvitedSupplier {
+  const InvitedSupplier({required this.id, required this.name});
+
+  final String id;
+  final String name;
+}
+
+List<String> _stringList(Object? v) {
+  if (v is! List) return const <String>[];
+  final out = <String>[];
+  for (final e in v) {
+    final s = e?.toString() ?? '';
+    if (s.isNotEmpty && !out.contains(s)) out.add(s);
+  }
+  return out;
+}
+
 class RfqRequest {
   const RfqRequest({
     required this.id,
@@ -76,6 +102,7 @@ class RfqRequest {
     this.deadline,
     this.status = RfqStatus.open,
     this.offerCount = 0,
+    this.invitedSupplierIds = const <String>[],
   });
 
   final String id;
@@ -97,6 +124,12 @@ class RfqRequest {
   final RfqStatus status;
   final int offerCount;
   final DateTime createdAt;
+
+  /// Invite-only request: only these suppliers can see it. Echoed by the
+  /// backend in the buyer's own views only; empty otherwise.
+  final List<String> invitedSupplierIds;
+
+  bool get isInviteOnly => invitedSupplierIds.isNotEmpty;
 
   /// Open or negotiating: can still receive / accept offers.
   bool get isLive =>
@@ -120,6 +153,7 @@ class RfqRequest {
         status: status ?? this.status,
         offerCount: offerCount ?? this.offerCount,
         createdAt: createdAt,
+        invitedSupplierIds: invitedSupplierIds,
       );
 
   factory RfqRequest.fromJson(Map<String, dynamic> j) {
@@ -145,6 +179,7 @@ class RfqRequest {
       status: rfqStatusFromJson(j['status'] as String?),
       offerCount: _intOrNull(j['offers_count'] ?? j['offer_count']) ?? 0,
       createdAt: _date(j['created_at']) ?? DateTime.now().toUtc(),
+      invitedSupplierIds: _stringList(j['invited_supplier_ids']),
     );
   }
 
@@ -164,6 +199,8 @@ class RfqRequest {
         'status': status.json,
         'offers_count': offerCount,
         'created_at': _iso(createdAt),
+        if (invitedSupplierIds.isNotEmpty)
+          'invited_supplier_ids': invitedSupplierIds,
       };
 }
 
@@ -180,6 +217,7 @@ class RfqDraft {
     this.category,
     this.targetPrice,
     this.deadline,
+    this.invitedSupplierIds = const <String>[],
   });
 
   final ListingKind kind;
@@ -193,6 +231,9 @@ class RfqDraft {
   final Location destination;
   final DateTime? deadline;
 
+  /// Optional invite-only list (max [kRfqMaxInvites]); omitted when empty.
+  final List<String> invitedSupplierIds;
+
   Map<String, dynamic> toJson() => {
         'kind': kind.json,
         if (condition != null) 'condition': condition!.json,
@@ -203,6 +244,8 @@ class RfqDraft {
         if (targetPrice != null) 'target_price': targetPrice!.toJson(),
         'destination': destination.toJson(),
         if (deadline != null) 'deadline': _iso(deadline!),
+        if (invitedSupplierIds.isNotEmpty)
+          'invited_supplier_ids': invitedSupplierIds,
       };
 }
 

@@ -131,7 +131,7 @@ async def unlike(post_id: ObjId, s: S, user: User):
 # ---- comments
 @router.get("/posts/{post_id}/comments")
 async def list_comments(post_id: ObjId, s: S, user: User, cursor: Cursor = None, limit: Limit = None):
-    return await s.list_comments(post_id, cursor, limit)
+    return await s.list_comments(post_id, cursor, limit, user)
 
 
 @router.post("/posts/{post_id}/comments", status_code=201)
@@ -157,7 +157,7 @@ async def report_comment(comment_id: ObjId, body: ReportIn, s: S, user: User):
 
 
 # ---- admin moderation (X-Admin-Token; 404 when FF_FEED_ADMIN_TOKEN is unset)
-Status = Annotated[str, Query(pattern="^(published|hidden|all)$")]
+Status = Annotated[str, Query(pattern="^(published|hidden|needs_review|all)$")]
 
 
 @admin.get("/posts", dependencies=[Depends(require_admin)])

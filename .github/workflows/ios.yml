@@ -7,14 +7,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
           channel: stable

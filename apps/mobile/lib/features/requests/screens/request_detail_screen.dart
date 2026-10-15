@@ -202,6 +202,12 @@ class _RequestHeader extends StatelessWidget {
           Wrap(
             spacing: AppSpacing.sm,
             children: [
+              if (r.isInviteOnly)
+                StatusPill(
+                  key: const ValueKey<String>('req-invite-only-pill'),
+                  label: context.tr('req.invite.pill'),
+                  color: AppColors.warning,
+                ),
               StatusPill(
                 label: context.tr('req.kind.${r.kind.json}'),
                 color: AppColors.accent,

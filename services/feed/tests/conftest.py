@@ -48,6 +48,9 @@ def make_client(clock):
     def _make(**kw):
         kw.setdefault("database_url", "sqlite+aiosqlite:///:memory:")
         kw.setdefault("report_min_account_age_seconds", 0)
+        # legacy tests post identical bodies in bulk: duplicate/velocity checks are opted into per test
+        for k in ("antispam_author_history", "antispam_cross_window_hours", "antispam_velocity_posts", "antispam_velocity_comments"):
+            kw.setdefault(k, 0)
         c = TestClient(create_app(Settings(**kw), clock=clock))
         c.__enter__()
         clients.append(c)

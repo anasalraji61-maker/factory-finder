@@ -12,6 +12,7 @@ from sqlalchemy import and_, delete, func, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ff_feed import antispam
 from ff_feed import cursor as cur
 from ff_feed.config import Settings
 from ff_feed.db import comments, follows, likes, now, posts, rate_events, reports
@@ -114,6 +115,49 @@ class FeedService:
                 details={"reasons": reasons},
             )
 
+    async def _antispam(self, c, kind: str, user: str, text: str) -> str | None:
+        """Deterministic spam checks for a new post (``kind='post'``) or comment. Raises 409
+        ``duplicate_content`` for an obvious repeat by the same author; returns a review reason code when
+        the item should be held (``needs_review``), else None. Never echoes other users' content."""
+        s = self.s
+        tbl, who = (posts, posts.c.author_user_id) if kind == "post" else (comments, comments.c.user_id)
+        new = antispam.fingerprint(text)
+        if s.antispam_author_history:
+            rows = await c.execute(
+                select(tbl.c.body).where(who == user).order_by(tbl.c.created_at.desc()).limit(s.antispam_author_history)
+            )
+            for (old,) in rows:
+                if antispam.is_match(new, antispam.fingerprint(old), s.antispam_author_similarity, s.antispam_min_tokens):
+                    raise Conflict(
+                        "You already posted this; edit it or post something new",
+                        code="duplicate_content",
+                    )
+        t = self.clock()
+        reasons: list[str] = []
+        if s.antispam_cross_window_hours and new.size >= s.antispam_min_tokens:
+            since = t - timedelta(hours=s.antispam_cross_window_hours)
+            rows = await c.execute(
+                select(tbl.c.body).where(who != user, tbl.c.created_at >= since)
+                .order_by(tbl.c.created_at.desc()).limit(s.antispam_cross_scan_limit)
+            )  # fmt: skip
+            if any(
+                antispam.is_match(new, antispam.fingerprint(old), s.antispam_cross_similarity, s.antispam_min_tokens)
+                for (old,) in rows
+            ):
+                reasons.append("cross_author_duplicate")
+        limit = s.antispam_velocity_posts if kind == "post" else s.antispam_velocity_comments
+        if limit:
+            n = await c.scalar(
+                select(func.count()).select_from(tbl).where(
+                    who == user, tbl.c.created_at >= t - timedelta(seconds=s.antispam_velocity_window_seconds)
+                )
+            )
+            if (n or 0) >= limit:
+                reasons.append("velocity")
+        if s.antispam_suspicious:
+            reasons += antispam.suspicious_signals(text)
+        return "antispam: " + ",".join(reasons) if reasons else None
+
     @staticmethod
     def _post(r, liked: set[str], admin: bool = False) -> dict:
         d = {
@@ -128,9 +172,10 @@ class FeedService:
             "viewer_liked": r.id in liked,
             "created_at": _iso(r.created_at),
         }
+        if r.status == "needs_review" or admin:  # the author sees a held post; everyone else gets 404
+            d["status"] = r.status
         if admin:
             d |= {
-                "status": r.status,
                 "hidden_reason": r.hidden_reason,
                 "report_count": r.report_count,
                 "author_user_id": r.author_user_id,
@@ -141,8 +186,10 @@ class FeedService:
     def _comment(r, admin: bool = False) -> dict:
         d = {"id": r.id, "post_id": r.post_id, "user_id": r.user_id, "body": r.body,
              "created_at": _iso(r.created_at)}  # fmt: skip
+        if r.status == "needs_review" or admin:
+            d["status"] = r.status
         if admin:
-            d |= {"status": r.status, "hidden_reason": r.hidden_reason, "report_count": r.report_count}
+            d |= {"hidden_reason": r.hidden_reason, "report_count": r.report_count}
         return d
 
     async def _liked(self, c, user: str | None, ids: list[str]) -> set[str]:
@@ -180,10 +227,12 @@ class FeedService:
                 raise Conflict(
                     "Post limit reached; delete an old post first", code="post_limit_reached"
                 )
+            held = await self._antispam(c, "post", user, body.body)
             await c.execute(
                 insert(posts).values(
                     id=pid, supplier_id=supplier, author_user_id=user, body=body.body, media=media,
-                    tags=body.tags, listing_ref=body.listing_ref, status="published",
+                    tags=body.tags, listing_ref=body.listing_ref,
+                    status="needs_review" if held else "published", hidden_reason=held,
                     like_count=0, comment_count=0, report_count=0, score=0, created_at=t,
                 )  # fmt: skip
             )
@@ -198,9 +247,17 @@ class FeedService:
             raise NotFound("Post not found")
         return r
 
+    @staticmethod
+    def _readable(user: str | None):
+        """Published, or held for review and read by its own author."""
+        pub = posts.c.status == "published"
+        return or_(pub, and_(posts.c.status == "needs_review", posts.c.author_user_id == user)) if user else pub
+
     async def get_post(self, user: str | None, post_id: str) -> dict:
         async with self.engine.connect() as c:
-            r = await self._visible_post(c, post_id)
+            r = (await c.execute(select(posts).where(posts.c.id == post_id, self._readable(user)))).first()
+            if r is None:
+                raise NotFound("Post not found")
             return self._post(r, await self._liked(c, user, [post_id]))
 
     async def delete_post(self, user: str, supplier: str | None, post_id: str) -> None:
@@ -217,7 +274,7 @@ class FeedService:
 
     async def supplier_posts(self, user: str | None, supplier_id: str, cursor: str | None, limit: int | None) -> dict:
         limit = self._limit(limit)
-        q = select(posts).where(posts.c.supplier_id == supplier_id, posts.c.status == "published")
+        q = select(posts).where(posts.c.supplier_id == supplier_id, self._readable(user))
         q = self._after_time(q, cursor)
         async with self.engine.connect() as c:
             return await self._post_page(c, q, user, limit, "c")
@@ -383,22 +440,28 @@ class FeedService:
             p = await self._visible_post(c, post_id)
             if p.comment_count >= self.s.max_comments_per_post:
                 raise Conflict("This post has reached its comment limit", code="comment_limit_reached")
+            held = await self._antispam(c, "comment", user, body.body)
             await c.execute(
                 insert(comments).values(
-                    id=cid, post_id=post_id, user_id=user, body=body.body, status="published",
+                    id=cid, post_id=post_id, user_id=user, body=body.body,
+                    status="needs_review" if held else "published", hidden_reason=held,
                     report_count=0, created_at=self.clock(),
                 )  # fmt: skip
             )
-            await c.execute(
-                update(posts).where(posts.c.id == post_id)
-                .values(comment_count=posts.c.comment_count + 1, score=posts.c.score + 2)
-            )  # fmt: skip
+            if not held:  # held comments are not counted until an admin restores them
+                await c.execute(
+                    update(posts).where(posts.c.id == post_id)
+                    .values(comment_count=posts.c.comment_count + 1, score=posts.c.score + 2)
+                )  # fmt: skip
             r = (await c.execute(select(comments).where(comments.c.id == cid))).one()
         return self._comment(r)
 
-    async def list_comments(self, post_id: str, cursor: str | None, limit: int | None) -> dict:
+    async def list_comments(self, post_id: str, cursor: str | None, limit: int | None, user: str | None = None) -> dict:
         limit = self._limit(limit)
-        q = select(comments).where(comments.c.post_id == post_id, comments.c.status == "published")
+        vis = comments.c.status == "published"
+        if user:  # a held comment stays visible to its own author
+            vis = or_(vis, and_(comments.c.status == "needs_review", comments.c.user_id == user))
+        q = select(comments).where(comments.c.post_id == post_id, vis)
         if cursor:
             d = cur.decode(cursor, ("c",))
             q = q.where(
@@ -493,7 +556,9 @@ class FeedService:
     async def admin_posts(self, status: str, cursor: str | None, limit: int | None) -> dict:
         limit = self._limit(limit)
         q = select(posts)
-        if status != "all":
+        if status == "hidden":  # the moderation queue: hidden + held for review
+            q = q.where(posts.c.status.in_(("hidden", "needs_review")))
+        elif status != "all":
             q = q.where(posts.c.status == status)
         q = self._after_time(q, cursor)
         async with self.engine.connect() as c:
@@ -515,7 +580,9 @@ class FeedService:
     async def admin_comments(self, status: str, post_id: str | None, cursor: str | None, limit: int | None) -> dict:
         limit = self._limit(limit)
         q = select(comments)
-        if status != "all":
+        if status == "hidden":
+            q = q.where(comments.c.status.in_(("hidden", "needs_review")))
+        elif status != "all":
             q = q.where(comments.c.status == status)
         if post_id:
             q = q.where(comments.c.post_id == post_id)

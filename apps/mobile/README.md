@@ -10,7 +10,7 @@ Runs entirely in **mock mode** by default: no backend is needed.
 | Discover | `/discover`, `/discover/search?q=` | feed, trending, kind/category chips, search, filters + sort |
 | Listing / Supplier | `/listing/:id`, `/supplier/:id` | detail, trust factors sheet, supplier page |
 | Business verification | `/verification` | supplier documents, status chips, submit/withdraw; public level badge on supplier and listing screens |
-| Requests & Offers | `/requests`, `/requests/new`, `/requests/:id` | my/open requests, create form, offers, accept -> deal summary (commission) |
+| Requests & Offers | `/requests`, `/requests/new?supplier=<id>&supplier_name=<name>`, `/requests/:id` | my/open requests, create form, offers, accept -> deal summary (commission). Invite-only RFQs: the supplier profile has a 'Request a quote from this supplier' action that opens the create form with that supplier pre-added as an invitee; the form shows a removable 'Invited suppliers' chip list (max 50, only they can see the request) and sends `invited_supplier_ids`; the buyer's request detail shows an 'Invite-only' pill |
 | Messages | `/messages` | placeholder |
 | Logistics | `/logistics`, `/logistics/calculator?listing_id=`, `/logistics/results` | landed-cost calculator + comparison results |
 | Freight quotes | `/logistics/freight`, `/logistics/freight/new`, `/logistics/freight/requests/:id`, `/logistics/freight/forwarder/apply`, `/logistics/freight/forwarder/requests/:id` | forwarder marketplace (`contracts/openapi/freight.yaml`): buyer requests + ranked quote comparison, accept / complete / rate, forwarder application, inbox, quote submit / revise / withdraw, abuse reports. Code in `lib/features/freight/` |

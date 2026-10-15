@@ -6,6 +6,7 @@ import 'package:factory_finder/features/onboarding/onboarding_screen.dart';
 import 'package:factory_finder/features/onboarding/onboarding_strings.dart';
 import 'package:factory_finder/features/payments/payments_strings.dart';
 import 'package:factory_finder/features/payments/screens/invoice_screen.dart';
+import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/requests_strings.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart';
 import 'package:factory_finder/features/requests/screens/request_detail_screen.dart';
@@ -60,7 +61,20 @@ final FeatureModule featureModuleA = FeatureModule(
         routes: [
           GoRoute(
             path: 'new',
-            builder: (context, state) => const CreateRequestScreen(),
+            builder: (context, state) {
+              final sid = state.uri.queryParameters['supplier'];
+              final name = state.uri.queryParameters['supplier_name'];
+              return CreateRequestScreen(
+                initialInvites: (sid == null || !isValidInviteId(sid))
+                    ? const <InvitedSupplier>[]
+                    : <InvitedSupplier>[
+                        InvitedSupplier(
+                          id: sid,
+                          name: (name == null || name.isEmpty) ? sid : name,
+                        ),
+                      ],
+              );
+            },
           ),
           GoRoute(
             path: ':id',

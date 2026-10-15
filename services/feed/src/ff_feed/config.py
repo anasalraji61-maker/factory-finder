@@ -56,6 +56,18 @@ class Settings(BaseSettings):
     rate_follows: int = Field(default=60, ge=0)
     rate_reports: int = Field(default=20, ge=0)
 
+    # anti-spam (deterministic, no ML/network); every numeric knob: 0 disables that check
+    antispam_author_history: int = Field(default=20, ge=0, le=200)  # own recent posts/comments compared; 0 = off
+    antispam_author_similarity: float = Field(default=0.9, ge=0, le=1)  # Jaccard => 409; 0 = exact hash only
+    antispam_cross_window_hours: int = Field(default=24, ge=0, le=168)  # other authors' items compared; 0 = off
+    antispam_cross_similarity: float = Field(default=0.8, ge=0, le=1)  # Jaccard => needs_review; 0 = exact only
+    antispam_cross_scan_limit: int = Field(default=500, ge=1, le=5000)  # newest rows scanned per check
+    antispam_min_tokens: int = Field(default=4, ge=1)  # shorter texts are never "duplicates"
+    antispam_velocity_posts: int = Field(default=5, ge=0)  # posts per velocity window before review; 0 = off
+    antispam_velocity_comments: int = Field(default=10, ge=0)
+    antispam_velocity_window_seconds: int = Field(default=60, ge=1)
+    antispam_suspicious: int = Field(default=1, ge=0, le=1)  # obfuscated contact / solicitation / flooding; 0 = off
+
     @property
     def internal_token_value(self) -> str | None:
         return self.internal_token.get_secret_value() or None if self.internal_token else None

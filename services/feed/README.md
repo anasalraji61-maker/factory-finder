@@ -5,6 +5,7 @@ Social side of the app: supplier/factory **posts**, **follow** / unfollow, a per
 - Identity: `X-User-Id` (required, except anonymous `GET /v1/feed/trending`); posting needs the gateway-verified `X-Supplier-Id` (403 `supplier_required` otherwise). Neither is ever read from a body.
 - Posts: text 1-2000 chars, <= 5 media URLs that must be media-service paths (`/v1/media/files/<32 hex>.<jpg|png|webp>`; absolute only under `FF_FEED_MEDIA_BASE_URL`), <= 5 tags, optional `listing_ref` (not verified against sourcing).
 - Screening (`moderation.py`, a trimmed copy of sourcing's): links, e-mails, phone numbers, messaging handles and prohibited goods (ar + en) are rejected with 422 `content_rejected`; the match is never echoed.
+- Anti-spam (`antispam.py`, pure and deterministic): same-author exact/near duplicate (last 20 posts or comments; normalized hash or 3-word-shingle Jaccard >= 0.9) -> 409 `duplicate_content`; near duplicate of another author's item (24h, Jaccard >= 0.8), per-author velocity (5 posts / 10 comments per 60 s) or obfuscated contact/solicitation/flooding -> 201 with `status: needs_review` (hidden from public surfaces, visible to its author, listed in the admin queue; admin restore publishes). Plain contact info is still rejected by screening (422). See `docs/decisions/feed-antispam.md`.
 - Feeds use opaque keyset cursors (`limit` <= 50). Trending = likes + 2 x comments over the last 14 days.
 - Reports: N distinct reporters (default 3) hide a post/comment; repeats are accepted silently (202). Admin hide/restore (restore clears the reports).
 - Limits: per-user rolling-hour rate limits stored in the DB (so they hold across replicas), plus caps on posts per supplier, follows per user and comments per post.
@@ -42,5 +43,15 @@ Every setting in `src/ff_feed/config.py` (`Settings`, case-insensitive env names
 | `FF_FEED_RATE_LIKES` | 200 |
 | `FF_FEED_RATE_FOLLOWS` | 60 |
 | `FF_FEED_RATE_REPORTS` | 20 |
+| `FF_FEED_ANTISPAM_AUTHOR_HISTORY` | 20 (0 disables the same-author check) |
+| `FF_FEED_ANTISPAM_AUTHOR_SIMILARITY` | 0.9 (0 = exact normalized match only) |
+| `FF_FEED_ANTISPAM_CROSS_WINDOW_HOURS` | 24 (0 disables the cross-author check) |
+| `FF_FEED_ANTISPAM_CROSS_SIMILARITY` | 0.8 (0 = exact only) |
+| `FF_FEED_ANTISPAM_CROSS_SCAN_LIMIT` | 500 |
+| `FF_FEED_ANTISPAM_MIN_TOKENS` | 4 (shorter texts are never duplicates) |
+| `FF_FEED_ANTISPAM_VELOCITY_POSTS` | 5 (0 disables) |
+| `FF_FEED_ANTISPAM_VELOCITY_COMMENTS` | 10 (0 disables) |
+| `FF_FEED_ANTISPAM_VELOCITY_WINDOW_SECONDS` | 60 |
+| `FF_FEED_ANTISPAM_SUSPICIOUS` | 1 (0 disables obfuscation/solicitation/flooding signals) |
 
 Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).
