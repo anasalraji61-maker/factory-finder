@@ -109,7 +109,7 @@ void main() {
       adapter
         ..online = false
         ..offlineStatus = 500;
-      expect(() => repo.search(q), throwsA(isA<ApiException>()));
+      await expectLater(repo.search(q), throwsA(isA<ApiException>()));
     });
 
     test('expired cache is ignored and the error surfaces', () async {
@@ -123,13 +123,13 @@ void main() {
       await repo.search(q);
       adapter.online = false;
       now = now.add(const Duration(hours: 25));
-      expect(() => repo.search(q), throwsA(isA<ApiException>()));
+      await expectLater(repo.search(q), throwsA(isA<ApiException>()));
     });
 
     test('without a cache the network error is rethrown', () async {
       final adapter = _Adapter(searchBody())..online = false;
       final repo = DiscoverRepository(_client(adapter));
-      expect(() => repo.search(const ListingQuery()), throwsA(isA<ApiException>()));
+      await expectLater(repo.search(const ListingQuery()), throwsA(isA<ApiException>()));
     });
 
     test('only the search slot is written', () async {
@@ -201,7 +201,7 @@ void main() {
       expect(store.data, isEmpty);
       await r.home();
       adapter.online = false;
-      expect(() => r.home(cursor: 'c2'), throwsA(isA<ApiException>()));
+      await expectLater(r.home(cursor: 'c2'), throwsA(isA<ApiException>()));
     });
   });
 }
