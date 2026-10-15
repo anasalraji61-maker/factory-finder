@@ -183,13 +183,21 @@ class RequestCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              StatusPill(
-                label: context.tr('req.kind.${r.kind.json}'),
-                color: AppColors.accent,
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    StatusPill(
+                      label: context.tr('req.kind.${r.kind.json}'),
+                      color: AppColors.accent,
+                    ),
+                    if (r.targetPrice != null) MoneyText(r.targetPrice!),
+                  ],
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              if (r.targetPrice != null) MoneyText(r.targetPrice!),
-              const Spacer(),
               const Icon(Icons.local_offer_outlined, size: 16),
               const SizedBox(width: 4),
               Text(

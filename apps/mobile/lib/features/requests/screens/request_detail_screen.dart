@@ -169,12 +169,20 @@ class _RequestHeader extends StatelessWidget {
           padding: const EdgeInsets.only(top: 6),
           child: Row(
             children: [
-              Text(
-                context.tr(labelKey),
-                style: const TextStyle(color: AppColors.textSecondary),
+              Flexible(
+                child: Text(
+                  context.tr(labelKey),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ),
-              const Spacer(),
-              value,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: value,
+                ),
+              ),
             ],
           ),
         );
@@ -276,12 +284,20 @@ class OfferCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4),
           child: Row(
             children: [
-              Text(
-                context.tr(labelKey),
-                style: const TextStyle(color: AppColors.textSecondary),
+              Flexible(
+                child: Text(
+                  context.tr(labelKey),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ),
-              const Spacer(),
-              value,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: value,
+                ),
+              ),
             ],
           ),
         );
