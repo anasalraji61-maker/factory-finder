@@ -29,7 +29,7 @@ void main() {
     test('format keeps code before amount; isolate wraps it', () {
       const m = Money(amount: '1234.5', currency: 'TRY');
       expect(m.format(), 'TRY 1,234.50');
-      expect(m.formatIsolated(), '⁦TRY 1,234.50⁩');
+      expect(m.formatIsolated(), '\u2066TRY 1,234.50\u2069');
     });
   });
 
@@ -48,7 +48,7 @@ void main() {
     test('verbatim ids keep ASCII digits, surrounding text converts', () {
       final s = 'حاوية ${verbatim('MSKU1234567')} بعد 5 أيام';
       expect(localizeDigits(s, DigitStyle.arabicIndic),
-          'حاوية ⁨MSKU1234567⁩ بعد ٥ أيام');
+          'حاوية \u2068MSKU1234567\u2069 بعد ٥ أيام');
       expect(localizeDigits(s, DigitStyle.western), s);
     });
     test('isolated money is still localized (different marker)', () {
