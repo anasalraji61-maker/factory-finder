@@ -9,7 +9,7 @@ Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 
 ## WebSocket proxy
 
-`WS /v1/ws/conversations/{id}` is proxied to messaging (same path). Auth: preferred `?ticket=` from `POST /v1/ws-ticket` (single use, 30 s, `FF_GATEWAY_WS_TICKET_TTL_SECONDS` / `FF_GATEWAY_WS_TICKET_MAX`); legacy `Authorization: Bearer <access>` or `?token=<access>` stays accepted while `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true` (default). Only the verified `X-User-Id` / `X-Supplier-Id` (and `X-Internal-Token` if configured) go upstream; client-supplied `user_id` and the token are never forwarded. Close codes: 4401 unauthenticated, 4403/4429 from messaging, 4404 unknown path, 1011 upstream unavailable. Note: access logs of the ASGI server may record `?token=`; prefer the header where possible.
+`WS /v1/ws/conversations/{id}` is proxied to messaging (same path). Auth: preferred `?ticket=` from `POST /v1/ws-ticket` (single use, 30 s, `FF_GATEWAY_WS_TICKET_TTL_SECONDS` / `FF_GATEWAY_WS_TICKET_MAX`); legacy `Authorization: Bearer <access>` / `?token=<access>` is **off by default** (`FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true` re-enables it for pre-ticket app builds; mobile's `chat_socket_provider` already fetches tickets and only falls back to the token against old gateways). Handshakes count in the same per-IP bucket as HTTP (`RATE_LIMIT_PER_MINUTE`, close 4429), `POST /v1/ws-ticket` is limited per user (`WS_TICKET_RATE_LIMIT_PER_MINUTE`, 30, 429) and each user may hold `WS_MAX_CONNECTIONS_PER_USER` (5, 0 = off, per process) open sockets (extra ones close 4429). Only the verified `X-User-Id` / `X-Supplier-Id` (and `X-Internal-Token` if configured) go upstream; client-supplied `user_id` and the token are never forwarded. Close codes: 4401 unauthenticated, 4403/4429 from messaging, 4404 unknown path, 1011 upstream unavailable. Note: access logs of the ASGI server may record `?token=`; prefer the header where possible.
 
 ## Supplier claims
 
@@ -26,11 +26,17 @@ With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pen
 ## Security notes
 - Refresh tokens are single-use and tracked in `refresh_tokens` (hashed jti + family). Reusing a rotated token revokes the family; `POST /v1/auth/logout` revokes it explicitly.
 - CORS: no origins allowed unless `FF_GATEWAY_CORS_ORIGINS` (JSON list) is set.
-- WebSocket auth accepts `?token=<access jwt>` (clients cannot set headers); uvicorn access logs are redacted, any proxy in front must scrub it too.
+- WebSocket auth uses `?ticket=` (default); the `?token=` fallback is opt-in (`FF_GATEWAY_WS_ALLOW_TOKEN_PARAM`), uvicorn access logs are redacted, any proxy in front must scrub it too.
 - Verified `X-Supplier-Id` (admin-verified claims only) is forwarded to messaging and rfq; client-sent values are never forwarded.
 
 ## Email verification
 `POST /v1/auth/verify-email {token}` (204; generic 400 for unknown/expired/used/stale tokens) and `POST /v1/auth/resend-verification {email}` (always 202, same body for unknown/verified/known accounts; silently throttled to `RESEND_VERIFICATION_PER_MINUTE` per address on top of the auth IP limit). Tokens are random (`token_urlsafe(32)`), stored only as SHA-256 in `email_verification_tokens`, single use, TTL `EMAIL_VERIFICATION_TTL_SECONDS` (24 h), bound to the address they were issued for (changing `email` via `PATCH /v1/me` resets `email_verified` and mails the new address). `MeOut.email_verified` is additive. Mail goes through `domain/mail.py`: `FF_GATEWAY_MAIL_BACKEND=off` (default: nothing sent, no tokens issued), `mock` (in-memory `app.state.mailer.outbox`, for tests), `smtp` (`SMTP_HOST/PORT/USER/PASSWORD/STARTTLS`, `MAIL_FROM`, optional `VERIFY_URL_TEMPLATE` with `{token}`). `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED=true` (default false) makes payments writes, new supplier claims (`PATCH /v1/me supplier_id`) and `/v1/my/*` writes answer 403 `email_not_verified`; phone-only accounts stay unverified, so enable it only with mail on.
+
+## Password reset and change
+- `POST /v1/auth/password/forgot {email}`: always 202 `{"status":"accepted"}`, identical for unknown/disabled/known accounts and when mail is off. Lookup, token and mail happen after the response (no timing oracle). Token: `token_urlsafe(32)`, only SHA-256 in `password_reset_tokens`, TTL `PASSWORD_RESET_TTL_SECONDS` (1800), a newer request drops older tokens. Silent throttle (still 202) per email+IP (`PASSWORD_FORGOT_PER_MINUTE`, 1) and per email (`PASSWORD_FORGOT_PER_EMAIL_PER_MINUTE`, 3); the per-IP auth limit gives 429. Mail via `domain/mail.py` (needs `MAIL_BACKEND` mock|smtp; optional `PASSWORD_RESET_URL_TEMPLATE` with `{token}`).
+- `POST /v1/auth/password/reset {token, new_password}`: 204; unknown/expired/used token -> generic 400 `invalid_reset_token`; weak password -> 422 and the token is kept; success sets the hash, marks the token used (atomic) and revokes every refresh token of the user.
+- `POST /v1/me/password {current_password, new_password}` (bearer): wrong current -> 403 `reauth_failed` (failures throttled per user via `LOGIN_FAIL_LIMIT_PER_MINUTE`, then 429); revokes all refresh tokens and returns a fresh `Tokens` pair for this device. Access tokens of other sessions live out their <= 15 min.
+- `PATCH /v1/me` with a changed/removed `email` needs `current_password` (422 missing, 403 wrong); the old address gets a notice mail.
 
 ## Ops (logging / readiness / rate limits)
 - `GET /ready`: 503 if the database is down; otherwise 200 with `checks` and `upstreams` as `{name: up|down boolean}` only (no URLs; probed via each upstream `/health`, cached 5 s). `status` is `degraded` when any upstream is down.
@@ -67,7 +73,13 @@ Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env na
 | `FF_GATEWAY_UPSTREAM_TIMEOUT_SECONDS` | 15.0 |
 | `FF_GATEWAY_WS_TICKET_TTL_SECONDS` | 30 |
 | `FF_GATEWAY_WS_TICKET_MAX` | 10000 |
-| `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` | True |
+| `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` | False |
+| `FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER` | 5 (0 = off) |
+| `FF_GATEWAY_WS_TICKET_RATE_LIMIT_PER_MINUTE` | 30 (0 = off) |
+| `FF_GATEWAY_PASSWORD_RESET_TTL_SECONDS` | 1800 |
+| `FF_GATEWAY_PASSWORD_FORGOT_PER_MINUTE` | 1 (per email+IP) |
+| `FF_GATEWAY_PASSWORD_FORGOT_PER_EMAIL_PER_MINUTE` | 3 |
+| `FF_GATEWAY_PASSWORD_RESET_URL_TEMPLATE` | unset |
 | `FF_GATEWAY_MAX_BODY_BYTES` | 10485760 |
 | `FF_GATEWAY_JSON_MAX_BODY_BYTES` | 1048576 (cap for every non-media route; MAX_BODY_BYTES applies to `/v1/media`) |
 | `FF_GATEWAY_BODY_READ_TIMEOUT_SECONDS` | 30 (whole body must arrive; media: `FF_GATEWAY_MEDIA_BODY_READ_TIMEOUT_SECONDS` 120) |

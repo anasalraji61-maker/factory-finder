@@ -126,6 +126,12 @@ class InvalidVerificationToken(GatewayError):
     default_message = "The verification token is invalid or has expired"
 
 
+class InvalidResetToken(GatewayError):
+    status_code = 400
+    code = "invalid_reset_token"
+    default_message = "The password reset token is invalid or has expired"
+
+
 class RateLimited(GatewayError):
     status_code = 429
     code = "rate_limited"

@@ -58,7 +58,9 @@ class Settings(BaseSettings):
     ws_ticket_max: int = 10_000
     # Keep accepting the access token in the ?token= query / Authorization header at the websocket
     # handshake (compat for old app builds). Set false once clients use ?ticket=.
-    ws_allow_token_param: bool = True
+    ws_allow_token_param: bool = False  # mobile fetches tickets (chat_socket_provider); flip to true only for pre-ticket app builds
+    ws_max_connections_per_user: int = 5  # concurrent proxied sockets per user, then close 4429 (0 = off)
+    ws_ticket_rate_limit_per_minute: int = 30  # POST /v1/ws-ticket per user (0 = off), on top of the HTTP limits
     max_body_bytes: int = 10 * 1024 * 1024  # media uploads (multipart); every other route class is capped by json_max_body_bytes
     json_max_body_bytes: int = 1024 * 1024
     body_read_timeout_seconds: float = 30.0  # whole request body must arrive within this (media: media_body_read_timeout_seconds)
@@ -101,6 +103,11 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: str | None = None
     smtp_starttls: bool = True
+    # Password reset (POST /v1/auth/password/forgot|reset); needs a mail backend, otherwise forgot is a silent no-op.
+    password_reset_ttl_seconds: int = 30 * 60
+    password_forgot_per_minute: int = 1  # per email+IP, silently throttled (same 202)
+    password_forgot_per_email_per_minute: int = 3  # per email over all IPs (limits mailbox flooding)
+    password_reset_url_template: str | None = None  # e.g. https://app.example.com/reset?token={token}
     # Optional link template put in the mail, e.g. https://app.example.com/verify?token={token}
     verify_url_template: str | None = None
 

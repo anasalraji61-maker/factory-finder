@@ -88,6 +88,41 @@ paths:
       responses:
         "202": {description: Accepted, content: {application/json: {schema: {type: object, properties: {status: {type: string}}}}}}
         "429": {$ref: "#/components/responses/Error"}
+  /v1/auth/password/forgot:
+    post:
+      operationId: forgotPassword
+      summary: Request a password reset mail (always 202 with an identical body; no account enumeration)
+      description: "If the email belongs to an active account and a mail backend is configured, a single-use reset token (random, SHA-256 only at rest, TTL FF_GATEWAY_PASSWORD_RESET_TTL_SECONDS = 30 min) is mailed. Work happens after the response. Throttled silently (same 202) per email+IP (FF_GATEWAY_PASSWORD_FORGOT_PER_MINUTE) and per email (..._PER_EMAIL_PER_MINUTE); the per-IP auth limit still answers 429. A newer request invalidates older tokens."
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [email], properties: {email: {type: string, format: email}}}}}}
+      responses:
+        "202": {description: Accepted, content: {application/json: {schema: {type: object, properties: {status: {type: string}}}}}}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/auth/password/reset:
+    post:
+      operationId: resetPassword
+      summary: Set a new password with a reset token (single use)
+      description: "Unknown, expired, used or stale token -> one generic 400 `invalid_reset_token`. The new password must satisfy the registration policy (422; the token is not consumed then). On success every refresh token of the user is revoked; sign in again."
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [token, new_password], properties: {token: {type: string}, new_password: {type: string, minLength: 8, maxLength: 128}}}}}}
+      responses:
+        "204": {description: Password changed}
+        "400": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /v1/me/password:
+    post:
+      operationId: changePassword
+      summary: Change my password (re-auth with the current one)
+      description: "Revokes every refresh token of the user (other sessions end when their access token expires, at most 15 min) and returns a fresh token pair for this device (no `user`). Wrong current password -> 403 `reauth_failed`; failures are throttled per user (FF_GATEWAY_LOGIN_FAIL_LIMIT_PER_MINUTE, then 429). The new password must satisfy the registration policy and differ from the current one (422)."
+      requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, required: [current_password, new_password], properties: {current_password: {type: string}, new_password: {type: string, minLength: 8, maxLength: 128}}}}}}
+      responses:
+        "200": {description: Password changed; new session, content: {application/json: {schema: {$ref: "#/components/schemas/Tokens"}}}}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/me:
     get:
       operationId: getMe
@@ -96,12 +131,15 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
     patch:
       operationId: patchMe
+      description: "Changing or removing `email` requires `current_password` (422 if missing, 403 `reauth_failed` if wrong; failures throttled per user). The previous address is notified when mail is on."
       requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/MePatch"}}}}
       responses:
         "200": {description: Updated profile, content: {application/json: {schema: {$ref: "#/components/schemas/Me"}}}}
         "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
         "409": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
     delete:
       operationId: deleteMe
       summary: Delete my account (store requirement)
@@ -406,10 +444,11 @@ paths:
       responses:
         "200": {description: "Ticket bound to the caller; pass as ?ticket= on /v1/ws/conversations/{id}", content: {application/json: {schema: {type: object, required: [ticket, expires_in], properties: {ticket: {type: string}, expires_in: {type: integer}}}}}}
         "401": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/ws/conversations/{conversation_id}:
     get:
       operationId: wsConversation
-      description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: ?ticket= from POST /v1/ws-ticket (preferred; single use), or (compat, FF_GATEWAY_WS_ALLOW_TOKEN_PARAM default true) Authorization Bearer access token / ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections, 1011 upstream unavailable."
+      description: "WebSocket proxy to messaging (same frames as messaging.yaml). Auth: ?ticket= from POST /v1/ws-ticket (preferred; single use), or (legacy, off by default: FF_GATEWAY_WS_ALLOW_TOKEN_PARAM=true) Authorization Bearer access token / ?token= query. Only verified X-User-Id/X-Supplier-Id are forwarded upstream. Close codes: 4401 unauthenticated, 4403 forbidden, 4404 unknown path, 4429 too many connections (per-user cap FF_GATEWAY_WS_MAX_CONNECTIONS_PER_USER, default 5, or the per-IP HTTP rate limit), 1011 upstream unavailable."
       parameters:
         - {name: conversation_id, in: path, required: true, schema: {type: string}}
         - {name: ticket, in: query, required: false, schema: {type: string}}
@@ -509,6 +548,7 @@ components:
         name: {type: string}
         phone: {type: string}
         email: {type: string, format: email}
+        current_password: {type: string, description: "Required when `email` changes"}
         company: {type: string}
         role: {type: string, enum: [buyer, supplier, both]}
         default_destination: {$ref: "../schemas/common.schema.json#/$defs/Location"}

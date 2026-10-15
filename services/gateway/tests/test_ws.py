@@ -3,6 +3,12 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.exceptions import InvalidStatus
 
 
+@pytest.fixture(autouse=True)
+def _legacy_token_fallback(monkeypatch):
+    """The ?token= / Bearer handshake is off by default; most tests here exercise the legacy path."""
+    monkeypatch.setenv("FF_GATEWAY_WS_ALLOW_TOKEN_PARAM", "true")
+
+
 class FakeUp:
     def __init__(self, url, headers, behaviour):
         self.url, self.headers, self.sent, self.close_code = url, headers, [], None
@@ -197,3 +203,88 @@ def test_token_param_can_be_disabled(make_client):
     ).json()
     c.app.state.ws_connect = lambda *a, **k: None
     assert _code(c, f"/v1/ws/conversations/c1?token={tok['access_token']}") == 4401
+
+
+def test_token_param_off_by_default(monkeypatch):
+    from ff_gateway.config import Settings
+
+    monkeypatch.delenv("FF_GATEWAY_WS_ALLOW_TOKEN_PARAM", raising=False)
+    assert Settings(_env_file=None).ws_allow_token_param is False
+
+
+def test_default_off_refuses_token_but_ticket_works(make_client, monkeypatch):
+    monkeypatch.delenv("FF_GATEWAY_WS_ALLOW_TOKEN_PARAM", raising=False)
+    c = make_client()
+    tok = c.post("/v1/auth/register", json={"email": "d@example.com", "password": "password123", "name": "D"}).json()
+    hdr = {"Authorization": f"Bearer {tok['access_token']}"}
+    c.app.state.ws_connect = lambda url, additional_headers=None, **kw: FakeUp(url, additional_headers, None)
+    assert _code(c, "/v1/ws/conversations/c1", headers=hdr) == 4401
+    assert _code(c, f"/v1/ws/conversations/c1?token={tok['access_token']}") == 4401
+    t = c.post("/v1/ws-ticket", headers=hdr).json()["ticket"]
+    with c.websocket_connect(f"/v1/ws/conversations/c1?ticket={t}") as w:
+        assert w.receive_text() == "hello"
+        _finish(w)
+
+
+def _ticket_url(c, hdr):
+    t = c.post("/v1/ws-ticket", headers=hdr).json()["ticket"]
+    return f"/v1/ws/conversations/c1?ticket={t}"
+
+
+def test_per_user_connection_cap(make_client):
+    c = make_client(ws_max_connections_per_user=2)
+    tok = c.post("/v1/auth/register", json={"email": "cap@example.com", "password": "password123", "name": "C"}).json()
+    hdr = {"Authorization": f"Bearer {tok['access_token']}"}
+    c.app.state.ws_connect = lambda url, additional_headers=None, **kw: FakeUp(url, additional_headers, None)
+    with c.websocket_connect(_ticket_url(c, hdr)) as w1, c.websocket_connect(_ticket_url(c, hdr)) as w2:
+        assert w1.receive_text() == "hello" and w2.receive_text() == "hello"
+        assert c.app.state.ws_connections[tok["user"]["id"]] == 2
+        assert _code(c, _ticket_url(c, hdr)) == 4429  # third socket refused
+        _finish(w1)
+        _finish(w2)
+    assert c.app.state.ws_connections == {}  # counters released
+    with c.websocket_connect(_ticket_url(c, hdr)) as w:  # slot free again
+        assert w.receive_text() == "hello"
+        _finish(w)
+
+
+def test_cap_is_per_user_and_releases_on_upstream_failure(make_client):
+    c = make_client(ws_max_connections_per_user=1)
+    tok = c.post("/v1/auth/register", json={"email": "cp@example.com", "password": "password123", "name": "C"}).json()
+    hdr = {"Authorization": f"Bearer {tok['access_token']}"}
+
+    def boom(*a, **k):
+        raise ConnectionRefusedError()
+
+    c.app.state.ws_connect = boom
+    for _ in range(3):  # failed connects must not leak slots
+        assert _code(c, _ticket_url(c, hdr)) == 1011
+    assert c.app.state.ws_connections == {}
+
+
+def test_cap_off_with_zero(make_client):
+    c = make_client(ws_max_connections_per_user=0)
+    tok = c.post("/v1/auth/register", json={"email": "c0@example.com", "password": "password123", "name": "C"}).json()
+    hdr = {"Authorization": f"Bearer {tok['access_token']}"}
+    c.app.state.ws_connect = lambda url, additional_headers=None, **kw: FakeUp(url, additional_headers, None)
+    ws = [c.websocket_connect(_ticket_url(c, hdr)) for _ in range(3)]
+    opened = [w.__enter__() for w in ws]
+    assert all(w.receive_text() == "hello" for w in opened)
+    for w in reversed(opened):
+        _finish(w)
+        w.__exit__(None, None, None)
+
+
+def test_handshake_uses_http_rate_limiter(make_client):
+    c = make_client(rate_limit_per_minute=1000)
+    c.app.state.settings.rate_limit_per_minute = 3
+    c.app.state.ws_connect = lambda *a, **k: None
+    codes = [_code(c, "/v1/ws/conversations/c1?ticket=wst_x") for _ in range(5)]
+    assert codes[0] == 4401 and 4429 in codes[2:]
+
+
+def test_ticket_issuance_rate_limited(make_client):
+    c = make_client(ws_ticket_rate_limit_per_minute=2)
+    tok = c.post("/v1/auth/register", json={"email": "tr@example.com", "password": "password123", "name": "T"}).json()
+    hdr = {"Authorization": f"Bearer {tok['access_token']}"}
+    assert [c.post("/v1/ws-ticket", headers=hdr).status_code for _ in range(3)] == [200, 200, 429]

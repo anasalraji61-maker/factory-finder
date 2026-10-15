@@ -1,6 +1,7 @@
 """Register / login / refresh."""
 
 import hashlib
+import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -8,28 +9,34 @@ from fastapi import APIRouter, BackgroundTasks, Request, Response
 from sqlalchemy import delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
-from ff_gateway.api.deps import to_me
-from ff_gateway.db import EmailVerificationToken, RefreshToken, User
+from ff_gateway.api.deps import request_ip_key, to_me
+from ff_gateway.db import EmailVerificationToken, PasswordResetToken, RefreshToken, User
 from ff_gateway.domain import privacy
 from ff_gateway.domain.errors import (
     AccountDisabled,
     AccountExists,
     InvalidCredentials,
+    InvalidResetToken,
     InvalidToken,
     InvalidVerificationToken,
     RateLimited,
+    ValidationFailed,
 )
 from ff_gateway.domain.mail import Mail
 from ff_gateway.domain.security import hash_jti, hash_password, verify_password
 from ff_gateway.schemas import (
+    ForgotPasswordIn,
     LoginIn,
     RefreshIn,
     RegisterIn,
     ResendVerificationIn,
+    ResetPasswordIn,
     TokensOut,
     VerifyEmailIn,
+    check_password_policy,
 )
 
+log = logging.getLogger("ff_gateway")
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 _DUMMY_HASH = hash_password("timing-equalizer", 12)
 
@@ -240,3 +247,100 @@ async def resend_verification(body: ResendVerificationIn, request: Request, task
 
 def _aware(dt: datetime) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+async def send_password_reset(request: Request, user: User) -> None:
+    """Issue a fresh single-use reset token (older ones are dropped) and mail it. No-op when mail is off."""
+    app = request.app
+    mailer = app.state.mailer
+    if not (mailer.enabled and user.email):
+        return
+    st = app.state.settings
+    token = secrets.token_urlsafe(32)
+    now = app.state.clock.now()
+    async with app.state.sessionmaker() as s:
+        await s.execute(
+            delete(PasswordResetToken)
+            .where(PasswordResetToken.user_id == user.id)
+            .execution_options(synchronize_session=False)
+        )
+        s.add(PasswordResetToken(
+            token_hash=_hash_token(token), user_id=user.id,
+            expires_at=now + timedelta(seconds=st.password_reset_ttl_seconds),
+        ))  # fmt: skip
+        await s.commit()
+    link = st.password_reset_url_template.format(token=token) if st.password_reset_url_template else None
+    minutes = max(1, st.password_reset_ttl_seconds // 60)
+    body = (
+        f"Someone asked to reset the password of your Factory Finder account. The code works once and expires in {minutes} minutes.\n\n"
+        + (f"Open: {link}\n" if link else f"Reset code: {token}\n")
+        + "\nIf this was not you, ignore this email; your password is unchanged."
+    )
+    await mailer.send(Mail(to=user.email, subject="Reset your password", body=body))
+
+
+async def _forgot_task(request: Request, email: str) -> None:
+    """Runs after the 202 has been sent: the account lookup must not shape the response time."""
+    try:
+        async with request.app.state.sessionmaker() as s:
+            user = await s.scalar(select(User).where(User.email == email))
+        if user is not None and user.is_active and user.deleted_at is None:
+            await send_password_reset(request, user)
+    except Exception:
+        log.warning("password reset mail failed", exc_info=False)
+
+
+@router.post("/password/forgot", status_code=202)
+async def password_forgot(body: ForgotPasswordIn, request: Request, tasks: BackgroundTasks) -> dict:
+    """Always 202 with the same body: no account enumeration. Throttled silently per email+IP and per email."""
+    app = request.app
+    st = app.state.settings
+    h = hashlib.sha256(body.email.encode()).hexdigest()[:32]
+    ip = request_ip_key(request)
+    lim = app.state.limiter
+    over_pair = await lim.check(f"pwforgot:{h}:{ip}", max(st.password_forgot_per_minute, 1)) is not None
+    over_email = await lim.check(f"pwforgot-e:{h}", max(st.password_forgot_per_email_per_minute, 1)) is not None
+    if not (over_pair or over_email):
+        tasks.add_task(_forgot_task, request, body.email)
+    return {"status": "accepted"}
+
+
+@router.post("/password/reset", status_code=204)
+async def password_reset(body: ResetPasswordIn, request: Request) -> Response:
+    """Consume a reset token (single use, 30 min) and set a new password; every refresh token of the user is revoked."""
+    app = request.app
+    now = app.state.clock.now()
+    key = _hash_token(body.token)
+    async with app.state.sessionmaker() as s:
+        row = await s.get(PasswordResetToken, key)
+        if row is None or row.used_at is not None or _aware(row.expires_at) <= now:
+            raise InvalidResetToken()
+        user = await s.get(User, row.user_id)
+        if user is None or not user.is_active or user.deleted_at is not None:
+            raise InvalidResetToken()
+        try:
+            check_password_policy(body.new_password, user.email, user.phone)
+        except ValueError as e:  # token stays usable: the user just picks a better password
+            raise ValidationFailed.for_field("new_password", str(e)) from None
+        res = await s.execute(  # atomic single use
+            update(PasswordResetToken)
+            .where(PasswordResetToken.token_hash == key, PasswordResetToken.used_at.is_(None))
+            .values(used_at=now)
+            .execution_options(synchronize_session=False)
+        )
+        if res.rowcount == 0:
+            raise InvalidResetToken()
+        user.password_hash = hash_password(body.new_password, app.state.settings.bcrypt_rounds)
+        await s.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=now)
+            .execution_options(synchronize_session=False)
+        )
+        await s.execute(
+            delete(PasswordResetToken)
+            .where(PasswordResetToken.user_id == user.id, PasswordResetToken.token_hash != key)
+            .execution_options(synchronize_session=False)
+        )
+        await s.commit()
+    return Response(status_code=204)

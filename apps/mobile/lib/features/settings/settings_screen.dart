@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/providers.dart';
@@ -35,6 +36,7 @@ class SettingsScreen extends ConsumerWidget {
     final currency = ref.watch(displayCurrencyProvider);
     final destination = ref.watch(destinationProvider);
     final digits = ref.watch(digitStyleProvider);
+    final signedIn = ref.watch(authProvider) != null;
     final cities = kCityPresets[destination?.countryCode] ?? const <String>[];
 
     return Scaffold(
@@ -141,6 +143,20 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const RecentlyViewedSettings(),
+          if (signedIn) ...[
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                key: const ValueKey<String>('settings-change-password'),
+                leading: const Icon(Icons.lock_outline),
+                title: Text(context.tr('auth.change.title')),
+                subtitle: Text(context.tr('auth.change.tile_sub')),
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () => context.push('/settings/change-password'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           AppCard(
             padding: EdgeInsets.zero,
             child: ListTile(

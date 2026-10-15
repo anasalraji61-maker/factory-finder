@@ -33,6 +33,20 @@ class Location(BaseModel):
     point: GeoPoint | None = None
 
 
+def check_password_policy(password: str, email: str | None = None, phone: str | None = None) -> None:
+    """Shared password policy (registration, reset, change). Raises ValueError when too easy to guess."""
+    low = password.lower()
+    local = (email or "").split("@")[0].lower()
+    email = (email or "").lower()
+    if (
+        low in _COMMON_PASSWORDS
+        or len(set(low)) < 3
+        or low == email or (len(local) >= 6 and low == local)
+        or (phone and low.lstrip("+") == phone.lstrip("+"))
+    ):
+        raise ValueError("password is too easy to guess")
+
+
 class RegisterIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr | None = None
@@ -54,15 +68,7 @@ class RegisterIn(BaseModel):
     def _one_contact(self) -> "RegisterIn":
         if not self.email and not self.phone:
             raise ValueError("either email or phone is required")
-        low = self.password.lower()
-        local = (self.email or "").split("@")[0]
-        if (
-            low in _COMMON_PASSWORDS
-            or len(set(low)) < 3
-            or low == (self.email or "") or (len(local) >= 6 and low == local)
-            or (self.phone and low.lstrip("+") == self.phone.lstrip("+"))
-        ):
-            raise ValueError("password is too easy to guess")
+        check_password_policy(self.password, self.email, self.phone)
         return self
 
 
@@ -124,6 +130,28 @@ class ResendVerificationIn(BaseModel):
         return v.lower()
 
 
+class ForgotPasswordIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        return v.lower()
+
+
+class ResetPasswordIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    token: str = Field(min_length=10, max_length=200)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class ChangePasswordIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 class TokensOut(BaseModel):
     access_token: str
     refresh_token: str
@@ -143,6 +171,7 @@ class MePatch(BaseModel):
     display_currency: Annotated[str | None, Field(pattern=r"^[A-Z]{3}$")] = None
     language: Language | None = None
     supplier_id: Annotated[str | None, Field(pattern=r"^sup_[A-Za-z0-9_.:\-]{1,59}$")] = None
+    current_password: str | None = Field(default=None, min_length=1, max_length=128)  # required to change `email`
 
     @field_validator("phone")
     @classmethod

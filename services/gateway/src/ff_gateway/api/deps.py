@@ -13,6 +13,15 @@ from ff_gateway.domain.errors import (
 from ff_gateway.schemas import Location, MeOut
 
 
+def request_ip_key(request) -> str:
+    """Rate-limit bucket of the caller (same derivation as the HTTP limiter; XFF only via trusted proxies)."""
+    from ff_gateway.domain.client_ip import client_ip, rate_key
+
+    peer = request.client.host if request.client else None
+    nets = request.app.state.trusted_nets
+    return rate_key(client_ip(peer, request.headers.get("x-forwarded-for"), nets))
+
+
 def bearer_token(request: Request) -> str | None:
     h = request.headers.get("authorization", "")
     scheme, _, token = h.partition(" ")
@@ -72,6 +81,7 @@ __all__ = [
     "current_user",
     "current_user_id",
     "internal_headers",
+    "request_ip_key",
     "require_verified",
     "to_me",
 ]

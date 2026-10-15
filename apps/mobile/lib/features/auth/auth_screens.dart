@@ -98,6 +98,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: _submit,
             ),
             TextButton(
+              key: const ValueKey<String>('login-forgot'),
+              onPressed: () => context.push('/forgot-password'),
+              child: Text(context.tr('auth.forgot_link')),
+            ),
+            TextButton(
               onPressed: () => context.pushReplacement('/register'),
               child: Text(context.tr('auth.no_account')),
             ),

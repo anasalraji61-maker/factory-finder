@@ -83,9 +83,10 @@ def test_email_change_resets_verification(make_client):
     hdr = {"Authorization": f"Bearer {tok['access_token']}"}
     old = _token(c)
     c.post("/v1/auth/verify-email", json={"token": old})
-    r = c.patch("/v1/me", json={"email": "new@example.com"}, headers=hdr)
+    r = c.patch("/v1/me", json={"email": "new@example.com", "current_password": REG["password"]}, headers=hdr)
     assert r.json()["email_verified"] is False
     assert c.app.state.mailer.outbox[-1].to == "new@example.com"
+    assert c.app.state.mailer.outbox[-2].to == REG["email"]  # previous address is told
 
 
 def test_require_verified_gates_sensitive_actions(make_client, mock_upstream):

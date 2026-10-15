@@ -11,9 +11,9 @@ from starlette.websockets import WebSocketDisconnect
 from websockets.asyncio.client import connect as ws_connect
 from websockets.exceptions import ConnectionClosed, InvalidStatus, WebSocketException
 
-from ff_gateway.api.deps import current_user_id
+from ff_gateway.api.deps import current_user_id, request_ip_key
 from ff_gateway.db import User
-from ff_gateway.domain.errors import GatewayError
+from ff_gateway.domain.errors import GatewayError, RateLimited
 
 router = APIRouter()
 log = logging.getLogger("ff_gateway")
@@ -33,6 +33,9 @@ def _token(ws: WebSocket) -> str | None:
 @router.post("/v1/ws-ticket")
 async def ws_ticket(request: Request, user_id: str = Depends(current_user_id)) -> dict:
     """Single-use ticket (default 30 s) for the websocket handshake: ``?ticket=``."""
+    limit = request.app.state.settings.ws_ticket_rate_limit_per_minute
+    if limit > 0 and (wait := await request.app.state.limiter.check(f"wsticket:{user_id}", limit)) is not None:
+        raise RateLimited(wait, limit)
     ticket, ttl = request.app.state.ws_tickets.issue(user_id)
     return {"ticket": ticket, "expires_in": ttl}
 
@@ -52,6 +55,10 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
     if not full.startswith(WS_PREFIX) or len(full) == len(WS_PREFIX) or ".." in full.split("/"):
         return await _reject(ws, 4404)
     state = ws.app.state
+    # the HTTP middleware does not see websocket handshakes: count them in the same per-IP bucket
+    ip = request_ip_key(ws)
+    if await state.limiter.check(f"api:{ip}", state.settings.rate_limit_per_minute) is not None:
+        return await _reject(ws, 4429)
     ticket = ws.query_params.get("ticket")
     if ticket:
         user_id = state.ws_tickets.consume(ticket)
@@ -79,6 +86,21 @@ async def ws_proxy(ws: WebSocket, path: str) -> None:
     if user is None or not user.is_active:
         return await _reject(ws, 4401)
 
+    cap = state.settings.ws_max_connections_per_user
+    open_sockets: dict[str, int] = state.ws_connections
+    if cap > 0 and open_sockets.get(user_id, 0) >= cap:
+        return await _reject(ws, 4429)
+    open_sockets[user_id] = open_sockets.get(user_id, 0) + 1
+    try:
+        await _proxy(ws, state, user_id, claimed, full)
+    finally:
+        if open_sockets[user_id] <= 1:
+            open_sockets.pop(user_id, None)
+        else:
+            open_sockets[user_id] -= 1
+
+
+async def _proxy(ws: WebSocket, state, user_id: str, claimed: str | None, full: str) -> None:
     headers = {"X-User-Id": user_id, "X-Request-Id": uuid.uuid4().hex}
     if claimed:  # verified claim from our DB, never from the client
         headers["X-Supplier-Id"] = claimed

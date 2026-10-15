@@ -29,10 +29,10 @@ def test_patch_null_required_and_conflicts(client, hdr):
     client.post(
         "/v1/auth/register", json={"email": "b@example.com", "password": "password123", "name": "B"}
     )
-    r = client.patch("/v1/me", headers=hdr, json={"email": "b@example.com"})
+    r = client.patch("/v1/me", headers=hdr, json={"email": "b@example.com", "current_password": "password123"})
     assert r.status_code == 409
     # cannot remove the only contact
-    assert client.patch("/v1/me", headers=hdr, json={"email": None}).status_code == 422
+    assert client.patch("/v1/me", headers=hdr, json={"email": None, "current_password": "password123"}).status_code == 422
 
 
 def test_home_feed_with_mock_client(client, hdr):

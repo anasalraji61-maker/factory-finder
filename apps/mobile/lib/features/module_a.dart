@@ -2,6 +2,7 @@ import 'package:factory_finder/core/registry/feature_module.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/features/auth/auth_screens.dart';
 import 'package:factory_finder/features/auth/auth_strings.dart';
+import 'package:factory_finder/features/auth/password_screens.dart';
 import 'package:factory_finder/features/onboarding/onboarding_screen.dart';
 import 'package:factory_finder/features/onboarding/onboarding_strings.dart';
 import 'package:factory_finder/features/payments/payments_strings.dart';
@@ -89,6 +90,19 @@ final FeatureModule featureModuleA = FeatureModule(
     GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) =>
+          ResetPasswordScreen(initialToken: state.uri.queryParameters['token']),
+    ),
+    GoRoute(
+      path: '/settings/change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
+    ),
     GoRoute(
       path: '/supplier-claim',
       builder: (context, state) => const SupplierClaimScreen(),

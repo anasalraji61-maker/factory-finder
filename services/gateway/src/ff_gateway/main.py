@@ -140,6 +140,8 @@ def create_app(
     if settings.require_email_verified and not app.state.mailer.enabled:
         log.warning("FF_GATEWAY_REQUIRE_EMAIL_VERIFIED is on but mail is off: nobody can verify")
     trusted_nets = settings.trusted_proxy_networks()  # fails at startup on a bad CIDR
+    app.state.trusted_nets = trusted_nets
+    app.state.ws_connections = {}  # user_id -> open proxied websockets (per process)
     app.state.engine = engine
     write_methods = {"POST", "PUT", "PATCH", "DELETE"}
 

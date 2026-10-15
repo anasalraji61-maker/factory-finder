@@ -74,4 +74,9 @@ const Map<String, (String, String)> _pairs = {
   'error.conversation_limit_reached': ('بلغت الحد الأقصى للمحادثات. أغلق بعضها لبدء محادثة جديدة.', 'You have reached the conversation limit. Close some to start a new one.'),
   'error.conversation_full': ('هذه المحادثة وصلت إلى الحد الأقصى للرسائل.', 'This conversation has reached its message limit.'),
   'error.upstream_timeout': ('استغرقت الخدمة وقتاً أطول من المتوقع. حاول مجدداً بعد قليل.', 'The service took too long to respond. Please try again shortly.'),
+  'error.rate_limited': ('طلبات كثيرة. حاول مجدداً بعد قليل.', 'Too many requests. Please try again shortly.'),
+  'error.rate_limited_wait': ('طلبات كثيرة. حاول مجدداً بعد {n} دقيقة.', 'Too many requests. Try again in {n} min.'),
+  'error.invalid_token': ('الرمز غير صالح أو منتهي الصلاحية. اطلب رمزاً جديداً.', 'The code is invalid or has expired. Request a new one.'),
+  'error.invalid_current_password': ('كلمة المرور الحالية غير صحيحة.', 'The current password is incorrect.'),
+  'error.weak_password': ('كلمة المرور الجديدة غير مقبولة. استخدم 8 أحرف على الأقل.', 'The new password was not accepted. Use at least 8 characters.'),
 };
