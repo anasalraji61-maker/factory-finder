@@ -189,7 +189,18 @@ class _MyProductsScreenState extends ConsumerState<MyProductsScreen> {
     final me = ref.watch(authProvider);
     final open = isVerifiedSupplier(me) || ref.watch(myProductsBypassGateProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('myp.title'))),
+      appBar: AppBar(
+        title: Text(context.tr('myp.title')),
+        actions: [
+          if (open)
+            IconButton(
+              key: const ValueKey<String>('myp-analytics'),
+              tooltip: context.tr('ana.open'),
+              icon: const Icon(Icons.insights_outlined),
+              onPressed: () => context.push('/my-products/analytics'),
+            ),
+        ],
+      ),
       floatingActionButton: open
           ? FloatingActionButton.extended(
               key: const ValueKey('myp-add'),

@@ -2,6 +2,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/analytics/listing_events.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
@@ -14,6 +15,7 @@ import 'package:factory_finder/features/watchlist/data/watch_models.dart';
 import 'package:factory_finder/features/watchlist/data/watch_repository.dart';
 import 'package:factory_finder/features/watchlist/screens/watchlist_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -139,7 +141,10 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     // the stateless `ref` of the recommendations request).
     final id = widget.listing.id;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(recentlyViewedProvider.notifier).add(id);
+      if (!mounted) return;
+      ref.read(recentlyViewedProvider.notifier).add(id);
+      // Anonymous, fire-and-forget analytics event (never blocks the UI).
+      ref.read(listingEventReporterProvider).report(id, ListingEventType.view);
     });
   }
 
@@ -200,6 +205,22 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     }
   }
 
+  /// No share plugin is allowed: "share" copies the listing text to the
+  /// clipboard and counts a share event.
+  Future<void> _share() async {
+    final l = widget.listing;
+    final lang = Localizations.localeOf(context).languageCode;
+    final text = '${l.displayTitle(lang)}\n${l.sourceUrl ?? l.id}';
+    final done = context.tr('ana.share.copied');
+    ref.read(listingEventReporterProvider).report(l.id, ListingEventType.share);
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (_) {
+      // Clipboard unavailable: the event above is still counted.
+    }
+    if (mounted) _snack(done);
+  }
+
   Future<void> _report() async {
     final ok = await showReportListingSheet(context, widget.listing.id);
     if (ok && mounted) _snack(context.tr('report.done'));
@@ -246,6 +267,12 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          IconButton(
+            key: const ValueKey<String>('listing-share'),
+            tooltip: context.tr('ana.share.action'),
+            icon: const Icon(Icons.share_outlined),
+            onPressed: _share,
+          ),
           IconButton(
             key: const ValueKey('listing-report'),
             tooltip: context.tr('report.action'),
@@ -510,8 +537,13 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
               _BottomActions(
                 big: MediaQuery.textScalerOf(context).scale(14) / 14 > 1.3,
                 first: OutlinedButton.icon(
-                  onPressed: () => context.push(
-                      '/messages/new?supplier_id=${l.supplier.id}&listing_id=${l.id}'),
+                  onPressed: () {
+                    ref
+                        .read(listingEventReporterProvider)
+                        .report(l.id, ListingEventType.contactClick);
+                    context.push(
+                        '/messages/new?supplier_id=${l.supplier.id}&listing_id=${l.id}');
+                  },
                   icon: const Icon(Icons.chat_bubble_outline, size: 18),
                   label: Text(context.tr('listing.message_supplier')),
                 ),

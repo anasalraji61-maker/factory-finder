@@ -1,5 +1,7 @@
 import 'package:factory_finder/core/registry/feature_module.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/features/analytics/analytics_strings.dart';
+import 'package:factory_finder/features/analytics/screens/supplier_analytics_screen.dart';
 import 'package:factory_finder/features/assistant/assistant_strings.dart';
 import 'package:factory_finder/features/assistant/screens/assistant_screen.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
@@ -33,6 +35,12 @@ final FeatureModule featureModuleC = FeatureModule(
       builder: (context, state) => const MyProductsScreen(),
     ),
     GoRoute(
+      path: '/my-products/analytics',
+      builder: (context, state) => SupplierAnalyticsScreen(
+        initialListingId: state.uri.queryParameters['listing_id'],
+      ),
+    ),
+    GoRoute(
       path: '/my-products/new',
       builder: (context, state) => const ProductEditorScreen(),
     ),
@@ -42,5 +50,5 @@ final FeatureModule featureModuleC = FeatureModule(
           ProductEditorScreen(listingId: state.pathParameters['id']),
     ),
   ],
-  strings: mergeStringTables([myProductsStrings, assistantStrings, settingsStrings, feedStrings, privacyStrings]),
+  strings: mergeStringTables([analyticsStrings, myProductsStrings, assistantStrings, settingsStrings, feedStrings, privacyStrings]),
 );

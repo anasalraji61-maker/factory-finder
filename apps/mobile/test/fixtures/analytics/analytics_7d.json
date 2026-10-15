@@ -1,0 +1,135 @@
+{
+  "period": {
+    "days": 7,
+    "from": "2026-10-09",
+    "to": "2026-10-15",
+    "previous_from": "2026-10-02",
+    "previous_to": "2026-10-08"
+  },
+  "totals": {
+    "impression": 420,
+    "view": 120,
+    "contact_click": 25,
+    "share": 4,
+    "watchlist_add": 4,
+    "report": 1
+  },
+  "unique_viewers": {
+    "view": 98,
+    "contact_click": 22,
+    "note": "Sum of per-day estimates."
+  },
+  "previous_totals": {
+    "impression": 300,
+    "view": 80,
+    "contact_click": 0,
+    "share": 2,
+    "watchlist_add": 3,
+    "report": 2
+  },
+  "change_pct": {
+    "impression": 40.0,
+    "view": 50.0,
+    "contact_click": null,
+    "share": 100.0,
+    "watchlist_add": 33.3,
+    "report": -50.0
+  },
+  "conversion": {
+    "view_to_contact": 0.2083,
+    "impression_to_view": 0.2857,
+    "previous_view_to_contact": 0.0
+  },
+  "series": [
+    {
+      "date": "2026-10-09",
+      "impression": 40,
+      "view": 10,
+      "contact_click": 2,
+      "share": 0,
+      "watchlist_add": 1,
+      "report": 0
+    },
+    {
+      "date": "2026-10-10",
+      "impression": 55,
+      "view": 14,
+      "contact_click": 3,
+      "share": 1,
+      "watchlist_add": 0,
+      "report": 0
+    },
+    {
+      "date": "2026-10-11",
+      "impression": 0,
+      "view": 0,
+      "contact_click": 0,
+      "share": 0,
+      "watchlist_add": 0,
+      "report": 0
+    },
+    {
+      "date": "2026-10-12",
+      "impression": 70,
+      "view": 20,
+      "contact_click": 5,
+      "share": 0,
+      "watchlist_add": 2,
+      "report": 1
+    },
+    {
+      "date": "2026-10-13",
+      "impression": 90,
+      "view": 26,
+      "contact_click": 4,
+      "share": 2,
+      "watchlist_add": 0,
+      "report": 0
+    },
+    {
+      "date": "2026-10-14",
+      "impression": 100,
+      "view": 30,
+      "contact_click": 6,
+      "share": 1,
+      "watchlist_add": 1,
+      "report": 0
+    },
+    {
+      "date": "2026-10-15",
+      "impression": 65,
+      "view": 20,
+      "contact_click": 5,
+      "share": 0,
+      "watchlist_add": 0,
+      "report": 0
+    }
+  ],
+  "listings": [
+    {
+      "listing_id": "lst_a",
+      "title": "LED panel light",
+      "status": "published",
+      "impression": 300,
+      "view": 90,
+      "contact_click": 17,
+      "share": 3,
+      "watchlist_add": 4,
+      "report": 0,
+      "view_to_contact": 0.1889
+    },
+    {
+      "listing_id": "lst_b",
+      "title": "Solar inverter",
+      "status": "published",
+      "impression": 120,
+      "view": 40,
+      "contact_click": 8,
+      "share": 1,
+      "watchlist_add": 2,
+      "report": 0,
+      "view_to_contact": 0.2
+    }
+  ],
+  "listings_total": 3
+}
