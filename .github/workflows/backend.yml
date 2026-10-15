@@ -50,7 +50,7 @@ jobs:
           exit $code
       - name: Upload test report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-${{ matrix.service }}
           path: services/${{ matrix.service }}/junit.xml
@@ -76,7 +76,7 @@ jobs:
       - run: python -m pytest -q -p no:cacheprovider packages/py-common --junitxml=junit-py-common.xml
       - name: Upload test report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: junit-py-common
           path: junit-py-common.xml
