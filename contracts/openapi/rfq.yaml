@@ -472,6 +472,7 @@ components:
         deadline: {type: string, format: date-time, description: Must be in the future}
         attachments: {type: array, items: {type: string}, maxItems: 10}
         visibility: {type: string, enum: [public, private], default: public}
+        invited_supplier_ids: {type: array, items: {type: string, pattern: "^[A-Za-z0-9_.:-]{1,64}$"}, maxItems: 50, default: [], description: "Optional. Non-empty = invite-only: only these verified supplier ids (gateway-set X-Supplier-Id) and the buyer can see the request or create offers; everyone else gets 404. Duplicates are dropped."}
     Request:
       type: object
       required: [kind, title, quantity, id, owner_id, status, offers_count, created_at, updated_at]
@@ -487,6 +488,7 @@ components:
         deadline: {type: [string, "null"], format: date-time}
         attachments: {type: array, items: {type: string}, maxItems: 10}
         visibility: {type: string, enum: [public, private], default: public}
+        invited_supplier_ids: {type: array, items: {type: string}, maxItems: 50, description: "Buyer's own view only (omitted for suppliers)"}
         id: {type: string, description: "req_..."}
         owner_id: {type: string}
         status: {$ref: "#/components/schemas/RequestStatus"}

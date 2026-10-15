@@ -8,13 +8,13 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, localcontext
 from typing import Any
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, exists, func, not_, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from ff_rfq.clients.sourcing import SourcingClient
 from ff_rfq.config import Settings
-from ff_rfq.db import Base, DealRow, OfferRow, RequestRow
+from ff_rfq.db import Base, DealRow, OfferRow, RequestInviteRow, RequestRow
 from ff_rfq.domain.commission import DEFAULT_USD_RATES, compute_commission
 from ff_rfq.domain.enums import DealStatus, ListingKind, OfferStatus, RequestStatus
 from ff_rfq.domain.errors import Conflict, Forbidden, InvalidTransition, NotFound, ValidationFailed
@@ -43,8 +43,8 @@ def _iso(dt: datetime | None) -> str | None:
     return dt.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if dt else None
 
 
-def request_dict(r: RequestRow, offers_count: int = 0) -> dict[str, Any]:
-    return {
+def request_dict(r: RequestRow, offers_count: int = 0, invited: list[str] | None = None) -> dict[str, Any]:
+    d = {
         "id": r.id, "owner_id": r.owner_id, "kind": r.kind, "title": r.title, "description": r.description,
         "quantity": r.quantity, "unit": r.unit, "condition": r.condition,
         "target_price": _money(r.target_amount, r.target_currency), "destination": r.destination,
@@ -52,6 +52,9 @@ def request_dict(r: RequestRow, offers_count: int = 0) -> dict[str, Any]:
         "status": r.status, "offers_count": offers_count, "created_at": _iso(r.created_at),
         "updated_at": _iso(r.updated_at),
     }
+    if invited is not None:  # buyer's own view only; never shown to suppliers
+        d["invited_supplier_ids"] = invited
+    return d
 
 
 def offer_dict(o: OfferRow) -> dict[str, Any]:
@@ -199,14 +202,33 @@ class RfqService:
         )
         async with self._sessions() as s, s.begin():
             s.add(row)
+            await s.flush()
+            for sid in body.invited_supplier_ids:
+                s.add(RequestInviteRow(request_id=row.id, supplier_id=sid))
         if row.deadline is not None:
             self._dirty = True
-        return request_dict(row)
+        return request_dict(row, invited=list(body.invited_supplier_ids))
+
+    async def _invited(self, s: AsyncSession, request_id: str) -> list[str]:
+        return list((await s.execute(select(RequestInviteRow.supplier_id).where(
+            RequestInviteRow.request_id == request_id).order_by(RequestInviteRow.supplier_id))).scalars())
+
+    async def _invite_only(self, s: AsyncSession, r: RequestRow, user: str, supplier_id: str | None) -> bool:
+        """True when ``r`` is invite-only and the caller is neither its buyer nor an invited verified supplier."""
+        if r.owner_id == user:
+            return False
+        invites = await self._invited(s, r.id)
+        return bool(invites) and (supplier_id is None or supplier_id not in invites)
 
     async def list_requests(self, user: str, *, scope: str, status: str | None, kind: str | None,
-                            p: int, size: int) -> dict[str, Any]:
+                            p: int, size: int, supplier_id: str | None = None) -> dict[str, Any]:
+        has_invites = exists().where(RequestInviteRow.request_id == RequestRow.id)
+        invited_me = exists().where(RequestInviteRow.request_id == RequestRow.id,
+                                    RequestInviteRow.supplier_id == (supplier_id or ""))
+        visible = or_(and_(RequestRow.visibility == "public", not_(has_invites)), invited_me) if supplier_id else \
+            and_(RequestRow.visibility == "public", not_(has_invites))
         cond = [RequestRow.owner_id == user] if scope == "mine" else [
-            RequestRow.owner_id != user, RequestRow.visibility == "public", RequestRow.status.in_(LIVE)]
+            RequestRow.owner_id != user, visible, RequestRow.status.in_(LIVE)]
         if status and scope == "mine":
             cond.append(RequestRow.status == status)
         if kind:
@@ -217,19 +239,23 @@ class RfqService:
             rows = (await s.execute(select(RequestRow).where(*cond).order_by(
                 RequestRow.created_at.desc(), RequestRow.id).offset((p - 1) * size).limit(size))).scalars().all()
             counts = await self._counts(s, [r.id for r in rows])
-            items = [request_dict(r, counts.get(r.id, 0)) for r in rows]
+            items = [request_dict(r, counts.get(r.id, 0), await self._invited(s, r.id) if r.owner_id == user else None)
+                     for r in rows]
         return page(items, total, p, size)
 
-    async def get_request(self, user: str, request_id: str) -> dict[str, Any]:
+    async def get_request(self, user: str, request_id: str, supplier_id: str | None = None) -> dict[str, Any]:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, self.clock())
             r = await self._request(s, request_id)
-            if r.owner_id != user and r.visibility != "public":  # private = owner + suppliers who offered
+            if await self._invite_only(s, r, user, supplier_id):
+                raise NotFound("Request not found")
+            invites = await self._invited(s, r.id)
+            if r.owner_id != user and r.visibility != "public" and not invites:  # private = owner + suppliers who offered
                 mine = (await s.execute(select(func.count()).select_from(OfferRow).where(
                     OfferRow.request_id == r.id, OfferRow.supplier_user_id == user))).scalar_one()
                 if not mine:
                     raise NotFound("Request not found")
-            return request_dict(r, await self._count(s, r.id))
+            return request_dict(r, await self._count(s, r.id), invites if r.owner_id == user else None)
 
     async def close_request(self, user: str, request_id: str) -> dict[str, Any]:
         now = self.clock()
@@ -267,6 +293,8 @@ class RfqService:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, now)
             r = await self._request(s, request_id, lock=True)
+            if await self._invite_only(s, r, user, supplier_id):
+                raise NotFound("Request not found")  # not invited: indistinguishable from a missing request
             if r.owner_id == user:
                 raise Forbidden("You cannot offer on your own request")
             mine, total = (await s.execute(select(
@@ -288,10 +316,13 @@ class RfqService:
                 self._dirty = True
             return offer_dict(o)
 
-    async def list_offers(self, user: str, request_id: str, status: str | None, p: int, size: int) -> dict[str, Any]:
+    async def list_offers(self, user: str, request_id: str, status: str | None, p: int, size: int,
+                          supplier_id: str | None = None) -> dict[str, Any]:
         async with self._sessions() as s, s.begin():
             await self._sweep(s, self.clock())
             r = await self._request(s, request_id)
+            if await self._invite_only(s, r, user, supplier_id):
+                raise NotFound("Request not found")
             cond = [OfferRow.request_id == r.id]
             if r.owner_id != user:  # suppliers only see their own offers
                 cond.append(OfferRow.supplier_user_id == user)

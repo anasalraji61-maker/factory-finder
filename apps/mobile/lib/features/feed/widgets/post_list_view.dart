@@ -34,6 +34,11 @@ class PostListView extends ConsumerWidget {
     // Banner when the personalised feed fell back to trending.
     final showFallback = listKey == 'home' && st.source == FeedSource.trending && st.ids.isNotEmpty;
     final head = <Widget>[
+      if (st.fromCache && st.ids.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: OfflineBanner(savedNote: true, onRetry: ctrl.refresh),
+        ),
       if (header != null) header!,
       if (showFallback)
         Padding(

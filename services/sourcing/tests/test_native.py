@@ -322,3 +322,127 @@ async def test_create_rate_limit():
         assert (await c.post("/v1/my/listings", json=BODY, headers=A)).status_code == 429
         assert (await create(c, headers=B))["id"]  # other suppliers unaffected
         assert (await c.put(f"/v1/my/listings/{lid}", json=BODY, headers=A)).status_code == 404
+
+
+# ---- bulk import ---------------------------------------------------------
+IMP = "/v1/my/listings/import"
+
+
+def item(ref, **over):
+    return body(external_ref=ref, **over)
+
+
+async def imp(c, items, headers=A, dry_run=None):
+    payload = {"items": items}
+    if dry_run is not None:
+        payload["dry_run"] = dry_run
+    return await c.post(IMP, json=payload, headers=headers)
+
+
+async def test_import_authz(nc):
+    for h in ({}, {"X-Supplier-Id": "bogus"}):
+        r = await imp(nc, [item("r1")], headers=h)
+        assert r.status_code == 403 and r.json()["error"]["code"] == "supplier_required"
+    app = make_app(internal_token="sekret")
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        assert (await imp(c, [item("r1")])).status_code == 401
+
+
+async def test_import_create_then_update_idempotent(nc):
+    r = await imp(nc, [item("r1"), item("r2", title="Second product")])
+    d = r.json()
+    assert r.status_code == 200 and (d["created"], d["updated"], d["rejected"]) == (2, 0, 0)
+    ids = [x["id"] for x in d["results"]]
+    assert all(i.startswith("nat_") for i in ids) and d["results"][0]["status"] == "draft"
+    d2 = (await imp(nc, [item("r1", title="Renamed one"), item("r2", title="Second product")])).json()
+    assert (d2["created"], d2["updated"]) == (0, 2) and [x["id"] for x in d2["results"]] == ids
+    page = (await nc.get("/v1/my/listings", headers=A)).json()
+    assert page["total"] == 2
+    got = (await nc.get(f"/v1/my/listings/{ids[0]}", headers=A)).json()
+    assert got["title"] == "Renamed one" and got["external_ref"] == "r1"
+
+
+async def test_import_same_ref_is_per_supplier(nc):
+    a = (await imp(nc, [item("shared")])).json()["results"][0]["id"]
+    b = (await imp(nc, [item("shared")], headers=B)).json()
+    assert b["created"] == 1 and b["results"][0]["id"] != a
+    assert (await nc.get(f"/v1/my/listings/{a}", headers=B)).status_code == 404
+    assert (await nc.get("/v1/my/listings", headers=B)).json()["total"] == 1
+
+
+async def test_import_bad_items_and_in_batch_duplicates(nc):
+    items = [
+        item("ok1"),
+        "nope",
+        item("bad", category="no-such"),
+        body(),  # missing external_ref
+        item("ok1", title="dup in same call"),
+        item("ok2", price={"min": {"amount": "5", "currency": "USD"}, "max": {"amount": "1", "currency": "USD"}}),
+    ]
+    d = (await imp(nc, items)).json()
+    assert (d["created"], d["rejected"]) == (1, 5)
+    reasons = [x.get("reason") for x in d["results"]]
+    assert reasons == [None, "invalid_item", "validation_error", "validation_error", "duplicate_in_batch", "validation_error"]
+    assert d["results"][2]["external_ref"] == "bad" and "id" not in d["results"][2]
+    assert (await nc.get("/v1/my/listings", headers=A)).json()["total"] == 1
+
+
+async def test_import_size_limits(nc):
+    assert (await imp(nc, [])).status_code == 422
+    assert (await imp(nc, [item(f"r{i}") for i in range(101)])).status_code == 422
+    assert (await nc.post(IMP, json=[item("r1")], headers=A)).status_code == 422  # bare array is not the contract
+    assert (await imp(nc, [item(f"r{i}") for i in range(100)])).json()["created"] == 100
+
+
+async def test_import_dry_run_writes_nothing(nc):
+    await imp(nc, [item("exists")])
+    d = (await imp(nc, [item("exists", title="Changed title"), item("new"), item("bad", category="x")], dry_run=True)).json()
+    assert d["dry_run"] is True and (d["created"], d["updated"], d["rejected"]) == (1, 1, 1)
+    assert "id" not in d["results"][1] and "status" not in d["results"][1]
+    page = (await nc.get("/v1/my/listings", headers=A)).json()
+    assert page["total"] == 1 and page["items"][0]["title"] == BODY["title"]
+
+
+async def test_import_respects_supplier_cap():
+    app = make_app()
+    app.state.native.max_per_supplier = 3
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        await create(c)
+        d = (await imp(c, [item("a"), item("b"), item("c"), item("d")])).json()
+        assert (d["created"], d["rejected"]) == (2, 2)
+        assert [x.get("reason") for x in d["results"]] == [None, None, "listing_cap_reached", "listing_cap_reached"]
+        d = (await imp(c, [item("a", title="Updated at cap"), item("e")])).json()  # updates still allowed at the cap
+        assert (d["updated"], d["rejected"]) == (1, 1)
+        assert (await c.get("/v1/my/listings", headers=A)).json()["total"] == 3
+        dr = (await imp(c, [item("zz")], dry_run=True)).json()
+        assert dr["rejected"] == 1 and dr["results"][0]["reason"] == "listing_cap_reached"
+
+
+async def test_import_applies_moderation():
+    app = make_app()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        d = (await imp(c, [item("clean"), item("dirty", description="Call me at +964 770 123 4567 or mail a@b.com")])).json()
+        assert d["results"][0]["status"] == "draft" and "moderation" not in d["results"][0]
+        assert d["results"][1]["status"] == "pending_review" and d["results"][1]["moderation"].startswith("Automatic screening")
+        d = (await imp(c, [item("dirty")])).json()  # owner fixes content: auto flag lifts
+        assert d["results"][0]["action"] == "updated" and d["results"][0]["status"] == "draft"
+
+
+async def test_import_rate_limited_and_dry_run_free():
+    app = make_app()
+    app.state.native.imports_per_hour = 2
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+        for _ in range(5):
+            assert (await imp(c, [item("a")], dry_run=True)).status_code == 200
+        assert (await imp(c, [item("a")])).status_code == 200
+        assert (await imp(c, [item("a")])).status_code == 200
+        r = await imp(c, [item("a")])
+        assert r.status_code == 429 and r.headers["Retry-After"]
+        assert (await imp(c, [item("a")], headers=B)).status_code == 200
+
+
+async def test_import_ignores_spoofed_fields(nc):
+    d = (await imp(nc, [item("s1", supplier_id="sup_cn_001", status="published", id="lst_0001")])).json()
+    assert d["results"][0]["status"] == "draft"
+    got = (await nc.get(f"/v1/my/listings/{d['results'][0]['id']}", headers=A)).json()
+    assert got["supplier"]["id"] == "sup_native_a"

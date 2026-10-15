@@ -40,6 +40,7 @@ class OwnedListing(ListingDetail):
     """Owner view of a native listing: the public detail plus workflow fields."""
 
     status: str
+    external_ref: str | None = None
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None = None
@@ -92,6 +93,10 @@ def _apply(row: NativeListingRow, body: ListingWrite) -> None:
     row.specs = dict(body.specs)
 
 
+class DuplicateRef(Exception):
+    """A listing with this supplier+external_ref already exists."""
+
+
 class NativeStore:
     def __init__(self, engine: AsyncEngine, auto_create: bool = True):
         self.engine = engine
@@ -118,12 +123,22 @@ class NativeStore:
             return await s.scalar(q.where(NativeListingRow.supplier_id == supplier_id)) or 0
 
     async def create(
-        self, supplier_id: str, body: ListingWrite, now: datetime, flagged: str | None = None
+        self,
+        supplier_id: str,
+        body: ListingWrite,
+        now: datetime,
+        flagged: str | None = None,
+        external_ref: str | None = None,
     ) -> NativeListingRow:
         await self.ensure_ready()
         for _ in range(5):
             row = NativeListingRow(
-                id=_new_id(), supplier_id=supplier_id, status="draft", created_at=now, updated_at=now
+                id=_new_id(),
+                supplier_id=supplier_id,
+                status="draft",
+                external_ref=external_ref,
+                created_at=now,
+                updated_at=now,
             )
             _apply(row, body)
             if flagged:
@@ -134,7 +149,9 @@ class NativeStore:
                     s.add(row)
                     await s.commit()
                 return row
-            except IntegrityError:  # id collision: pick another
+            except IntegrityError:  # id collision: pick another (or the external_ref was taken meanwhile)
+                if external_ref and await self.get_by_ref(supplier_id, external_ref) is not None:
+                    raise DuplicateRef(external_ref) from None
                 continue
         raise RuntimeError("could not allocate a listing id")
 
@@ -143,6 +160,25 @@ class NativeStore:
         async with self.sm() as s:
             row = await s.get(NativeListingRow, listing_id)
         return row if row is not None and row.supplier_id == supplier_id else None
+
+    async def get_by_ref(self, supplier_id: str, external_ref: str) -> NativeListingRow | None:
+        await self.ensure_ready()
+        async with self.sm() as s:
+            q = select(NativeListingRow).where(
+                NativeListingRow.supplier_id == supplier_id, NativeListingRow.external_ref == external_ref
+            )
+            return await s.scalar(q)
+
+    async def refs_for(self, supplier_id: str, refs: list[str]) -> dict[str, str]:
+        """external_ref -> listing id, for the given supplier only."""
+        await self.ensure_ready()
+        if not refs:
+            return {}
+        async with self.sm() as s:
+            q = select(NativeListingRow.external_ref, NativeListingRow.id).where(
+                NativeListingRow.supplier_id == supplier_id, NativeListingRow.external_ref.in_(refs)
+            )
+            return {r: i for r, i in (await s.execute(q)).all()}
 
     async def owned_summaries(self, supplier_id: str, cap: int = 500) -> list[tuple[str, str, str]]:
         """(id, title, status) of the supplier's listings (all statuses), bounded."""
@@ -515,6 +551,7 @@ class NativeAdapter(SourceAdapter):
         return OwnedListing(
             **base,
             status=row.status,
+            external_ref=row.external_ref,
             created_at=row.created_at,
             updated_at=row.updated_at,
             published_at=row.published_at,

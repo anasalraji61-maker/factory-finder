@@ -172,3 +172,12 @@ class ListingWrite(BaseModel):
         if LEAF_KIND.get(self.category) != self.kind:
             raise ValueError("category must be a leaf slug from /v1/categories that belongs to kind")
         return self
+
+
+MAX_IMPORT_ITEMS = 100
+
+
+class ImportItem(ListingWrite):
+    """One element of POST /v1/my/listings/import: a ListingWrite plus the supplier's own stable reference."""
+
+    external_ref: Annotated[str, Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:\-/]{0,63}$")]

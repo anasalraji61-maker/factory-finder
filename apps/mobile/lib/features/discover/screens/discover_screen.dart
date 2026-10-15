@@ -4,6 +4,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
+import 'package:factory_finder/features/discover/data/search_facets.dart';
 import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
@@ -63,6 +64,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final theme = Theme.of(context);
     final offline = (feed.hasError && isNetworkError(feed.error!)) ||
         (trending.hasError && isNetworkError(trending.error!));
+    final feedValue = feed.valueOrNull;
+    final saved = feedValue is ListingPage && feedValue.fromCache;
     final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
 
     return Scaffold(
@@ -76,9 +79,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              if (offline)
+              if (offline || saved)
                 SliverToBoxAdapter(
-                  child: OfflineBanner(onRetry: () {
+                  child: OfflineBanner(savedNote: saved, onRetry: () {
                     ref.invalidate(listingsProvider(_query));
                     ref.invalidate(trendingProvider);
                   }),

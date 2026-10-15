@@ -3,6 +3,7 @@ import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/core/storage/persistence.dart';
+import 'package:factory_finder/core/storage/read_cache.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/onboarding/onboarding_state.dart';
@@ -23,6 +24,8 @@ const List<String> kLocalStateKeys = [
   StorageKeys.refreshToken,
   StorageKeys.themeMode,
   StorageKeys.digitStyle,
+  kSearchCacheSlot,
+  kHomeFeedCacheSlot,
 ];
 
 /// Settings -> Privacy & data: export my data, delete my account.

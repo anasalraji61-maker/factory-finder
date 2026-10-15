@@ -267,6 +267,38 @@ paths:
         "401": {$ref: "#/components/responses/Error"}
         "403": {$ref: "#/components/responses/Error"}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/my/listings/import:
+    post:
+      summary: Bulk create/update the caller's listings (max 100 per call), idempotent by external_ref
+      description: |
+        Same identity/authz rules as POST /v1/my/listings (gateway-set X-Supplier-Id; 403 supplier_required, 401 bad
+        internal token). Each item is a ListingWrite plus a required `external_ref` (the supplier's own stable id,
+        unique per supplier). An item whose external_ref already exists for this supplier UPDATES that listing (status
+        unchanged unless moderation applies); otherwise a draft is CREATED. Items are validated independently: bad items
+        are `rejected` with a reason and never fail the whole call (the call itself is 422 only for an empty list or
+        more than 100 items). The same automatic moderation screening as single create/update applies per item
+        (flagged items become pending_review; `moderation` carries the owner-facing reason). The per-supplier cap of
+        200 listings is enforced across the batch (creates beyond it are rejected `listing_cap_reached`; updates still
+        apply). With dry_run=true nothing is written and no import quota is consumed; results show what would happen.
+        Results only ever contain ids of the caller's own listings. At most 10 non-dry-run imports per hour per
+        supplier (429 rate_limited + Retry-After).
+      parameters:
+        - {$ref: "#/components/parameters/SupplierId"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ListingImportRequest"}
+      responses:
+        "200":
+          description: Per-item results in request order
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ListingImportResponse"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
   /v1/my/listings/{id}:
     parameters:
       - {name: id, in: path, required: true, schema: {type: string}}
@@ -672,12 +704,47 @@ components:
         images: {type: array, maxItems: 8, items: {type: string, description: http(s) URL, maxLength: 2048}}
         origin: {$ref: ../schemas/common.schema.json#/$defs/Location}
         specs: {type: object, maxProperties: 20, additionalProperties: {type: string, maxLength: 200}}
+    ListingImportItem:
+      allOf:
+        - $ref: "#/components/schemas/ListingWrite"
+        - type: object
+          required: [external_ref]
+          properties:
+            external_ref: {type: string, minLength: 1, maxLength: 64, pattern: "^[A-Za-z0-9][A-Za-z0-9_.:\\-/]{0,63}$", description: Supplier's own stable reference; idempotency key together with the supplier}
+    ListingImportRequest:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, minItems: 1, maxItems: 100, items: {$ref: "#/components/schemas/ListingImportItem"}}
+        dry_run: {type: boolean, default: false}
+    ListingImportResult:
+      type: object
+      required: [index, action]
+      properties:
+        index: {type: integer, minimum: 0}
+        external_ref: {type: string}
+        action: {type: string, enum: [created, updated, rejected]}
+        id: {type: string, description: "Caller's own listing id (created/updated, non-dry-run created only after write; absent for rejected and for dry-run creates)"}
+        status: {type: string, enum: [draft, published, archived, pending_review, hidden], description: Listing status after the write (not present on dry_run)}
+        moderation: {type: string, description: Owner-facing automatic screening reason when the item was flagged}
+        reason: {type: string, enum: [validation_error, invalid_item, duplicate_in_batch, listing_cap_reached, conflict], description: Only on rejected}
+        message: {type: string, description: Only on rejected; never echoes submitted content beyond field paths}
+    ListingImportResponse:
+      type: object
+      required: [dry_run, created, updated, rejected, results]
+      properties:
+        dry_run: {type: boolean}
+        created: {type: integer}
+        updated: {type: integer}
+        rejected: {type: integer}
+        results: {type: array, items: {$ref: "#/components/schemas/ListingImportResult"}}
     OwnedListing:
       allOf:
         - $ref: "#/components/schemas/ListingDetail"
         - type: object
           required: [status, created_at, updated_at]
           properties:
+            external_ref: {type: string, description: Supplier's own reference when set via bulk import}
             status: {type: string, enum: [draft, published, archived, pending_review, hidden], description: "pending_review/hidden = moderated: not searchable, not visible to anyone but the owner"}
             moderation_source: {type: string, enum: [auto, report, admin]}
             moderation_reason: {type: string, description: Why the listing is pending_review/hidden; never contains reporter data}

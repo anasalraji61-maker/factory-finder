@@ -164,6 +164,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ],
             ),
           ),
+          if (pageFacets is ListingPage && pageFacets.fromCache)
+            OfflineBanner(
+              savedNote: true,
+              onRetry: () => ref.invalidate(listingsProvider(_query)),
+            ),
           Expanded(
             child: results.when(
               loading: () => const SingleChildScrollView(child: LoadingList()),

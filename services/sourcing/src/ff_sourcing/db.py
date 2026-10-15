@@ -42,7 +42,10 @@ class Base(DeclarativeBase):
 
 class NativeListingRow(Base):
     __tablename__ = "native_listings"
-    __table_args__ = (Index("ix_native_listings_supplier_status", "supplier_id", "status"),)
+    __table_args__ = (
+        Index("ix_native_listings_supplier_status", "supplier_id", "status"),
+        UniqueConstraint("supplier_id", "external_ref", name="uq_native_listings_supplier_ref"),
+    )
 
     id: Mapped[str] = mapped_column(String(16), primary_key=True)
     supplier_id: Mapped[str] = mapped_column(String(64), index=True)
@@ -75,6 +78,7 @@ class NativeListingRow(Base):
     moderation_source: Mapped[str | None] = mapped_column(String(8), nullable=True)  # auto | report | admin
     moderation_reason: Mapped[str | None] = mapped_column(String(400), nullable=True)
     status_before: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    external_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)  # supplier's own id (bulk import)
     moderated_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
 

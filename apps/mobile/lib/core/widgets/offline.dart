@@ -19,9 +19,13 @@ bool isNetworkError(Object error) {
 /// Compact banner with a retry button. Shown above a list when loading failed
 /// because the network is unreachable.
 class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key, required this.onRetry});
+  const OfflineBanner({super.key, required this.onRetry, this.savedNote = false});
 
   final VoidCallback onRetry;
+
+  /// Adds a "showing saved results" line (the list below came from the offline
+  /// read cache).
+  final bool savedNote;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +46,24 @@ class OfflineBanner extends StatelessWidget {
               Icon(Icons.wifi_off_rounded, size: 20, color: scheme.onErrorContainer),
               const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Text(
-                  context.tr('offline.banner'),
-                  style: TextStyle(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.tr('offline.banner'),
+                      style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (savedNote)
+                      Text(
+                        context.tr('offline.saved_note'),
+                        key: const ValueKey('offline-saved-note'),
+                        style: TextStyle(color: scheme.onErrorContainer),
+                      ),
+                  ],
                 ),
               ),
               TextButton(

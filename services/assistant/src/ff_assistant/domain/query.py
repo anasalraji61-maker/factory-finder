@@ -11,6 +11,7 @@ from ff_assistant.domain.models import (
     Condition,
     CurrencyCode,
     DecimalStr,
+    Incoterm,
     ListingKind,
     Location,
 )
@@ -55,4 +56,5 @@ class ParsedQuery(BaseModel):
     listing_ids: list[str] = Field(default_factory=list)
     hs_code: str | None = None
     hs_query: str | None = None
+    incoterm: Incoterm | None = None
     confidence: float = Field(default=0.0, ge=0, le=1)

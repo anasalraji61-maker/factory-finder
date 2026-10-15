@@ -1,5 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/core/widgets/offline.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/listing_report.dart';
 import 'package:factory_finder/features/discover/data/mock_catalog.dart';
@@ -26,9 +28,12 @@ const Map<String, String?> kLiveCategorySlugs = {
 };
 
 class DiscoverRepository {
-  DiscoverRepository(this._api);
+  DiscoverRepository(this._api, {ReadCache? cache}) : _cache = cache;
 
   final ApiClient _api;
+
+  /// Optional offline read cache (public search results only).
+  final ReadCache? _cache;
 
   Future<PageResult<Listing>> search(ListingQuery q) async {
     if (_api.isMock) {
@@ -43,7 +48,7 @@ class DiscoverRepository {
     final keyword = (hasSlugMap && categorySlug == null && q.query.isEmpty)
         ? cat.replaceAll('_', ' ')
         : q.query;
-    final json = await _api.get('/v1/search', query: {
+    final params = <String, dynamic>{
       if (keyword.isNotEmpty) 'q': keyword,
       if (q.kind != null) 'kind': q.kind!.json,
       if (q.condition != null) 'condition': q.condition!.json,
@@ -54,7 +59,40 @@ class DiscoverRepository {
       if (q.sort != SortOption.relevance) 'sort': q.sort.api,
       'page': 1,
       'page_size': 50,
-    });
+    };
+    final cacheKey = _cacheKey(params);
+    final Object? json;
+    try {
+      json = await _api.get('/v1/search', query: params);
+    } catch (e) {
+      if (isNetworkError(e)) {
+        final hit = await _cache?.get(kSearchCacheSlot, cacheKey);
+        if (hit != null && hit.data is Map) {
+          try {
+            return _parsePage(hit.data, q, fromCache: true);
+          } catch (_) {
+            // unreadable saved copy: surface the network error
+          }
+        }
+      }
+      rethrow;
+    }
+    final page = _parsePage(json, q);
+    final cache = _cache;
+    if (cache != null) {
+      // Only the raw public response is stored.
+      await cache.put(kSearchCacheSlot, cacheKey, json);
+    }
+    return page;
+  }
+
+  static String _cacheKey(Map<String, dynamic> params) {
+    final keys = params.keys.toList()..sort();
+    return keys.map((k) => '$k=${params[k]}').join('&');
+  }
+
+  static ListingPage _parsePage(Object? json, ListingQuery q,
+      {bool fromCache = false}) {
     final map = Map<String, dynamic>.from(json as Map);
     final base = PageResult.fromJson<Listing>(map, Listing.fromJson);
     final page = ListingPage(
@@ -63,6 +101,7 @@ class DiscoverRepository {
       page: base.page,
       pageSize: base.pageSize,
       facets: SearchFacets.tryParse(map['facets']),
+      fromCache: fromCache,
     );
     return applyClientSort(page, q);
   }
@@ -92,6 +131,7 @@ class DiscoverRepository {
       page: page.page,
       pageSize: page.pageSize,
       facets: page is ListingPage ? page.facets : null,
+      fromCache: page is ListingPage && page.fromCache,
     );
   }
 
@@ -200,7 +240,10 @@ class DiscoverRepository {
 }
 
 final discoverRepositoryProvider = Provider<DiscoverRepository>(
-  (ref) => DiscoverRepository(ref.watch(apiClientProvider)),
+  (ref) => DiscoverRepository(
+    ref.watch(apiClientProvider),
+    cache: ref.watch(readCacheProvider),
+  ),
 );
 
 final listingsProvider =

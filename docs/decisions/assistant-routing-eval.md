@@ -1,0 +1,1 @@
+2026-10-15 | Added routing eval fixture (85 cases); user-text prompt-injection now short-circuits to help + warning prompt_injection_ignored; ParsedQuery.incoterm (additive, contract updated); off-topic/compliance questions without a product term route to help | no out_of_scope intent to avoid a breaking enum change

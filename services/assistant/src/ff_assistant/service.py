@@ -50,6 +50,9 @@ class Assistant:
 
     async def handle(self, text: str, destination: Location | None = None, user_id: str | None = None) -> AssistantResult:
         p = parse(text, self.gaz, destination)
+        if guardrails.is_injection(text):  # never route, never call an LLM or a downstream service
+            return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=compose.help_text(p.language),
+                                   warnings=[guardrails.INJECTION_WARNING])
         tool_intent = p.intent in TOOL_INTENTS
         if self.llm is not None and p.confidence < self.s.llm_min_confidence and not tool_intent:
             p = await extract_query(self.llm, self.s, text, p)

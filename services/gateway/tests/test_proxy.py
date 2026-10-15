@@ -15,7 +15,7 @@ from ff_gateway.domain.routing import is_public, resolve_upstream
         ("/v1/feed/home", "feed"), ("/v1/feed/posts/post_1/like", "feed"), ("/v1/feed/trending", "feed"), ("/v1/feedx", None), ("/v1/admin/feed/posts", None),
         ("/v1/freight/requests/shp_1/quotes", "freight"), ("/v1/freight/forwarders/me", "freight"), ("/v1/freightx", None), ("/v1/admin/freight/applications", None),
         ("/v1/invoices/inv_1/cancel", "payments"), ("/v1/ledger", "payments"), ("/v1/payments/webhooks/mock", "payments"),
-        ("/v1/my/listings", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/suppliers/sup_1/reviews", "rfq"), ("/v1/suppliers/sup_1/review-summary", "rfq"), ("/v1/suppliers/sup_1", "sourcing"), ("/v1/suppliers/sup_1/reviews/x", "sourcing"), ("/v1/reviews/rev_1/reply", "rfq"), ("/v1/deals/deal_1/reviews", "rfq"), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
+        ("/v1/my/listings", "sourcing"), ("/v1/my/listings/import", "sourcing"), ("/v1/my/listings/nat_1/publish", "sourcing"), ("/v1/mything", None), ("/v1/suppliers/sup_1/reviews", "rfq"), ("/v1/suppliers/sup_1/review-summary", "rfq"), ("/v1/suppliers/sup_1", "sourcing"), ("/v1/suppliers/sup_1/reviews/x", "sourcing"), ("/v1/reviews/rev_1/reply", "rfq"), ("/v1/deals/deal_1/reviews", "rfq"), ("/v1/searchx", None), ("/v2/search", None), ("/v1/auth/login", None),
     ],
 )  # fmt: skip
 def test_resolve(path, upstream):
@@ -29,7 +29,7 @@ def test_resolve(path, upstream):
         ("GET", "/v1/fx/rates", True), ("GET", "/v1/hs/search", True), ("POST", "/v1/fx/convert", False), ("POST", "/v1/quotes/landed-cost", True),
         ("GET", "/v1/compliance/countries", True), ("GET", "/v1/compliance/incoterms", True), ("POST", "/v1/compliance/checklist", True), ("PUT", "/v1/compliance/checklist", False), ("DELETE", "/v1/compliance/countries/CN", False),
         ("POST", "/v1/search", False), ("GET", "/v1/trust/suppliers/s", False), ("GET", "/v1/requests", False),
-        ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False),
+        ("GET", "/v1/sources", False), ("GET", "/v1/hubs/nearest", True), ("GET", "/v1/me", False), ("GET", "/v1/my/listings", False), ("POST", "/v1/my/listings", False), ("POST", "/v1/my/listings/import", False),
         ("GET", "/v1/media/files/abc.jpg", True), ("HEAD", "/v1/media/files/abc.jpg", True), ("POST", "/v1/media/images", False),
         ("DELETE", "/v1/media/images/abc", False), ("POST", "/v1/media/files/abc.jpg", False), ("DELETE", "/v1/media/files/abc.jpg", False),
         ("GET", "/v1/media/images/abc", False),

@@ -32,6 +32,7 @@ const Map<String, (String, String)> _pairs = {
   'offline.title': ('لا يوجد اتصال بالخادم', 'You appear to be offline'),
   'offline.message': ('تعذّر الوصول إلى الخادم. تحقق من اتصالك بالإنترنت ثم أعد المحاولة.', 'We could not reach the server. Check your internet connection and try again.'),
   'offline.banner': ('أنت غير متصل بالإنترنت', 'You are offline'),
+  'offline.saved_note': ('نعرض النتائج المحفوظة من آخر مرة', 'Showing saved results from your last visit'),
   'a11y.search_filters': ('بحث وتصفية', 'Search and filters'),
   'a11y.listing_card': ('{title}، السعر {price}، {trust}', '{title}, price {price}, {trust}'),
   'trust.green': ('موثوق', 'Trusted'),

@@ -124,15 +124,24 @@ class FeedComment {
 
 /// One keyset page. [source] is only set by the home / trending feeds.
 class FeedPage<T> {
-  const FeedPage({required this.items, this.nextCursor, this.source});
+  const FeedPage({
+    required this.items,
+    this.nextCursor,
+    this.source,
+    this.fromCache = false,
+  });
 
   final List<T> items;
   final String? nextCursor;
   final FeedSource? source;
 
+  /// True when the network failed and this is the saved copy of an earlier page.
+  final bool fromCache;
+
   bool get hasMore => nextCursor != null && nextCursor!.isNotEmpty;
 
-  static FeedPage<T> parse<T>(Object? json, T Function(Object?) item) {
+  static FeedPage<T> parse<T>(Object? json, T Function(Object?) item,
+      {bool fromCache = false}) {
     final m = json is Map ? json : const <String, dynamic>{};
     final raw = m['items'];
     final c = m['next_cursor'];
@@ -143,6 +152,7 @@ class FeedPage<T> {
       source: s == 'following'
           ? FeedSource.following
           : (s == 'trending' ? FeedSource.trending : null),
+      fromCache: fromCache,
     );
   }
 }

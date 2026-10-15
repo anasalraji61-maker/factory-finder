@@ -63,6 +63,14 @@ class RequestRow(Base):
                       Index("ix_requests_status_created", "status", "created_at"))
 
 
+class RequestInviteRow(Base):
+    """Invite-only requests: a request with at least one row here is visible to / offerable by these verified
+    supplier ids (X-Supplier-Id) and its buyer only."""
+    __tablename__ = "request_invites"
+    request_id: Mapped[str] = mapped_column(ForeignKey("requests.id"), primary_key=True)
+    supplier_id: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
+
+
 class OfferRow(Base):
     __tablename__ = "offers"
     id: Mapped[str] = mapped_column(String(40), primary_key=True)

@@ -83,9 +83,14 @@ class ListingPage extends PageResult<Listing> {
     required super.page,
     required super.pageSize,
     this.facets,
+    this.fromCache = false,
   });
 
   final SearchFacets? facets;
+
+  /// True when the network failed and this is the saved copy of an earlier
+  /// successful response.
+  final bool fromCache;
 }
 
 /// " (12)" suffix for a chip label, or '' when the count is unknown.

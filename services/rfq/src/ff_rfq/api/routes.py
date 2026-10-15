@@ -83,16 +83,17 @@ async def create_request(body: RequestCreate, user: User, s: Svc) -> dict[str, A
 
 @router.get("/requests")
 async def list_requests(
-    user: User, s: Svc, scope: Annotated[str, Query(pattern="^(mine|public)$")] = "mine",
+    user: User, supplier: Supplier, s: Svc, scope: Annotated[str, Query(pattern="^(mine|public)$")] = "mine",
     status: RequestStatus | None = None, kind: ListingKind | None = None, page: Page = 1, page_size: Size = 20,
 ) -> dict[str, Any]:
     return await s.list_requests(user, scope=scope, status=status.value if status else None,
-                                 kind=kind.value if kind else None, p=page, size=page_size)
+                                 kind=kind.value if kind else None, p=page, size=page_size,
+                                 supplier_id=supplier)
 
 
 @router.get("/requests/{request_id}")
-async def get_request(request_id: str, user: User, s: Svc) -> dict[str, Any]:
-    return await s.get_request(user, request_id)
+async def get_request(request_id: str, user: User, supplier: Supplier, s: Svc) -> dict[str, Any]:
+    return await s.get_request(user, request_id, supplier_id=supplier)
 
 
 @router.post("/requests/{request_id}/close")
@@ -112,9 +113,10 @@ async def create_offer(request_id: str, body: OfferCreate, user: User, supplier:
 
 
 @router.get("/requests/{request_id}/offers")
-async def list_offers(request_id: str, user: User, s: Svc, status: OfferStatus | None = None,
+async def list_offers(request_id: str, user: User, supplier: Supplier, s: Svc, status: OfferStatus | None = None,
                       page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
-    return await s.list_offers(user, request_id, status.value if status else None, page, page_size)
+    return await s.list_offers(user, request_id, status.value if status else None, page, page_size,
+                               supplier_id=supplier)
 
 
 @router.post("/offers/{offer_id}/accept")

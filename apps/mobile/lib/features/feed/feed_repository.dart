@@ -1,5 +1,7 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/core/widgets/offline.dart';
 import 'package:factory_finder/features/feed/feed_logic.dart';
 import 'package:factory_finder/features/feed/feed_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,9 +32,17 @@ abstract class FeedRepository {
 }
 
 class LiveFeedRepository implements FeedRepository {
-  LiveFeedRepository(this._api);
+  LiveFeedRepository(this._api, {ReadCache? cache, String? Function()? cacheScope})
+      : _cache = cache,
+        _cacheScope = cacheScope;
 
   final ApiClient _api;
+
+  /// Optional offline cache for the first home feed page only.
+  final ReadCache? _cache;
+
+  /// Signed-in user id; the home feed is cached per user and never when null.
+  final String? Function()? _cacheScope;
 
   static String _e(String s) => Uri.encodeComponent(s);
 
@@ -47,8 +57,53 @@ class LiveFeedRepository implements FeedRepository {
   }
 
   @override
-  Future<FeedPage<FeedPost>> home({String? cursor, int limit = kFeedPageSize}) async =>
-      FeedPage.parse(await _api.get('/v1/feed/home', query: _page(cursor, limit)), FeedPost.fromJson);
+  Future<FeedPage<FeedPost>> home({String? cursor, int limit = kFeedPageSize}) async {
+    final cache = _cache;
+    final scopeOf = _cacheScope;
+    final scope = scopeOf == null ? null : scopeOf();
+    final cacheKey = (cache != null && scope != null && cursor == null) ? 'home:$scope' : null;
+    final Object? json;
+    try {
+      json = await _api.get('/v1/feed/home', query: _page(cursor, limit));
+    } catch (e) {
+      if (cacheKey != null && isNetworkError(e)) {
+        final hit = await cache!.get(kHomeFeedCacheSlot, cacheKey);
+        if (hit != null) {
+          try {
+            return FeedPage.parse(hit.data, FeedPost.fromJson, fromCache: true);
+          } catch (_) {
+            // unreadable saved copy: surface the network error
+          }
+        }
+      }
+      rethrow;
+    }
+    final page = FeedPage.parse(json, FeedPost.fromJson);
+    if (cacheKey != null) {
+      await cache!.put(kHomeFeedCacheSlot, cacheKey, _publicFeedJson(json));
+    }
+    return page;
+  }
+
+  /// Raw page without per-viewer fields (like state is not stored).
+  static Object? _publicFeedJson(Object? json) {
+    if (json is! Map) return json;
+    final items = json['items'];
+    return <String, Object?>{
+      'items': items is List
+          ? <Object?>[
+              for (final e in items)
+                if (e is Map)
+                  <String, Object?>{
+                    for (final kv in e.entries)
+                      if (kv.key != 'viewer_liked') kv.key.toString(): kv.value,
+                  }
+            ]
+          : <Object?>[],
+      'next_cursor': json['next_cursor'],
+      'source': json['source'],
+    };
+  }
 
   @override
   Future<FeedPage<FeedPost>> trending({String? cursor, int limit = kFeedPageSize}) async =>
@@ -484,7 +539,13 @@ class MockFeedRepository implements FeedRepository {
 
 final feedRepositoryProvider = Provider<FeedRepository>((ref) {
   final api = ref.watch(apiClientProvider);
-  if (!api.isMock) return LiveFeedRepository(api);
+  if (!api.isMock) {
+    return LiveFeedRepository(
+      api,
+      cache: ref.watch(readCacheProvider),
+      cacheScope: () => ref.read(authProvider)?.id,
+    );
+  }
   return MockFeedRepository(
     userId: () => ref.read(authProvider)?.id ?? kMockUserId,
     supplierId: () {

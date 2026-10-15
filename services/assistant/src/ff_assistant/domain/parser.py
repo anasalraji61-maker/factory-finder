@@ -5,10 +5,11 @@ from __future__ import annotations
 import re
 from decimal import Decimal, InvalidOperation
 
+from ff_assistant import guard
 from ff_assistant.domain import lexicon as lx
 from ff_assistant.domain.gazetteer import Gazetteer
 from ff_assistant.domain.matching import canon, in_set
-from ff_assistant.domain.models import Condition, ListingKind, Location
+from ff_assistant.domain.models import Condition, Incoterm, ListingKind, Location
 from ff_assistant.domain.query import Budget, Intent, ParsedQuery
 from ff_assistant.domain.text import (
     Token,
@@ -47,6 +48,8 @@ def _currency(tok: Token | None) -> str | None:
 
 def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location | None = None) -> ParsedQuery:
     gaz = gaz or Gazetteer.default()
+    if guard.is_injection(text):  # instructions aimed at the assistant are never parsed into tool calls
+        return ParsedQuery(intent=Intent.HELP, language=detect_language(clean_text(text)), confidence=1.0)
     clean = clean_text(text)
 
     # 1. references (masked afterwards so they never leak into keywords)
@@ -70,6 +73,11 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         if lm.group().lower() not in listing_ids:
             listing_ids.append(lm.group().lower())
         spans.append(lm.span())
+    incoterm = None
+    im = lx.INCOTERM_RE.search(clean)
+    if im:
+        incoterm = Incoterm.FOB if im.group(2) else Incoterm(im.group(1).upper())
+        spans.append(im.span())
     dm = lx.DEAL_RE.search(clean)
     deal_id = dm.group().lower() if dm else None
     if dm:
@@ -170,6 +178,9 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
             continue
         after = _currency(tokens[i + 1]) if i + 1 < len(tokens) else None
         before = _currency(tokens[i - 1]) if i > 0 else None
+        nxt = tokens[i + 1] if i + 1 < len(tokens) else None
+        if not (after or before) and nxt is not None and nxt.is_word and (lx.UNITS.get(canon(nxt.norm)) or lx.UNITS.get(nxt.norm)):
+            continue  # "سعر ٢٠٠٠ كيلو": a quantity, not a budget
         cue = False
         bound = "max"
         j = i - 1 - (1 if before else 0)
@@ -243,6 +254,7 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         if kind is None:
             kind = ListingKind(m.value)
 
+    product_found = bool(keywords) or kind is not None
     # 7. intent
     if len(listing_ids) >= 2 or (listing_ids and lx.COMPARE_RE.search(clean)):
         intent = Intent.COMPARE
@@ -256,9 +268,11 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         intent = Intent.TRACK
     elif supplier_id or _has(tokens, lx.TRUST_WORDS):
         intent = Intent.TRUST
-    elif _has(tokens, lx.SHIP_WORDS) and _has(tokens, lx.COST_WORDS):
+    elif (_has(tokens, lx.SHIP_WORDS) or lx.DOOR_RE.search(clean) or incoterm) and _has(tokens, lx.COST_WORDS):
         intent = Intent.QUOTE
-    elif not keywords and (_has(tokens, lx.HELP_WORDS) or len(tokens) <= 2):
+    elif (not product_found and (lx.OFFTOPIC_RE.search(clean) or lx.COMPLIANCE_RE.search(clean))) or (
+        not keywords and (_has(tokens, lx.HELP_WORDS) or len(tokens) <= 2)
+    ):
         intent = Intent.HELP
     else:
         intent = Intent.SEARCH
@@ -309,5 +323,6 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
         listing_ids=listing_ids,
         hs_code=hs_code,
         hs_query=hs_query,
+        incoterm=incoterm,
         confidence=min(conf, 1.0),
     )

@@ -8,11 +8,13 @@ a user id or a downstream URL.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from ff_assistant.domain.models import Listing, TrustScore
 
 FILTERED = "[filtered]"
 WARNING = "untrusted_text_filtered"
+INJECTION_WARNING = "prompt_injection_ignored"
 
 _CTRL = re.compile(r"[\x00-\x1f\x7f-\x9f​-‏‪-‮⁦-⁩﻿]")
 _MD_LINK = re.compile(r"!?\[([^\]]{0,200})\]\([^)]{0,500}\)")
@@ -26,7 +28,20 @@ _INJECT = re.compile(
     r"|\b(?:system|assistant|user)\s*:|<\|[^|]{0,40}\|>|\[/?(?:inst|system)\]"
     r"|تجاهل\s+(?:كل\s+|جميع\s+)?(?:ال)?(?:تعليمات|اوامر|أوامر)|انس[ىَ]?\s+(?:كل\s+)?(?:ال)?تعليمات|تعليمات\s+(?:ال)?(?:نظام|جديدة)"
     r"|(?:انت|أنت)\s+(?:ال)?(?:ان|آن|الآن)|اكشف\s+(?:ال)?(?:مفتاح|رمز|سر)"
+    r"|\bjailbreak\b|\bdeveloper\s+mode\b|\bdo\s+anything\s+now\b"
+    r"|(?:كلي|قلي|اعطني|اعطيني|ورجيني)\s+(?:ال)?(?:توكن|مفتاح|باسورد|كلمة\s+السر)"
 )
+
+
+_INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad\u0640\u064b-\u065f]")
+
+
+def is_injection(text: str | None) -> bool:
+    """True when *user* text tries to override instructions or extract secrets (strict; checked before parsing)."""
+    if not text:
+        return False
+    t = unicodedata.normalize("NFKC", str(text))
+    return any(_INJECT.search(v) for v in (_INVISIBLE.sub("", t), _CTRL.sub(" ", _INVISIBLE.sub(" ", t))))
 
 
 def clean(text: str | None, max_len: int = 120) -> tuple[str, bool]:

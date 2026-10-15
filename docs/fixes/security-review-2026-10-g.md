@@ -24,6 +24,7 @@ geo
 
 ## Closed in follow-up (with tests)
 
+- (open item 1) rfq: optional `invited_supplier_ids` on request creation makes a request invite-only (see `docs/decisions/rfq-invites.md`); non-invited callers get 404 on detail, offers list and offer create and do not see it in lists. Tests in `services/rfq/tests/test_invites.py`.
 - (open item 3) rfq: a `deal_payment` refund (deal -> refunded/disputed, or recorded after completion) sets the deal's published review to `hidden` + `flagged_for_review`, writes a `hidden` review event (actor `system:payments`); hidden reviews leave lists and `review-summary` and cannot be edited/replied/reported. Rows kept for audit. No schema/contract change (status is a free string column).
 - (open item 5) tracking: `ShipmentRepository.delete` removes the shipment's undelivered (pending/dead) outbox rows; delivered history is kept. User erasure already deleted all outbox rows of the owner (now covered by a test).
 - (open item 7) tracking `label`/`carrier` and rfq free text (request title/description/unit/city/attachments, offer supplier_name/notes) have control/bidi/zero-width characters stripped before length validation (single-line fields also collapse whitespace). Review texts were already sanitised.
@@ -31,7 +32,7 @@ geo
 
 ## Open (not safe to change inside this lane or needs a product decision)
 
-1. rfq `create_offer` does not check request visibility: any authenticated user who knows a private request id can offer on it. Ids are 128-bit random so exploitation needs a leaked id; decide whether private requests need an invite list (new field, additive).
+1. FIXED (see Closed in follow-up). rfq `create_offer` did not check request visibility: any authenticated user who knows a private request id can offer on it. Ids are 128-bit random so exploitation needs a leaked id; decide whether private requests need an invite list (new field, additive).
 2. rfq has no price/currency amendment endpoint after acceptance (good); the deal copies price at accept time. Payments verifies amounts via `amount_mismatch`. No change needed, noted as an invariant to keep.
 3. rfq `confirm_receipt` lets the buyer complete without supplier `delivered` (by design, event data records `supplier_marked_delivered`). Reviews are allowed from `paid`; a later refund leaves the review published. Consider hiding reviews of refunded/disputed deals.
 4. rfq deal event `seq` is `count()+1` under a row lock; fine on PostgreSQL, relies on `with_for_update` (unique `(deal_id, seq)` is the backstop).

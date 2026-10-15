@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -54,7 +55,19 @@ class RequestCreate(BaseModel):
     deadline: datetime | None = None
     attachments: list[str] = Field(default_factory=list, max_length=10)
     visibility: Visibility = Visibility.PUBLIC
+    invited_supplier_ids: list[str] = Field(default_factory=list, max_length=50)
 
+    @field_validator("invited_supplier_ids", mode="before")
+    @classmethod
+    def _invites(cls, v: object) -> object:
+        if not isinstance(v, list):
+            return v
+        if len(v) > 50:
+            raise ValueError("at most 50 invited suppliers")
+        for x in v:
+            if not isinstance(x, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", x):
+                raise ValueError("invited_supplier_ids entries must match [A-Za-z0-9_.:-]{1,64}")
+        return list(dict.fromkeys(v))  # de-duplicate, keep order
 
     @field_validator("title", "unit", mode="before")
     @classmethod

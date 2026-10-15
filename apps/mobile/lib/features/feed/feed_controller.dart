@@ -49,6 +49,7 @@ class FeedListState {
     this.error,
     this.moreError,
     this.source,
+    this.fromCache = false,
   });
 
   final List<String> ids;
@@ -61,6 +62,9 @@ class FeedListState {
   final Object? moreError;
   final FeedSource? source;
 
+  /// True when [ids] come from the offline read cache.
+  final bool fromCache;
+
   bool get hasMore => nextCursor != null;
 
   FeedListState copyWith({
@@ -71,6 +75,7 @@ class FeedListState {
     Object? error = _keep,
     Object? moreError = _keep,
     Object? source = _keep,
+    bool? fromCache,
   }) =>
       FeedListState(
         ids: ids ?? this.ids,
@@ -80,6 +85,7 @@ class FeedListState {
         error: identical(error, _keep) ? this.error : error,
         moreError: identical(moreError, _keep) ? this.moreError : moreError,
         source: identical(source, _keep) ? this.source : source as FeedSource?,
+        fromCache: fromCache ?? this.fromCache,
       );
 }
 
@@ -114,6 +120,7 @@ class FeedListController extends StateNotifier<FeedListState> {
         nextCursor: page.nextCursor,
         loading: false,
         source: page.source,
+        fromCache: page.fromCache,
       );
     } catch (e) {
       if (!mounted || gen != _generation) return;

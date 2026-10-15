@@ -75,6 +75,25 @@ test/            core, discover, logistics, requests (models/filters/validators)
 Features plug in through `FeatureModule` (`lib/core/registry/feature_module.dart`).
 All user-facing strings live in `*_strings.dart` files as `key: (arabic, english)` pairs.
 
+## Offline read cache
+
+`lib/core/storage/read_cache.dart` keeps a small read cache on the settings
+store (shared_preferences in the app, `MemoryStore` in tests) for exactly two
+public things: the last successful search results (up to 5 recent queries,
+matched by exact query) and the first page of the signed-in user's home feed
+(per user id; per-viewer `viewer_liked` is dropped; never cached when signed
+out or for later pages). Entries expire after 24 h and a slot is capped at
+200,000 characters (oldest evicted; an oversized entry is skipped).
+
+The cache is read only when the network call fails with no HTTP status
+(`isNetworkError`: socket / DNS / timeout). Server errors (4xx/5xx) are never
+masked. Served pages carry `fromCache = true` and the screens show the
+existing offline banner plus a "showing saved results" line
+(`offline.saved_note`). Auth, deals, chats, invoices, verification and every
+other private repository are not cached. The slots are removed on account
+deletion. Tests: `test/core/read_cache_test.dart`,
+`test/core/offline_cache_test.dart`, `test/widgets/offline_saved_test.dart`.
+
 ## Test
 
 ```bash

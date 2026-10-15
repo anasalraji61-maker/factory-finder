@@ -164,6 +164,7 @@ components:
         listing_ids: {type: array, items: {type: string}}
         hs_code: {type: string, description: digits only}
         hs_query: {type: string}
+        incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
         confidence: {type: number, minimum: 0, maximum: 1}
     AssistantResponse:
       type: object
@@ -181,7 +182,7 @@ components:
           items: {$ref: "#/components/schemas/Card"}
         warnings:
           type: array
-          description: "e.g. deals_unavailable, untrusted_text_filtered (instruction-like third-party text was removed), compare_limited_to_two, sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
+          description: "e.g. deals_unavailable, prompt_injection_ignored (the user's own text tried to override instructions; answered with help only), untrusted_text_filtered (instruction-like third-party text was removed), compare_limited_to_two, sourcing_unavailable, logistics_unavailable, trust_unavailable, tracking_unavailable, quote_insufficient_data"
           items: {type: string}
     CardRow:
       type: object
