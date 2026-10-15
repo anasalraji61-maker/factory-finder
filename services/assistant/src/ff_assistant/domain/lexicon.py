@@ -126,6 +126,11 @@ RFQ_RE = re.compile(
 )
 
 
+RFQ_NOISE = word_set(
+    ["انشر", "انشاء", "اضف", "طلب", "شراء", "عروض", "عرض", "استلم", "تسعير", "اسعار", "rfq", "request", "requests", "post", "create", "publish", "submit", "open", "collect", "receive", "offers", "offer", "quotes", "quote", "quotation", "purchase", "buying", "target", "budget", "per", "each", "delivered", "deliver"]
+)
+
+
 def special_request(text: str) -> str | None:
     """'message' | 'rfq' | None: handled without any tool call (message wins: it is the riskier one)."""
     if MESSAGE_RE.search(text):

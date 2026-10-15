@@ -51,8 +51,10 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
     if guard.is_injection(text):  # instructions aimed at the assistant are never parsed into tool calls
         return ParsedQuery(intent=Intent.HELP, language=detect_language(clean_text(text)), confidence=1.0)
     clean = clean_text(text)
-    if lx.special_request(clean):  # private messages / RFQ posting are app actions, never parsed into tool calls
+    special = lx.special_request(clean)
+    if special == "message":  # private messages are app actions, never parsed into tool calls
         return ParsedQuery(intent=Intent.HELP, language=detect_language(clean), confidence=1.0)
+    rfq = special == "rfq"  # RFQ: parsed into a DRAFT only (the assistant never posts anything)
 
     # 1. references (masked afterwards so they never leak into keywords)
     spans: list[tuple[int, int]] = []
@@ -258,7 +260,9 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
 
     product_found = bool(keywords) or kind is not None
     # 7. intent
-    if len(listing_ids) >= 2 or (listing_ids and lx.COMPARE_RE.search(clean)):
+    if rfq:
+        intent = Intent.CREATE_RFQ_DRAFT
+    elif len(listing_ids) >= 2 or (listing_ids and lx.COMPARE_RE.search(clean)):
         intent = Intent.COMPARE
     elif deal_id or (lx.DEAL_PHRASE_RE.search(clean) and not keywords):
         intent = Intent.DEAL_STATUS
@@ -279,13 +283,13 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
     else:
         intent = Intent.SEARCH
 
-    if intent in (Intent.SEARCH, Intent.QUOTE) and not keywords:
+    if intent in (Intent.SEARCH, Intent.QUOTE, Intent.CREATE_RFQ_DRAFT) and not keywords:
         leftover = [
             t
             for t in tokens
             if t.is_word
             and not used[t.index]
-            and not in_set(t.norm, lx.STOPWORDS | lx.SHIP_WORDS | lx.COST_WORDS, clitics=True)
+            and not in_set(t.norm, lx.STOPWORDS | lx.SHIP_WORDS | lx.COST_WORDS | (lx.RFQ_NOISE if rfq else frozenset()), clitics=True)
         ]
         keywords = [t.surface for t in leftover][:6]
 
@@ -305,7 +309,7 @@ def parse(text: str, gaz: Gazetteer | None = None, default_destination: Location
     conf += 0.15 if destination else 0
     conf += 0.1 if origin or origin_region else 0
     conf += 0.5 if (reference or supplier_id or deal_id or listing_ids or hs_code) else 0
-    if intent is Intent.HELP:
+    if intent is Intent.HELP or intent is Intent.CREATE_RFQ_DRAFT:
         conf = 0.8
     return ParsedQuery(
         intent=intent,

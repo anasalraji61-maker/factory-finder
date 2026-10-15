@@ -69,6 +69,12 @@ class Tools:
     def __init__(self, assistant: Assistant) -> None:
         self.a = assistant
 
+    # -- (0) RFQ draft: pure local extraction, no downstream call; the app posts it (deep link) -----------
+    async def rfq_draft(self, p: ParsedQuery) -> ToolOutput:
+        from ff_assistant.rfq_draft import build_rfq_draft
+
+        return build_rfq_draft(p, self.a.gaz)
+
     # -- (a) shipment status ------------------------------------------------------------------
     async def shipment_status(self, p: ParsedQuery, user_id: str | None, warnings: list[str], san: Sanitizer) -> ToolOutput:
         L = p.language

@@ -27,6 +27,7 @@ class Intent(StrEnum):
     DEAL_STATUS = "deal_status"
     COMPARE = "compare"
     HS_LOOKUP = "hs_lookup"
+    CREATE_RFQ_DRAFT = "create_rfq_draft"
 
 
 class Budget(BaseModel):

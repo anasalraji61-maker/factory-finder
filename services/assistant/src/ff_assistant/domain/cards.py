@@ -17,6 +17,7 @@ class CardType(StrEnum):
     DEAL_STATUS = "deal_status"
     LISTING_COMPARISON = "listing_comparison"
     HS_CODE = "hs_code"
+    RFQ_DRAFT = "rfq_draft"
     NOTICE = "notice"
 
 

@@ -1042,7 +1042,9 @@
    "category": "rfq",
    "text": "اريد انشر طلب شراء ٥ اطنان قماش واستلم عروض",
    "expect": {
-    "intent": "help"
+    "intent": "create_rfq_draft",
+    "quantity": "5",
+    "unit": "ton"
    }
   },
   {
@@ -1050,7 +1052,9 @@
    "category": "rfq",
    "text": "post a request for 100 office chairs and collect offers",
    "expect": {
-    "intent": "help"
+    "intent": "create_rfq_draft",
+    "quantity": "100",
+    "unit": "piece"
    }
   },
   {
@@ -1058,7 +1062,9 @@
    "category": "rfq",
    "text": "I want to create an RFQ for 2000 kg of cotton",
    "expect": {
-    "intent": "help"
+    "intent": "create_rfq_draft",
+    "quantity": "2000",
+    "unit": "kg"
    }
   },
   {

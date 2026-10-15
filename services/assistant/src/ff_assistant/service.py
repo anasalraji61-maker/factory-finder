@@ -40,7 +40,7 @@ class AssistantResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
-TOOL_INTENTS = frozenset({Intent.SHIPMENT_STATUS, Intent.DEAL_STATUS, Intent.COMPARE, Intent.HS_LOOKUP})
+TOOL_INTENTS = frozenset({Intent.SHIPMENT_STATUS, Intent.DEAL_STATUS, Intent.COMPARE, Intent.HS_LOOKUP, Intent.CREATE_RFQ_DRAFT})
 
 
 class Assistant:
@@ -56,11 +56,10 @@ class Assistant:
             return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=compose.help_text(p.language),
                                    warnings=[guardrails.INJECTION_WARNING])
         special = lx.special_request(clean_text(text))
-        if special:  # never send private messages (draft only) and never post an RFQ on the user's behalf
-            L = p.language
-            body = compose.message_refusal(L) if special == "message" else compose.rfq_text(L)
-            return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=body,
-                                   warnings=["private_message_blocked"] if special == "message" else [])
+        if special == "message":  # never send private messages (draft only)
+            return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=compose.message_refusal(p.language),
+                                   warnings=["private_message_blocked"])
+        # RFQ requests fall through: Intent.CREATE_RFQ_DRAFT returns a local draft card, never posts anything
         tool_intent = p.intent in TOOL_INTENTS
         if self.llm is not None and p.confidence < self.s.llm_min_confidence and not tool_intent:
             p = await extract_query(self.llm, self.s, text, p)
@@ -93,6 +92,7 @@ class Assistant:
             Intent.DEAL_STATUS: lambda: t.deal_status(p, user_id, warnings, san),
             Intent.COMPARE: lambda: t.compare(p, warnings, san),
             Intent.HS_LOOKUP: lambda: t.hs_lookup(p, warnings, san),
+            Intent.CREATE_RFQ_DRAFT: lambda: t.rfq_draft(p),
         }[p.intent]
         o = await out()
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=o.text, listings=o.listings, quote=o.quote,

@@ -138,7 +138,7 @@ components:
       type: object
       required: [intent]
       properties:
-        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup]}
+        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup, create_rfq_draft]}
         language: {type: string, enum: [ar, en]}
         kind: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}
         condition: {type: string, enum: [new, used, refurbished]}
@@ -170,7 +170,7 @@ components:
       type: object
       required: [intent, parsed_query, answer_text, listings, warnings]
       properties:
-        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup]}
+        intent: {type: string, enum: [search, quote, trust, track, help, shipment_status, deal_status, compare, hs_lookup, create_rfq_draft]}
         parsed_query: {$ref: "#/components/schemas/ParsedQuery"}
         answer_text: {type: string, description: Concise Arabic answer}
         listings: {type: array, items: {$ref: ../schemas/common.schema.json#/$defs/Listing}}
@@ -206,12 +206,12 @@ components:
       type: object
       required: [type, title, title_ar, severity, rows, refs]
       properties:
-        type: {type: string, enum: [shipment_status, deal_status, listing_comparison, hs_code, notice]}
+        type: {type: string, enum: [shipment_status, deal_status, listing_comparison, hs_code, rfq_draft, notice]}
         title: {type: string}
         title_ar: {type: string}
         severity: {type: string, enum: [info, ok, warning, error]}
         rows: {type: array, items: {$ref: "#/components/schemas/CardRow"}}
         columns: {type: [array, "null"], items: {$ref: "#/components/schemas/CardColumn"}}
-        refs: {type: object, additionalProperties: {type: string}, description: "Ids for deep links (shipment_id, deal_id, listing_a/listing_b, hs_code) or a notice code (auth_required_*, *_not_found, *_unavailable)"}
+        refs: {type: object, additionalProperties: {type: string}, description: "Ids for deep links (shipment_id, deal_id, listing_a/listing_b, hs_code); rfq_draft cards carry deep_link=/requests/new, draft=true, missing (comma-separated required field keys) and prefill_<field> values taken only from the user's text - the assistant never creates the request; or a notice code (auth_required_*, *_not_found, *_unavailable)"}
         footnote: {type: [string, "null"]}
         footnote_ar: {type: [string, "null"]}
