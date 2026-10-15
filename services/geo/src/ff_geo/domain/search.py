@@ -10,14 +10,28 @@ def resolve_hub_type(t: str | None) -> str | None:
     return HUB_TYPE_ALIASES.get(t, t) if t else None
 
 
+_NORM_CACHE: dict[int, tuple[Dataset, dict[str, tuple[str, str]]]] = {}
+
+
+def _city_names(ds: Dataset) -> dict[str, tuple[str, str]]:
+    """Normalised (en, ar) names per city id, computed once per dataset instead of on every query."""
+    hit = _NORM_CACHE.get(id(ds))
+    if hit is None or hit[0] is not ds:
+        _NORM_CACHE.clear()  # at most one dataset is live; keeps this bounded
+        hit = (ds, {c.id: (normalize(c.name_en), normalize(c.name_ar)) for c in ds.cities})
+        _NORM_CACHE[id(ds)] = hit
+    return hit[1]
+
+
 def search_cities(ds: Dataset, q: str | None = None, country: str | None = None) -> list[City]:
     items = [c for c in ds.cities if not country or c.country_code == country.upper()]
     if not q or not normalize(q):
         return sorted(items, key=lambda c: c.name_en)
     nq = normalize(q)
+    norm = _city_names(ds)
     scored: list[tuple[int, str, City]] = []
     for c in items:
-        names = (normalize(c.name_en), normalize(c.name_ar))
+        names = norm[c.id]
         if any(n.startswith(nq) for n in names):
             scored.append((0, c.name_en, c))
         elif any(nq in n for n in names):

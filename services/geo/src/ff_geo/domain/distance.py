@@ -10,6 +10,8 @@ AIR_OVERHEAD_H = 3.0
 def road_factor_at(ds: Dataset, lat: float, lon: float, default: float, country: str | None = None):
     if country and country.upper() in ds.country_by_code:
         return ds.country_by_code[country.upper()].road_factor
+    if not ds.cities:
+        return default
     nearest = min(ds.cities, key=lambda c: haversine_km(lat, lon, c.point.lat, c.point.lon))
     return ds.country_by_code[nearest.country_code].road_factor if nearest else default
 

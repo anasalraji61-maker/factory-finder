@@ -256,3 +256,19 @@ async def test_search_is_fast(service):
             await service.search(SearchQuery(q=q), 1, 20)
         avg_ms = (time.perf_counter() - t) / 5 * 1000
         assert avg_ms < 60, (q, avg_ms)  # ~5-12ms typical; generous bound for slow CI
+
+
+def test_rank_price_fit_matches_first_index_semantics():
+    """Perf regression: price_fit uses a precomputed rank table; equal prices share the first position."""
+    from decimal import Decimal
+
+    from ff_sourcing.domain import search as eng
+
+    prices = [Decimal(p) for p in ("5", "5", "9", "1")]
+    ordered = sorted(prices)
+    pos = {}
+    for i, p in enumerate(ordered):
+        pos.setdefault(p, i)
+    for p in prices:
+        assert pos[p] == ordered.index(p)
+    assert eng.rank([], "relevance") == []

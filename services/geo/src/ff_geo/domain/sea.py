@@ -513,27 +513,40 @@ def _graph(avoid: frozenset[str] = frozenset()) -> dict[str, list[tuple[str, flo
     return g
 
 
-def _access(lat: float, lon: float) -> list[tuple[float, str]]:
+@lru_cache(maxsize=2048)
+def _access(lat: float, lon: float) -> tuple[tuple[float, str], ...]:
     """Nearest few lane nodes to a point (straight-line). Nodes farther than MAX_ACCESS_KM are dropped
     (except the nearest one), so a port never "jumps" overland to a node on another coast."""
     near = sorted((haversine_km(lat, lon, *p), n) for n, p in NODES.items())[:3]
-    return [x for i, x in enumerate(near) if i == 0 or x[0] <= MAX_ACCESS_KM]
+    return tuple(x for i, x in enumerate(near) if i == 0 or x[0] <= MAX_ACCESS_KM)
 
 
-def _dijkstra(start: str, goal: str, avoid: frozenset[str] = frozenset()) -> tuple[float, list[str]]:
+@lru_cache(maxsize=4096)
+def _dijkstra(start: str, goal: str, avoid: frozenset[str] = frozenset()) -> tuple[float, tuple[str, ...]]:
+    """Shortest lane path (cached: the graph is static; at most 174^2 x |avoid sets| distinct keys, capped).
+    Predecessor map instead of copying a path list per heap push."""
     g = _graph(avoid)
-    pq: list[tuple[float, str, list[str]]] = [(0.0, start, [start])]
-    seen: set[str] = set()
+    dist: dict[str, float] = {start: 0.0}
+    prev: dict[str, str] = {}
+    pq: list[tuple[float, str]] = [(0.0, start)]
+    done: set[str] = set()
     while pq:
-        d, n, path = heapq.heappop(pq)
-        if n == goal:
-            return d, path
-        if n in seen:
+        d, n = heapq.heappop(pq)
+        if n in done:
             continue
-        seen.add(n)
+        if n == goal:
+            path = [n]
+            while n != start:
+                n = prev[n]
+                path.append(n)
+            return d, tuple(reversed(path))
+        done.add(n)
         for m, w in g[n]:
-            if m not in seen:
-                heapq.heappush(pq, (d + w, m, [*path, m]))
+            nd = d + w
+            if m not in done and nd < dist.get(m, float("inf")):
+                dist[m] = nd
+                prev[m] = n
+                heapq.heappush(pq, (nd, m))
     raise SeaRouteUnavailable("no sea route")
 
 
@@ -544,14 +557,14 @@ def sea_distance_km(
 
     With `avoid` (chokepoint ids from CHOKEPOINTS) only each endpoint's nearest lane node is used, so a
     port can never "jump" overland to dodge a closure; raises SeaRouteUnavailable if no lane remains."""
-    best: tuple[float, list[str]] | None = None
+    best: tuple[float, tuple[str, ...]] | None = None
     starts, goals = _access(lat1, lon1), _access(lat2, lon2)
     if avoid:
         starts, goals = starts[:1], goals[:1]
     for d1, n1 in starts:
         for d2, n2 in goals:
             try:
-                core, path = (0.0, [n1]) if n1 == n2 else _dijkstra(n1, n2, avoid)
+                core, path = (0.0, (n1,)) if n1 == n2 else _dijkstra(n1, n2, avoid)
             except SeaRouteUnavailable:
                 continue
             total = core + (d1 + d2) * _ACCESS_FACTOR
@@ -559,4 +572,4 @@ def sea_distance_km(
                 best = (total, path)
     if best is None:
         raise SeaRouteUnavailable(f"no sea route avoiding {', '.join(sorted(avoid))}")
-    return best
+    return best[0], list(best[1])

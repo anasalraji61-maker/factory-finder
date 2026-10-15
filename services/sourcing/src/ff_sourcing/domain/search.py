@@ -234,14 +234,19 @@ def rank(items: list[tuple[Listing, Match]], sort: str = "relevance") -> list[Li
     groups: dict[str | None, list[Decimal]] = {}
     for listing, _ in items:
         groups.setdefault(listing.category, []).append(mid_price(listing))
-    for v in groups.values():
+    first_rank: dict[str | None, dict[Decimal, int]] = {}
+    for cat, v in groups.items():
         v.sort()
+        pos: dict[Decimal, int] = {}
+        for i, p in enumerate(v):
+            pos.setdefault(p, i)  # list.index semantics: first position among equal prices
+        first_rank[cat] = pos
 
     def price_fit(listing: Listing) -> float:
         prices = groups[listing.category]
         if len(prices) < 2:
             return 0.5
-        return 1.0 - prices.index(mid_price(listing)) / (len(prices) - 1)
+        return 1.0 - first_rank[listing.category][mid_price(listing)] / (len(prices) - 1)
 
     def relevance_score(item: tuple[Listing, Match]) -> float:
         listing, m = item
