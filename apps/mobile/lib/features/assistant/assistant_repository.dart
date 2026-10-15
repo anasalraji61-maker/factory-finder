@@ -113,6 +113,39 @@ AssistantAnswer mockAssistantAnswer(String text, {String lang = 'ar'}) {
       ],
       'warnings': <String>[],
     };
+  } else if (q.contains('rfq') || q.contains('request') || text.contains('طلب شراء')) {
+    body = {
+      'intent': 'create_rfq_draft',
+      'answer_text': ar
+          ? 'جهزت مسودة طلب الشراء. راجعها وانشرها من تبويب الطلبات (لم أنشر شيئاً).'
+          : 'I prepared a purchase request draft. Review it and publish it from the Requests tab (nothing was posted).',
+      'cards': [
+        {
+          'type': 'rfq_draft',
+          'title': 'Purchase request draft',
+          'title_ar': 'مسودة طلب شراء',
+          'severity': 'info',
+          'rows': [
+            _row('product', 'Product', 'المنتج', 'LED lights', 'LED lights'),
+            _row('quantity', 'Quantity', 'الكمية', '500'),
+            _row('unit', 'Unit', 'الوحدة', 'piece', 'قطعة'),
+            _row('destination', 'Delivery to', 'جهة التسليم', 'Baghdad', 'بغداد'),
+          ],
+          'refs': {
+            'deep_link': '/requests/new',
+            'draft': 'true',
+            'missing': '',
+            'prefill_product': 'LED lights',
+            'prefill_quantity': '500',
+            'prefill_unit': 'piece',
+            'prefill_destination': 'Baghdad',
+          },
+          'footnote': 'Draft only: nothing has been posted. Review and publish it from the Requests tab.',
+          'footnote_ar': 'مسودة فقط: لم يُنشر شيء. راجعها وانشرها من تبويب الطلبات.',
+        },
+      ],
+      'warnings': <String>[],
+    };
   } else if (q.contains('hs') || text.contains('جمرك') || text.contains('رمز')) {
     body = {
       'intent': 'hs_lookup',

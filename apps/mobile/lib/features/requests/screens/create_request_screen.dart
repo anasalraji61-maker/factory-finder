@@ -7,6 +7,7 @@ import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
+import 'package:factory_finder/features/requests/data/rfq_prefill.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:factory_finder/features/requests/data/rfq_validators.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,12 @@ class CreateRequestScreen extends ConsumerStatefulWidget {
   const CreateRequestScreen({
     super.key,
     this.initialInvites = const <InvitedSupplier>[],
+    this.prefill,
   });
+
+  /// Optional suggested values (e.g. from an assistant draft). The user
+  /// reviews and submits; nothing is posted automatically.
+  final RfqPrefill? prefill;
 
   /// Suppliers pre-added as invitees (e.g. from the supplier profile).
   final List<InvitedSupplier> initialInvites;
@@ -56,6 +62,15 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       }
     }
     _destination = ref.read(destinationProvider);
+    final p = widget.prefill;
+    if (p != null) {
+      if (p.title != null) _title.text = p.title!;
+      if (p.quantity != null) _quantity.text = p.quantity!;
+      if (p.unit != null) _unit = p.unit!;
+      if (p.targetPrice != null) _price.text = p.targetPrice!;
+      if (p.currency != null) _currency = p.currency!;
+      if (p.destination != null) _destination = p.destination;
+    }
   }
 
   @override

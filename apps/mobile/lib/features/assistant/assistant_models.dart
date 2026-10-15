@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/api_client.dart';
+import 'package:factory_finder/features/requests/data/rfq_prefill.dart';
 
 /// Ids from card refs are third-party data: only plain ids may build a route.
 final RegExp _safeId = RegExp(r'^[A-Za-z0-9_.:@-]{1,64}$');
@@ -109,6 +110,7 @@ class AssistantCard {
     'deal_status',
     'listing_comparison',
     'hs_code',
+    'rfq_draft',
     'notice',
   ];
 
@@ -161,6 +163,14 @@ class AssistantCard {
     }
     if (type == 'deal_status' && _ref('deal_id') != null) {
       out.add(const CardAction(labelKey: 'assistant.open_deals', route: '/deals'));
+    }
+    if (type == 'rfq_draft' && refs['deep_link'] == '/requests/new') {
+      // Values come only from refs, are re-validated, and just seed the form.
+      final q = RfqPrefill.fromRefs(refs).toQuery();
+      out.add(CardAction(
+        labelKey: 'assistant.open_request_form',
+        route: Uri(path: '/requests/new', queryParameters: q.isEmpty ? null : q).toString(),
+      ));
     }
     final code = refs['code'];
     if (type == 'notice' && code != null && code.startsWith('auth_required')) {

@@ -27,6 +27,8 @@ IconData assistantCardIcon(String type) {
       return Icons.compare_arrows_rounded;
     case 'hs_code':
       return Icons.qr_code_2_rounded;
+    case 'rfq_draft':
+      return Icons.edit_note_rounded;
     case 'notice':
       return Icons.info_outline_rounded;
     default:

@@ -28,6 +28,7 @@ const Map<String, (String, String)> _pairs = {
   ),
   'assistant.open_shipment': ('فتح الشحنة', 'Open shipment'),
   'assistant.open_listing': ('عرض المنتج {n}', 'View listing {n}'),
+  'assistant.open_request_form': ('فتح نموذج الطلب', 'Open request form'),
   'assistant.open_deals': ('فتح الصفقات', 'Open deals'),
   'assistant.sign_in': ('تسجيل الدخول', 'Sign in'),
   'assistant.empty_value': ('—', '—'),

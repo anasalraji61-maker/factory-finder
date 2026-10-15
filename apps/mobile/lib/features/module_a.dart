@@ -8,6 +8,7 @@ import 'package:factory_finder/features/onboarding/onboarding_strings.dart';
 import 'package:factory_finder/features/payments/payments_strings.dart';
 import 'package:factory_finder/features/payments/screens/invoice_screen.dart';
 import 'package:factory_finder/features/requests/data/rfq_models.dart';
+import 'package:factory_finder/features/requests/data/rfq_prefill.dart';
 import 'package:factory_finder/features/requests/requests_strings.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart';
 import 'package:factory_finder/features/requests/screens/request_detail_screen.dart';
@@ -66,6 +67,7 @@ final FeatureModule featureModuleA = FeatureModule(
               final sid = state.uri.queryParameters['supplier'];
               final name = state.uri.queryParameters['supplier_name'];
               return CreateRequestScreen(
+                prefill: RfqPrefill.fromQuery(state.uri.queryParameters),
                 initialInvites: (sid == null || !isValidInviteId(sid))
                     ? const <InvitedSupplier>[]
                     : <InvitedSupplier>[
