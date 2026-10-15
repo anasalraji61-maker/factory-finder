@@ -18,7 +18,7 @@ dependencies:
   dio: ^5.4.3
   intl: any
   cached_network_image: ^3.3.1
-  shimmer: ^3.0.0
+  shimmer: ^4.0.0
   google_fonts: ^6.2.1
   shared_preferences: ^2.2.3
   flutter_secure_storage: ^9.2.2
