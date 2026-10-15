@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
@@ -16,6 +17,7 @@ from ff_tracking.domain.progress import progress_percent
 from ff_tracking.domain.validators import strip_control, validate_reference
 from ff_tracking.service import ShipmentService, detect_carrier
 
+_UID_RE = re.compile(r"[A-Za-z0-9_.:@+\-]{1,128}")
 router = APIRouter(prefix="/v1")
 
 
@@ -35,7 +37,10 @@ class ShipmentCreate(BaseModel):
 def current_user(x_user_id: Annotated[str | None, Header()] = None) -> str:
     if not x_user_id or not x_user_id.strip():
         raise Unauthenticated("X-User-Id header is required")
-    return x_user_id.strip()
+    uid = x_user_id.strip()
+    if not _UID_RE.fullmatch(uid):
+        raise Unauthenticated("Invalid X-User-Id")
+    return uid
 
 
 def service(request: Request) -> ShipmentService:
@@ -61,24 +66,24 @@ async def create_shipment(body: ShipmentCreate, user: User, svc: Svc) -> dict[st
 @router.get("/shipments")
 async def list_shipments(
     user: User, svc: Svc, status: ShipmentStatus | None = None,
-    page: Annotated[int, Query(ge=1)] = 1, page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page: Annotated[int, Query(ge=1, le=100_000)] = 1, page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> dict[str, Any]:
     items, total = await svc.list(user, status.value if status else None, page, page_size)
     return {"items": [present(s) for s in items], "total": total, "page": page, "page_size": page_size}
 
 
 @router.get("/shipments/{shipment_id}")
-async def get_shipment(shipment_id: str, user: User, svc: Svc) -> dict[str, Any]:
+async def get_shipment(shipment_id: Annotated[str, Path(max_length=64)], user: User, svc: Svc) -> dict[str, Any]:
     return present(await svc.get(user, shipment_id))
 
 
 @router.post("/shipments/{shipment_id}/refresh")
-async def refresh_shipment(shipment_id: str, user: User, svc: Svc) -> dict[str, Any]:
+async def refresh_shipment(shipment_id: Annotated[str, Path(max_length=64)], user: User, svc: Svc) -> dict[str, Any]:
     return present(await svc.refresh(user, shipment_id))
 
 
 @router.delete("/shipments/{shipment_id}", status_code=204)
-async def delete_shipment(shipment_id: str, user: User, svc: Svc) -> Response:
+async def delete_shipment(shipment_id: Annotated[str, Path(max_length=64)], user: User, svc: Svc) -> Response:
     await svc.delete(user, shipment_id)
     return Response(status_code=204)
 

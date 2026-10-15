@@ -53,7 +53,7 @@ class RequestCreate(BaseModel):
     target_price: Money | None = Field(default=None, description="Per unit")
     destination: Destination | None = None
     deadline: datetime | None = None
-    attachments: list[str] = Field(default_factory=list, max_length=10)
+    attachments: list[Annotated[str, Field(max_length=500)]] = Field(default_factory=list, max_length=10)
     visibility: Visibility = Visibility.PUBLIC
     invited_supplier_ids: list[str] = Field(default_factory=list, max_length=50)
 
@@ -90,7 +90,7 @@ class OfferCreate(BaseModel):
     price: Money = Field(description="Per unit")
     supplier_name: str = Field(min_length=1, max_length=200)
     supplier_ref: str | None = Field(default=None, max_length=64, description="Deprecated and ignored: identity comes from the verified X-Supplier-Id header")
-    moq: int | None = Field(default=None, ge=0)
+    moq: int | None = Field(default=None, ge=0, le=1_000_000_000)
     lead_time_days: int | None = Field(default=None, ge=0, le=1000)
     incoterm: Incoterm | None = None
     valid_until: datetime | None = None

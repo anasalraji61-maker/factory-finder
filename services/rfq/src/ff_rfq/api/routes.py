@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+import re
 from typing import Annotated, Any
 from urllib.parse import unquote
 
@@ -23,13 +24,18 @@ from ff_rfq.schemas import (
 )
 from ff_rfq.service import RfqService
 
+_UID_RE = re.compile(r"[A-Za-z0-9_.:@+\-]{1,128}")
+
 router = APIRouter(prefix="/v1")
 
 
 def current_user(x_user_id: Annotated[str | None, Header()] = None) -> str:
     if not x_user_id or not x_user_id.strip():
         raise Unauthenticated("X-User-Id header is required")
-    return x_user_id.strip()
+    uid = x_user_id.strip()
+    if not _UID_RE.fullmatch(uid):
+        raise Unauthenticated("Invalid X-User-Id")
+    return uid
 
 
 def verified_supplier(x_supplier_id: Annotated[str | None, Header()] = None) -> str | None:
@@ -57,7 +63,8 @@ def internal_only(request: Request, x_internal_token: Annotated[str | None, Head
 
 
 def optional_user(x_user_id: Annotated[str | None, Header()] = None) -> str | None:
-    return x_user_id.strip() if x_user_id and x_user_id.strip() else None
+    uid = x_user_id.strip() if x_user_id and x_user_id.strip() else None
+    return uid if uid and _UID_RE.fullmatch(uid) else None
 
 
 def display_name(x_user_name: Annotated[str | None, Header()] = None) -> str | None:
@@ -72,7 +79,7 @@ Reviews = Annotated[ReviewService, Depends(reviews_svc)]
 Deals = Annotated[DealService, Depends(deals_svc)]
 MaybeUser = Annotated[str | None, Depends(optional_user)]
 SupplierRef = Annotated[str, Path(min_length=1, max_length=64)]
-Page = Annotated[int, Query(ge=1)]
+Page = Annotated[int, Query(ge=1, le=100_000)]
 Size = Annotated[int, Query(ge=1, le=100)]
 
 

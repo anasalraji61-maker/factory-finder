@@ -67,7 +67,7 @@ paths:
         - {name: scope, in: query, schema: {type: string, enum: [mine, public], default: mine}}
         - {name: status, in: query, description: Only with scope=mine, schema: {$ref: "#/components/schemas/RequestStatus"}}
         - {name: kind, in: query, schema: {$ref: ../schemas/common.schema.json#/$defs/ListingKind}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         "200": {$ref: "#/components/responses/RequestPage"}
@@ -124,7 +124,7 @@ paths:
         - {$ref: "#/components/parameters/UserId"}
         - {$ref: "#/components/parameters/Id"}
         - {name: status, in: query, schema: {$ref: "#/components/schemas/OfferStatus"}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         "200":
@@ -168,7 +168,7 @@ paths:
         - {$ref: "#/components/parameters/UserId"}
         - {name: role, in: query, schema: {type: string, enum: [buyer, supplier, any], default: any}}
         - {name: status, in: query, schema: {$ref: "#/components/schemas/DealStatus"}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         "200":
@@ -288,7 +288,7 @@ paths:
       description: Served by rfq (the gateway routes this path here although /v1/suppliers belongs to sourcing). With X-User-Id present (optional) the caller's own review carries `mine=true`.
       parameters:
         - {name: supplier_ref, in: path, required: true, schema: {type: string, maxLength: 64}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
         - {name: sort, in: query, schema: {type: string, enum: [recent, rating], default: recent}}
       responses:
@@ -470,7 +470,7 @@ components:
         target_price: {$ref: "#/components/schemas/Money"}
         destination: {type: object, required: [country_code], properties: {country_code: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}, city: {type: string}}}
         deadline: {type: string, format: date-time, description: Must be in the future}
-        attachments: {type: array, items: {type: string}, maxItems: 10}
+        attachments: {type: array, items: {type: string, maxLength: 500}, maxItems: 10}
         visibility: {type: string, enum: [public, private], default: public}
         invited_supplier_ids: {type: array, items: {type: string, pattern: "^[A-Za-z0-9_.:-]{1,64}$"}, maxItems: 50, default: [], description: "Optional. Non-empty = invite-only: only these verified supplier ids (gateway-set X-Supplier-Id) and the buyer can see the request or create offers; everyone else gets 404. Duplicates are dropped."}
     Request:
@@ -486,7 +486,7 @@ components:
         target_price: {$ref: "#/components/schemas/Money"}
         destination: {type: object, required: [country_code], properties: {country_code: {$ref: ../schemas/common.schema.json#/$defs/CountryCode}, city: {type: string}}}
         deadline: {type: [string, "null"], format: date-time}
-        attachments: {type: array, items: {type: string}, maxItems: 10}
+        attachments: {type: array, items: {type: string, maxLength: 500}, maxItems: 10}
         visibility: {type: string, enum: [public, private], default: public}
         invited_supplier_ids: {type: array, items: {type: string}, maxItems: 50, description: "Buyer's own view only (omitted for suppliers)"}
         id: {type: string, description: "req_..."}
@@ -503,7 +503,7 @@ components:
         price: {$ref: "#/components/schemas/Money"}
         supplier_name: {type: string}
         supplier_ref: {type: string, deprecated: true, description: "Ignored. The offer owner is X-User-Id; supplier_ref in responses is the gateway-verified X-Supplier-Id (null if none)."}
-        moq: {type: integer, minimum: 0}
+        moq: {type: integer, minimum: 0, maximum: 1000000000}
         lead_time_days: {type: integer, minimum: 0}
         incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
         valid_until: {type: string, format: date-time}
@@ -515,7 +515,7 @@ components:
         price: {$ref: "#/components/schemas/Money"}
         supplier_name: {type: string}
         supplier_ref: {type: [string, "null"], description: "Gateway-verified X-Supplier-Id (null if none)."}
-        moq: {type: integer, minimum: 0}
+        moq: {type: integer, minimum: 0, maximum: 1000000000}
         lead_time_days: {type: integer, minimum: 0}
         incoterm: {$ref: ../schemas/common.schema.json#/$defs/Incoterm}
         valid_until: {type: [string, "null"], format: date-time}

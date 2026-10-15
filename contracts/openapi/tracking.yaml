@@ -83,7 +83,7 @@ paths:
       parameters:
         - {$ref: "#/components/parameters/UserId"}
         - {name: status, in: query, schema: {$ref: "#/components/schemas/ShipmentStatus"}}
-        - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+        - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
         "200":

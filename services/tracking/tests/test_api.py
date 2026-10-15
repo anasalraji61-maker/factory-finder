@@ -79,3 +79,17 @@ def test_air_and_imo_shipments(client):
     assert air["mode"] == "air" and air["carrier"]["code"] == "emirates"
     imo = client.post("/v1/shipments", json={"reference": "IMO9074729", "reference_type": "vessel_imo"}, headers=H).json()
     assert imo["reference"] == "9074729"
+
+
+def test_qa_input_bounds():
+    from starlette.testclient import TestClient
+
+    from ff_tracking.config import Settings
+    from ff_tracking.main import create_app
+
+    app = create_app(Settings(database_url="sqlite+aiosqlite:///:memory:"))
+    with TestClient(app, raise_server_exceptions=False) as c:
+        h = {"X-User-Id": "u1"}
+        assert c.get("/v1/shipments?page=99999999999999999999", headers=h).status_code == 422
+        assert c.get("/v1/shipments", headers={"X-User-Id": "u" * 129}).status_code == 401
+        assert c.get("/v1/shipments/" + "a" * 65, headers=h).status_code == 422
