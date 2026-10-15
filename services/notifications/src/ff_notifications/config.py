@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     default_drop_threshold_pct: str = "5"
     equivalent_min_saving_pct: str = "0"
     max_watches_per_user: int = Field(default=100, ge=1)
+    max_alerts_per_user: int = Field(default=1000, ge=1)  # newest kept; older are pruned
+    alert_retention_days: int = Field(default=180, ge=1)
+    delivery_retention_days: int = Field(default=30, ge=1)
     page_size_default: int = Field(default=20, ge=1)
     page_size_max: int = Field(default=100, ge=1)
 

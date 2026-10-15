@@ -24,6 +24,7 @@ DISCLOSURE = {
     "en": "Note: this reply is from the Factory Finder sourcing platform, not an individual.",
 }
 OUTCOMES = ("replied", "converted", "no_response")
+MAX_AUDIT = 50  # per-draft audit cap: repeatable calls cannot grow the document forever
 
 
 def _iso(dt: datetime) -> str:
@@ -39,6 +40,13 @@ def _clean(value: str, limit: int = 120) -> str:
     value = _URL.sub("", value)
     value = "".join(ch for ch in value if ch.isprintable() or ch.isspace())
     return _WS.sub(" ", value).strip()[:limit]
+
+
+def _audit(d: dict, entry: dict) -> None:
+    """Append an audit entry; past the cap the oldest entries after the first are dropped."""
+    d["audit"].append(entry)
+    if len(d["audit"]) > MAX_AUDIT:
+        d["audit"] = [d["audit"][0], *d["audit"][-(MAX_AUDIT - 1) :]]
 
 
 def ensure_disclosure(text: str, language: str) -> str:
@@ -186,13 +194,14 @@ class DemandService:
             d["text"] = ensure_disclosure(text.strip(), d["language"])
         now = self.clock()
         d.update(status="approved", approved_by=actor, approved_at=_iso(now))
-        d["audit"].append(
+        _audit(
+            d,
             {
                 "at": _iso(now),
                 "actor": actor,
                 "action": "approved",
                 "note": "text edited" if text is not None else None,
-            }
+            },
         )
         start, end = self._day()
         ok = await self.store.save_draft(
@@ -213,9 +222,7 @@ class DemandService:
         if prev not in ("draft", "approved"):
             raise Conflict(f"Cannot reject a {prev} draft")
         d["status"] = "rejected"
-        d["audit"].append(
-            {"at": _iso(self.clock()), "actor": actor, "action": "rejected", "note": reason}
-        )
+        _audit(d, {"at": _iso(self.clock()), "actor": actor, "action": "rejected", "note": reason})
         if not await self.store.save_draft(d, prev):
             raise Conflict("Draft changed concurrently")
         return d
@@ -227,9 +234,7 @@ class DemandService:
             raise Conflict("Only an approved draft can be marked published")
         d["status"] = "published"
         d["published_url"] = url
-        d["audit"].append(
-            {"at": _iso(self.clock()), "actor": actor, "action": "published", "note": url}
-        )
+        _audit(d, {"at": _iso(self.clock()), "actor": actor, "action": "published", "note": url})
         if not await self.store.save_draft(d, "approved"):
             raise Conflict("Draft changed concurrently")
         return d
@@ -241,8 +246,14 @@ class DemandService:
         if d["status"] != "published":
             raise Conflict("Outcome can only be recorded for published drafts")
         d["outcome"] = outcome
-        d["audit"].append(
-            {"at": _iso(self.clock()), "actor": actor, "action": f"outcome:{outcome}", "note": note}
+        _audit(
+            d,
+            {
+                "at": _iso(self.clock()),
+                "actor": actor,
+                "action": f"outcome:{outcome}",
+                "note": note,
+            },
         )
         if not await self.store.save_draft(d, "published"):
             raise Conflict("Draft changed concurrently")

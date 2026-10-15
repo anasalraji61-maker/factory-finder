@@ -200,7 +200,9 @@ class NotificationService:
         updated = replace(
             watch.with_state(decision.state), updated_at=now, version=watch.version + 1
         )
-        await self.store.save_evaluation(updated, new_alerts)
+        await self.store.save_evaluation(
+            updated, new_alerts, keep=self.settings.max_alerts_per_user
+        )
         report.evaluated += 1
         report.skipped += [
             {"watch_id": watch.id, "rule": s.rule.value, "reason": s.reason}
@@ -268,7 +270,7 @@ class NotificationService:
                 fingerprint=ev.dedupe_key,
                 created_at=self.clock(),
             )
-            if await self.store.insert_alert_once(alert):
+            if await self.store.insert_alert_once(alert, keep=self.settings.max_alerts_per_user):
                 created.setdefault(ev.owner_id, []).append(alert)
                 results.append(
                     {
@@ -521,6 +523,18 @@ class NotificationService:
         await self.delivery.enqueue_digests()
         return await self.delivery.process_due()
 
+    # ------------------------------------------------------------ retention
+
+    async def prune(self) -> dict[str, int]:
+        now = self.clock()
+        cut = lambda days: (now - timedelta(days=days)).isoformat(timespec="milliseconds").replace(  # noqa: E731
+            "+00:00", "Z"
+        )
+        return await self.store.prune(
+            alerts_before=cut(self.settings.alert_retention_days),
+            deliveries_before=cut(self.settings.delivery_retention_days),
+        )
+
     # ------------------------------------------------------------ scheduler
 
     async def run_scheduler(self) -> None:
@@ -530,3 +544,5 @@ class NotificationService:
                 await self.evaluate_all()
             with contextlib.suppress(Exception):
                 await self.send_digests()
+            with contextlib.suppress(Exception):
+                await self.prune()

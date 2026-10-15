@@ -89,6 +89,13 @@ def invoice_dict(r: InvoiceRow) -> dict[str, Any]:
     }
 
 
+def _for_viewer(d: dict[str, Any], r: InvoiceRow, user: str | None, admin: bool) -> dict[str, Any]:
+    """The memo is free text typed by the payer: the payee (and anyone else) never sees it."""
+    if not admin and r.payer_user_id != user:
+        d["user_memo"] = None
+    return d
+
+
 def ledger_dict(e: LedgerEntryRow) -> dict[str, Any]:
     return {"id": e.id, "group_id": e.group_id, "invoice_id": e.invoice_id, "account": e.account,
             "direction": e.direction, "amount": _money(e.amount, e.currency), "reason": e.reason,
@@ -269,7 +276,8 @@ class PaymentsService:
 
     async def get_invoice(self, user: str | None, admin: bool, invoice_id: str) -> dict[str, Any]:
         async with self.sessions() as s:
-            return invoice_dict(await self._load(s, invoice_id, user, admin))
+            r = await self._load(s, invoice_id, user, admin)
+            return _for_viewer(invoice_dict(r), r, user, admin)
 
     async def list_invoices(self, user: str | None, admin: bool, *, deal_id: str | None, status: str | None,
                             page: int, size: int) -> dict[str, Any]:
@@ -285,7 +293,8 @@ class PaymentsService:
             total = (await s.execute(select(func.count()).select_from(InvoiceRow).where(*conds))).scalar_one()
             rows = (await s.execute(select(InvoiceRow).where(*conds).order_by(
                 InvoiceRow.created_at.desc(), InvoiceRow.id).limit(size).offset((page - 1) * size))).scalars().all()
-            return {"items": [invoice_dict(r) for r in rows], "total": total, "page": page, "page_size": size}
+            return {"items": [_for_viewer(invoice_dict(r), r, user, admin) for r in rows], "total": total,
+                    "page": page, "page_size": size}
 
     async def cancel(self, user: str | None, admin: bool, invoice_id: str) -> dict[str, Any]:
         async with self.sessions() as s:

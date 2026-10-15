@@ -8,11 +8,12 @@ from typing import Annotated, Any, NamedTuple
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 
 from ff_payments.domain.enums import InvoiceStatus
-from ff_payments.domain.errors import Forbidden, Unauthenticated
+from ff_payments.domain.errors import Forbidden, Unauthenticated, ValidationFailed
 from ff_payments.schemas import InvoiceCreate
 from ff_payments.service import PaymentsService
 
 router = APIRouter(prefix="/v1")
+MAX_WEBHOOK_BYTES = 64 * 1024
 
 
 class Actor(NamedTuple):
@@ -38,6 +39,8 @@ def actor(request: Request, x_user_id: Annotated[str | None, Header()] = None,
           x_admin_token: Annotated[str | None, Header()] = None) -> Actor:
     admin = _is_admin(request, x_admin_token)
     user = x_user_id.strip() if x_user_id and x_user_id.strip() else None
+    if user is not None and len(user) > 64:
+        raise Unauthenticated("X-User-Id header is invalid")
     if user is None and not admin:
         raise Unauthenticated("X-User-Id header is required")
     return Actor(user, admin)
@@ -107,4 +110,13 @@ async def requeue_outbox(outbox_id: str, s: Svc) -> dict[str, Any]:
 @router.post("/payments/webhooks/{provider}")
 async def webhook(provider: str, request: Request, s: Svc,
                   x_ff_signature: Annotated[str | None, Header()] = None) -> dict[str, Any]:
-    return await s.handle_webhook(provider, await request.body(), x_ff_signature)
+    # unauthenticated route (HMAC is checked after the body is read): bound what we buffer
+    declared = request.headers.get("content-length", "")
+    if declared.isascii() and declared.isdigit() and int(declared) > MAX_WEBHOOK_BYTES:
+        raise ValidationFailed("Webhook body too large", code="payload_too_large")
+    body = bytearray()
+    async for chunk in request.stream():
+        body += chunk
+        if len(body) > MAX_WEBHOOK_BYTES:
+            raise ValidationFailed("Webhook body too large", code="payload_too_large")
+    return await s.handle_webhook(provider, bytes(body), x_ff_signature)

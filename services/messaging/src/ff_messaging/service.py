@@ -57,6 +57,10 @@ class MessagingService:
         self.limiter = limiter
         self.publisher = publisher
         self.clock: Callable = clock
+        self.create_limiter = SlidingWindowRateLimiter(
+            limit=settings.conversation_create_limit,
+            window_seconds=settings.conversation_create_window_seconds,
+        )
 
     # ------------------------------------------------------------ conversations
 
@@ -91,6 +95,11 @@ class MessagingService:
             existing = await repo.get_conversation_by_key(key)
             if existing is not None:
                 return existing, False
+            decision = self.create_limiter.hit(caller)  # only brand-new conversations count
+            if not decision.allowed:
+                raise RateLimitedError(
+                    "Too many new conversations", retry_after_seconds=decision.retry_after
+                )
             conv_id = new_id(CONVERSATION_PREFIX)
             await repo.insert_conversation(
                 conversation_id=conv_id,

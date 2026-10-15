@@ -112,3 +112,14 @@ def test_listing_text_cannot_inject_links_or_newlines():
     text = build_reply("en", [c])
     assert "evil.test" not in text and "\r" not in text
     assert sum(1 for ln in text.split("\n") if ln.startswith("- ")) == 1
+
+
+def test_audit_trail_is_capped():
+    from ff_demand.service import MAX_AUDIT, _audit
+
+    d = {"audit": [{"action": "drafted"}]}
+    for i in range(MAX_AUDIT * 3):
+        _audit(d, {"action": f"outcome:{i}"})
+    assert len(d["audit"]) == MAX_AUDIT
+    assert d["audit"][0]["action"] == "drafted"
+    assert d["audit"][-1]["action"] == f"outcome:{MAX_AUDIT * 3 - 1}"

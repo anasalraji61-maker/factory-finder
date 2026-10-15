@@ -224,7 +224,9 @@ class Store:
             prints.add((kind, fp))
         return AlertHistory(last_alert_at=last, fingerprints=frozenset(prints))
 
-    async def save_evaluation(self, watch: Watch, new_alerts: list[Alert]) -> None:
+    async def save_evaluation(
+        self, watch: Watch, new_alerts: list[Alert], keep: int = 0
+    ) -> None:
         """Persist the new watch state and its alerts atomically."""
         async with self._lock, self.engine.begin() as conn:
             for alert in new_alerts:
@@ -240,13 +242,41 @@ class Store:
                         doc=serde.alert_to_doc(alert),
                     )
                 )
+            if new_alerts:
+                await self._cap_owner_alerts(conn, watch.owner_id, keep)
             await conn.execute(
                 update(watches)
                 .where(watches.c.id == watch.id)
                 .values(doc=serde.watch_to_doc(watch), version=watch.version)
             )
 
-    async def insert_alert_once(self, alert: Alert) -> bool:
+    async def _cap_owner_alerts(self, conn, owner_id: str, keep: int) -> None:
+        """Retention: keep only the newest ``keep`` alerts of one owner (same txn)."""
+        if keep <= 0:
+            return
+        old = (
+            select(alerts.c.id)
+            .where(alerts.c.owner_id == owner_id)
+            .order_by(alerts.c.created_at.desc(), alerts.c.id.desc())
+            .offset(keep)
+        )
+        ids = [r[0] for r in (await conn.execute(old)).all()]
+        if ids:
+            await conn.execute(delete(alerts).where(alerts.c.id.in_(ids)))
+
+    async def prune(self, *, alerts_before: str, deliveries_before: str) -> dict[str, int]:
+        """Age-based retention: old alerts and finished (non-pending) deliveries."""
+        async with self._lock, self.engine.begin() as conn:
+            a = await conn.execute(delete(alerts).where(alerts.c.created_at < alerts_before))
+            d = await conn.execute(
+                delete(deliveries).where(
+                    deliveries.c.status != DeliveryStatus.PENDING.value,
+                    deliveries.c.next_attempt_at < deliveries_before,
+                )
+            )
+        return {"alerts": int(a.rowcount or 0), "deliveries": int(d.rowcount or 0)}
+
+    async def insert_alert_once(self, alert: Alert, keep: int = 0) -> bool:
         """Insert unless (watch_id, rule, fingerprint) exists already. True when inserted."""
         try:
             async with self._lock, self.engine.begin() as conn:
@@ -273,6 +303,7 @@ class Store:
                         doc=serde.alert_to_doc(alert),
                     )
                 )
+                await self._cap_owner_alerts(conn, alert.owner_id, keep)
                 return True
         except IntegrityError:  # another replica inserted it between our check and insert
             return False

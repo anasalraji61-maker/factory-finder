@@ -308,7 +308,10 @@ async def conversation_socket(
                     )
             elif kind == "read":
                 try:
-                    await svc.mark_read(uid, conversation_id, frame.get("message_id"))
+                    mid = frame.get("message_id")
+                    await svc.mark_read(
+                        uid, conversation_id, mid if isinstance(mid, str) and len(mid) <= 64 else None
+                    )
                 except MessagingError as exc:
                     conn.offer({"type": "error", "code": exc.code, "message": exc.message})
             else:

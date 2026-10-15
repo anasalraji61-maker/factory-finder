@@ -41,3 +41,16 @@ def containers_needed(spec: ContainerSpec, kg: Decimal, m3: Decimal) -> int:
 def fill_ratio(spec: ContainerSpec, kg: Decimal, m3: Decimal) -> Decimal:
     n = containers_needed(spec, kg, m3)
     return max(D(m3) / (spec.volume_m3 * n), D(kg) / (spec.max_kg * n))
+
+
+TRUCK_FULL_BILLING_FILL = Decimal("0.7")
+TRUCK_MIN_FACTOR = Decimal("0.3")
+
+
+def truck_billing_factor(kg: Decimal, m3: Decimal) -> Decimal:
+    """Share of a full truck that is billed. A truck loaded to >=70% is charged as a full truck
+    (carriers do not discount a nearly full truck); below that the price scales down linearly
+    with the fill to the 70% mark, never under 30%. More than one truck: always full price."""
+    if containers_needed(TRUCK, kg, m3) > 1:
+        return Decimal(1)
+    return min(Decimal(1), max(TRUCK_MIN_FACTOR, fill_ratio(TRUCK, kg, m3) / TRUCK_FULL_BILLING_FILL))

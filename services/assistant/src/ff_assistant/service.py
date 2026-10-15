@@ -219,6 +219,11 @@ class Assistant:
         if not p.reference or not p.reference_type:
             return AssistantResult(intent=p.intent, parsed_query=p, answer_text=compose.msg(L, "اكتب رقم الحاوية أو بوليصة الشحن الجوي أو رقم IMO للسفينة حتى أتحقق منه.", "Send the container number, air waybill or vessel IMO number so I can validate it."))
         check = await self._guard("tracking", self.c.tracking.validate(p.reference_type, p.reference), warnings)
+        # downstream-supplied text: treated as data (cleaned) before it reaches the answer / LLM rewrite
+        san = Sanitizer()
+        san_reason = san.text(check.reason, 80) if check is not None else ""
+        if san.hit and guardrails.WARNING not in warnings:
+            warnings.append(guardrails.WARNING)
         kind = ({"container": "container", "awb": "air waybill", "vessel_imo": "vessel"} if L == "en" else
                 {"container": "الحاوية", "awb": "بوليصة الشحن الجوي", "vessel_imo": "السفينة"})[p.reference_type]
         if check is None:
@@ -226,7 +231,7 @@ class Assistant:
         elif check.valid:
             text = compose.msg(L, f"رقم {kind} {p.reference} صحيح. أضفه من تبويب الشحنات لمتابعة حالته ومواعيد الوصول.", f"The {kind} number {p.reference} is valid. Add it from the Shipments tab to follow its status and ETA.")
         else:
-            text = compose.msg(L, f"رقم {kind} {p.reference} غير صحيح ({check.reason or 'فشل التحقق'}). تأكد من الرقم وأعد الكتابة.", f"The {kind} number {p.reference} is not valid ({check.reason or 'validation failed'}). Check the number and try again.")
+            text = compose.msg(L, f"رقم {kind} {p.reference} غير صحيح ({san_reason or 'فشل التحقق'}). تأكد من الرقم وأعد الكتابة.", f"The {kind} number {p.reference} is not valid ({san_reason or 'validation failed'}). Check the number and try again.")
         return AssistantResult(intent=p.intent, parsed_query=p, answer_text=text)
 
     async def _help(self, p: ParsedQuery, warnings: list[str]) -> AssistantResult:

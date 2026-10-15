@@ -7,6 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 DAY = 86400
+MAX_KEYS = 200_000  # per-day counter cap: spoofed ids/addresses cannot grow memory without bound
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,8 @@ class DailyQuota:
             self._day, self._counts = day, {}
         key, limit = (f"u:{user_id}", self.per_user) if user_id else (f"a:{client}", self.per_anon)
         used = self._counts.get(key, 0)
+        if key not in self._counts and len(self._counts) >= MAX_KEYS:
+            return QuotaDecision(False, limit, 0, int((day + 1) * DAY - now) + 1)  # fail closed
         retry = int((day + 1) * DAY - now) + 1
         if used >= limit:
             return QuotaDecision(False, limit, 0, retry)

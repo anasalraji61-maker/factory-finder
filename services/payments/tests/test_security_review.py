@@ -33,3 +33,22 @@ def test_stale_concurrent_settlement_cannot_double_post_ledger(client):
             return (await s.execute(select(LedgerEntryRow).where(LedgerEntryRow.invoice_id == inv["id"]))).scalars().all()
 
     assert len(asyncio.run(run())) == 2  # one balanced group (2 legs)
+
+
+def test_oversized_webhook_body_is_refused_before_signature_work(client):
+    r = client.post("/v1/payments/webhooks/mock", content=b"x" * (65 * 1024))
+    assert r.status_code == 422 and r.json()["error"]["code"] == "payload_too_large"
+
+
+def test_payee_never_sees_payers_memo_via_api(client):
+    inv = mk(client, memo="payer only").json()
+    payee = inv["payee"]
+    assert client.get(f"/v1/invoices/{inv['id']}", headers={"X-User-Id": "buyer1"}).json()["user_memo"] == "payer only"
+    seen = client.get(f"/v1/invoices/{inv['id']}", headers={"X-User-Id": payee}).json()
+    assert seen["user_memo"] is None
+    items = client.get("/v1/invoices", headers={"X-User-Id": payee}).json()["items"]
+    assert items and all(i["user_memo"] is None for i in items)
+
+
+def test_overlong_user_id_header_is_rejected(client):
+    assert client.get("/v1/invoices", headers={"X-User-Id": "u" * 200}).status_code == 401

@@ -89,7 +89,7 @@ def haul_cost(cc: str, km: Decimal, kg: Decimal, m3: Decimal, containers: int | 
     if containers:
         return max(minimum, km * rate) * containers
     trucks = cargo.containers_needed(cargo.TRUCK, kg, m3)
-    factor = max(Decimal("0.3"), cargo.fill_ratio(cargo.TRUCK, kg, m3)) if trucks == 1 else Decimal(1)
+    factor = cargo.truck_billing_factor(kg, m3)
     return max(minimum * factor, km * rate * trucks * factor)
 
 
@@ -142,10 +142,18 @@ class Engine:
     # ------------------------------------------------------------ public
     async def quote(self, req: LandedCostRequest) -> dict:
         disp = req.display_currency
+        priced_at = utcnow_iso()
         usd_rate, table = await self.fx.rate("USD", disp)
         g = req.goods
         oc, dc = req.origin.country_code, req.destination.country_code
         assumptions = [ASSUMPTION_TABLE]
+        if dc not in DATA.duties["countries"]:
+            assumptions.append(f"No duty/VAT table for destination {dc}: a generic 10% duty and 0% VAT were "
+                               "assumed, so duties and taxes are a placeholder (low confidence).")
+        for label, cc in (("origin", oc), ("destination", dc)):
+            if cc not in DATA.lanes["regions"]:
+                assumptions.append(f"Country {cc} ({label}) is not in the region table: Europe-region handling "
+                                   "charges and freight lanes were assumed (low confidence).")
 
         # goods value in USD
         val = g.total_value or (g.unit_price and MoneyIn(
@@ -163,7 +171,8 @@ class Engine:
         o_pt, d_pt = await asyncio.gather(self._resolve(req.origin, "origin"),
                                           self._resolve(req.destination, "destination"))
         self.ctx = {"req": req, "kg": kg, "m3": m3, "goods_usd": goods_usd, "o_pt": o_pt, "d_pt": d_pt,
-                    "oc": oc, "dc": dc, "stages": BUYER_STAGES[req.supplier_incoterm]}
+                    "oc": oc, "dc": dc, "stages": BUYER_STAGES[req.supplier_incoterm],
+                    "priced_at": priced_at, "fx": f"{table.source} {table.timestamp}"}
         inc = req.supplier_incoterm
         if inc in ("CFR", "CIF", "DAP", "DDP", "FOB", "FCA"):
             assumptions.append(f"Supplier incoterm {inc}: stages already in the supplier price are "
@@ -205,7 +214,7 @@ class Engine:
         assumptions.append(f"FX: {table.source} rates as of {table.timestamp}; 1 USD = {usd_rate:.6g} {disp}.")
         return {"id": "qte_" + uuid.uuid4().hex, "currency": disp, "origin": req.origin.model_dump(exclude_none=True),
                 "destination": req.destination.model_dump(exclude_none=True), "options": options,
-                "assumptions": assumptions, "warnings": quote_warn, "created_at": utcnow_iso()}
+                "assumptions": assumptions, "warnings": quote_warn, "created_at": priced_at}
 
     # ------------------------------------------------------------ helpers
     async def _de_minimis_warning(self, dc: str, goods_usd: Decimal) -> str | None:
@@ -370,7 +379,7 @@ class Engine:
         if mode == "road":
             km = await self.dist(c["o_pt"], c["d_pt"], "road")
             trucks = cargo.containers_needed(cargo.TRUCK, kg, m3)
-            ltl = max(Decimal("0.3"), cargo.fill_ratio(cargo.TRUCK, kg, m3)) if trucks == 1 else Decimal(1)
+            ltl = cargo.truck_billing_factor(kg, m3)
             rate = (DATA.road_rate(oc) + DATA.road_rate(dc)) / 2 * D("1.15")
             borders = 0 if oc == dc else max(1, round(float(km) / 2500))
             freight = (km * rate * trucks * ltl + D(h["border_fee_usd"]) * borders) * dgf
@@ -457,7 +466,7 @@ class Engine:
                 + (f" (incl. {sur['note']})" if sur and fam == "sea" else ""), dh + D(dho["docs"]), src)
             # destination inland
             cont = n if fam in ("sea", "rail") and mode != "sea_lcl" else None
-            fee = alt.border_fee if cont else alt.border_fee * max(D("0.3"), cargo.fill_ratio(cargo.TRUCK, kg, m3))
+            fee = alt.border_fee if cont else alt.border_fee * cargo.truck_billing_factor(kg, m3)
             if alt.via:
                 k1 = await self.dist(alt.hub.point, alt.via.point, "road")
                 k2 = await self.dist(alt.via.point, c["d_pt"], "road")
@@ -549,7 +558,8 @@ class Engine:
                 goods_amt = amt
             entry = {"stage": ln.stage, "description": ln.description, "amount": money(amt, disp),
                      "original_amount": money(ln.usd, "USD"), "fx_rate": f"{rate:.8g}",
-                     "source": ln.source, "estimate": ln.estimate}
+                     "source": f"{ln.source}; priced {self.ctx['priced_at']}; FX {self.ctx['fx']}",
+                     "estimate": ln.estimate}
             if ln.stage == "goods":
                 entry["original_amount"] = money(goods_val.amount, goods_val.currency)
             lines_out.append(entry)

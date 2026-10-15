@@ -84,6 +84,8 @@ class Settings(BaseSettings):
     abuse_terms_extra: StrList = Field(default_factory=list)  # appended to the active list
 
     # --- send rate limit (per user, sliding window) ---------------------------------------------
+    conversation_create_limit: int = Field(default=10, ge=1)  # new conversations per user per window
+    conversation_create_window_seconds: float = Field(default=60.0, gt=0)
     send_rate_limit: int = Field(default=20, ge=1)
     send_rate_window_seconds: float = Field(default=10.0, gt=0)
 

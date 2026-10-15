@@ -66,18 +66,18 @@ class _Body(BaseModel):
 
 
 class MoneyIn(_Body):
-    amount: str
-    currency: str
+    amount: str = Field(max_length=40)
+    currency: str = Field(max_length=8)
 
 
 class SearchIn(_Body):
     q: str | None = Field(default=None, max_length=200)
-    kind: str | None = None
-    condition: str | None = None
-    origin_country: str | None = None
-    category: str | None = None
-    min_price: str | None = None
-    max_price: str | None = None
+    kind: str | None = Field(default=None, max_length=32)
+    condition: str | None = Field(default=None, max_length=32)
+    origin_country: str | None = Field(default=None, max_length=8)
+    category: str | None = Field(default=None, max_length=64)
+    min_price: str | None = Field(default=None, max_length=40)
+    max_price: str | None = Field(default=None, max_length=40)
     moq_max: int | None = Field(default=None, ge=0)
     verified_only: bool | None = None
 
@@ -88,7 +88,7 @@ class WatchCreate(_Body):
     )
     search: SearchIn | None = None
     target_price: MoneyIn | None = None
-    drop_threshold_pct: str | None = None
+    drop_threshold_pct: str | None = Field(default=None, max_length=16)
 
 
 class DeviceCreate(_Body):
@@ -103,7 +103,9 @@ class QuietHoursIn(_Body):
 
 
 class PrefsIn(_Body):
-    channels: dict[str, list[str]] | None = None
+    channels: dict[str, Annotated[list[str], Field(max_length=8)]] | None = Field(
+        default=None, max_length=16
+    )
     quiet_hours: QuietHoursIn | None = None
     clear_quiet_hours: bool = False
     timezone: str | None = Field(default=None, max_length=64)
@@ -117,8 +119,8 @@ class VerifyEmailIn(_Body):
 
 
 class EvaluateIn(_Body):
-    owner_id: str | None = None
-    watch_id: str | None = None
+    owner_id: str | None = Field(default=None, max_length=64)
+    watch_id: str | None = Field(default=None, max_length=40)
 
 
 def _money(m: Money | None) -> dict | None:
