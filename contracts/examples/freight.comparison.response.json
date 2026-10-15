@@ -1,0 +1,165 @@
+{
+  "spec": "freight.yaml",
+  "pointer": "#/components/schemas/Comparison",
+  "description": "GET /v1/freight/requests/{id}/comparison with two quotes: rows carry rating_confidence, price_delta and cheaper_quote_ids.",
+  "value": {
+    "request_id": "shp_55343a29221342d087869062e99ef3ed",
+    "request_status": "open",
+    "currency": "USD",
+    "sort": "score",
+    "weights": {
+      "price": 0.5,
+      "transit": 0.3,
+      "rating": 0.2
+    },
+    "formula": "score = 100 x (w_price x cheapest/price + w_transit x fastest/transit + w_rating x adjusted_rating/5); adjusted_rating = (sum of stars + 3 x 2) / (rating count + 2)",
+    "items": [
+      {
+        "price_delta": 0.0,
+        "cheaper_quote_ids": [],
+        "rating_count": 0,
+        "rating_confidence": "unrated",
+        "verified": true,
+        "valid_until": "2026-10-29T12:00:00.007000Z",
+        "inclusions_missing": [],
+        "inclusions_unique": [],
+        "rank": 1,
+        "score": 85.6,
+        "breakdown": {
+          "price": {
+            "value": 1.0,
+            "weight": 0.5
+          },
+          "transit": {
+            "value": 0.786,
+            "weight": 0.3
+          },
+          "rating": {
+            "value": 0.6,
+            "weight": 0.2
+          }
+        },
+        "adjusted_rating": 3.0,
+        "badges": [
+          "cheapest"
+        ],
+        "explanation": [
+          "price 100% of best (weight 50%)",
+          "transit 79% of best (weight 30%)",
+          "rating 3.00/5 after shrinking toward 3.0 (weight 20%)",
+          "best cheapest",
+          "rating based on 0 review(s): unrated confidence"
+        ],
+        "quote": {
+          "id": "qte_f7391ea6aa344d0686209d182c0655ea",
+          "request_id": "shp_55343a29221342d087869062e99ef3ed",
+          "forwarder_id": "fwd_faf4da710d5a42b2b4d2cd974f34b96b",
+          "amount": "2450.00",
+          "currency": "USD",
+          "transit_days": 28,
+          "valid_until": "2026-10-29T12:00:00.007000Z",
+          "valid": true,
+          "inclusions": [
+            "Ocean freight",
+            "Origin THC"
+          ],
+          "exclusions": [
+            "Customs duties"
+          ],
+          "breakdown": [],
+          "terms": "Payment net 14 days",
+          "status": "submitted",
+          "revision": 1,
+          "created_at": "2026-10-15T12:00:00.007000Z",
+          "updated_at": "2026-10-15T12:00:00.007000Z",
+          "forwarder": {
+            "id": "fwd_faf4da710d5a42b2b4d2cd974f34b96b",
+            "company_name": "Gulf Star Logistics",
+            "country_code": "AE",
+            "rating": {
+              "average": null,
+              "count": 0
+            },
+            "completed_jobs": 0,
+            "verified": true
+          }
+        }
+      },
+      {
+        "price_delta": 450.0,
+        "cheaper_quote_ids": [
+          "qte_f7391ea6aa344d0686209d182c0655ea"
+        ],
+        "rating_count": 0,
+        "rating_confidence": "unrated",
+        "verified": true,
+        "valid_until": "2026-10-29T12:00:00.010000Z",
+        "inclusions_missing": [],
+        "inclusions_unique": [],
+        "rank": 2,
+        "score": 84.2,
+        "breakdown": {
+          "price": {
+            "value": 0.845,
+            "weight": 0.5
+          },
+          "transit": {
+            "value": 1.0,
+            "weight": 0.3
+          },
+          "rating": {
+            "value": 0.6,
+            "weight": 0.2
+          }
+        },
+        "adjusted_rating": 3.0,
+        "badges": [
+          "fastest"
+        ],
+        "explanation": [
+          "price 85% of best (weight 50%)",
+          "transit 100% of best (weight 30%)",
+          "rating 3.00/5 after shrinking toward 3.0 (weight 20%)",
+          "best fastest",
+          "1 cheaper quote(s) exist; price is +450.00 over the cheapest",
+          "rating based on 0 review(s): unrated confidence"
+        ],
+        "quote": {
+          "id": "qte_f508386aaaba440ea3311c1494569a31",
+          "request_id": "shp_55343a29221342d087869062e99ef3ed",
+          "forwarder_id": "fwd_a410b272250d4d3ebb9790e412828ec8",
+          "amount": "2900.00",
+          "currency": "USD",
+          "transit_days": 22,
+          "valid_until": "2026-10-29T12:00:00.010000Z",
+          "valid": true,
+          "inclusions": [
+            "Ocean freight",
+            "Origin THC"
+          ],
+          "exclusions": [
+            "Customs duties"
+          ],
+          "breakdown": [],
+          "terms": "Payment net 14 days",
+          "status": "submitted",
+          "revision": 1,
+          "created_at": "2026-10-15T12:00:00.010000Z",
+          "updated_at": "2026-10-15T12:00:00.010000Z",
+          "forwarder": {
+            "id": "fwd_a410b272250d4d3ebb9790e412828ec8",
+            "company_name": "Silk Route Cargo",
+            "country_code": "AE",
+            "rating": {
+              "average": null,
+              "count": 0
+            },
+            "completed_jobs": 0,
+            "verified": true
+          }
+        }
+      }
+    ],
+    "excluded": []
+  }
+}

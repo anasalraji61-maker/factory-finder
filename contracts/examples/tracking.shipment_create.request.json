@@ -1,0 +1,10 @@
+{
+  "spec": "tracking.yaml",
+  "pointer": "#/components/schemas/ShipmentCreate",
+  "description": "POST /v1/shipments body (container, label).",
+  "value": {
+    "reference": "CSQU3054383",
+    "reference_type": "container",
+    "label": "chairs"
+  }
+}

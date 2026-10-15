@@ -95,8 +95,13 @@ deliveries = Table(
     Column("status", String(16), nullable=False),
     Column("next_attempt_at", String(32), nullable=False),
     Column("doc", JSON, nullable=False),
+    # Denormalised from ``doc`` (migration 0005) so the daily push cap is a COUNT query.
+    Column("channel", String(16), nullable=True),
+    Column("device_id", String(64), nullable=True),
+    Column("created_at", String(32), nullable=True),
     Index("ix_delivery_due", "status", "next_attempt_at"),
     Index("ix_delivery_owner_id", "owner_id", "id"),
+    Index("ix_delivery_cap", "owner_id", "channel", "device_id", "created_at"),
 )
 
 
@@ -531,10 +536,31 @@ class Store:
                     owner_id=d.owner_id,
                     status=d.status.value,
                     next_attempt_at=serde.ts(d.next_attempt_at),
+                    channel=d.channel,
+                    device_id=d.device_id,
+                    created_at=serde.ts(d.created_at),
                     doc=serde.delivery_to_doc(d),
                 )
             )
             return True
+
+    async def count_recent_deliveries(
+        self, owner_id: str, *, channel: str, device_id: str, since: datetime
+    ) -> int:
+        """Non-skipped deliveries of ``channel`` for one device created at/after ``since``."""
+        q = (
+            select(func.count())
+            .select_from(deliveries)
+            .where(
+                deliveries.c.owner_id == owner_id,
+                deliveries.c.channel == channel,
+                deliveries.c.device_id == device_id,
+                deliveries.c.created_at >= serde.ts(since),
+                deliveries.c.status != DeliveryStatus.SKIPPED.value,
+            )
+        )
+        async with self.engine.connect() as conn:
+            return int((await conn.execute(q)).scalar_one())
 
     async def get_delivery(self, delivery_id: str) -> Delivery | None:
         async with self.engine.connect() as conn:

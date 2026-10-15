@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     max_bytes_per_user: int = 100 * 1024 * 1024  # sum of stored ORIGINAL sizes per user (variants add at most ~1x on top)
     max_concurrent_processing: int = 4  # simultaneous decode/re-encode jobs per process (memory guard)
     sweep_min_age_seconds: int = 3600  # orphan blobs younger than this are never swept (in-flight uploads)
+    sweep_batch: int = 500  # FF_MEDIA_SWEEP_BATCH: rows/blobs handled per sweep batch
+    sweep_max_seconds: float = 30.0  # FF_MEDIA_SWEEP_MAX_SECONDS: runtime budget per sweep_orphans call
 
     @property
     def base(self) -> str:

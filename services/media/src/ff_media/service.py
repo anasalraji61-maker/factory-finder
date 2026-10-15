@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
+import re
 import secrets
+import time
 import weakref
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
@@ -20,7 +23,9 @@ from ff_media.imaging import Processed, process_image
 from ff_media.schemas import MediaImage, SignedUrl
 from ff_media.storage import StorageBackend, make_key
 
+log = logging.getLogger("ff_media")
 HOUR = timedelta(hours=1)
+_ID_IN_KEY = re.compile(r"[a-f0-9]{32}")
 
 
 class MediaService:
@@ -35,6 +40,9 @@ class MediaService:
         self._cpu = asyncio.Semaphore(max(1, settings.max_concurrent_processing))
         sk = settings.signing_key.get_secret_value() if settings.signing_key else ""
         self.signing_key: bytes = sk.encode() if sk else secrets.token_bytes(32)  # random per process when unset (dev)
+        if not sk:
+            log.warning("FF_MEDIA_SIGNING_KEY is unset: using a random per-process signing key; signed URLs break on "
+                        "restart and across replicas (required when FF_ENV=production)")
 
     async def create_tables(self) -> None:
         async with self.engine.begin() as conn:
@@ -114,6 +122,15 @@ class MediaService:
                 width=proc.width, height=proc.height, size_bytes=len(proc.data), sha256=proc.sha256,
                 widths=",".join(str(w) for w in proc.variants), created_at=self.clock(),
             )  # fmt: skip
+            # DB-consistent quota: serialise per owner across processes where the DB can (PostgreSQL advisory xact lock),
+            # then re-check COUNT/SUM inside the same transaction that inserts the row.
+            try:
+                await self._lock_owner_in_tx(s, owner)
+                await self._recheck_quota(s, owner, len(proc.data))
+            except Exception:
+                await s.rollback()
+                await self._cleanup(keys)
+                raise
             s.add(row)
             try:
                 await s.commit()
@@ -128,6 +145,24 @@ class MediaService:
                 await self._cleanup(keys)
                 raise
             return self.to_image(row), True
+
+    @staticmethod
+    async def _lock_owner_in_tx(s, owner: str) -> None:
+        bind = s.get_bind()
+        if bind.dialect.name == "postgresql":  # released at commit/rollback; SQLite already serialises writers
+            await s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": "media-quota:" + owner})
+
+    async def _recheck_quota(self, s, owner: str, new_bytes: int) -> None:
+        s_ = self.settings
+        count = await s.scalar(select(func.count()).select_from(MediaFileRow).where(MediaFileRow.owner_id == owner))
+        if (count or 0) >= s_.max_files_per_user:
+            raise QuotaFiles(f"Stored file limit reached ({s_.max_files_per_user})", {"limit": s_.max_files_per_user})
+        used = await self.stored_bytes(owner, s)
+        if used + new_bytes > s_.max_bytes_per_user:
+            raise QuotaBytes(
+                f"Storage limit reached ({s_.max_bytes_per_user} bytes)",
+                {"limit_bytes": s_.max_bytes_per_user, "used_bytes": used},
+            )
 
     async def stored_bytes(self, owner: str, s=None) -> int:
         q = select(func.coalesce(func.sum(MediaFileRow.size_bytes), 0)).where(MediaFileRow.owner_id == owner)
@@ -244,29 +279,69 @@ class MediaService:
         return row, data
 
     # ------------------------------------------------------------------ orphan cleanup
-    async def sweep_orphans(self, *, dry_run: bool = True) -> dict[str, int]:
+    async def sweep_orphans(self, *, dry_run: bool = True, after: str | None = None) -> dict[str, int | str | bool | None]:
         """Remove blobs that no database row references (failed/crashed uploads, rows deleted out of band).
 
         Needs a storage backend that can list keys (``LocalDiskStorage``); blobs younger than
         ``sweep_min_age_seconds`` are kept because their row may not be committed yet. Rows whose original blob is
         missing are only counted (``rows_missing_blob``), never deleted.
+
+        Memory and DB load are bounded: blobs are processed in key order in batches of ``sweep_batch`` and each batch
+        looks up only its own ids; the rows pass uses keyset pagination on ``id``. A call stops after
+        ``sweep_max_seconds``: ``complete`` is then False and ``next_after`` is the cursor to pass back as ``after``.
         """
         lister = getattr(self.storage, "list_keys", None)
         if lister is None:
-            return {"scanned": 0, "orphans": 0, "deleted": 0, "rows_missing_blob": 0, "unsupported": 1}
-        async with self.sessions() as s:
-            rows = (await s.scalars(select(MediaFileRow))).all()
-        wanted: set[str] = set()
-        for r in rows:
-            priv = r.visibility == "private"
-            wanted.add(make_key(r.id, r.ext, private=priv))
-            wanted.update(make_key(r.id, r.ext, int(w), private=priv) for w in r.widths.split(",") if w)
+            return {"scanned": 0, "orphans": 0, "deleted": 0, "rows_missing_blob": 0, "unsupported": 1,
+                    "complete": True, "next_after": None}  # fmt: skip
+        batch = max(1, self.settings.sweep_batch)
+        deadline = time.monotonic() + max(0.0, self.settings.sweep_max_seconds)
         cutoff = self.clock().timestamp() - self.settings.sweep_min_age_seconds
-        present = await lister()
-        orphans = [k for k, mtime in present if k not in wanted and mtime <= cutoff]
-        if not dry_run:
-            await self._cleanup(orphans)
+        present = sorted(await lister())
         have = {k for k, _ in present}
-        missing = sum(1 for r in rows if make_key(r.id, r.ext, private=r.visibility == "private") not in have)
-        return {"scanned": len(present), "orphans": len(orphans), "deleted": 0 if dry_run else len(orphans),
-                "rows_missing_blob": missing}  # fmt: skip
+        scanned = orphans = deleted = missing = 0
+        phase, cursor = ("r", after[2:]) if after and after.startswith("r:") else ("b", after[2:] if after and after.startswith("b:") else "")
+        next_after: str | None = None
+
+        if phase == "b":
+            todo = [(k, m) for k, m in present if k > cursor]
+            for off in range(0, len(todo), batch):
+                if off and time.monotonic() >= deadline:
+                    next_after = "b:" + todo[off - 1][0]
+                    break
+                chunk = todo[off : off + batch]
+                ids = {m.group(0) for k, _ in chunk if (m := _ID_IN_KEY.search(k))}
+                wanted: set[str] = set()
+                async with self.sessions() as s:
+                    for r in (await s.scalars(select(MediaFileRow).where(MediaFileRow.id.in_(ids)))).all():
+                        priv = r.visibility == "private"
+                        wanted.add(make_key(r.id, r.ext, private=priv))
+                        wanted.update(make_key(r.id, r.ext, int(w), private=priv) for w in r.widths.split(",") if w)
+                found = [k for k, mtime in chunk if k not in wanted and mtime <= cutoff]
+                scanned += len(chunk)
+                orphans += len(found)
+                if found and not dry_run:
+                    await self._cleanup(found)
+                    deleted += len(found)
+            if next_after is None:
+                phase, cursor = "r", ""
+        if phase == "r" and next_after is None:
+            first = scanned == 0 and phase == "r" and bool(after)  # always make progress on a resumed call
+            while True:
+                if time.monotonic() >= deadline and cursor and not first:
+                    next_after = "r:" + cursor
+                    break
+                async with self.sessions() as s:
+                    rows = (await s.execute(
+                        select(MediaFileRow.id, MediaFileRow.ext, MediaFileRow.visibility)
+                        .where(MediaFileRow.id > cursor).order_by(MediaFileRow.id).limit(batch)
+                    )).all()  # fmt: skip
+                if not rows:
+                    break
+                first = False
+                missing += sum(1 for rid, ext, vis in rows if make_key(rid, ext, private=vis == "private") not in have)
+                cursor = rows[-1][0]
+                if len(rows) < batch:
+                    break
+        return {"scanned": scanned, "orphans": orphans, "deleted": deleted, "rows_missing_blob": missing,
+                "complete": next_after is None, "next_after": next_after}  # fmt: skip

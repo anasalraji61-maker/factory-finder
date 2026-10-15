@@ -12,9 +12,10 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 - Ownership: owner = `X-User-Id`; `DELETE /v1/media/images/{id}` by anyone else is 404 (never 403). Deleted images can live on in downstream caches for the immutable lifetime (use a CDN purge if that matters).
 - Private files (`visibility=private`, or `kind=verification` which is always private; `kind=verification`+`visibility=public` -> 422): stored under `p-` keys the public route cannot address (public `GET /v1/media/files/*` -> 404), no resized variants, response `url` is the relative ref `/v1/media/private/<id>.<ext>`. Readable by the owner (`X-User-Id`) at that path, by anyone with a signed URL (`POST /v1/media/files/{id}/sign`, owner only -> `?u=&exp=&sig=`, HMAC-SHA256 over id+user+exp, 5 min, constant-time compare, bound to the file's owner) and by admins via `GET /v1/media/admin/files/{id}` (X-Admin-Token; gateway: `/v1/admin/media/files/{name}`). All other cases are one 404. Headers: `Cache-Control: private, no-store`, nosniff, `Referrer-Policy: no-referrer`, CSP. No listing. Dedupe is per (owner, hash, visibility). Rows created before migration 0002 are public; re-upload old verification documents.
 - Quotas per user: 200 stored files, 100 MiB of stored originals (`quota_bytes_exceeded`), 30 upload requests per rolling hour (every request counts, valid or not; 429 + `Retry-After`). At most `FF_MEDIA_MAX_CONCURRENT_PROCESSING` (4) decode/re-encode jobs run at once per process.
+- Quota consistency: uploads of one user are serialised by an in-process lock; additionally, right before the insert the COUNT/SUM are re-checked inside the inserting transaction, and on PostgreSQL a per-owner `pg_advisory_xact_lock` is taken first, so replicas cannot exceed the quota. Residual: on SQLite (single-process by nature) or any DB without that lock, two processes racing can each pass the re-check and overshoot by at most one file (one upload per racing process); the early dedupe/limit check is still best-effort.
 - HEAD and single-range `Range: bytes=` (206/416, `Accept-Ranges: bytes`) work on public, private and admin reads; multi-range is served whole. Errors (>=400) and every private/admin/sign response are `Cache-Control: no-store`. A signed URL is a bearer link: it can be replayed until expiry (<=5 min) by design.
 - PDFs and other documents are NOT accepted (415); verification documents must be images. Metadata is stripped from every stored byte, including private originals.
-- Orphans: `python -m ff_media.sweep` (dry run) / `--apply` deletes storage blobs no row references and older than `FF_MEDIA_SWEEP_MIN_AGE_SECONDS` (3600); rows with a missing blob are only counted. Local disk only (S3 has no `list_keys`). Run it from cron.
+- Orphans: `python -m ff_media.sweep` (dry run) / `--apply` deletes storage blobs no row references and older than `FF_MEDIA_SWEEP_MIN_AGE_SECONDS` (3600); rows with a missing blob are only counted. Local disk only (S3 has no `list_keys`). Run it from cron. The sweep is batched (`FF_MEDIA_SWEEP_BATCH`, 500; keyset pagination, per-batch id lookups) and each `sweep_orphans` call stops after `FF_MEDIA_SWEEP_MAX_SECONDS` (30) returning `complete=false` + `next_after` to resume; the CLI loops until complete. `rows_missing_blob` is per call when interrupted.
 - Dedupe: per owner by SHA-256 of the re-encoded bytes.
 - Storage: `StorageBackend` protocol (`storage/base.py`); `LocalDiskStorage` (default; keep `FF_MEDIA_STORAGE_ROOT` on a persistent volume) and `S3Storage` (UNVERIFIED skeleton, off by default, needs `pip install .[s3]`; credentials only from the environment).
 - Nothing is scanned for malware and no content moderation is performed; add both before opening uploads to untrusted users at scale.
@@ -26,7 +27,7 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 | `FF_MEDIA_STORAGE_ROOT` | `./media-data` |
 | `FF_MEDIA_S3_BUCKET` / `_REGION` / `_ENDPOINT_URL` / `_PREFIX` | unset / unset / unset / `media/` |
 | `FF_MEDIA_S3_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` | unset (env only) |
-| `FF_MEDIA_SIGNING_KEY` | unset -> random per-process key (dev); **required when FF_ENV=production** (refuses to start) |
+| `FF_MEDIA_SIGNING_KEY` | unset -> random per-process key (dev, one WARNING logged at startup); **required when FF_ENV=production** (refuses to start) |
 | `FF_MEDIA_SIGNED_URL_TTL_SECONDS` | `300` |
 | `FF_MEDIA_ADMIN_TOKEN` | unset -> admin read 404 (gateway must hold the same value) |
 | `FF_MEDIA_MAX_UPLOAD_BYTES` | `5242880` |
@@ -35,6 +36,7 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 | `FF_MEDIA_MAX_FILES_PER_USER` / `_MAX_UPLOADS_PER_HOUR` | `200` / `30` |
 | `FF_MEDIA_MAX_BYTES_PER_USER` | `104857600` |
 | `FF_MEDIA_MAX_CONCURRENT_PROCESSING` / `_SWEEP_MIN_AGE_SECONDS` | `4` / `3600` |
+| `FF_MEDIA_SWEEP_BATCH` / `_SWEEP_MAX_SECONDS` | `500` / `30` |
 | `FF_MEDIA_DATABASE_URL` / `_DB_AUTO_CREATE` | `sqlite+aiosqlite:///./media.db` / auto (see docs/DB.md) |
 
 ## Ops (logging / readiness)

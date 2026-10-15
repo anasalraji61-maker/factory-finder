@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     # requests without it share a small per-client-host bucket.
     quota_per_day: int = Field(default=200, ge=1)
     anon_quota_per_day: int = Field(default=30, ge=1)
+    # Per-minute burst limit (sliding window, in-memory per process), keyed like the daily quota. Checked before it.
+    rate_limit_per_minute: int = Field(default=20, ge=1)
+    anon_rate_limit_per_minute: int = Field(default=10, ge=1)
+    # Hard cap on the characters of answer_text returned to the client (truncated with an ellipsis).
+    max_answer_chars: int = Field(default=1500, ge=100, le=10000)
     # Share the quota counters across replicas (needs the `redis` extra). Empty = in-memory, per process.
     redis_url: str | None = Field(default=None, validation_alias=AliasChoices("FF_REDIS_URL", "FF_ASSISTANT_REDIS_URL"))
 

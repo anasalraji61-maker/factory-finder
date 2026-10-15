@@ -1,8 +1,9 @@
-import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/auth/auth_errors.dart';
 import 'package:factory_finder/features/auth/auth_validators.dart';
+import 'package:factory_finder/features/auth/password_field.dart';
 import 'package:factory_finder/features/auth/password_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,13 +38,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
       await ref.read(passwordRepositoryProvider).forgot(_email.text.trim());
       if (mounted) setState(() => _sent = true);
     } catch (e) {
-      if (mounted) _snack(context, localizedPasswordError(context, e));
+      if (mounted) _snack(context, localizedAuthError(context, e, passwordFlow: true));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -128,6 +130,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
@@ -139,7 +142,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       _snack(context, context.tr('auth.reset.done'));
       context.go('/login');
     } catch (e) {
-      if (mounted) _snack(context, localizedPasswordError(context, e));
+      if (mounted) _snack(context, localizedAuthError(context, e, passwordFlow: true));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -163,22 +166,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               validator: (v) => _tr(context, validateResetToken(v)),
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
               key: const ValueKey<String>('reset-password'),
               controller: _password,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: context.tr('auth.reset.new_password'),
-                helperText: context.tr('auth.password_hint'),
-              ),
+              label: context.tr('auth.reset.new_password'),
+              helperText: context.tr('auth.password_hint'),
               validator: (v) => _tr(context, validateNewPassword(v)),
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
               key: const ValueKey<String>('reset-confirm'),
               controller: _confirm,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.tr('auth.reset.confirm')),
+              label: context.tr('auth.reset.confirm'),
               validator: (v) => _tr(context, validatePasswordConfirm(v, _password.text)),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -218,6 +217,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
@@ -229,7 +229,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       _snack(context, context.tr('auth.change.done'));
       if (context.canPop()) context.pop();
     } catch (e) {
-      if (mounted) _snack(context, localizedPasswordError(context, e));
+      if (mounted) _snack(context, localizedAuthError(context, e, passwordFlow: true));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -244,31 +244,26 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            TextFormField(
+            PasswordField(
               key: const ValueKey<String>('change-current'),
               controller: _current,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.tr('auth.change.current')),
+              label: context.tr('auth.change.current'),
               validator: (v) => _tr(context, validateCurrentPassword(v)),
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
               key: const ValueKey<String>('change-password'),
               controller: _password,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: context.tr('auth.reset.new_password'),
-                helperText: context.tr('auth.password_hint'),
-              ),
+              label: context.tr('auth.reset.new_password'),
+              helperText: context.tr('auth.password_hint'),
               validator: (v) =>
                   _tr(context, validateNewPassword(v, current: _current.text)),
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
               key: const ValueKey<String>('change-confirm'),
               controller: _confirm,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.tr('auth.reset.confirm')),
+              label: context.tr('auth.reset.confirm'),
               validator: (v) => _tr(context, validatePasswordConfirm(v, _password.text)),
             ),
             const SizedBox(height: AppSpacing.lg),

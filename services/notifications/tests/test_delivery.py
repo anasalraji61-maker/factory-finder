@@ -292,6 +292,61 @@ async def test_daily_digest_idempotent_and_localised(env):
     assert len(env.email.sent) == 1
 
 
+async def test_digest_id_keys_on_utc_date_so_timezone_change_cannot_double_send(env):
+    await env.device()
+    await env.alert()
+    await env.prefs(
+        channels={"price_drop": ["in_app", "email"]},
+        digest_email="buyer@example.com",
+        timezone="Asia/Baghdad",
+    )
+    await env.verify()
+    env.email.sent.clear()
+    env.now = datetime(2026, 10, 13, 20, 0, tzinfo=UTC)  # Baghdad 23:00 on the 13th
+    assert await env.svc.send_digests() == 1
+    # Auckland is already on the 14th, past 08:00: local date differs, UTC date does not.
+    await env.prefs(timezone="Pacific/Auckland")
+    assert await env.svc.send_digests() == 0
+    assert len(env.email.sent) == 1
+
+
+def test_digest_id_is_per_owner_and_utc_date():
+    from ff_notifications.domain.delivery import delivery_id
+
+    a = delivery_id("digest", "email", "u1", "2026-10-13")
+    assert a != delivery_id("digest", "email", "u2", "2026-10-13")
+    assert a != delivery_id("digest", "email", "u1", "2026-10-14")
+
+
+async def test_push_cap_counts_in_sql_per_device_and_window(tmp_path):
+    from ff_notifications.domain.delivery import PUSH, Delivery
+    from ff_notifications.persistence.store import Store
+
+    store = Store(f"sqlite+aiosqlite:///{tmp_path / 'cap.db'}")
+    await store.create_all()
+
+    def mk(i, dev, created, status=DeliveryStatus.PENDING, channel=PUSH):
+        return Delivery(
+            f"d{i}", "u1", channel, "alerts", ("a",), created, created, dev, status
+        )
+
+    t = T0
+    for d in (
+        mk(1, "devA", t),
+        mk(2, "devA", t - timedelta(hours=23)),
+        mk(3, "devA", t - timedelta(hours=25)),  # outside window
+        mk(4, "devA", t, DeliveryStatus.SKIPPED),  # skipped never counts
+        mk(5, "devB", t),  # other device
+        mk(6, "devA", t, channel="email"),  # other channel
+    ):
+        assert await store.insert_delivery(d)
+    n = await store.count_recent_deliveries(
+        "u1", channel=PUSH, device_id="devA", since=t - timedelta(hours=24)
+    )
+    assert n == 2
+    await store.engine.dispose()
+
+
 # --------------------------------------------------------------- providers / config
 
 

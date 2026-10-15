@@ -1,0 +1,63 @@
+{
+  "spec": "rfq.yaml",
+  "pointer": "#/components/responses/RequestPage/content/application~1json/schema",
+  "description": "GET /v1/requests?scope=public&page_size=2: first page of the public market with next_cursor to pass as ?cursor=.",
+  "value": {
+    "items": [
+      {
+        "id": "req_0aad9dff8e624042944674e45853ca4d",
+        "owner_id": "buyer1",
+        "kind": "product",
+        "title": "LED panel lights",
+        "description": null,
+        "quantity": "1000",
+        "unit": "piece",
+        "condition": "any",
+        "target_price": {
+          "amount": "9.50",
+          "currency": "USD"
+        },
+        "destination": {
+          "country_code": "IQ",
+          "city": "Baghdad"
+        },
+        "deadline": null,
+        "attachments": [],
+        "visibility": "public",
+        "status": "open",
+        "offers_count": 0,
+        "created_at": "2026-10-01T12:00:00Z",
+        "updated_at": "2026-10-01T12:00:00Z"
+      },
+      {
+        "id": "req_3ccac8edfa244950a3adabd1de22ade7",
+        "owner_id": "buyer1",
+        "kind": "product",
+        "title": "Plastic chairs",
+        "description": null,
+        "quantity": "1000",
+        "unit": "piece",
+        "condition": "any",
+        "target_price": {
+          "amount": "9.50",
+          "currency": "USD"
+        },
+        "destination": {
+          "country_code": "IQ",
+          "city": "Baghdad"
+        },
+        "deadline": null,
+        "attachments": [],
+        "visibility": "public",
+        "status": "open",
+        "offers_count": 0,
+        "created_at": "2026-10-01T12:00:00Z",
+        "updated_at": "2026-10-01T12:00:00Z"
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "page_size": 2,
+    "next_cursor": "WyIyMDI2LTEwLTAxVDEyOjAwOjAwKzAwOjAwIiwicmVxXzNjY2FjOGVkZmEyNDQ5NTBhM2FkYWJkMWRlMjJhZGU3Il0"
+  }
+}

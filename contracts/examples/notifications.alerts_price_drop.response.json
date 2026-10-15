@@ -1,0 +1,39 @@
+{
+  "spec": "notifications.yaml",
+  "pointer": "#/components/schemas/AlertPage",
+  "description": "GET /v1/alerts after a 10% price drop on a watched listing (rule price_drop).",
+  "value": {
+    "items": [
+      {
+        "id": "alt_d3ca0a83bcffb6ca8df51ba4",
+        "watch_id": "wch_3ebc381b43f4285ddcf4d548",
+        "rule": "price_drop",
+        "title": "Price drop: Pump lst_1",
+        "title_ar": "انخفاض في السعر: Pump lst_1",
+        "body": "Now 90.00 USD (was 100.00 USD), 10% lower.",
+        "body_ar": "السعر الآن 90.00 USD بعد أن كان 100.00 USD، أي أقل بنسبة 10٪.",
+        "payload": {
+          "listing_ids": [
+            "lst_1"
+          ],
+          "old_price": {
+            "amount": "100",
+            "currency": "USD"
+          },
+          "new_price": {
+            "amount": "90",
+            "currency": "USD"
+          },
+          "drop_pct": "10.00"
+        },
+        "read": false,
+        "created_at": "2026-10-13T12:00:00.000Z",
+        "read_at": null
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "page_size": 20,
+    "unread_total": 1
+  }
+}

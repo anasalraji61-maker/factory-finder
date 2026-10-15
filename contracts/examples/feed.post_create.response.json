@@ -1,0 +1,19 @@
+{
+  "spec": "feed.yaml",
+  "pointer": "#/components/schemas/Post",
+  "description": "201 from POST /v1/feed/posts as a verified supplier (X-Supplier-Id).",
+  "value": {
+    "id": "post_f81a05b4c6934143a7f69bbc5315def4",
+    "supplier_id": "sup_acme",
+    "body": "New CNC machines in stock, ready to ship from Shenzhen",
+    "media": [
+      "/v1/media/files/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"
+    ],
+    "tags": [],
+    "listing_ref": null,
+    "like_count": 0,
+    "comment_count": 0,
+    "viewer_liked": false,
+    "created_at": "2026-10-14T12:00:00.002000Z"
+  }
+}

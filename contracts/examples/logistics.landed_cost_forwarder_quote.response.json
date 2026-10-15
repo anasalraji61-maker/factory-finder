@@ -1,0 +1,369 @@
+{
+  "spec": "logistics.yaml",
+  "pointer": "#/components/schemas/LandedCostQuoteResponse",
+  "description": "POST /v1/quotes/landed-cost with freight_override (source forwarder_quote): the main_leg line is exact (quoted: true, estimate: false) instead of a range. as_of/valid_until values are from the run date.",
+  "value": {
+    "id": "qte_8c0a0551e67644ee9d67d0bf796562a0",
+    "currency": "USD",
+    "origin": {
+      "country_code": "CN",
+      "city": "Shanghai"
+    },
+    "destination": {
+      "country_code": "IQ",
+      "city": "Baghdad"
+    },
+    "options": [
+      {
+        "mode": "sea_fcl_40",
+        "origin_hub": "CNSHA",
+        "destination_hub": "IQUQR",
+        "route_summary": "Shanghai -> Umm Qasr (sea) -> destination | alternatives: Mersin + truck via Ibrahim Khalil (+USD 1577); Jebel Ali + truck via Safwan (+USD 2884); Aqaba + truck via Trebil (+USD 1509)",
+        "lines": [
+          {
+            "stage": "goods",
+            "description": "Goods price from supplier",
+            "amount": {
+              "amount": "40000.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "40000.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "supplier quote; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": false,
+            "as_of": "2026-10-15T20:21:03Z"
+          },
+          {
+            "stage": "origin_inland",
+            "description": "Truck from factory to Shanghai (0 km)",
+            "amount": {
+              "amount": "120.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "120.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. rate table v1; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "96.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "144.00",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "origin_handling",
+            "description": "Terminal handling, export clearance and docs at Shanghai",
+            "amount": {
+              "amount": "440.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "440.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. rate table v1; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "374.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "506.00",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "main_leg",
+            "description": "Shanghai to Umm Qasr: forwarder quote fqt_abc",
+            "amount": {
+              "amount": "2500.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "2500.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "forwarder_quote fqt_abc, valid until 2026-10-20T20:21:03Z; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": false,
+            "as_of": "2026-10-15T20:21:03Z",
+            "quoted": true
+          },
+          {
+            "stage": "insurance",
+            "description": "Cargo insurance (110% of goods value)",
+            "amount": {
+              "amount": "132.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "132.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. 0.2-0.35% premium; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "118.80",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "145.20",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "destination_handling",
+            "description": "Terminal handling and delivery order at Umm Qasr (incl. port congestion / war-risk surcharges)",
+            "amount": {
+              "amount": "1730.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "1730.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. rate table v1; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "1384.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "2076.00",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "duties",
+            "description": "Import duty on customs value USD 43192: IQ chapter 84: 5% [range 0-30%]",
+            "amount": {
+              "amount": "2159.60",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "2159.60",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "0.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "12957.60",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "taxes",
+            "description": "VAT/sales tax 0% on customs value + duty",
+            "amount": {
+              "amount": "0.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "0.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "0.00",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "0.00",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "clearance",
+            "description": "Customs broker / clearance fee",
+            "amount": {
+              "amount": "250.00",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "250.00",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. duty table (indicative, verify with customs broker); as of 2026-10, confidence low; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "187.50",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "312.50",
+                "currency": "USD"
+              }
+            }
+          },
+          {
+            "stage": "destination_inland",
+            "description": "Truck from Umm Qasr to destination (645 km)",
+            "amount": {
+              "amount": "1807.12",
+              "currency": "USD"
+            },
+            "original_amount": {
+              "amount": "1807.12",
+              "currency": "USD"
+            },
+            "fx_rate": "1",
+            "source": "approx. rate table v1; priced 2026-10-15T20:21:03Z; FX mock 2026-01-01T00:00:00Z",
+            "estimate": true,
+            "as_of": "2026-10-15T20:21:03Z",
+            "range": {
+              "min": {
+                "amount": "1445.70",
+                "currency": "USD"
+              },
+              "max": {
+                "amount": "2168.54",
+                "currency": "USD"
+              }
+            }
+          }
+        ],
+        "total": {
+          "min": {
+            "amount": "37467.60",
+            "currency": "USD"
+          },
+          "max": {
+            "amount": "60809.84",
+            "currency": "USD"
+          }
+        },
+        "transit_days": {
+          "min": 33,
+          "max": 52
+        },
+        "co2_kg": 2752.5,
+        "recommended": true,
+        "warnings": [
+          "Estimate, confidence low, as of 2026-10: transit 33-52 days and the cost range are indicative, not a quote; verify with a forwarder."
+        ],
+        "sensitivity": {
+          "currency": "USD",
+          "freight": {
+            "low": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "base": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "high": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "shock_pct": "0"
+          },
+          "fx": {
+            "low": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "base": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "high": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "shock_pct": "0",
+            "goods_currency": "USD"
+          },
+          "combined": {
+            "low": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "base": {
+              "amount": "49138.72",
+              "currency": "USD"
+            },
+            "high": {
+              "amount": "49138.72",
+              "currency": "USD"
+            }
+          },
+          "estimate": true,
+          "note": "Sensitivity is a stress range, not a forecast: freight uses the same main-leg spread as the estimate range; FX uses indicative per-currency volatility buckets (data/fx_volatility.json)."
+        }
+      }
+    ],
+    "assumptions": [
+      "Rates, duties and fees come from an approximate table, verify with a customs broker.",
+      "Duty/VAT table confidence for IQ: low (as of 2026-10); indicative, simplified by 2-digit HS chapter, not verified against live tariff lines.",
+      "Recommended = lowest 0.6*cost + 0.4*time score (both normalised across options).",
+      "Main-leg freight uses forwarder quote fqt_abc (USD 2500.00, valid until 2026-10-20T20:21:03Z) as an exact price, not an estimate; it was not checked against the cargo or lane here. Other lines use the approximate tables.",
+      "FX: mock rates as of 2026-01-01T00:00:00Z; 1 USD = 1 USD."
+    ],
+    "warnings": [],
+    "created_at": "2026-10-15T20:21:03Z",
+    "compliance_hint": {
+      "destination_country": "IQ",
+      "covered": true,
+      "product_group": "machinery",
+      "required_programs": [
+        "coc_cosqc"
+      ],
+      "restriction_flags": 0,
+      "highest_severity": null,
+      "clearance_days": {
+        "min": 5,
+        "max": 21
+      },
+      "pre_shipment_days": {
+        "min": 5,
+        "max": 22
+      },
+      "confidence": "low",
+      "as_of": "2026-10",
+      "label_en": "Indicative, verify with a licensed customs broker",
+      "label_ar": "إرشادي، تحقّق من مخلّص جمركي مرخّص",
+      "details": "POST /v1/compliance/checklist"
+    }
+  }
+}

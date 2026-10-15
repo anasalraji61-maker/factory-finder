@@ -1,0 +1,221 @@
+{
+  "spec": "tracking.yaml",
+  "pointer": "#/components/schemas/Shipment",
+  "description": "201 from POST /v1/shipments with the mock provider: timeline in events[].",
+  "value": {
+    "id": "shp_0eecd1c66c874642ba6eb4e3df436b44",
+    "owner_id": "usr_a",
+    "reference": "CSQU3054383",
+    "reference_type": "container",
+    "carrier": null,
+    "label": "chairs",
+    "status": "in_transit",
+    "eta": "2026-10-09T04:36:47.367659Z",
+    "origin": {
+      "country_code": "CN",
+      "city": "Shenzhen",
+      "point": {
+        "lat": 22.574,
+        "lon": 114.278
+      }
+    },
+    "origin_hub_id": "CNYTN",
+    "destination": {
+      "country_code": "IQ",
+      "city": "Basra",
+      "point": {
+        "lat": 30.5085,
+        "lon": 47.7804
+      }
+    },
+    "destination_hub_id": "IQUQR",
+    "vessel": {
+      "name": "Maersk Sentosa",
+      "imo": null,
+      "voyage": "77W"
+    },
+    "flight": null,
+    "events": [
+      {
+        "id": "evt_30564911a50a99eb_00",
+        "status": "booked",
+        "description": "Booking confirmed",
+        "description_ar": "تم تأكيد الحجز",
+        "location": {
+          "name": "Shenzhen (Yantian)",
+          "name_ar": "شنتشن (يانتيان)",
+          "country_code": "CN",
+          "hub_id": "CNYTN",
+          "point": {
+            "lat": 22.574,
+            "lon": 114.278
+          }
+        },
+        "timestamp": "2026-09-21T17:00:00Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_01",
+        "status": "gate_in",
+        "description": "Container gated in at terminal",
+        "description_ar": "دخلت الحاوية المحطة",
+        "location": {
+          "name": "Shenzhen (Yantian)",
+          "name_ar": "شنتشن (يانتيان)",
+          "country_code": "CN",
+          "hub_id": "CNYTN",
+          "point": {
+            "lat": 22.574,
+            "lon": 114.278
+          }
+        },
+        "timestamp": "2026-09-23T05:00:00Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_02",
+        "status": "loaded",
+        "description": "Loaded on vessel",
+        "description_ar": "تم التحميل على السفينة",
+        "location": {
+          "name": "Shenzhen (Yantian)",
+          "name_ar": "شنتشن (يانتيان)",
+          "country_code": "CN",
+          "hub_id": "CNYTN",
+          "point": {
+            "lat": 22.574,
+            "lon": 114.278
+          }
+        },
+        "timestamp": "2026-09-24T11:00:00Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_03",
+        "status": "departed",
+        "description": "Vessel departed",
+        "description_ar": "غادرت السفينة",
+        "location": {
+          "name": "Shenzhen (Yantian)",
+          "name_ar": "شنتشن (يانتيان)",
+          "country_code": "CN",
+          "hub_id": "CNYTN",
+          "point": {
+            "lat": 22.574,
+            "lon": 114.278
+          }
+        },
+        "timestamp": "2026-09-24T21:00:00Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_04",
+        "status": "in_transit",
+        "description": "Vessel under way",
+        "description_ar": "السفينة في الطريق",
+        "location": {
+          "name": "South China Sea",
+          "name_ar": "بحر الصين الجنوبي",
+          "country_code": null,
+          "hub_id": null,
+          "point": {
+            "lat": 14.5,
+            "lon": 112.5
+          }
+        },
+        "timestamp": "2026-09-26T22:05:15.338237Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_05",
+        "status": "in_transit",
+        "description": "Vessel under way",
+        "description_ar": "السفينة في الطريق",
+        "location": {
+          "name": "Singapore Strait",
+          "name_ar": "مضيق سنغافورة",
+          "country_code": null,
+          "hub_id": null,
+          "point": {
+            "lat": 1.2,
+            "lon": 103.9
+          }
+        },
+        "timestamp": "2026-09-28T23:10:30.676474Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      },
+      {
+        "id": "evt_30564911a50a99eb_06",
+        "status": "in_transit",
+        "description": "Vessel under way",
+        "description_ar": "السفينة في الطريق",
+        "location": {
+          "name": "Strait of Malacca",
+          "name_ar": "مضيق ملقا",
+          "country_code": null,
+          "hub_id": null,
+          "point": {
+            "lat": 4.8,
+            "lon": 99.2
+          }
+        },
+        "timestamp": "2026-10-01T00:15:46.014711Z",
+        "vessel": {
+          "name": "Maersk Sentosa",
+          "imo": null,
+          "voyage": "77W"
+        },
+        "flight": null,
+        "source": "mock"
+      }
+    ],
+    "provider": "mock",
+    "warning": null,
+    "milestones": {},
+    "initial_eta": "2026-10-09T04:36:47.367659Z",
+    "delayed": false,
+    "delay_hours": null,
+    "last_refreshed_at": "2026-10-01T12:00:00Z",
+    "last_refresh_attempt_at": null,
+    "created_at": "2026-10-01T12:00:00Z",
+    "updated_at": "2026-10-01T12:00:00Z",
+    "mode": "sea",
+    "progress_percent": 55
+  }
+}

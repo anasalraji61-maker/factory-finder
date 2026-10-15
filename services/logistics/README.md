@@ -12,6 +12,9 @@ Run: `cd services/logistics && ../../.venv/bin/python -m pytest -q`; `uvicorn ff
 
 Env: `FF_LOGISTICS_GEO_PROVIDER` (http|mock, default http), `FF_LOGISTICS_GEO_URL` (http://localhost:8103), `FF_LOGISTICS_FX_PROVIDER` (mock|ecb), `FF_LOGISTICS_FX_URL`, `FF_LOGISTICS_FX_CACHE_TTL_SECONDS`, `FF_INTERNAL_TOKEN` (optional).
 
+## HS suggestions (indicative, `GET /v1/hs/suggest?q=&limit=`)
+Free-text goods description (Arabic / English / Chinese) -> ranked 6-digit HS headings from `data/hs_keywords.json` (~200 common import goods, keyword lists per language). Domain: `domain/hs_suggest.py` `suggest_hs(text, limit)`. Items: `{hs6, description_en, description_ar, confidence: low|medium, note}`; confidence is never higher than medium and every item says it is indicative, not an official classification (confirm with a customs broker). Input: `q` 1-100 chars (422 otherwise), `limit` 1-20. Matching uses token-sequence and substring comparison only (no user-built regex), so it is linear-time and ReDoS-safe. Unknown or garbage text returns an empty list.
+
 ## Live freight rates (OFF by default, UNVERIFIED)
 `adapters/freight.py`: `FreightRateProvider` (`MockFreight` = built-in tables, `HttpFreightProvider` = Freightos-style
 estimator). Quotes feed the main-leg line (midpoint, range from the quote, never tighter than +-5%, marked estimate with

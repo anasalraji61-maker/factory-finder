@@ -12,11 +12,22 @@ from ff_media.service import MediaService
 from ff_media.storage import build_storage
 
 
-async def _run(apply: bool) -> dict[str, int]:
+async def _run(apply: bool) -> dict:
     settings = Settings()
     engine = make_engine(settings.database_url)
     try:
-        return await MediaService(engine, settings, build_storage(settings)).sweep_orphans(dry_run=not apply)
+        svc = MediaService(engine, settings, build_storage(settings))
+        total: dict = {"scanned": 0, "orphans": 0, "deleted": 0, "rows_missing_blob": 0}
+        after = None
+        while True:  # each call is time-bounded; resume from its cursor until complete
+            res = await svc.sweep_orphans(dry_run=not apply, after=after)
+            for k in total:
+                total[k] += int(res.get(k, 0))
+            if res.get("unsupported"):
+                total["unsupported"] = 1
+            after = res.get("next_after")
+            if res.get("complete", True) or not after:
+                return total
     finally:
         await engine.dispose()
 

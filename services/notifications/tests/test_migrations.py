@@ -85,3 +85,43 @@ def test_0003_creates_verification_table_and_downgrades(tmp_path):
     assert "email_verifications" in _tables(db)
     command.downgrade(cfg, "0002")
     assert "email_verifications" not in _tables(db) and "notification_prefs" in _tables(db)
+
+
+def test_0005_backfills_delivery_columns_and_downgrades(tmp_path):
+    import json
+
+    db = tmp_path / "mig.db"
+    cfg = _cfg(db)
+    command.upgrade(cfg, "0004")
+    engine = sa.create_engine(f"sqlite:///{db}")
+    doc = {
+        "channel": "push",
+        "kind": "alerts",
+        "alert_ids": ["a"],
+        "device_id": "dev_1",
+        "attempts": 0,
+        "last_error": None,
+        "created_at": "2026-10-13T12:00:00.000Z",
+        "updated_at": None,
+    }
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO deliveries (id, owner_id, status, next_attempt_at, doc) "
+                "VALUES ('d1', 'u1', 'pending', '2026-10-13T12:00:00.000Z', :doc)"
+            ),
+            {"doc": json.dumps(doc)},
+        )
+    command.upgrade(cfg, "0005")
+    with engine.connect() as conn:
+        row = conn.execute(
+            sa.text("SELECT channel, device_id, created_at FROM deliveries WHERE id='d1'")
+        ).one()
+        assert tuple(row) == ("push", "dev_1", "2026-10-13T12:00:00.000Z")
+        idx = {i["name"] for i in sa.inspect(conn).get_indexes("deliveries")}
+        assert "ix_delivery_cap" in idx
+    command.downgrade(cfg, "0004")
+    with engine.connect() as conn:
+        cols = {c["name"] for c in sa.inspect(conn).get_columns("deliveries")}
+        assert not {"channel", "device_id", "created_at"} & cols
+    engine.dispose()

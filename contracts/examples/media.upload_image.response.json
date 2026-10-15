@@ -1,0 +1,18 @@
+{
+  "spec": "media.yaml",
+  "pointer": "#/components/schemas/MediaImage",
+  "description": "201 from POST /v1/media/images (multipart file + kind=listing).",
+  "value": {
+    "id": "7b8170da62dae3fa9730c22931e45b8c",
+    "url": "https://api.example.test/v1/media/files/7b8170da62dae3fa9730c22931e45b8c.png",
+    "width": 64,
+    "height": 48,
+    "bytes": 124,
+    "content_type": "image/png",
+    "sha256": "a005e7d99a68e9876b9cc1d6d18d064301beb1b73697a6712377226bb7d629b5",
+    "kind": "listing",
+    "visibility": "public",
+    "widths": [],
+    "created_at": "2026-10-01T12:00:00Z"
+  }
+}

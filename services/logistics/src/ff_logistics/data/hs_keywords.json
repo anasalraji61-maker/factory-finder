@@ -1,0 +1,4232 @@
+{
+ "note": "indicative, confirm with a customs broker; not an official classification",
+ "version": "hs-keywords-1",
+ "items": [
+  {
+   "hs6": "850760",
+   "description_en": "Lithium-ion batteries",
+   "description_ar": "بطاريات ليثيوم أيون",
+   "keywords": {
+    "en": [
+     "lithium battery",
+     "li-ion",
+     "battery pack"
+    ],
+    "ar": [
+     "بطارية ليثيوم",
+     "بطاريات ليثيوم"
+    ],
+    "zh": [
+     "锂电池",
+     "锂离子电池"
+    ]
+   }
+  },
+  {
+   "hs6": "850710",
+   "description_en": "Lead-acid batteries for starting engines",
+   "description_ar": "بطاريات رصاص حمضية للسيارات",
+   "keywords": {
+    "en": [
+     "car battery",
+     "lead acid battery"
+    ],
+    "ar": [
+     "بطارية سيارة",
+     "بطارية رصاص"
+    ],
+    "zh": [
+     "铅酸蓄电池",
+     "汽车电瓶"
+    ]
+   }
+  },
+  {
+   "hs6": "854143",
+   "description_en": "Photovoltaic cells assembled in modules (solar panels)",
+   "description_ar": "ألواح شمسية كهروضوئية",
+   "keywords": {
+    "en": [
+     "solar panel",
+     "solar module",
+     "photovoltaic",
+     "pv module"
+    ],
+    "ar": [
+     "لوح شمسي",
+     "الواح شمسية",
+     "ألواح شمسية",
+     "طاقة شمسية"
+    ],
+    "zh": [
+     "太阳能电池板",
+     "光伏组件",
+     "太阳能板"
+    ]
+   }
+  },
+  {
+   "hs6": "850440",
+   "description_en": "Static converters (inverters, chargers)",
+   "description_ar": "محولات كهربائية ساكنة (إنفرتر، شواحن)",
+   "keywords": {
+    "en": [
+     "inverter",
+     "solar inverter",
+     "power adapter",
+     "charger"
+    ],
+    "ar": [
+     "انفرتر",
+     "إنفرتر",
+     "شاحن",
+     "محول كهرباء"
+    ],
+    "zh": [
+     "逆变器",
+     "充电器",
+     "电源适配器"
+    ]
+   }
+  },
+  {
+   "hs6": "851713",
+   "description_en": "Smartphones",
+   "description_ar": "هواتف ذكية",
+   "keywords": {
+    "en": [
+     "smartphone",
+     "mobile phone",
+     "cell phone",
+     "iphone",
+     "android phone"
+    ],
+    "ar": [
+     "هاتف ذكي",
+     "هواتف ذكية",
+     "جوال",
+     "موبايل",
+     "موبايلات"
+    ],
+    "zh": [
+     "智能手机",
+     "手机"
+    ]
+   }
+  },
+  {
+   "hs6": "851762",
+   "description_en": "Wireless/network communication apparatus (routers, modems)",
+   "description_ar": "أجهزة اتصال وشبكات (راوتر، مودم)",
+   "keywords": {
+    "en": [
+     "router",
+     "modem",
+     "wifi router",
+     "network switch"
+    ],
+    "ar": [
+     "راوتر",
+     "مودم",
+     "جهاز شبكات"
+    ],
+    "zh": [
+     "路由器",
+     "调制解调器",
+     "交换机"
+    ]
+   }
+  },
+  {
+   "hs6": "851830",
+   "description_en": "Headphones and earphones",
+   "description_ar": "سماعات رأس وأذن",
+   "keywords": {
+    "en": [
+     "headphones",
+     "earphones",
+     "earbuds",
+     "headset"
+    ],
+    "ar": [
+     "سماعات",
+     "سماعة رأس",
+     "سماعات اذن"
+    ],
+    "zh": [
+     "耳机",
+     "蓝牙耳机"
+    ]
+   }
+  },
+  {
+   "hs6": "851821",
+   "description_en": "Single loudspeakers mounted in enclosure",
+   "description_ar": "مكبرات صوت",
+   "keywords": {
+    "en": [
+     "speaker",
+     "loudspeaker",
+     "bluetooth speaker"
+    ],
+    "ar": [
+     "مكبر صوت",
+     "سماعة صوت",
+     "سبيكر"
+    ],
+    "zh": [
+     "音箱",
+     "扬声器"
+    ]
+   }
+  },
+  {
+   "hs6": "847130",
+   "description_en": "Portable computers (laptops)",
+   "description_ar": "حواسيب محمولة (لابتوب)",
+   "keywords": {
+    "en": [
+     "laptop",
+     "notebook computer",
+     "portable computer"
+    ],
+    "ar": [
+     "لابتوب",
+     "حاسوب محمول",
+     "كمبيوتر محمول"
+    ],
+    "zh": [
+     "笔记本电脑",
+     "手提电脑"
+    ]
+   }
+  },
+  {
+   "hs6": "847141",
+   "description_en": "Desktop computers",
+   "description_ar": "حواسيب مكتبية",
+   "keywords": {
+    "en": [
+     "desktop computer",
+     "pc",
+     "computer",
+     "all-in-one pc"
+    ],
+    "ar": [
+     "كمبيوتر مكتبي",
+     "حاسوب",
+     "كمبيوتر"
+    ],
+    "zh": [
+     "台式电脑",
+     "电脑",
+     "计算机"
+    ]
+   }
+  },
+  {
+   "hs6": "847160",
+   "description_en": "Computer input or output units (keyboards, mice, printers)",
+   "description_ar": "وحدات إدخال/إخراج للحاسوب",
+   "keywords": {
+    "en": [
+     "keyboard",
+     "computer mouse",
+     "input device"
+    ],
+    "ar": [
+     "لوحة مفاتيح",
+     "ماوس",
+     "فأرة"
+    ],
+    "zh": [
+     "键盘",
+     "鼠标"
+    ]
+   }
+  },
+  {
+   "hs6": "844332",
+   "description_en": "Printers connected to computers",
+   "description_ar": "طابعات",
+   "keywords": {
+    "en": [
+     "printer",
+     "inkjet printer",
+     "laser printer"
+    ],
+    "ar": [
+     "طابعة",
+     "طابعات"
+    ],
+    "zh": [
+     "打印机",
+     "激光打印机"
+    ]
+   }
+  },
+  {
+   "hs6": "852872",
+   "description_en": "Television receivers, colour",
+   "description_ar": "أجهزة تلفزيون ملونة",
+   "keywords": {
+    "en": [
+     "television",
+     "tv",
+     "smart tv",
+     "led tv"
+    ],
+    "ar": [
+     "تلفزيون",
+     "تلفاز",
+     "شاشة تلفزيون",
+     "شاشات"
+    ],
+    "zh": [
+     "电视机",
+     "电视",
+     "液晶电视"
+    ]
+   }
+  },
+  {
+   "hs6": "852580",
+   "description_en": "Cameras (digital, video, CCTV)",
+   "description_ar": "كاميرات (رقمية، مراقبة)",
+   "keywords": {
+    "en": [
+     "camera",
+     "cctv",
+     "security camera",
+     "digital camera"
+    ],
+    "ar": [
+     "كاميرا",
+     "كاميرات مراقبة",
+     "كاميرا مراقبة"
+    ],
+    "zh": [
+     "摄像机",
+     "监控摄像头",
+     "相机"
+    ]
+   }
+  },
+  {
+   "hs6": "854231",
+   "description_en": "Electronic integrated circuits (processors)",
+   "description_ar": "دوائر متكاملة إلكترونية (معالجات)",
+   "keywords": {
+    "en": [
+     "integrated circuit",
+     "chip",
+     "microchip",
+     "processor",
+     "semiconductor"
+    ],
+    "ar": [
+     "شريحة",
+     "دائرة متكاملة",
+     "معالج",
+     "أشباه الموصلات"
+    ],
+    "zh": [
+     "集成电路",
+     "芯片",
+     "处理器"
+    ]
+   }
+  },
+  {
+   "hs6": "853400",
+   "description_en": "Printed circuits (PCB)",
+   "description_ar": "دوائر مطبوعة",
+   "keywords": {
+    "en": [
+     "pcb",
+     "printed circuit board",
+     "circuit board"
+    ],
+    "ar": [
+     "لوحة دوائر مطبوعة",
+     "دائرة مطبوعة"
+    ],
+    "zh": [
+     "线路板",
+     "印刷电路板"
+    ]
+   }
+  },
+  {
+   "hs6": "853950",
+   "description_en": "LED lamps",
+   "description_ar": "مصابيح LED",
+   "keywords": {
+    "en": [
+     "led lamp",
+     "led bulb",
+     "led light"
+    ],
+    "ar": [
+     "مصباح ليد",
+     "لمبة ليد",
+     "اضاءة ليد",
+     "إضاءة led"
+    ],
+    "zh": [
+     "LED灯",
+     "LED灯泡",
+     "灯泡"
+    ]
+   }
+  },
+  {
+   "hs6": "940542",
+   "description_en": "LED luminaires and lighting fittings",
+   "description_ar": "وحدات إنارة LED",
+   "keywords": {
+    "en": [
+     "led luminaire",
+     "led panel light",
+     "street light",
+     "lighting fixture"
+    ],
+    "ar": [
+     "وحدة انارة",
+     "إنارة",
+     "انارة",
+     "كشاف"
+    ],
+    "zh": [
+     "灯具",
+     "路灯",
+     "照明"
+    ]
+   }
+  },
+  {
+   "hs6": "854442",
+   "description_en": "Electric conductors with connectors (cables)",
+   "description_ar": "موصلات كهربائية مع وصلات (كابلات)",
+   "keywords": {
+    "en": [
+     "cable",
+     "usb cable",
+     "electric cable",
+     "wire harness"
+    ],
+    "ar": [
+     "كابل",
+     "كابلات",
+     "سلك كهربائي"
+    ],
+    "zh": [
+     "电缆",
+     "数据线",
+     "电线"
+    ]
+   }
+  },
+  {
+   "hs6": "853690",
+   "description_en": "Electrical switching apparatus (switches, plugs, sockets)",
+   "description_ar": "أجهزة قطع ووصل كهربائية",
+   "keywords": {
+    "en": [
+     "switch",
+     "socket",
+     "plug",
+     "circuit breaker",
+     "electrical switch"
+    ],
+    "ar": [
+     "مفتاح كهربائي",
+     "قاطع كهرباء",
+     "مقبس",
+     "بريزة"
+    ],
+    "zh": [
+     "开关",
+     "插座",
+     "断路器"
+    ]
+   }
+  },
+  {
+   "hs6": "850131",
+   "description_en": "DC motors",
+   "description_ar": "محركات تيار مستمر",
+   "keywords": {
+    "en": [
+     "dc motor",
+     "electric motor"
+    ],
+    "ar": [
+     "محرك كهربائي",
+     "موتور كهربائي",
+     "محرك تيار مستمر"
+    ],
+    "zh": [
+     "直流电机",
+     "电动机",
+     "马达"
+    ]
+   }
+  },
+  {
+   "hs6": "850164",
+   "description_en": "AC generators (alternators) above 750 kVA",
+   "description_ar": "مولدات تيار متناوب",
+   "keywords": {
+    "en": [
+     "alternator",
+     "ac generator"
+    ],
+    "ar": [
+     "مولد تيار متناوب"
+    ],
+    "zh": [
+     "交流发电机"
+    ]
+   }
+  },
+  {
+   "hs6": "850211",
+   "description_en": "Diesel generating sets up to 75 kVA",
+   "description_ar": "مولدات كهرباء ديزل",
+   "keywords": {
+    "en": [
+     "diesel generator",
+     "generator set",
+     "genset",
+     "generator"
+    ],
+    "ar": [
+     "مولد كهرباء",
+     "مولدة",
+     "مولد ديزل",
+     "مولدات"
+    ],
+    "zh": [
+     "柴油发电机组",
+     "发电机"
+    ]
+   }
+  },
+  {
+   "hs6": "850423",
+   "description_en": "Power transformers above 10,000 kVA",
+   "description_ar": "محولات كهربائية قدرة",
+   "keywords": {
+    "en": [
+     "transformer",
+     "power transformer"
+    ],
+    "ar": [
+     "محولة",
+     "محول كهربائي",
+     "ترانس"
+    ],
+    "zh": [
+     "变压器"
+    ]
+   }
+  },
+  {
+   "hs6": "841451",
+   "description_en": "Table, floor, wall fans",
+   "description_ar": "مراوح",
+   "keywords": {
+    "en": [
+     "fan",
+     "electric fan",
+     "ceiling fan"
+    ],
+    "ar": [
+     "مروحة",
+     "مراوح"
+    ],
+    "zh": [
+     "风扇",
+     "电风扇"
+    ]
+   }
+  },
+  {
+   "hs6": "841510",
+   "description_en": "Air conditioners, window or split type",
+   "description_ar": "مكيفات هواء",
+   "keywords": {
+    "en": [
+     "air conditioner",
+     "split air conditioner",
+     "ac unit",
+     "air conditioning"
+    ],
+    "ar": [
+     "مكيف",
+     "مكيفات",
+     "مكيف هواء",
+     "سبليت"
+    ],
+    "zh": [
+     "空调",
+     "分体空调"
+    ]
+   }
+  },
+  {
+   "hs6": "841810",
+   "description_en": "Combined refrigerator-freezers",
+   "description_ar": "ثلاجات مع فريزر",
+   "keywords": {
+    "en": [
+     "refrigerator",
+     "fridge",
+     "freezer",
+     "refrigerator freezer"
+    ],
+    "ar": [
+     "ثلاجة",
+     "براد",
+     "ثلاجات",
+     "فريزر"
+    ],
+    "zh": [
+     "冰箱",
+     "冷柜",
+     "冷冻机"
+    ]
+   }
+  },
+  {
+   "hs6": "845011",
+   "description_en": "Household washing machines, fully automatic",
+   "description_ar": "غسالات منزلية",
+   "keywords": {
+    "en": [
+     "washing machine",
+     "washer",
+     "laundry machine"
+    ],
+    "ar": [
+     "غسالة",
+     "غسالات"
+    ],
+    "zh": [
+     "洗衣机"
+    ]
+   }
+  },
+  {
+   "hs6": "851650",
+   "description_en": "Microwave ovens",
+   "description_ar": "أفران ميكروويف",
+   "keywords": {
+    "en": [
+     "microwave oven",
+     "microwave"
+    ],
+    "ar": [
+     "مايكروويف",
+     "ميكروويف",
+     "فرن مايكروويف"
+    ],
+    "zh": [
+     "微波炉"
+    ]
+   }
+  },
+  {
+   "hs6": "851660",
+   "description_en": "Electric ovens, cookers, grills",
+   "description_ar": "أفران وطباخات كهربائية",
+   "keywords": {
+    "en": [
+     "electric oven",
+     "electric cooker",
+     "electric stove"
+    ],
+    "ar": [
+     "فرن كهربائي",
+     "طباخ كهربائي"
+    ],
+    "zh": [
+     "电烤箱",
+     "电炉"
+    ]
+   }
+  },
+  {
+   "hs6": "851610",
+   "description_en": "Electric water heaters",
+   "description_ar": "سخانات مياه كهربائية",
+   "keywords": {
+    "en": [
+     "water heater",
+     "electric water heater",
+     "boiler"
+    ],
+    "ar": [
+     "سخان ماء",
+     "سخان مياه"
+    ],
+    "zh": [
+     "热水器",
+     "电热水器"
+    ]
+   }
+  },
+  {
+   "hs6": "850940",
+   "description_en": "Food grinders, mixers, juicers (domestic)",
+   "description_ar": "خلاطات ومحضرات طعام منزلية",
+   "keywords": {
+    "en": [
+     "blender",
+     "mixer",
+     "juicer",
+     "food processor"
+    ],
+    "ar": [
+     "خلاط",
+     "عصارة",
+     "محضرة طعام"
+    ],
+    "zh": [
+     "搅拌机",
+     "榨汁机",
+     "料理机"
+    ]
+   }
+  },
+  {
+   "hs6": "850910",
+   "description_en": "Vacuum cleaners",
+   "description_ar": "مكانس كهربائية",
+   "keywords": {
+    "en": [
+     "vacuum cleaner",
+     "robot vacuum"
+    ],
+    "ar": [
+     "مكنسة كهربائية",
+     "مكنسة"
+    ],
+    "zh": [
+     "吸尘器",
+     "扫地机器人"
+    ]
+   }
+  },
+  {
+   "hs6": "851631",
+   "description_en": "Hair dryers",
+   "description_ar": "مجففات شعر",
+   "keywords": {
+    "en": [
+     "hair dryer",
+     "hairdryer"
+    ],
+    "ar": [
+     "مجفف شعر",
+     "سشوار"
+    ],
+    "zh": [
+     "吹风机"
+    ]
+   }
+  },
+  {
+   "hs6": "851679",
+   "description_en": "Other electrothermic appliances (kettles, irons)",
+   "description_ar": "أجهزة كهرحرارية (غلايات، مكاوي)",
+   "keywords": {
+    "en": [
+     "electric kettle",
+     "kettle",
+     "coffee maker",
+     "toaster"
+    ],
+    "ar": [
+     "غلاية",
+     "غلاية كهربائية",
+     "ماكينة قهوة"
+    ],
+    "zh": [
+     "电热水壶",
+     "咖啡机"
+    ]
+   }
+  },
+  {
+   "hs6": "870323",
+   "description_en": "Passenger cars, petrol, 1500-3000 cc",
+   "description_ar": "سيارات ركاب بنزين",
+   "keywords": {
+    "en": [
+     "car",
+     "passenger car",
+     "petrol car",
+     "sedan",
+     "suv"
+    ],
+    "ar": [
+     "سيارة",
+     "سيارات",
+     "سيارة ركاب"
+    ],
+    "zh": [
+     "汽车",
+     "轿车",
+     "小汽车"
+    ]
+   }
+  },
+  {
+   "hs6": "870380",
+   "description_en": "Electric passenger vehicles",
+   "description_ar": "سيارات كهربائية",
+   "keywords": {
+    "en": [
+     "electric car",
+     "electric vehicle",
+     "ev"
+    ],
+    "ar": [
+     "سيارة كهربائية",
+     "سيارات كهربائية"
+    ],
+    "zh": [
+     "电动汽车",
+     "新能源汽车"
+    ]
+   }
+  },
+  {
+   "hs6": "870421",
+   "description_en": "Diesel goods vehicles up to 5 t (pickups, light trucks)",
+   "description_ar": "شاحنات خفيفة ديزل",
+   "keywords": {
+    "en": [
+     "pickup",
+     "light truck",
+     "pickup truck"
+    ],
+    "ar": [
+     "بيك اب",
+     "شاحنة صغيرة",
+     "وانيت"
+    ],
+    "zh": [
+     "皮卡",
+     "轻型卡车"
+    ]
+   }
+  },
+  {
+   "hs6": "870423",
+   "description_en": "Diesel trucks above 20 t",
+   "description_ar": "شاحنات ديزل ثقيلة",
+   "keywords": {
+    "en": [
+     "truck",
+     "heavy truck",
+     "lorry"
+    ],
+    "ar": [
+     "شاحنة",
+     "شاحنات",
+     "لوري"
+    ],
+    "zh": [
+     "卡车",
+     "重型卡车"
+    ]
+   }
+  },
+  {
+   "hs6": "870899",
+   "description_en": "Other motor vehicle parts",
+   "description_ar": "قطع غيار سيارات أخرى",
+   "keywords": {
+    "en": [
+     "car parts",
+     "auto parts",
+     "spare parts",
+     "vehicle parts"
+    ],
+    "ar": [
+     "قطع غيار سيارات",
+     "قطع غيار"
+    ],
+    "zh": [
+     "汽车配件",
+     "汽车零件"
+    ]
+   }
+  },
+  {
+   "hs6": "870830",
+   "description_en": "Brakes and parts for motor vehicles",
+   "description_ar": "فرامل وأجزاؤها",
+   "keywords": {
+    "en": [
+     "brake pad",
+     "brake",
+     "brake disc"
+    ],
+    "ar": [
+     "فرامل",
+     "تيل فرامل",
+     "بطانة فرامل"
+    ],
+    "zh": [
+     "刹车片",
+     "刹车"
+    ]
+   }
+  },
+  {
+   "hs6": "401110",
+   "description_en": "New pneumatic tyres for passenger cars",
+   "description_ar": "إطارات سيارات جديدة",
+   "keywords": {
+    "en": [
+     "tyre",
+     "tire",
+     "car tyre",
+     "car tire"
+    ],
+    "ar": [
+     "إطار",
+     "اطار",
+     "إطارات",
+     "كفرات",
+     "كفر"
+    ],
+    "zh": [
+     "轮胎",
+     "汽车轮胎"
+    ]
+   }
+  },
+  {
+   "hs6": "871120",
+   "description_en": "Motorcycles 50-250 cc",
+   "description_ar": "دراجات نارية",
+   "keywords": {
+    "en": [
+     "motorcycle",
+     "motorbike",
+     "scooter"
+    ],
+    "ar": [
+     "دراجة نارية",
+     "موتوسيكل",
+     "سكوتر"
+    ],
+    "zh": [
+     "摩托车",
+     "踏板车"
+    ]
+   }
+  },
+  {
+   "hs6": "871200",
+   "description_en": "Bicycles, not motorised",
+   "description_ar": "دراجات هوائية",
+   "keywords": {
+    "en": [
+     "bicycle",
+     "bike"
+    ],
+    "ar": [
+     "دراجة هوائية",
+     "سيكل",
+     "دراجة"
+    ],
+    "zh": [
+     "自行车",
+     "单车"
+    ]
+   }
+  },
+  {
+   "hs6": "871160",
+   "description_en": "Electric motorcycles and e-bikes",
+   "description_ar": "دراجات كهربائية",
+   "keywords": {
+    "en": [
+     "electric bike",
+     "e-bike",
+     "electric scooter"
+    ],
+    "ar": [
+     "دراجة كهربائية",
+     "سكوتر كهربائي"
+    ],
+    "zh": [
+     "电动自行车",
+     "电动车",
+     "电动滑板车"
+    ]
+   }
+  },
+  {
+   "hs6": "842912",
+   "description_en": "Bulldozers/graders (self-propelled)",
+   "description_ar": "جرافات وممهدات",
+   "keywords": {
+    "en": [
+     "bulldozer",
+     "grader",
+     "dozer"
+    ],
+    "ar": [
+     "جرافة",
+     "بلدوزر",
+     "ممهدة"
+    ],
+    "zh": [
+     "推土机",
+     "平地机"
+    ]
+   }
+  },
+  {
+   "hs6": "842951",
+   "description_en": "Front-end shovel loaders",
+   "description_ar": "محملات أمامية",
+   "keywords": {
+    "en": [
+     "wheel loader",
+     "front loader",
+     "loader"
+    ],
+    "ar": [
+     "لودر",
+     "محمل أمامي",
+     "شيول"
+    ],
+    "zh": [
+     "装载机",
+     "铲车"
+    ]
+   }
+  },
+  {
+   "hs6": "842959",
+   "description_en": "Excavators and other self-propelled excavating machines",
+   "description_ar": "حفارات",
+   "keywords": {
+    "en": [
+     "excavator",
+     "digger",
+     "backhoe"
+    ],
+    "ar": [
+     "حفارة",
+     "حفارات",
+     "بوكلين"
+    ],
+    "zh": [
+     "挖掘机",
+     "挖机"
+    ]
+   }
+  },
+  {
+   "hs6": "842720",
+   "description_en": "Self-propelled works trucks (forklifts, rough terrain)",
+   "description_ar": "رافعات شوكية ذاتية الحركة",
+   "keywords": {
+    "en": [
+     "forklift",
+     "fork lift truck"
+    ],
+    "ar": [
+     "رافعة شوكية",
+     "فورك لفت",
+     "كلارك"
+    ],
+    "zh": [
+     "叉车"
+    ]
+   }
+  },
+  {
+   "hs6": "842619",
+   "description_en": "Overhead travelling cranes and gantries",
+   "description_ar": "رافعات جسرية",
+   "keywords": {
+    "en": [
+     "crane",
+     "overhead crane",
+     "gantry crane"
+    ],
+    "ar": [
+     "رافعة",
+     "رافعة جسرية",
+     "ونش"
+    ],
+    "zh": [
+     "起重机",
+     "行车",
+     "龙门吊"
+    ]
+   }
+  },
+  {
+   "hs6": "842810",
+   "description_en": "Lifts and skip hoists (elevators)",
+   "description_ar": "مصاعد",
+   "keywords": {
+    "en": [
+     "elevator",
+     "lift",
+     "passenger lift"
+    ],
+    "ar": [
+     "مصعد",
+     "مصاعد",
+     "أسانسير"
+    ],
+    "zh": [
+     "电梯",
+     "升降机"
+    ]
+   }
+  },
+  {
+   "hs6": "843320",
+   "description_en": "Mowers/harvesting machinery other",
+   "description_ar": "آلات حصاد وجز",
+   "keywords": {
+    "en": [
+     "harvester",
+     "mower",
+     "combine harvester"
+    ],
+    "ar": [
+     "حصادة",
+     "آلة حصاد"
+    ],
+    "zh": [
+     "收割机",
+     "割草机"
+    ]
+   }
+  },
+  {
+   "hs6": "870191",
+   "description_en": "Tractors up to 18 kW",
+   "description_ar": "جرارات",
+   "keywords": {
+    "en": [
+     "tractor",
+     "farm tractor"
+    ],
+    "ar": [
+     "جرار",
+     "تراكتور",
+     "جرار زراعي"
+    ],
+    "zh": [
+     "拖拉机"
+    ]
+   }
+  },
+  {
+   "hs6": "841370",
+   "description_en": "Centrifugal pumps",
+   "description_ar": "مضخات طرد مركزي",
+   "keywords": {
+    "en": [
+     "water pump",
+     "centrifugal pump",
+     "pump"
+    ],
+    "ar": [
+     "مضخة",
+     "مضخة ماء",
+     "مضخات",
+     "طلمبة"
+    ],
+    "zh": [
+     "水泵",
+     "离心泵"
+    ]
+   }
+  },
+  {
+   "hs6": "841480",
+   "description_en": "Air or gas compressors",
+   "description_ar": "ضواغط هواء وغاز",
+   "keywords": {
+    "en": [
+     "air compressor",
+     "compressor"
+    ],
+    "ar": [
+     "ضاغط هواء",
+     "كمبريسور",
+     "ضاغط"
+    ],
+    "zh": [
+     "空气压缩机",
+     "压缩机"
+    ]
+   }
+  },
+  {
+   "hs6": "841581",
+   "description_en": "Air conditioning with refrigeration unit (chillers)",
+   "description_ar": "وحدات تكييف مع تبريد (تشيلر)",
+   "keywords": {
+    "en": [
+     "chiller",
+     "water chiller"
+    ],
+    "ar": [
+     "تشيلر",
+     "مبرد مياه"
+    ],
+    "zh": [
+     "冷水机组",
+     "冷水机"
+    ]
+   }
+  },
+  {
+   "hs6": "847989",
+   "description_en": "Machines with individual functions, other",
+   "description_ar": "آلات متنوعة بوظائف مستقلة",
+   "keywords": {
+    "en": [
+     "industrial machine",
+     "machinery",
+     "machine"
+    ],
+    "ar": [
+     "آلة صناعية",
+     "ماكينة",
+     "آلات"
+    ],
+    "zh": [
+     "机械",
+     "工业设备"
+    ]
+   }
+  },
+  {
+   "hs6": "847720",
+   "description_en": "Extruders for rubber/plastics",
+   "description_ar": "آلات بثق بلاستيك",
+   "keywords": {
+    "en": [
+     "extruder",
+     "plastic extruder"
+    ],
+    "ar": [
+     "آلة بثق",
+     "اكسترودر"
+    ],
+    "zh": [
+     "挤出机",
+     "挤塑机"
+    ]
+   }
+  },
+  {
+   "hs6": "847740",
+   "description_en": "Vacuum moulding / thermoforming machines",
+   "description_ar": "آلات تشكيل بالتفريغ",
+   "keywords": {
+    "en": [
+     "thermoforming machine",
+     "vacuum forming machine"
+    ],
+    "ar": [
+     "آلة تشكيل حراري"
+    ],
+    "zh": [
+     "热成型机"
+    ]
+   }
+  },
+  {
+   "hs6": "847710",
+   "description_en": "Injection-moulding machines",
+   "description_ar": "آلات حقن بلاستيك",
+   "keywords": {
+    "en": [
+     "injection molding machine",
+     "injection moulding machine",
+     "plastic injection machine"
+    ],
+    "ar": [
+     "آلة حقن بلاستيك",
+     "ماكينة حقن"
+    ],
+    "zh": [
+     "注塑机"
+    ]
+   }
+  },
+  {
+   "hs6": "845710",
+   "description_en": "Machining centres for metal",
+   "description_ar": "مراكز تشغيل معادن (CNC)",
+   "keywords": {
+    "en": [
+     "cnc machine",
+     "machining center",
+     "cnc machining centre"
+    ],
+    "ar": [
+     "آلة سي ان سي",
+     "ماكينة cnc",
+     "مخرطة سي ان سي"
+    ],
+    "zh": [
+     "加工中心",
+     "数控机床"
+    ]
+   }
+  },
+  {
+   "hs6": "845819",
+   "description_en": "Horizontal lathes, other (metal)",
+   "description_ar": "مخارط معادن",
+   "keywords": {
+    "en": [
+     "lathe",
+     "metal lathe"
+    ],
+    "ar": [
+     "مخرطة",
+     "مخرطة معادن"
+    ],
+    "zh": [
+     "车床"
+    ]
+   }
+  },
+  {
+   "hs6": "846721",
+   "description_en": "Hand tools, electric (drills)",
+   "description_ar": "عدد يدوية كهربائية (مثاقب)",
+   "keywords": {
+    "en": [
+     "power drill",
+     "electric drill",
+     "power tool",
+     "cordless drill"
+    ],
+    "ar": [
+     "مثقاب",
+     "دريل",
+     "عدة كهربائية"
+    ],
+    "zh": [
+     "电钻",
+     "电动工具"
+    ]
+   }
+  },
+  {
+   "hs6": "820559",
+   "description_en": "Hand tools, other",
+   "description_ar": "عدد يدوية",
+   "keywords": {
+    "en": [
+     "hand tools",
+     "tool set",
+     "wrench",
+     "spanner",
+     "hammer"
+    ],
+    "ar": [
+     "عدد يدوية",
+     "مفتاح ربط",
+     "مطرقة",
+     "طقم عدة"
+    ],
+    "zh": [
+     "手工具",
+     "扳手",
+     "锤子",
+     "工具套装"
+    ]
+   }
+  },
+  {
+   "hs6": "732393",
+   "description_en": "Table/kitchen articles of stainless steel",
+   "description_ar": "أدوات مطبخ من الفولاذ المقاوم للصدأ",
+   "keywords": {
+    "en": [
+     "stainless steel cookware",
+     "kitchenware",
+     "cooking pot",
+     "stainless pot"
+    ],
+    "ar": [
+     "أواني طبخ",
+     "طناجر",
+     "أدوات مطبخ",
+     "قدر"
+    ],
+    "zh": [
+     "不锈钢锅",
+     "厨具",
+     "炊具"
+    ]
+   }
+  },
+  {
+   "hs6": "721049",
+   "description_en": "Flat-rolled iron/steel, plated or coated with zinc",
+   "description_ar": "صفائح فولاذ مجلفنة",
+   "keywords": {
+    "en": [
+     "galvanized steel",
+     "galvanised sheet",
+     "gi sheet",
+     "steel sheet"
+    ],
+    "ar": [
+     "صفائح مجلفنة",
+     "حديد مجلفن",
+     "صاج"
+    ],
+    "zh": [
+     "镀锌板",
+     "镀锌钢板",
+     "钢板"
+    ]
+   }
+  },
+  {
+   "hs6": "721420",
+   "description_en": "Iron/steel bars with indentations (rebar)",
+   "description_ar": "حديد تسليح",
+   "keywords": {
+    "en": [
+     "rebar",
+     "reinforcing bar",
+     "steel bar",
+     "deformed bar"
+    ],
+    "ar": [
+     "حديد تسليح",
+     "سيخ حديد",
+     "حديد بناء"
+    ],
+    "zh": [
+     "螺纹钢",
+     "钢筋"
+    ]
+   }
+  },
+  {
+   "hs6": "730630",
+   "description_en": "Welded tubes of iron/steel",
+   "description_ar": "أنابيب فولاذ ملحومة",
+   "keywords": {
+    "en": [
+     "steel pipe",
+     "welded pipe",
+     "steel tube"
+    ],
+    "ar": [
+     "أنبوب حديد",
+     "مواسير حديد",
+     "انابيب فولاذ"
+    ],
+    "zh": [
+     "钢管",
+     "焊管"
+    ]
+   }
+  },
+  {
+   "hs6": "731815",
+   "description_en": "Screws and bolts",
+   "description_ar": "براغي ومسامير لولبية",
+   "keywords": {
+    "en": [
+     "screw",
+     "bolt",
+     "fastener",
+     "nut and bolt"
+    ],
+    "ar": [
+     "برغي",
+     "براغي",
+     "مسامير",
+     "صواميل"
+    ],
+    "zh": [
+     "螺丝",
+     "螺栓",
+     "紧固件"
+    ]
+   }
+  },
+  {
+   "hs6": "731700",
+   "description_en": "Nails, tacks, staples",
+   "description_ar": "مسامير",
+   "keywords": {
+    "en": [
+     "nail",
+     "nails",
+     "staple"
+    ],
+    "ar": [
+     "مسمار",
+     "مسامير حديد"
+    ],
+    "zh": [
+     "钉子",
+     "铁钉"
+    ]
+   }
+  },
+  {
+   "hs6": "760611",
+   "description_en": "Aluminium plates and sheets",
+   "description_ar": "صفائح ألمنيوم",
+   "keywords": {
+    "en": [
+     "aluminium sheet",
+     "aluminum sheet",
+     "aluminum plate"
+    ],
+    "ar": [
+     "صفائح المنيوم",
+     "الومنيوم",
+     "ألمنيوم"
+    ],
+    "zh": [
+     "铝板",
+     "铝材"
+    ]
+   }
+  },
+  {
+   "hs6": "761010",
+   "description_en": "Aluminium doors and windows",
+   "description_ar": "أبواب ونوافذ ألمنيوم",
+   "keywords": {
+    "en": [
+     "aluminium window",
+     "aluminum door",
+     "aluminium door"
+    ],
+    "ar": [
+     "شباك المنيوم",
+     "باب المنيوم",
+     "نوافذ المنيوم"
+    ],
+    "zh": [
+     "铝合金门窗",
+     "铝窗"
+    ]
+   }
+  },
+  {
+   "hs6": "740811",
+   "description_en": "Copper wire",
+   "description_ar": "أسلاك نحاس",
+   "keywords": {
+    "en": [
+     "copper wire",
+     "copper cable"
+    ],
+    "ar": [
+     "سلك نحاس",
+     "نحاس"
+    ],
+    "zh": [
+     "铜线",
+     "铜丝"
+    ]
+   }
+  },
+  {
+   "hs6": "252329",
+   "description_en": "Portland cement",
+   "description_ar": "إسمنت بورتلاندي",
+   "keywords": {
+    "en": [
+     "cement",
+     "portland cement"
+    ],
+    "ar": [
+     "اسمنت",
+     "إسمنت",
+     "سمنت"
+    ],
+    "zh": [
+     "水泥"
+    ]
+   }
+  },
+  {
+   "hs6": "690721",
+   "description_en": "Ceramic tiles",
+   "description_ar": "بلاط سيراميك",
+   "keywords": {
+    "en": [
+     "ceramic tile",
+     "floor tile",
+     "wall tile",
+     "porcelain tile"
+    ],
+    "ar": [
+     "بلاط",
+     "سيراميك",
+     "بورسلان",
+     "كاشي"
+    ],
+    "zh": [
+     "瓷砖",
+     "陶瓷砖"
+    ]
+   }
+  },
+  {
+   "hs6": "700719",
+   "description_en": "Toughened (tempered) safety glass",
+   "description_ar": "زجاج مقسى",
+   "keywords": {
+    "en": [
+     "tempered glass",
+     "safety glass",
+     "toughened glass"
+    ],
+    "ar": [
+     "زجاج مقسى",
+     "زجاج سيكوريت"
+    ],
+    "zh": [
+     "钢化玻璃"
+    ]
+   }
+  },
+  {
+   "hs6": "701349",
+   "description_en": "Glassware for table or kitchen",
+   "description_ar": "أواني زجاجية",
+   "keywords": {
+    "en": [
+     "glassware",
+     "drinking glass",
+     "glass cup"
+    ],
+    "ar": [
+     "أواني زجاجية",
+     "كاسات زجاج"
+    ],
+    "zh": [
+     "玻璃器皿",
+     "玻璃杯"
+    ]
+   }
+  },
+  {
+   "hs6": "691110",
+   "description_en": "Porcelain tableware",
+   "description_ar": "أطقم مائدة بورسلان",
+   "keywords": {
+    "en": [
+     "porcelain tableware",
+     "dinnerware",
+     "plates and cups"
+    ],
+    "ar": [
+     "أطقم صحون",
+     "صحون",
+     "أواني بورسلان"
+    ],
+    "zh": [
+     "瓷器餐具",
+     "餐具"
+    ]
+   }
+  },
+  {
+   "hs6": "441231",
+   "description_en": "Plywood of tropical wood",
+   "description_ar": "خشب رقائقي (بلايوود)",
+   "keywords": {
+    "en": [
+     "plywood",
+     "veneer board"
+    ],
+    "ar": [
+     "خشب رقائقي",
+     "بلايوود",
+     "خشب أبلكاش",
+     "أبلكاش"
+    ],
+    "zh": [
+     "胶合板",
+     "夹板"
+    ]
+   }
+  },
+  {
+   "hs6": "441114",
+   "description_en": "Medium density fibreboard (MDF)",
+   "description_ar": "ألواح ليفية متوسطة الكثافة",
+   "keywords": {
+    "en": [
+     "mdf",
+     "fibreboard",
+     "fiberboard"
+    ],
+    "ar": [
+     "ام دي اف",
+     "mdf",
+     "خشب mdf"
+    ],
+    "zh": [
+     "中纤板",
+     "密度板"
+    ]
+   }
+  },
+  {
+   "hs6": "940360",
+   "description_en": "Wooden furniture, other",
+   "description_ar": "أثاث خشبي",
+   "keywords": {
+    "en": [
+     "wooden furniture",
+     "furniture",
+     "wood furniture"
+    ],
+    "ar": [
+     "أثاث",
+     "اثاث",
+     "أثاث خشبي"
+    ],
+    "zh": [
+     "家具",
+     "木家具"
+    ]
+   }
+  },
+  {
+   "hs6": "940161",
+   "description_en": "Upholstered seats with wooden frames (sofas)",
+   "description_ar": "مقاعد منجدة (كنب)",
+   "keywords": {
+    "en": [
+     "sofa",
+     "couch",
+     "upholstered chair"
+    ],
+    "ar": [
+     "كنب",
+     "أريكة",
+     "صوفا"
+    ],
+    "zh": [
+     "沙发"
+    ]
+   }
+  },
+  {
+   "hs6": "940350",
+   "description_en": "Wooden bedroom furniture",
+   "description_ar": "أثاث غرف نوم خشبي",
+   "keywords": {
+    "en": [
+     "bed",
+     "bedroom furniture",
+     "wardrobe"
+    ],
+    "ar": [
+     "سرير",
+     "غرفة نوم",
+     "خزانة ملابس"
+    ],
+    "zh": [
+     "床",
+     "卧室家具",
+     "衣柜"
+    ]
+   }
+  },
+  {
+   "hs6": "940320",
+   "description_en": "Metal furniture",
+   "description_ar": "أثاث معدني",
+   "keywords": {
+    "en": [
+     "metal furniture",
+     "steel cabinet",
+     "metal shelf"
+    ],
+    "ar": [
+     "أثاث معدني",
+     "رفوف معدنية"
+    ],
+    "zh": [
+     "金属家具",
+     "铁架"
+    ]
+   }
+  },
+  {
+   "hs6": "940490",
+   "description_en": "Mattresses and bedding",
+   "description_ar": "فرش وأغطية سرير",
+   "keywords": {
+    "en": [
+     "mattress",
+     "pillow",
+     "bedding"
+    ],
+    "ar": [
+     "فرشة",
+     "مرتبة",
+     "وسادة",
+     "مخدة"
+    ],
+    "zh": [
+     "床垫",
+     "枕头"
+    ]
+   }
+  },
+  {
+   "hs6": "570330",
+   "description_en": "Carpets of man-made fibres, tufted",
+   "description_ar": "سجاد ألياف صناعية",
+   "keywords": {
+    "en": [
+     "carpet",
+     "rug",
+     "tufted carpet"
+    ],
+    "ar": [
+     "سجاد",
+     "موكيت",
+     "زولية"
+    ],
+    "zh": [
+     "地毯"
+    ]
+   }
+  },
+  {
+   "hs6": "630231",
+   "description_en": "Bed linen of cotton",
+   "description_ar": "شراشف قطن",
+   "keywords": {
+    "en": [
+     "bed sheet",
+     "bed linen",
+     "bedsheet"
+    ],
+    "ar": [
+     "شراشف",
+     "ملاءات"
+    ],
+    "zh": [
+     "床单",
+     "床上用品"
+    ]
+   }
+  },
+  {
+   "hs6": "630260",
+   "description_en": "Terry towels of cotton",
+   "description_ar": "مناشف قطن",
+   "keywords": {
+    "en": [
+     "towel",
+     "bath towel"
+    ],
+    "ar": [
+     "منشفة",
+     "مناشف",
+     "فوط"
+    ],
+    "zh": [
+     "毛巾",
+     "浴巾"
+    ]
+   }
+  },
+  {
+   "hs6": "630790",
+   "description_en": "Other made-up textile articles",
+   "description_ar": "منسوجات جاهزة أخرى",
+   "keywords": {
+    "en": [
+     "made-up textile",
+     "cloth",
+     "rag"
+    ],
+    "ar": [
+     "قماش جاهز"
+    ],
+    "zh": [
+     "纺织制品"
+    ]
+   }
+  },
+  {
+   "hs6": "620342",
+   "description_en": "Men's trousers of cotton",
+   "description_ar": "بناطيل رجالية قطن",
+   "keywords": {
+    "en": [
+     "trousers",
+     "jeans",
+     "men's pants"
+    ],
+    "ar": [
+     "بنطلون",
+     "بناطيل",
+     "جينز"
+    ],
+    "zh": [
+     "裤子",
+     "牛仔裤",
+     "男裤"
+    ]
+   }
+  },
+  {
+   "hs6": "610910",
+   "description_en": "T-shirts of cotton, knitted",
+   "description_ar": "قمصان تي شيرت قطن",
+   "keywords": {
+    "en": [
+     "t-shirt",
+     "tee shirt",
+     "tshirt"
+    ],
+    "ar": [
+     "تيشيرت",
+     "تي شيرت",
+     "قميص قطني"
+    ],
+    "zh": [
+     "T恤",
+     "t恤"
+    ]
+   }
+  },
+  {
+   "hs6": "620520",
+   "description_en": "Men's shirts of cotton",
+   "description_ar": "قمصان رجالية قطن",
+   "keywords": {
+    "en": [
+     "shirt",
+     "men's shirt"
+    ],
+    "ar": [
+     "قميص",
+     "قمصان رجالية"
+    ],
+    "zh": [
+     "衬衫",
+     "男衬衫"
+    ]
+   }
+  },
+  {
+   "hs6": "620462",
+   "description_en": "Women's trousers of cotton",
+   "description_ar": "بناطيل نسائية قطن",
+   "keywords": {
+    "en": [
+     "women's trousers",
+     "women's pants",
+     "leggings"
+    ],
+    "ar": [
+     "بنطلون نسائي"
+    ],
+    "zh": [
+     "女裤"
+    ]
+   }
+  },
+  {
+   "hs6": "620443",
+   "description_en": "Women's dresses of synthetic fibres",
+   "description_ar": "فساتين نسائية",
+   "keywords": {
+    "en": [
+     "dress",
+     "women's dress",
+     "gown"
+    ],
+    "ar": [
+     "فستان",
+     "فساتين"
+    ],
+    "zh": [
+     "连衣裙",
+     "裙子"
+    ]
+   }
+  },
+  {
+   "hs6": "620193",
+   "description_en": "Men's anoraks/jackets of man-made fibres",
+   "description_ar": "جاكيتات رجالية",
+   "keywords": {
+    "en": [
+     "jacket",
+     "coat",
+     "anorak",
+     "windbreaker"
+    ],
+    "ar": [
+     "جاكيت",
+     "معطف",
+     "سترة"
+    ],
+    "zh": [
+     "夹克",
+     "外套"
+    ]
+   }
+  },
+  {
+   "hs6": "611020",
+   "description_en": "Jerseys, pullovers of cotton, knitted",
+   "description_ar": "كنزات قطن",
+   "keywords": {
+    "en": [
+     "sweater",
+     "pullover",
+     "hoodie",
+     "jumper"
+    ],
+    "ar": [
+     "كنزة",
+     "بلوزة صوف",
+     "هودي"
+    ],
+    "zh": [
+     "毛衣",
+     "卫衣"
+    ]
+   }
+  },
+  {
+   "hs6": "611595",
+   "description_en": "Hosiery socks of cotton",
+   "description_ar": "جوارب قطن",
+   "keywords": {
+    "en": [
+     "socks",
+     "hosiery",
+     "stockings"
+    ],
+    "ar": [
+     "جوارب",
+     "شرابات"
+    ],
+    "zh": [
+     "袜子"
+    ]
+   }
+  },
+  {
+   "hs6": "621143",
+   "description_en": "Women's garments, other of man-made fibres (abaya)",
+   "description_ar": "ملابس نسائية (عباءات)",
+   "keywords": {
+    "en": [
+     "abaya",
+     "women's garment"
+    ],
+    "ar": [
+     "عباية",
+     "عباءة",
+     "عبايات",
+     "حجاب"
+    ],
+    "zh": [
+     "阿拉伯长袍",
+     "女装"
+    ]
+   }
+  },
+  {
+   "hs6": "640399",
+   "description_en": "Footwear with leather uppers",
+   "description_ar": "أحذية بوجه جلدي",
+   "keywords": {
+    "en": [
+     "leather shoes",
+     "footwear",
+     "shoes"
+    ],
+    "ar": [
+     "حذاء جلد",
+     "أحذية",
+     "حذاء"
+    ],
+    "zh": [
+     "皮鞋",
+     "鞋子",
+     "鞋"
+    ]
+   }
+  },
+  {
+   "hs6": "640411",
+   "description_en": "Sports footwear with textile uppers",
+   "description_ar": "أحذية رياضية",
+   "keywords": {
+    "en": [
+     "sneakers",
+     "sports shoes",
+     "trainers",
+     "running shoes"
+    ],
+    "ar": [
+     "حذاء رياضي",
+     "أحذية رياضية",
+     "سنيكرز"
+    ],
+    "zh": [
+     "运动鞋",
+     "球鞋"
+    ]
+   }
+  },
+  {
+   "hs6": "640299",
+   "description_en": "Footwear with rubber/plastic uppers (sandals, slippers)",
+   "description_ar": "أحذية بلاستيك/مطاط (صنادل، شباشب)",
+   "keywords": {
+    "en": [
+     "sandals",
+     "slippers",
+     "flip flops",
+     "plastic shoes"
+    ],
+    "ar": [
+     "صندل",
+     "شبشب",
+     "نعال",
+     "شباشب"
+    ],
+    "zh": [
+     "拖鞋",
+     "凉鞋"
+    ]
+   }
+  },
+  {
+   "hs6": "420221",
+   "description_en": "Handbags with leather outer surface",
+   "description_ar": "حقائب يد جلدية",
+   "keywords": {
+    "en": [
+     "handbag",
+     "leather bag",
+     "purse"
+    ],
+    "ar": [
+     "حقيبة يد",
+     "شنطة يد",
+     "حقائب"
+    ],
+    "zh": [
+     "手提包",
+     "皮包",
+     "包包"
+    ]
+   }
+  },
+  {
+   "hs6": "420292",
+   "description_en": "Bags with textile outer surface (backpacks, travel bags)",
+   "description_ar": "حقائب نسيجية (ظهر، سفر)",
+   "keywords": {
+    "en": [
+     "backpack",
+     "travel bag",
+     "school bag",
+     "luggage bag"
+    ],
+    "ar": [
+     "حقيبة ظهر",
+     "شنطة مدرسية",
+     "حقيبة سفر"
+    ],
+    "zh": [
+     "背包",
+     "书包",
+     "旅行包"
+    ]
+   }
+  },
+  {
+   "hs6": "420222",
+   "description_en": "Handbags with plastic/textile outer surface",
+   "description_ar": "حقائب يد بلاستيكية",
+   "keywords": {
+    "en": [
+     "plastic handbag",
+     "fashion bag",
+     "tote bag"
+    ],
+    "ar": [
+     "شنطة",
+     "حقيبة نسائية"
+    ],
+    "zh": [
+     "女包",
+     "托特包"
+    ]
+   }
+  },
+  {
+   "hs6": "711719",
+   "description_en": "Imitation jewellery of base metal",
+   "description_ar": "مجوهرات تقليدية",
+   "keywords": {
+    "en": [
+     "imitation jewelry",
+     "fashion jewelry",
+     "costume jewellery"
+    ],
+    "ar": [
+     "إكسسوارات",
+     "مجوهرات تقليد",
+     "بجوتري"
+    ],
+    "zh": [
+     "饰品",
+     "仿真首饰",
+     "首饰"
+    ]
+   }
+  },
+  {
+   "hs6": "910211",
+   "description_en": "Wrist-watches, electrically operated",
+   "description_ar": "ساعات يد",
+   "keywords": {
+    "en": [
+     "wristwatch",
+     "watch",
+     "smart watch"
+    ],
+    "ar": [
+     "ساعة يد",
+     "ساعات",
+     "ساعة ذكية"
+    ],
+    "zh": [
+     "手表",
+     "智能手表"
+    ]
+   }
+  },
+  {
+   "hs6": "900410",
+   "description_en": "Sunglasses",
+   "description_ar": "نظارات شمسية",
+   "keywords": {
+    "en": [
+     "sunglasses"
+    ],
+    "ar": [
+     "نظارة شمسية",
+     "نظارات شمسية"
+    ],
+    "zh": [
+     "太阳镜",
+     "墨镜"
+    ]
+   }
+  },
+  {
+   "hs6": "900490",
+   "description_en": "Spectacles and frames, other",
+   "description_ar": "نظارات طبية وإطاراتها",
+   "keywords": {
+    "en": [
+     "eyeglasses",
+     "spectacles",
+     "glasses frame"
+    ],
+    "ar": [
+     "نظارة طبية",
+     "اطار نظارة"
+    ],
+    "zh": [
+     "眼镜",
+     "眼镜架"
+    ]
+   }
+  },
+  {
+   "hs6": "950300",
+   "description_en": "Toys: tricycles, scooters, dolls, puzzles",
+   "description_ar": "ألعاب أطفال",
+   "keywords": {
+    "en": [
+     "toy",
+     "toys",
+     "doll",
+     "puzzle",
+     "kids toy"
+    ],
+    "ar": [
+     "لعبة",
+     "ألعاب",
+     "العاب أطفال",
+     "دمية"
+    ],
+    "zh": [
+     "玩具",
+     "儿童玩具"
+    ]
+   }
+  },
+  {
+   "hs6": "950450",
+   "description_en": "Video game consoles",
+   "description_ar": "أجهزة ألعاب فيديو",
+   "keywords": {
+    "en": [
+     "game console",
+     "video game",
+     "gaming console"
+    ],
+    "ar": [
+     "جهاز العاب",
+     "بلايستيشن",
+     "ألعاب فيديو"
+    ],
+    "zh": [
+     "游戏机",
+     "电子游戏"
+    ]
+   }
+  },
+  {
+   "hs6": "950662",
+   "description_en": "Inflatable balls",
+   "description_ar": "كرات (قابلة للنفخ)",
+   "keywords": {
+    "en": [
+     "ball",
+     "football",
+     "soccer ball",
+     "basketball"
+    ],
+    "ar": [
+     "كرة",
+     "كرة قدم",
+     "كرة سلة"
+    ],
+    "zh": [
+     "球",
+     "足球",
+     "篮球"
+    ]
+   }
+  },
+  {
+   "hs6": "950691",
+   "description_en": "Gym and fitness equipment",
+   "description_ar": "معدات رياضية ولياقة",
+   "keywords": {
+    "en": [
+     "gym equipment",
+     "fitness equipment",
+     "treadmill",
+     "exercise machine"
+    ],
+    "ar": [
+     "معدات رياضية",
+     "جهاز مشي",
+     "أجهزة رياضية"
+    ],
+    "zh": [
+     "健身器材",
+     "跑步机"
+    ]
+   }
+  },
+  {
+   "hs6": "960810",
+   "description_en": "Ball point pens",
+   "description_ar": "أقلام حبر جاف",
+   "keywords": {
+    "en": [
+     "pen",
+     "ballpoint pen",
+     "stationery pen"
+    ],
+    "ar": [
+     "قلم",
+     "قلم حبر",
+     "أقلام"
+    ],
+    "zh": [
+     "圆珠笔",
+     "笔"
+    ]
+   }
+  },
+  {
+   "hs6": "482020",
+   "description_en": "Exercise books/notebooks",
+   "description_ar": "دفاتر",
+   "keywords": {
+    "en": [
+     "notebook",
+     "exercise book",
+     "diary"
+    ],
+    "ar": [
+     "دفتر",
+     "دفاتر",
+     "مفكرة"
+    ],
+    "zh": [
+     "笔记本",
+     "练习本"
+    ]
+   }
+  },
+  {
+   "hs6": "480256",
+   "description_en": "Uncoated paper, 40-150 g/m2 (A4 paper)",
+   "description_ar": "ورق كتابة وطباعة",
+   "keywords": {
+    "en": [
+     "a4 paper",
+     "copy paper",
+     "printing paper",
+     "paper"
+    ],
+    "ar": [
+     "ورق طباعة",
+     "ورق a4",
+     "ورق"
+    ],
+    "zh": [
+     "打印纸",
+     "复印纸",
+     "纸张"
+    ]
+   }
+  },
+  {
+   "hs6": "481910",
+   "description_en": "Cartons and boxes of corrugated paper",
+   "description_ar": "كراتين مموجة",
+   "keywords": {
+    "en": [
+     "carton",
+     "corrugated box",
+     "cardboard box",
+     "packaging box"
+    ],
+    "ar": [
+     "كرتون",
+     "كراتين",
+     "علب كرتون"
+    ],
+    "zh": [
+     "纸箱",
+     "瓦楞纸箱"
+    ]
+   }
+  },
+  {
+   "hs6": "392329",
+   "description_en": "Plastic sacks and bags",
+   "description_ar": "أكياس بلاستيك",
+   "keywords": {
+    "en": [
+     "plastic bag",
+     "polybag",
+     "shopping bag"
+    ],
+    "ar": [
+     "كيس بلاستيك",
+     "أكياس نايلون",
+     "اكياس"
+    ],
+    "zh": [
+     "塑料袋",
+     "购物袋"
+    ]
+   }
+  },
+  {
+   "hs6": "392410",
+   "description_en": "Plastic tableware and kitchenware",
+   "description_ar": "أدوات مائدة ومطبخ بلاستيكية",
+   "keywords": {
+    "en": [
+     "plastic tableware",
+     "plastic cup",
+     "plastic container",
+     "food container"
+    ],
+    "ar": [
+     "أواني بلاستيك",
+     "علب بلاستيك",
+     "كاسات بلاستيك"
+    ],
+    "zh": [
+     "塑料餐具",
+     "塑料杯",
+     "塑料盒"
+    ]
+   }
+  },
+  {
+   "hs6": "392690",
+   "description_en": "Other articles of plastics",
+   "description_ar": "مصنوعات بلاستيكية أخرى",
+   "keywords": {
+    "en": [
+     "plastic products",
+     "plastic parts",
+     "plastic article"
+    ],
+    "ar": [
+     "منتجات بلاستيك",
+     "مصنوعات بلاستيكية"
+    ],
+    "zh": [
+     "塑料制品"
+    ]
+   }
+  },
+  {
+   "hs6": "390110",
+   "description_en": "Polyethylene, density below 0.94",
+   "description_ar": "بولي إيثيلين",
+   "keywords": {
+    "en": [
+     "polyethylene",
+     "pe resin",
+     "hdpe",
+     "ldpe"
+    ],
+    "ar": [
+     "بولي ايثيلين",
+     "بولي إيثيلين",
+     "بلاستيك خام"
+    ],
+    "zh": [
+     "聚乙烯",
+     "PE树脂"
+    ]
+   }
+  },
+  {
+   "hs6": "390210",
+   "description_en": "Polypropylene",
+   "description_ar": "بولي بروبيلين",
+   "keywords": {
+    "en": [
+     "polypropylene",
+     "pp resin",
+     "pp granules"
+    ],
+    "ar": [
+     "بولي بروبيلين"
+    ],
+    "zh": [
+     "聚丙烯",
+     "PP树脂"
+    ]
+   }
+  },
+  {
+   "hs6": "390410",
+   "description_en": "Polyvinyl chloride (PVC)",
+   "description_ar": "بولي فينيل كلوريد",
+   "keywords": {
+    "en": [
+     "pvc",
+     "pvc resin",
+     "polyvinyl chloride"
+    ],
+    "ar": [
+     "بي في سي",
+     "pvc",
+     "بولي فينيل"
+    ],
+    "zh": [
+     "聚氯乙烯",
+     "PVC树脂"
+    ]
+   }
+  },
+  {
+   "hs6": "391723",
+   "description_en": "Rigid plastic tubes (PVC pipes)",
+   "description_ar": "أنابيب بلاستيك صلبة",
+   "keywords": {
+    "en": [
+     "pvc pipe",
+     "plastic pipe",
+     "water pipe"
+    ],
+    "ar": [
+     "أنابيب بلاستيك",
+     "مواسير بي في سي",
+     "مواسير"
+    ],
+    "zh": [
+     "塑料管",
+     "PVC管"
+    ]
+   }
+  },
+  {
+   "hs6": "401693",
+   "description_en": "Rubber gaskets, washers and seals",
+   "description_ar": "جوانات مطاطية",
+   "keywords": {
+    "en": [
+     "rubber gasket",
+     "rubber seal",
+     "o-ring"
+    ],
+    "ar": [
+     "جوان",
+     "جوانات مطاط",
+     "أورنج"
+    ],
+    "zh": [
+     "橡胶密封圈",
+     "密封件"
+    ]
+   }
+  },
+  {
+   "hs6": "401519",
+   "description_en": "Rubber gloves, other",
+   "description_ar": "قفازات مطاطية",
+   "keywords": {
+    "en": [
+     "rubber gloves",
+     "latex gloves",
+     "gloves"
+    ],
+    "ar": [
+     "قفازات مطاطية",
+     "قفازات",
+     "كفوف"
+    ],
+    "zh": [
+     "橡胶手套",
+     "手套"
+    ]
+   }
+  },
+  {
+   "hs6": "902300",
+   "description_en": "Instruments for demonstration",
+   "description_ar": "أدوات تعليمية",
+   "keywords": {
+    "en": [
+     "teaching equipment",
+     "training equipment"
+    ],
+    "ar": [
+     "أدوات تعليمية"
+    ],
+    "zh": [
+     "教学设备"
+    ]
+   }
+  },
+  {
+   "hs6": "901890",
+   "description_en": "Medical instruments and appliances, other",
+   "description_ar": "أجهزة ومعدات طبية",
+   "keywords": {
+    "en": [
+     "medical equipment",
+     "medical device",
+     "medical instrument"
+    ],
+    "ar": [
+     "معدات طبية",
+     "أجهزة طبية",
+     "اجهزة طبية"
+    ],
+    "zh": [
+     "医疗器械",
+     "医疗设备"
+    ]
+   }
+  },
+  {
+   "hs6": "901839",
+   "description_en": "Syringes, needles, catheters",
+   "description_ar": "محاقن وإبر",
+   "keywords": {
+    "en": [
+     "syringe",
+     "needle",
+     "catheter"
+    ],
+    "ar": [
+     "محقنة",
+     "سرنجة",
+     "إبرة"
+    ],
+    "zh": [
+     "注射器",
+     "针头"
+    ]
+   }
+  },
+  {
+   "hs6": "901910",
+   "description_en": "Massage apparatus",
+   "description_ar": "أجهزة تدليك",
+   "keywords": {
+    "en": [
+     "massager",
+     "massage chair"
+    ],
+    "ar": [
+     "جهاز مساج",
+     "كرسي مساج",
+     "مدلك"
+    ],
+    "zh": [
+     "按摩器",
+     "按摩椅"
+    ]
+   }
+  },
+  {
+   "hs6": "902519",
+   "description_en": "Thermometers, non-liquid",
+   "description_ar": "موازين حرارة",
+   "keywords": {
+    "en": [
+     "thermometer",
+     "infrared thermometer"
+    ],
+    "ar": [
+     "ميزان حرارة",
+     "ترمومتر"
+    ],
+    "zh": [
+     "温度计",
+     "体温计"
+    ]
+   }
+  },
+  {
+   "hs6": "621210",
+   "description_en": "Brassieres",
+   "description_ar": "حمالات صدر",
+   "keywords": {
+    "en": [
+     "bra",
+     "brassiere",
+     "lingerie"
+    ],
+    "ar": [
+     "حمالة صدر",
+     "ملابس داخلية نسائية"
+    ],
+    "zh": [
+     "文胸",
+     "内衣"
+    ]
+   }
+  },
+  {
+   "hs6": "630622",
+   "description_en": "Tents of synthetic fibres",
+   "description_ar": "خيام",
+   "keywords": {
+    "en": [
+     "tent",
+     "camping tent"
+    ],
+    "ar": [
+     "خيمة",
+     "خيام"
+    ],
+    "zh": [
+     "帐篷"
+    ]
+   }
+  },
+  {
+   "hs6": "392062",
+   "description_en": "Polyethylene terephthalate film",
+   "description_ar": "أغشية PET",
+   "keywords": {
+    "en": [
+     "pet film",
+     "plastic film",
+     "stretch film"
+    ],
+    "ar": [
+     "غشاء بلاستيك",
+     "نايلون تغليف",
+     "فيلم بلاستيك"
+    ],
+    "zh": [
+     "塑料薄膜",
+     "保鲜膜"
+    ]
+   }
+  },
+  {
+   "hs6": "392310",
+   "description_en": "Plastic boxes, cases, crates",
+   "description_ar": "صناديق بلاستيك",
+   "keywords": {
+    "en": [
+     "plastic crate",
+     "plastic box",
+     "storage box"
+    ],
+    "ar": [
+     "صناديق بلاستيك",
+     "صندوق بلاستيك"
+    ],
+    "zh": [
+     "塑料箱",
+     "收纳盒"
+    ]
+   }
+  },
+  {
+   "hs6": "392321",
+   "description_en": "Plastic bags of polyethylene",
+   "description_ar": "أكياس بولي إيثيلين",
+   "keywords": {
+    "en": [
+     "polyethylene bag",
+     "garbage bag",
+     "trash bag"
+    ],
+    "ar": [
+     "أكياس قمامة",
+     "كيس نفايات"
+    ],
+    "zh": [
+     "垃圾袋"
+    ]
+   }
+  },
+  {
+   "hs6": "392350",
+   "description_en": "Plastic caps, lids, stoppers",
+   "description_ar": "أغطية وسدادات بلاستيك",
+   "keywords": {
+    "en": [
+     "bottle cap",
+     "plastic cap",
+     "lid"
+    ],
+    "ar": [
+     "غطاء بلاستيك",
+     "سدادة"
+    ],
+    "zh": [
+     "瓶盖",
+     "塑料盖"
+    ]
+   }
+  },
+  {
+   "hs6": "392330",
+   "description_en": "Plastic bottles and carboys",
+   "description_ar": "قوارير بلاستيك",
+   "keywords": {
+    "en": [
+     "plastic bottle",
+     "pet bottle",
+     "water bottle"
+    ],
+    "ar": [
+     "قنينة بلاستيك",
+     "زجاجة بلاستيك",
+     "قناني"
+    ],
+    "zh": [
+     "塑料瓶",
+     "水瓶"
+    ]
+   }
+  },
+  {
+   "hs6": "100630",
+   "description_en": "Rice, semi-milled or wholly milled",
+   "description_ar": "أرز",
+   "keywords": {
+    "en": [
+     "rice",
+     "basmati rice",
+     "white rice"
+    ],
+    "ar": [
+     "رز",
+     "أرز",
+     "ارز"
+    ],
+    "zh": [
+     "大米",
+     "稻米"
+    ]
+   }
+  },
+  {
+   "hs6": "170199",
+   "description_en": "Refined sugar",
+   "description_ar": "سكر أبيض",
+   "keywords": {
+    "en": [
+     "sugar",
+     "white sugar",
+     "refined sugar"
+    ],
+    "ar": [
+     "سكر",
+     "سكر ابيض"
+    ],
+    "zh": [
+     "白砂糖",
+     "糖"
+    ]
+   }
+  },
+  {
+   "hs6": "110100",
+   "description_en": "Wheat or meslin flour",
+   "description_ar": "طحين قمح",
+   "keywords": {
+    "en": [
+     "wheat flour",
+     "flour"
+    ],
+    "ar": [
+     "طحين",
+     "دقيق",
+     "طحين قمح"
+    ],
+    "zh": [
+     "面粉",
+     "小麦粉"
+    ]
+   }
+  },
+  {
+   "hs6": "150790",
+   "description_en": "Soya-bean oil, refined",
+   "description_ar": "زيت صويا",
+   "keywords": {
+    "en": [
+     "soybean oil",
+     "soya oil",
+     "vegetable oil",
+     "cooking oil"
+    ],
+    "ar": [
+     "زيت صويا",
+     "زيت طبخ",
+     "زيت نباتي"
+    ],
+    "zh": [
+     "大豆油",
+     "食用油"
+    ]
+   }
+  },
+  {
+   "hs6": "090240",
+   "description_en": "Black tea, in packages over 3 kg",
+   "description_ar": "شاي أسود",
+   "keywords": {
+    "en": [
+     "tea",
+     "black tea"
+    ],
+    "ar": [
+     "شاي",
+     "شاي أسود"
+    ],
+    "zh": [
+     "红茶",
+     "茶叶"
+    ]
+   }
+  },
+  {
+   "hs6": "090111",
+   "description_en": "Coffee, not roasted, not decaffeinated",
+   "description_ar": "بن أخضر",
+   "keywords": {
+    "en": [
+     "coffee",
+     "green coffee",
+     "coffee beans"
+    ],
+    "ar": [
+     "قهوة",
+     "بن",
+     "حبوب قهوة"
+    ],
+    "zh": [
+     "咖啡豆",
+     "咖啡"
+    ]
+   }
+  },
+  {
+   "hs6": "180690",
+   "description_en": "Chocolate and cocoa preparations",
+   "description_ar": "شوكولاتة",
+   "keywords": {
+    "en": [
+     "chocolate",
+     "cocoa product"
+    ],
+    "ar": [
+     "شوكولاته",
+     "شوكولاتة",
+     "كاكاو"
+    ],
+    "zh": [
+     "巧克力"
+    ]
+   }
+  },
+  {
+   "hs6": "190590",
+   "description_en": "Bakery products, biscuits",
+   "description_ar": "بسكويت ومخبوزات",
+   "keywords": {
+    "en": [
+     "biscuit",
+     "cookies",
+     "bakery product"
+    ],
+    "ar": [
+     "بسكويت",
+     "كعك",
+     "معجنات"
+    ],
+    "zh": [
+     "饼干",
+     "烘焙食品"
+    ]
+   }
+  },
+  {
+   "hs6": "200989",
+   "description_en": "Fruit juices",
+   "description_ar": "عصائر فواكه",
+   "keywords": {
+    "en": [
+     "juice",
+     "fruit juice"
+    ],
+    "ar": [
+     "عصير",
+     "عصائر"
+    ],
+    "zh": [
+     "果汁"
+    ]
+   }
+  },
+  {
+   "hs6": "220210",
+   "description_en": "Sweetened waters (soft drinks)",
+   "description_ar": "مشروبات غازية",
+   "keywords": {
+    "en": [
+     "soft drink",
+     "soda",
+     "carbonated drink",
+     "energy drink"
+    ],
+    "ar": [
+     "مشروب غازي",
+     "مشروبات غازية",
+     "مياه غازية",
+     "مشروب طاقة"
+    ],
+    "zh": [
+     "汽水",
+     "碳酸饮料",
+     "饮料"
+    ]
+   }
+  },
+  {
+   "hs6": "040221",
+   "description_en": "Milk powder",
+   "description_ar": "حليب بودرة",
+   "keywords": {
+    "en": [
+     "milk powder",
+     "powdered milk"
+    ],
+    "ar": [
+     "حليب بودرة",
+     "حليب مجفف",
+     "حليب"
+    ],
+    "zh": [
+     "奶粉"
+    ]
+   }
+  },
+  {
+   "hs6": "020714",
+   "description_en": "Frozen chicken cuts",
+   "description_ar": "دجاج مجمد",
+   "keywords": {
+    "en": [
+     "frozen chicken",
+     "chicken"
+    ],
+    "ar": [
+     "دجاج مجمد",
+     "دجاج",
+     "فروج مجمد"
+    ],
+    "zh": [
+     "冻鸡肉",
+     "鸡肉"
+    ]
+   }
+  },
+  {
+   "hs6": "020230",
+   "description_en": "Frozen boneless beef",
+   "description_ar": "لحم بقري مجمد",
+   "keywords": {
+    "en": [
+     "frozen beef",
+     "beef",
+     "meat"
+    ],
+    "ar": [
+     "لحم بقر",
+     "لحم مجمد",
+     "لحم"
+    ],
+    "zh": [
+     "冷冻牛肉",
+     "牛肉"
+    ]
+   }
+  },
+  {
+   "hs6": "030617",
+   "description_en": "Frozen shrimps and prawns",
+   "description_ar": "روبيان مجمد",
+   "keywords": {
+    "en": [
+     "shrimp",
+     "prawn",
+     "frozen shrimp"
+    ],
+    "ar": [
+     "روبيان",
+     "جمبري",
+     "ربيان"
+    ],
+    "zh": [
+     "虾",
+     "冻虾"
+    ]
+   }
+  },
+  {
+   "hs6": "200570",
+   "description_en": "Olives prepared or preserved",
+   "description_ar": "زيتون محفوظ",
+   "keywords": {
+    "en": [
+     "olives",
+     "preserved olives"
+    ],
+    "ar": [
+     "زيتون"
+    ],
+    "zh": [
+     "橄榄"
+    ]
+   }
+  },
+  {
+   "hs6": "080131",
+   "description_en": "Cashew nuts in shell",
+   "description_ar": "كاجو",
+   "keywords": {
+    "en": [
+     "cashew",
+     "cashew nuts"
+    ],
+    "ar": [
+     "كاجو",
+     "كاشو"
+    ],
+    "zh": [
+     "腰果"
+    ]
+   }
+  },
+  {
+   "hs6": "080212",
+   "description_en": "Almonds, shelled",
+   "description_ar": "لوز",
+   "keywords": {
+    "en": [
+     "almond",
+     "almonds"
+    ],
+    "ar": [
+     "لوز"
+    ],
+    "zh": [
+     "杏仁"
+    ]
+   }
+  },
+  {
+   "hs6": "080410",
+   "description_en": "Dates, fresh or dried",
+   "description_ar": "تمور",
+   "keywords": {
+    "en": [
+     "dates",
+     "date fruit"
+    ],
+    "ar": [
+     "تمر",
+     "تمور"
+    ],
+    "zh": [
+     "椰枣"
+    ]
+   }
+  },
+  {
+   "hs6": "071310",
+   "description_en": "Dried peas",
+   "description_ar": "بازلاء مجففة",
+   "keywords": {
+    "en": [
+     "dried peas",
+     "peas",
+     "lentils",
+     "chickpeas",
+     "pulses"
+    ],
+    "ar": [
+     "بازلاء",
+     "عدس",
+     "حمص",
+     "بقوليات"
+    ],
+    "zh": [
+     "豌豆",
+     "扁豆",
+     "鹰嘴豆"
+    ]
+   }
+  },
+  {
+   "hs6": "090411",
+   "description_en": "Pepper, neither crushed nor ground",
+   "description_ar": "فلفل أسود",
+   "keywords": {
+    "en": [
+     "black pepper",
+     "pepper",
+     "spices"
+    ],
+    "ar": [
+     "فلفل",
+     "بهارات",
+     "توابل"
+    ],
+    "zh": [
+     "胡椒",
+     "香料"
+    ]
+   }
+  },
+  {
+   "hs6": "120190",
+   "description_en": "Soya beans",
+   "description_ar": "فول الصويا",
+   "keywords": {
+    "en": [
+     "soybean",
+     "soya beans"
+    ],
+    "ar": [
+     "فول صويا",
+     "صويا"
+    ],
+    "zh": [
+     "大豆"
+    ]
+   }
+  },
+  {
+   "hs6": "230910",
+   "description_en": "Dog or cat food",
+   "description_ar": "أغذية حيوانات أليفة",
+   "keywords": {
+    "en": [
+     "pet food",
+     "dog food",
+     "cat food"
+    ],
+    "ar": [
+     "طعام قطط",
+     "طعام كلاب",
+     "أكل حيوانات"
+    ],
+    "zh": [
+     "宠物食品",
+     "狗粮",
+     "猫粮"
+    ]
+   }
+  },
+  {
+   "hs6": "330499",
+   "description_en": "Beauty or make-up preparations",
+   "description_ar": "مستحضرات تجميل",
+   "keywords": {
+    "en": [
+     "cosmetics",
+     "makeup",
+     "make-up",
+     "skin care cream",
+     "face cream"
+    ],
+    "ar": [
+     "مكياج",
+     "مستحضرات تجميل",
+     "كريم",
+     "كريم بشرة"
+    ],
+    "zh": [
+     "化妆品",
+     "彩妆",
+     "护肤品"
+    ]
+   }
+  },
+  {
+   "hs6": "330510",
+   "description_en": "Shampoos",
+   "description_ar": "شامبو",
+   "keywords": {
+    "en": [
+     "shampoo",
+     "hair care"
+    ],
+    "ar": [
+     "شامبو",
+     "شامبوهات"
+    ],
+    "zh": [
+     "洗发水",
+     "洗发露"
+    ]
+   }
+  },
+  {
+   "hs6": "330300",
+   "description_en": "Perfumes and toilet waters",
+   "description_ar": "عطور",
+   "keywords": {
+    "en": [
+     "perfume",
+     "fragrance",
+     "cologne"
+    ],
+    "ar": [
+     "عطر",
+     "عطور",
+     "برفان"
+    ],
+    "zh": [
+     "香水"
+    ]
+   }
+  },
+  {
+   "hs6": "330610",
+   "description_en": "Dentifrices (toothpaste)",
+   "description_ar": "معجون أسنان",
+   "keywords": {
+    "en": [
+     "toothpaste"
+    ],
+    "ar": [
+     "معجون اسنان",
+     "معجون أسنان"
+    ],
+    "zh": [
+     "牙膏"
+    ]
+   }
+  },
+  {
+   "hs6": "340111",
+   "description_en": "Soap, toilet",
+   "description_ar": "صابون",
+   "keywords": {
+    "en": [
+     "soap",
+     "bar soap"
+    ],
+    "ar": [
+     "صابون"
+    ],
+    "zh": [
+     "肥皂",
+     "香皂"
+    ]
+   }
+  },
+  {
+   "hs6": "340220",
+   "description_en": "Washing preparations (detergents)",
+   "description_ar": "منظفات ومساحيق غسيل",
+   "keywords": {
+    "en": [
+     "detergent",
+     "washing powder",
+     "laundry detergent",
+     "cleaning product"
+    ],
+    "ar": [
+     "منظف",
+     "مسحوق غسيل",
+     "منظفات",
+     "صابون سائل"
+    ],
+    "zh": [
+     "洗衣粉",
+     "洗涤剂",
+     "清洁剂"
+    ]
+   }
+  },
+  {
+   "hs6": "481890",
+   "description_en": "Sanitary paper products (tissues, diapers)",
+   "description_ar": "منتجات ورق صحية",
+   "keywords": {
+    "en": [
+     "tissue paper",
+     "toilet paper",
+     "napkin"
+    ],
+    "ar": [
+     "مناديل ورقية",
+     "ورق تواليت",
+     "محارم"
+    ],
+    "zh": [
+     "卫生纸",
+     "纸巾"
+    ]
+   }
+  },
+  {
+   "hs6": "961900",
+   "description_en": "Sanitary towels, tampons, diapers",
+   "description_ar": "حفاضات ومنتجات صحية",
+   "keywords": {
+    "en": [
+     "diaper",
+     "baby diaper",
+     "sanitary pad",
+     "nappy"
+    ],
+    "ar": [
+     "حفاضات",
+     "حفاظات",
+     "فوط صحية"
+    ],
+    "zh": [
+     "尿不湿",
+     "纸尿裤",
+     "卫生巾"
+    ]
+   }
+  },
+  {
+   "hs6": "300490",
+   "description_en": "Medicaments in measured doses, retail",
+   "description_ar": "أدوية معبأة للبيع بالتجزئة",
+   "keywords": {
+    "en": [
+     "medicine",
+     "pharmaceutical",
+     "drug",
+     "medication"
+    ],
+    "ar": [
+     "دواء",
+     "أدوية",
+     "ادوية"
+    ],
+    "zh": [
+     "药品",
+     "药物"
+    ]
+   }
+  },
+  {
+   "hs6": "300590",
+   "description_en": "Wadding, gauze, bandages",
+   "description_ar": "ضمادات وشاش",
+   "keywords": {
+    "en": [
+     "bandage",
+     "gauze",
+     "medical dressing"
+    ],
+    "ar": [
+     "ضمادة",
+     "شاش",
+     "ضمادات"
+    ],
+    "zh": [
+     "绷带",
+     "纱布"
+    ]
+   }
+  },
+  {
+   "hs6": "401511",
+   "description_en": "Surgical rubber gloves",
+   "description_ar": "قفازات جراحية",
+   "keywords": {
+    "en": [
+     "surgical gloves",
+     "medical gloves",
+     "examination gloves",
+     "nitrile gloves"
+    ],
+    "ar": [
+     "قفازات جراحية",
+     "قفازات طبية"
+    ],
+    "zh": [
+     "医用手套",
+     "丁腈手套"
+    ]
+   }
+  },
+  {
+   "hs6": "310210",
+   "description_en": "Urea",
+   "description_ar": "يوريا",
+   "keywords": {
+    "en": [
+     "urea",
+     "fertilizer",
+     "nitrogen fertilizer"
+    ],
+    "ar": [
+     "يوريا",
+     "سماد",
+     "أسمدة"
+    ],
+    "zh": [
+     "尿素",
+     "化肥",
+     "肥料"
+    ]
+   }
+  },
+  {
+   "hs6": "380891",
+   "description_en": "Insecticides",
+   "description_ar": "مبيدات حشرية",
+   "keywords": {
+    "en": [
+     "insecticide",
+     "pesticide"
+    ],
+    "ar": [
+     "مبيد حشري",
+     "مبيدات",
+     "مبيد"
+    ],
+    "zh": [
+     "杀虫剂",
+     "农药"
+    ]
+   }
+  },
+  {
+   "hs6": "320910",
+   "description_en": "Paints based on acrylic polymers",
+   "description_ar": "دهانات أكريليك",
+   "keywords": {
+    "en": [
+     "paint",
+     "acrylic paint",
+     "wall paint"
+    ],
+    "ar": [
+     "دهان",
+     "طلاء",
+     "دهانات",
+     "بوية"
+    ],
+    "zh": [
+     "油漆",
+     "涂料"
+    ]
+   }
+  },
+  {
+   "hs6": "350691",
+   "description_en": "Adhesives based on rubber or plastics",
+   "description_ar": "مواد لاصقة",
+   "keywords": {
+    "en": [
+     "adhesive",
+     "glue"
+    ],
+    "ar": [
+     "غراء",
+     "لاصق",
+     "مواد لاصقة"
+    ],
+    "zh": [
+     "胶水",
+     "胶粘剂"
+    ]
+   }
+  },
+  {
+   "hs6": "271019",
+   "description_en": "Medium oils, lubricating oils",
+   "description_ar": "زيوت تشحيم",
+   "keywords": {
+    "en": [
+     "lubricating oil",
+     "engine oil",
+     "motor oil",
+     "lubricant"
+    ],
+    "ar": [
+     "زيت محرك",
+     "زيوت تشحيم",
+     "زيت سيارات"
+    ],
+    "zh": [
+     "润滑油",
+     "机油"
+    ]
+   }
+  },
+  {
+   "hs6": "252100",
+   "description_en": "Limestone flux",
+   "description_ar": "حجر جيري",
+   "keywords": {
+    "en": [
+     "limestone"
+    ],
+    "ar": [
+     "حجر جيري",
+     "حجر كلسي"
+    ],
+    "zh": [
+     "石灰石"
+    ]
+   }
+  },
+  {
+   "hs6": "680221",
+   "description_en": "Marble/travertine worked stone",
+   "description_ar": "رخام",
+   "keywords": {
+    "en": [
+     "marble",
+     "granite",
+     "stone slab"
+    ],
+    "ar": [
+     "رخام",
+     "غرانيت",
+     "حجر"
+    ],
+    "zh": [
+     "大理石",
+     "花岗岩"
+    ]
+   }
+  },
+  {
+   "hs6": "890190",
+   "description_en": "Cargo vessels and other vessels",
+   "description_ar": "سفن شحن",
+   "keywords": {
+    "en": [
+     "ship",
+     "cargo ship",
+     "vessel",
+     "boat"
+    ],
+    "ar": [
+     "سفينة",
+     "قارب",
+     "مركب"
+    ],
+    "zh": [
+     "船",
+     "货船"
+    ]
+   }
+  },
+  {
+   "hs6": "732111",
+   "description_en": "Gas cooking appliances",
+   "description_ar": "طباخات غاز",
+   "keywords": {
+    "en": [
+     "gas stove",
+     "gas cooker",
+     "gas cooking"
+    ],
+    "ar": [
+     "طباخ غاز",
+     "موقد غاز",
+     "غاز طبخ"
+    ],
+    "zh": [
+     "燃气灶",
+     "煤气灶"
+    ]
+   }
+  },
+  {
+   "hs6": "392510",
+   "description_en": "Plastic reservoirs and tanks",
+   "description_ar": "خزانات بلاستيك",
+   "keywords": {
+    "en": [
+     "water tank",
+     "plastic tank"
+    ],
+    "ar": [
+     "خزان ماء",
+     "خزان مياه",
+     "خزان"
+    ],
+    "zh": [
+     "水箱",
+     "水塔"
+    ]
+   }
+  },
+  {
+   "hs6": "848180",
+   "description_en": "Taps, cocks, valves",
+   "description_ar": "حنفيات وصمامات",
+   "keywords": {
+    "en": [
+     "valve",
+     "tap",
+     "faucet",
+     "ball valve"
+    ],
+    "ar": [
+     "حنفية",
+     "صمام",
+     "محبس",
+     "خلاط ماء"
+    ],
+    "zh": [
+     "阀门",
+     "水龙头"
+    ]
+   }
+  },
+  {
+   "hs6": "848210",
+   "description_en": "Ball bearings",
+   "description_ar": "رولمان بلي",
+   "keywords": {
+    "en": [
+     "bearing",
+     "ball bearing"
+    ],
+    "ar": [
+     "رولمان",
+     "محمل",
+     "بلي",
+     "رمان بلي"
+    ],
+    "zh": [
+     "轴承",
+     "滚珠轴承"
+    ]
+   }
+  },
+  {
+   "hs6": "848340",
+   "description_en": "Gears and gearing",
+   "description_ar": "علب تروس",
+   "keywords": {
+    "en": [
+     "gearbox",
+     "gear",
+     "reducer"
+    ],
+    "ar": [
+     "علبة تروس",
+     "جير",
+     "تروس"
+    ],
+    "zh": [
+     "齿轮箱",
+     "减速机"
+    ]
+   }
+  },
+  {
+   "hs6": "853710",
+   "description_en": "Control panels for voltage up to 1000 V",
+   "description_ar": "لوحات تحكم كهربائية",
+   "keywords": {
+    "en": [
+     "control panel",
+     "switchboard",
+     "distribution board"
+    ],
+    "ar": [
+     "لوحة تحكم",
+     "لوحة كهرباء",
+     "لوحة توزيع"
+    ],
+    "zh": [
+     "控制柜",
+     "配电箱"
+    ]
+   }
+  },
+  {
+   "hs6": "902610",
+   "description_en": "Instruments for measuring flow of liquids",
+   "description_ar": "أجهزة قياس تدفق",
+   "keywords": {
+    "en": [
+     "flow meter",
+     "water meter"
+    ],
+    "ar": [
+     "عداد مياه",
+     "عداد"
+    ],
+    "zh": [
+     "流量计",
+     "水表"
+    ]
+   }
+  },
+  {
+   "hs6": "847982",
+   "description_en": "Mixing machines",
+   "description_ar": "آلات خلط",
+   "keywords": {
+    "en": [
+     "mixing machine",
+     "concrete mixer",
+     "industrial mixer"
+    ],
+    "ar": [
+     "خلاطة",
+     "خلاطة اسمنت",
+     "آلة خلط"
+    ],
+    "zh": [
+     "搅拌机械",
+     "混凝土搅拌机"
+    ]
+   }
+  },
+  {
+   "hs6": "843810",
+   "description_en": "Bakery machinery",
+   "description_ar": "آلات مخابز",
+   "keywords": {
+    "en": [
+     "bakery machine",
+     "bread machine",
+     "dough mixer"
+    ],
+    "ar": [
+     "آلة مخبز",
+     "ماكينة خبز"
+    ],
+    "zh": [
+     "面包机械",
+     "烘焙设备"
+    ]
+   }
+  },
+  {
+   "hs6": "842230",
+   "description_en": "Machinery for filling and packing bottles",
+   "description_ar": "آلات تعبئة وتغليف",
+   "keywords": {
+    "en": [
+     "packaging machine",
+     "filling machine",
+     "bottle filling"
+    ],
+    "ar": [
+     "آلة تعبئة",
+     "ماكينة تغليف",
+     "آلة تغليف"
+    ],
+    "zh": [
+     "包装机",
+     "灌装机"
+    ]
+   }
+  },
+  {
+   "hs6": "845210",
+   "description_en": "Sewing machines, household",
+   "description_ar": "ماكينات خياطة",
+   "keywords": {
+    "en": [
+     "sewing machine"
+    ],
+    "ar": [
+     "ماكينة خياطة",
+     "مكينة خياطة"
+    ],
+    "zh": [
+     "缝纫机"
+    ]
+   }
+  },
+  {
+   "hs6": "844859",
+   "description_en": "Textile machine parts and accessories",
+   "description_ar": "أجزاء آلات نسيج",
+   "keywords": {
+    "en": [
+     "textile machine",
+     "knitting machine",
+     "loom"
+    ],
+    "ar": [
+     "آلة نسيج",
+     "ماكينة تريكو"
+    ],
+    "zh": [
+     "纺织机械",
+     "针织机"
+    ]
+   }
+  },
+  {
+   "hs6": "847210",
+   "description_en": "Duplicating machines, office",
+   "description_ar": "آلات مكتبية",
+   "keywords": {
+    "en": [
+     "photocopier",
+     "copier",
+     "copy machine"
+    ],
+    "ar": [
+     "آلة تصوير",
+     "ماكينة تصوير مستندات",
+     "فوتوكوبي"
+    ],
+    "zh": [
+     "复印机"
+    ]
+   }
+  },
+  {
+   "hs6": "820730",
+   "description_en": "Tools for pressing, stamping or punching",
+   "description_ar": "قوالب وأدوات كبس",
+   "keywords": {
+    "en": [
+     "mould",
+     "mold",
+     "die",
+     "stamping die"
+    ],
+    "ar": [
+     "قالب",
+     "قوالب"
+    ],
+    "zh": [
+     "模具",
+     "冲压模"
+    ]
+   }
+  },
+  {
+   "hs6": "902780",
+   "description_en": "Laboratory instruments",
+   "description_ar": "أجهزة مختبرات",
+   "keywords": {
+    "en": [
+     "laboratory equipment",
+     "lab instrument"
+    ],
+    "ar": [
+     "معدات مختبر",
+     "أجهزة مختبر"
+    ],
+    "zh": [
+     "实验室设备",
+     "实验仪器"
+    ]
+   }
+  },
+  {
+   "hs6": "854370",
+   "description_en": "Electrical machines with individual functions",
+   "description_ar": "أجهزة كهربائية متنوعة",
+   "keywords": {
+    "en": [
+     "electronic cigarette",
+     "vape",
+     "e-cigarette"
+    ],
+    "ar": [
+     "سيجارة الكترونية",
+     "فيب"
+    ],
+    "zh": [
+     "电子烟"
+    ]
+   }
+  },
+  {
+   "hs6": "870600",
+   "description_en": "Chassis fitted with engines",
+   "description_ar": "هياكل مركبات بمحركات",
+   "keywords": {
+    "en": [
+     "chassis",
+     "vehicle chassis"
+    ],
+    "ar": [
+     "شاسيه"
+    ],
+    "zh": [
+     "底盘"
+    ]
+   }
+  },
+  {
+   "hs6": "940510",
+   "description_en": "Chandeliers and ceiling lighting fittings",
+   "description_ar": "ثريات",
+   "keywords": {
+    "en": [
+     "chandelier",
+     "ceiling light"
+    ],
+    "ar": [
+     "ثريا",
+     "نجفة",
+     "ثريات"
+    ],
+    "zh": [
+     "吊灯",
+     "吸顶灯"
+    ]
+   }
+  },
+  {
+   "hs6": "940370",
+   "description_en": "Furniture of plastics",
+   "description_ar": "أثاث بلاستيكي",
+   "keywords": {
+    "en": [
+     "plastic furniture",
+     "plastic chair",
+     "plastic table"
+    ],
+    "ar": [
+     "كرسي بلاستيك",
+     "طاولة بلاستيك",
+     "أثاث بلاستيك"
+    ],
+    "zh": [
+     "塑料椅",
+     "塑料家具"
+    ]
+   }
+  },
+  {
+   "hs6": "940130",
+   "description_en": "Swivel seats with height adjustment (office chairs)",
+   "description_ar": "كراسي مكتب دوارة",
+   "keywords": {
+    "en": [
+     "office chair",
+     "swivel chair",
+     "gaming chair"
+    ],
+    "ar": [
+     "كرسي مكتب",
+     "كراسي مكتبية"
+    ],
+    "zh": [
+     "办公椅",
+     "转椅"
+    ]
+   }
+  },
+  {
+   "hs6": "940330",
+   "description_en": "Wooden office furniture",
+   "description_ar": "أثاث مكتبي خشبي",
+   "keywords": {
+    "en": [
+     "office desk",
+     "office furniture",
+     "desk"
+    ],
+    "ar": [
+     "مكتب",
+     "أثاث مكتبي",
+     "طاولة مكتب"
+    ],
+    "zh": [
+     "办公桌",
+     "办公家具"
+    ]
+   }
+  },
+  {
+   "hs6": "391990",
+   "description_en": "Self-adhesive plates, sheets, tape of plastics",
+   "description_ar": "أشرطة لاصقة",
+   "keywords": {
+    "en": [
+     "adhesive tape",
+     "packing tape",
+     "self-adhesive tape"
+    ],
+    "ar": [
+     "شريط لاصق",
+     "لاصق تغليف"
+    ],
+    "zh": [
+     "胶带",
+     "封箱胶带"
+    ]
+   }
+  },
+  {
+   "hs6": "732690",
+   "description_en": "Other articles of iron or steel",
+   "description_ar": "مصنوعات حديد وفولاذ أخرى",
+   "keywords": {
+    "en": [
+     "steel product",
+     "iron product",
+     "metal parts"
+    ],
+    "ar": [
+     "مصنوعات حديد",
+     "قطع معدنية"
+    ],
+    "zh": [
+     "钢铁制品",
+     "金属零件"
+    ]
+   }
+  },
+  {
+   "hs6": "830242",
+   "description_en": "Mountings and fittings for furniture",
+   "description_ar": "إكسسوارات وتجهيزات أثاث",
+   "keywords": {
+    "en": [
+     "hinge",
+     "furniture hardware",
+     "drawer slide",
+     "door handle"
+    ],
+    "ar": [
+     "مفصلة",
+     "مقبض",
+     "اكسسوارات اثاث"
+    ],
+    "zh": [
+     "合页",
+     "拉手",
+     "五金"
+    ]
+   }
+  },
+  {
+   "hs6": "830140",
+   "description_en": "Locks of base metal",
+   "description_ar": "أقفال",
+   "keywords": {
+    "en": [
+     "lock",
+     "padlock",
+     "door lock"
+    ],
+    "ar": [
+     "قفل",
+     "اقفال",
+     "أقفال"
+    ],
+    "zh": [
+     "锁",
+     "挂锁"
+    ]
+   }
+  }
+ ]
+}

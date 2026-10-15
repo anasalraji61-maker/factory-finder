@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request
 from ..adapters.carriers import list_carriers
 from ..domain import compliance as compliance_domain
 from ..domain import hs as hs_domain
+from ..domain import hs_suggest as hs_suggest_domain
 from ..domain.duties import load_json
 from ..domain.engine import Engine
 from ..domain.money import money
@@ -80,6 +81,15 @@ async def hs_search(q: Annotated[str, Query(max_length=100)] = "", limit: Annota
     items = [hs_domain.to_item(e, duties, destination_country) for e in hs_domain.search(q, limit)]
     return {"items": items, "total": len(items), "destination_country": destination_country,
             "disclaimer": _HS_DISCLAIMER}
+
+
+@router.get("/hs/suggest")
+async def hs_suggest(q: Annotated[str, Query(max_length=hs_suggest_domain.MAX_Q)] = "",
+                     limit: Annotated[int, Query(ge=1, le=hs_suggest_domain.MAX_LIMIT)] = 5):
+    if not q.strip():
+        raise ApiError("validation_error", "q must not be empty", 422, {"field": "q"})
+    items = hs_suggest_domain.suggest_hs(q, limit)
+    return {"items": items, "total": len(items), "indicative": True, "disclaimer": _HS_DISCLAIMER}
 
 
 @router.get("/hs/{code}")

@@ -1,11 +1,12 @@
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
-import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/router/return_path.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
+import 'package:factory_finder/features/auth/auth_errors.dart';
 import 'package:factory_finder/features/auth/auth_validators.dart';
+import 'package:factory_finder/features/auth/password_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -43,6 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
@@ -66,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
+            .showSnackBar(SnackBar(content: Text(localizedAuthError(context, e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -91,6 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             TextFormField(
+              key: const ValueKey<String>('login-email'),
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
@@ -101,10 +104,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               },
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
+              key: const ValueKey<String>('login-password'),
               controller: _password,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.tr('auth.password')),
+              label: context.tr('auth.password'),
+              autofillHints: const [AutofillHints.password],
               validator: (v) {
                 final k = validatePassword(v);
                 return k == null ? null : context.tr(k);
@@ -157,13 +161,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
       await ref.read(authProvider.notifier).register(
             name: _name.text.trim(),
             email: _email.text.trim(),
-            phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+            phone: normalizePhone(_phone.text),
             password: _password.text,
           );
       if (!mounted) return;
@@ -182,7 +187,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(localizedError(context, e))));
+            .showSnackBar(SnackBar(content: Text(localizedAuthError(context, e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -199,6 +204,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             TextFormField(
+              key: const ValueKey<String>('register-name'),
               controller: _name,
               decoration: InputDecoration(labelText: context.tr('auth.name')),
               validator: (v) {
@@ -208,6 +214,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
+              key: const ValueKey<String>('register-email'),
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(labelText: context.tr('auth.email')),
@@ -218,15 +225,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
+              key: const ValueKey<String>('register-phone'),
               controller: _phone,
               keyboardType: TextInputType.phone,
+              autofillHints: const [AutofillHints.telephoneNumber],
               decoration: InputDecoration(labelText: context.tr('auth.phone')),
+              validator: (v) {
+                final k = validatePhone(v);
+                return k == null ? null : context.tr(k);
+              },
             ),
             const SizedBox(height: AppSpacing.md),
-            TextFormField(
+            PasswordField(
+              key: const ValueKey<String>('register-password'),
               controller: _password,
-              obscureText: true,
-              decoration: InputDecoration(labelText: context.tr('auth.password')),
+              label: context.tr('auth.password'),
+              autofillHints: const [AutofillHints.password],
               validator: (v) {
                 final k = validatePassword(v);
                 return k == null ? null : context.tr(k);

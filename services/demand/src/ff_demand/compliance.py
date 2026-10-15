@@ -24,6 +24,13 @@ _LINK = re.compile(
     r"(?i)\b(?:https?://|www\.)[^\s<>\"')\]]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|cn|me|ly|co|info|biz|ru|app|link|xyz)\b[^\s]*"
 )
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+_TLDS = r"(?:com|net|org|io|cn|me|co|info|biz|ru|app|xyz|edu|gov|iq|ae|sa|tr|de|uk)"
+_AT = r"(?:\s*[\[({<]\s*(?:at|@)\s*[\])}>]\s*|\s+at\s+|\s*@\s*)"
+_DOT = r"(?:\s*[\[({<]\s*(?:dot|\.)\s*[\])}>]\s*|\s+dot\s+|\s*\.\s*)"
+_EMAIL_OBF = re.compile(
+    rf"(?i)(?<![\w.+-])[\w.+-]+{_AT}[\w-]+(?:{_DOT}[\w-]+)*?{_DOT}{_TLDS}\b"
+)
+_IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:[ -]?[A-Z0-9]{4}){2,7}(?:[ -]?[A-Z0-9]{1,3})?\b")
 _HANDLE = re.compile(r"(?<![\w])@[A-Za-z0-9_.]{3,}")
 _PHONE = re.compile(r"(?<![\w.])\+?\d[\d\s().-]{7,}\d")
 _NUM = re.compile(r"\d+(?:[.,]\d+)*")
@@ -196,7 +203,11 @@ def validate_reply(
 
 def scrub_pii(text: str) -> str:
     """Replace e-mails, phone numbers, @handles and links with placeholders before storage."""
+    text = _EMAIL_OBF.sub("[email]", text)
     text = _EMAIL.sub("[email]", text)
+    text = _IBAN.sub(
+        lambda m: "[iban]" if sum(c.isdigit() for c in m.group()) >= 6 else m.group(), text
+    )
     text = _LINK.sub("[link]", text)
     text = _HANDLE.sub("[handle]", text)
     for ph in sorted(_phones(text), key=len, reverse=True):

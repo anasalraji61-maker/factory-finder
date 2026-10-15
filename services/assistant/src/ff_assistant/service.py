@@ -51,6 +51,23 @@ class Assistant:
         self.tools = Tools(self)
 
     async def handle(self, text: str, destination: Location | None = None, user_id: str | None = None) -> AssistantResult:
+        res = await self._handle(text, destination, user_id)
+        lang = res.parsed_query.language
+        ans = res.answer_text
+        if compose.ORDER_CLAIM.search(ans):  # the assistant never places orders: drop any line that claims it did
+            ans = "\n".join(ln for ln in ans.split("\n") if not compose.ORDER_CLAIM.search(ln)).strip()
+        if compose.ORDER_REQUEST.search(clean_text(text)) or compose.ORDER_REQUEST.search(text):
+            note = compose.no_order_note(lang)
+            ans = (ans + "\n" + note).strip()
+            if "order_not_placed" not in res.warnings:
+                res.warnings.append("order_not_placed")
+            cap = max(self.s.max_answer_chars, len(note) + 2)
+            if len(ans) > cap:  # keep the note: truncate the body, not the disclaimer
+                ans = compose.cap_text(ans[: -len(note) - 1].rstrip(), cap - len(note) - 1) + "\n" + note
+        res.answer_text = compose.cap_text(ans, self.s.max_answer_chars)
+        return res
+
+    async def _handle(self, text: str, destination: Location | None = None, user_id: str | None = None) -> AssistantResult:
         p = parse(text, self.gaz, destination)
         if guardrails.is_injection(text):  # never route, never call an LLM or a downstream service
             return AssistantResult(intent=Intent.HELP, parsed_query=p, answer_text=compose.help_text(p.language),

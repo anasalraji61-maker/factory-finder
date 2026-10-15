@@ -19,10 +19,10 @@ def run(text):
 @pytest.mark.parametrize(
     ("text", "lang"),
     [
-        ("Çin'den Basra'ya 5 ton plastik istiyorum", "en"),
+        ("Çin'den Basra'ya 5 ton plastik istiyorum", "ar"),  # unsupported language -> Arabic fallback
         ("می‌خواهم ۵ تن پلاستیک از چین به بصره", "ar"),
         ("دەمەوێت ٥ تەن پلاستیک لە چینەوە بۆ هەولێر", "ar"),
-        ("我想买五吨塑料颗粒，从中国运到巴士拉", "en"),
+        ("我想买五吨塑料颗粒，从中国运到巴士拉", "ar"),  # unsupported language -> Arabic fallback
     ],
 )
 def test_reply_language_follows_script(text, lang):
@@ -55,4 +55,4 @@ def test_private_message_refusal_follows_language():
     tr = run("sup_cn_002 tedarikçisine özel mesaj gönder")
     fa = run("پیام خصوصی به تامین‌کننده sup_cn_001 بفرست")
     assert "private_message_blocked" in tr.warnings and "private_message_blocked" in fa.warnings
-    assert tr.answer_text.isascii() and not fa.answer_text.isascii()
+    assert not tr.answer_text.isascii() and not fa.answer_text.isascii()  # both unsupported -> Arabic

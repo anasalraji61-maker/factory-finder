@@ -82,6 +82,15 @@ paths:
       responses:
         "200": {description: matches (best first), content: {application/json: {schema: {$ref: "#/components/schemas/HsSearchResponse"}}}}
         "422": {$ref: "#/components/responses/Error"}
+  /v1/hs/suggest:
+    get:
+      summary: Indicative HS-heading suggestions from a free-text goods description (ar/en/zh); never an official classification
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 100}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 20, default: 5}}
+      responses:
+        "200": {description: ranked suggestions (best first; may be empty), content: {application/json: {schema: {$ref: "#/components/schemas/HsSuggestResponse"}}}}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/hs/{code}:
     get:
       summary: One HS subheading by 6-digit code (dots and 8/10-digit national codes are truncated to 6)
@@ -144,6 +153,23 @@ components:
         items: {type: array, items: {$ref: "#/components/schemas/HsItem"}}
         total: {type: integer}
         destination_country: {type: string}
+        disclaimer: {type: string}
+    HsSuggestItem:
+      type: object
+      required: [hs6, description_en, description_ar, confidence, note]
+      properties:
+        hs6: {type: string, pattern: "^[0-9]{6}$"}
+        description_en: {type: string}
+        description_ar: {type: string}
+        confidence: {type: string, enum: [low, medium]}
+        note: {type: string, description: "Always states the suggestion is indicative, not an official classification"}
+    HsSuggestResponse:
+      type: object
+      required: [items, total, indicative, disclaimer]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/HsSuggestItem"}}
+        total: {type: integer}
+        indicative: {type: boolean, const: true}
         disclaimer: {type: string}
     HsDetailResponse:
       allOf:

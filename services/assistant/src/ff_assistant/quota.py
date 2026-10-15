@@ -21,6 +21,20 @@ class QuotaDecision:
     retry_after_s: int
 
 
+class BurstLimiter:
+    """Per-minute sliding-window limiter (in memory, per process), keyed like :class:`DailyQuota`."""
+
+    def __init__(self, per_user: int, per_anon: int, clock: Callable[[], float] = time.monotonic) -> None:
+        self.per_user, self.per_anon = per_user, per_anon
+        self._lim = WindowLimiter(window_seconds=60, mode="sliding", clock=clock, max_keys=MAX_KEYS, on_full="closed")
+
+    def hit(self, user_id: str | None, client: str = "unknown") -> QuotaDecision:
+        limit = self.per_user if user_id else self.per_anon
+        key = f"u:{user_id}" if user_id else f"a:{client}"
+        d = self._lim.hit_sync(key, limit)
+        return QuotaDecision(d.allowed, limit, d.remaining, int(d.retry_after) + 1 if not d.allowed else 0)
+
+
 class DailyQuota:
     """``hit``/``usage``/``forget`` are the synchronous in-memory API (tests, single process);
     ``ahit``/``ausage``/``aforget`` use Redis (``redis`` client) when given, else the same memory counters."""

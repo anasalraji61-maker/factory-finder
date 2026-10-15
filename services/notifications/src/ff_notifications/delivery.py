@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ff_notifications.adapters.email import EmailProvider
@@ -89,21 +89,16 @@ class DeliveryPipeline:
         cap = self.settings.push_daily_cap_per_user
         if cap <= 0:
             return False
-        since = now - timedelta(hours=24)
-        recent = [
-            d
-            for d in await self.store.list_deliveries(owner_id, limit=500)
-            if d.channel == PUSH
-            and d.device_id == device_id
-            and d.created_at >= since
-            and d.status is not DeliveryStatus.SKIPPED
-        ]
-        return len(recent) >= cap
+        recent = await self.store.count_recent_deliveries(
+            owner_id, channel=PUSH, device_id=device_id, since=now - timedelta(hours=24)
+        )
+        return recent >= cap
 
     async def enqueue_digests(self) -> int:
         if self.email is None:
             return 0
         now, created = self.clock(), 0
+        utc_day = now.astimezone(UTC).date().isoformat()  # tz changes cannot mint a 2nd digest
         async for prefs in self.store.iter_owners_with_email_prefs():
             local = now.astimezone(ZoneInfo(prefs.timezone))
             if local.hour < DIGEST_HOUR:
@@ -119,7 +114,7 @@ class DeliveryPipeline:
             if not ids:
                 continue
             d = Delivery(
-                id=delivery_id("digest", EMAIL, prefs.owner_id, local.date().isoformat()),
+                id=delivery_id("digest", EMAIL, prefs.owner_id, utc_day),
                 owner_id=prefs.owner_id,
                 channel=EMAIL,
                 kind="digest",

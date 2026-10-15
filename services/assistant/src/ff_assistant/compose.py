@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 from ff_assistant.domain.gazetteer import Gazetteer
@@ -67,6 +68,32 @@ def message_refusal(lang: str = "ar") -> str:
 def rfq_text(lang: str = "ar") -> str:
     return msg(lang, "لنشر طلب شراء واستلام عروض الموردين، استخدم تبويب الطلبات في التطبيق. جهّز المنتج والكمية ومدينة التسليم.",
                "To post a purchase request and receive supplier offers, use the Requests tab in the app. Have the product, quantity and delivery city ready.")
+
+
+ORDER_REQUEST = re.compile(
+    r"(?i)(\b(place|make|submit|create|confirm)\b.{0,20}\b(an? |my |the )?(order|purchase)\b|\b(buy|purchase)\b.{0,20}\b(it|this|now)\b"
+    r"|\bcheckout\b|\bconfirm (my |the )?(order|purchase)\b"
+    r"|(اطلب|أطلب|اشتر|اشتري|اشترِ|اكمل|أكمل|ثبت|أكد|اكد|أكّد)\s.{0,30}(طلب|شراء|المنتج|البضاعة|الشحنة)|(اطلب|اشتري|اشترِ) لي)"
+)
+ORDER_CLAIM = re.compile(
+    r"(?i)(order (has been |was |is )?(placed|confirmed|created|submitted)|purchase (completed|confirmed)"
+    r"|تم (تقديم|إنشاء|تأكيد|إرسال|شراء|وضع) ال?(طلب|شراء)|تم الشراء|اشتريت)"
+)
+
+
+def no_order_note(lang: str = "ar") -> str:
+    return msg(lang, "لم أُنشئ أي طلب ولا أستطيع الشراء نيابةً عنك. هذه معلومات فقط؛ للطلب انشر طلب شراء من تبويب الطلبات أو تواصل مع المورد بنفسك.",
+               "I have not placed any order and cannot buy on your behalf. This is information only; post a request from the Requests tab or contact the supplier yourself.")
+
+
+def cap_text(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    cut = text[: limit - 1]
+    nl = cut.rfind("\n")
+    if nl >= limit // 2:
+        cut = cut[:nl]
+    return cut.rstrip() + "…"
 
 
 def msg(lang: str, ar: str, en: str) -> str:

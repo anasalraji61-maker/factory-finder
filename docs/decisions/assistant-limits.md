@@ -1,0 +1,1 @@
+2026-10-15 | Unsupported languages (Turkish, Chinese, French, Cyrillic...) now reply in Arabic instead of English; only ASCII Latin text maps to en | brief: Arabic-first fallback; ASCII Turkish cannot be told apart from English

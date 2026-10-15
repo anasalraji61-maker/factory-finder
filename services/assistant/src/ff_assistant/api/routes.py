@@ -41,6 +41,13 @@ def quota_client(request: Request) -> str:
              responses={429: {"description": "Daily per-user quota exceeded (code quota_exceeded, Retry-After)"}})
 async def query(body: AssistantRequest, request: Request, response: Response):
     user_id = caller_id(request)
+    burst = request.app.state.burst.hit(user_id, quota_client(request))
+    if not burst.allowed:
+        return JSONResponse(
+            status_code=429, headers={"Retry-After": str(burst.retry_after_s)},
+            content={"error": {"code": "rate_limited", "message": "too many requests, slow down",
+                               "details": {"limit_per_minute": burst.limit, "retry_after_seconds": burst.retry_after_s}}},
+        )
     decision = await request.app.state.quota.ahit(user_id, quota_client(request))
     if not decision.allowed:
         return JSONResponse(

@@ -163,5 +163,16 @@ never converted implicitly), `null` when the request has no target price. Exampl
 curl -s $GW/v1/requests/REQUEST_ID/offers -H "Authorization: Bearer $TOKEN"   # each offer has price and comparable
 ```
 
+**More validated examples (`contracts/examples/`).** Real mock-service responses, checked by `make contract-examples`:
+- `tracking.shipment_create.request.json` / `.response.json`: `POST /v1/shipments` and the 201 `Shipment` with its timeline.
+- `logistics.landed_cost_forwarder_quote.response.json`: `freight_override` with `source: forwarder_quote`; the `main_leg` line is exact (`quoted: true`, `estimate: false`).
+- `freight.comparison.response.json`: comparison rows with `rating_confidence`, `price_delta`, `cheaper_quote_ids`.
+- `payments.invoice_amount_mismatch_review.response.json`: invoice kept `awaiting_payment` with `status_reason: amount_mismatch_review` after a wrong-amount webhook.
+- `notifications.alerts_price_drop.response.json`: `GET /v1/alerts` after a 10% price drop (rule `price_drop`).
+- `feed.post_create.response.json`: a supplier post (201).
+- `media.upload_image.response.json`: multipart image upload (201).
+- `geo.distance_sea_avoid.response.json`: `GET /v1/distance?mode=sea&avoid=suez,bab_el_mandeb`.
+- `rfq.market_page.response.json`: `GET /v1/requests?scope=public&page_size=2` with `next_cursor` for `?cursor=`.
+
 ## Errors
 Failures use the shared error shape (`error.code`, e.g. `not_found`, `deal_not_reviewable`); 401 without a token, 422 for invalid bodies, 429 with `Retry-After`.

@@ -1,0 +1,42 @@
+{
+  "spec": "geo.yaml",
+  "pointer": "#/components/schemas/Distance",
+  "description": "GET /v1/distance?mode=sea&avoid=suez,bab_el_mandeb for Shenzhen to Rotterdam (routed around the Cape).",
+  "value": {
+    "mode": "sea",
+    "distance_km": 28164.3,
+    "straight_line_km": 9318.7,
+    "duration_hours": 1083.2,
+    "method": "shipping-lane waypoint graph",
+    "road_factor": null,
+    "via": [
+      "Pearl River Estuary",
+      "Taiwan Strait",
+      "East China Sea",
+      "North Pacific West",
+      "North Pacific East",
+      "US West Coast",
+      "Baja West Offshore",
+      "Cabo San Lucas Offshore",
+      "Mexico Pacific",
+      "Central America Pacific",
+      "Gulf of Panama South",
+      "Panama Pacific",
+      "Panama Atlantic",
+      "Cartagena Approach",
+      "Anegada Passage",
+      "Mid Atlantic",
+      "North Atlantic",
+      "English Channel",
+      "Dover Strait",
+      "North Sea"
+    ],
+    "is_estimate": true,
+    "avoided": [
+      "bab_el_mandeb",
+      "suez"
+    ],
+    "confidence": "low",
+    "as_of": "2026-10"
+  }
+}

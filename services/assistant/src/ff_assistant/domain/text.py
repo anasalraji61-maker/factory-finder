@@ -96,6 +96,7 @@ _FOLD_MAP = str.maketrans(
 
 _ARABIC_LETTER_RE = re.compile("[ء-يٱ-ۓ]")
 _LATIN_LETTER_RE = re.compile("[A-Za-zÀ-ɏ]")
+_ACCENTED_LATIN_RE = re.compile("[À-ɏ]")
 _HAN_LETTER_RE = re.compile("[㐀-䶿一-鿿豈-﫿]")
 _LATIN_WORD = "A-Za-zÀ-ɏ"
 # Turkish case suffixes after an apostrophe become direction markers: Basra'ya -> "to Basra".
@@ -149,8 +150,9 @@ def detect_language(clean: str) -> Literal["ar", "en"]:
     arabic = len(_ARABIC_LETTER_RE.findall(clean))
     latin = len(_LATIN_LETTER_RE.findall(clean))
     han = len(_HAN_LETTER_RE.findall(clean))
-    # Arabic-script text (Arabic, Persian, Kurdish) -> ar; Latin (incl. Turkish) and Chinese -> en templates
-    return "en" if latin + han > arabic else "ar"
+    # Only Arabic and English are supported. Arabic-script text -> ar; plain-ASCII Latin text -> en. Anything else
+    # (Chinese, Cyrillic, accented Latin such as Turkish/French, ...) falls back to Arabic, the default language.
+    return "en" if latin > arabic and not han and not _ACCENTED_LATIN_RE.search(clean) else "ar"
 
 
 def is_arabic(word: str) -> bool:
