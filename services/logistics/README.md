@@ -35,3 +35,26 @@ Endpoints: `POST /v1/compliance/checklist`, `GET /v1/compliance/countries`, `GET
 Data: `data/compliance.json` (generated once from reviewed tables, now edited by hand). Profiles: IQ, SA, AE, KW, QA, OM, BH, TR, JO, EG, EU (27 members resolve to it), US; any other country returns the generic `ZZ` baseline with `covered=false`, confidence low. Product resolution: HS chapter -> product group (every chapter 01-97 maps to exactly one group), else `category` alias, else generic goods (confidence drops, assumption listed). Each profile has `source`, `as_of`, `confidence`; documents/restrictions may override confidence and carry filters (`groups`, `hs_prefixes`, `origins`, `modes`, `condition`). Country documents override same-id global ones.
 
 Adding a country: add a profile under `countries` (same shape as IQ), run `tests/test_compliance.py` (shape + ar/en parity tests iterate every profile). No network, no env vars.
+
+## Environment reference (complete)
+Every setting in `src/ff_logistics/config.py` (`Settings`, case-insensitive env names). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_LOGISTICS_GEO_PROVIDER` | http |
+| `FF_LOGISTICS_GEO_URL` | http://localhost:8103 |
+| `FF_LOGISTICS_GEO_CACHE_TTL_SECONDS` | 600.0 |
+| `FF_LOGISTICS_FX_PROVIDER` | mock |
+| `FF_LOGISTICS_FX_URL` | https://api.frankfurter.dev/v1/latest |
+| `FF_LOGISTICS_FX_CACHE_TTL_SECONDS` | 21600 |
+| `FF_INTERNAL_TOKEN` | unset |
+| `FF_LOGISTICS_FREIGHT_PROVIDER` | mock |
+| `FF_LOGISTICS_FREIGHT_URL` | unset |
+| `FF_LOGISTICS_FREIGHT_API_KEY` | unset |
+| `FF_LOGISTICS_FREIGHT_MIN_INTERVAL_S` | 3.0 |
+| `FF_LOGISTICS_FREIGHT_CACHE_TTL_SECONDS` | 21600 |
+| `FF_LOGISTICS_FREIGHT_MAX_CALLS_PER_QUOTE` | 6 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).
+
+Read straight from the environment (not in `Settings`): `FF_LOGISTICS_KILL_SWITCH` and `FF_LOGISTICS_FREIGHT_DISABLED` (truthy = the live freight adapter is skipped and the mock is used).

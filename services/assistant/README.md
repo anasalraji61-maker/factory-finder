@@ -20,3 +20,36 @@ Env (prefix `FF_ASSISTANT_`): `CLIENTS=http|mock`, `SOURCING_URL`, `LOGISTICS_UR
 
 ## Ops (logging / readiness)
 `GET /ready` (unauthenticated, exempt from the internal token): always 200 (no database). Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
+
+## Environment reference (complete)
+Every setting in `src/ff_assistant/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_ASSISTANT_CLIENTS` | http |
+| `FF_ASSISTANT_SOURCING_URL` | http://localhost:8101 |
+| `FF_ASSISTANT_LOGISTICS_URL` | http://localhost:8102 |
+| `FF_ASSISTANT_TRUST_URL` | http://localhost:8104 |
+| `FF_ASSISTANT_TRACKING_URL` | http://localhost:8107 |
+| `FF_ASSISTANT_RFQ_URL` | http://localhost:8105 |
+| `FF_ASSISTANT_HTTP_TIMEOUT_S` | 4.0 |
+| `FF_INTERNAL_TOKEN` / `FF_ASSISTANT_INTERNAL_TOKEN` | unset |
+| `FF_ASSISTANT_TRUST_CLIENT_IP_HEADER` | False |
+| `FF_ASSISTANT_DEFAULT_CURRENCY` | USD |
+| `FF_ASSISTANT_MAX_LISTINGS` | 3 |
+| `FF_ASSISTANT_SEARCH_PAGE_SIZE` | 10 |
+| `FF_ASSISTANT_QUOTA_PER_DAY` | 200 |
+| `FF_ASSISTANT_ANON_QUOTA_PER_DAY` | 30 |
+| `FF_ASSISTANT_LLM` | off |
+| `FF_ASSISTANT_LLM_API_KEY` | unset |
+| `FF_ASSISTANT_LLM_MODEL` | claude-haiku-5-5 |
+| `FF_ASSISTANT_LLM_BASE_URL` | https://api.anthropic.com |
+| `FF_ASSISTANT_LLM_TIMEOUT_S` | 6.0 |
+| `FF_ASSISTANT_LLM_MAX_TOKENS` | 300 |
+| `FF_ASSISTANT_LLM_MAX_INPUT_CHARS` | 1500 |
+| `FF_ASSISTANT_LLM_MIN_CONFIDENCE` | 0.5 |
+| `FF_ASSISTANT_LLM_REWRITE` | False |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).
+
+Quota counters use `ratelimit.py` (self-contained copy of `packages/py-common/src/ff_common/ratelimit.py`), UTC-day window. In-memory by default; set `FF_REDIS_URL` (or `FF_ASSISTANT_REDIS_URL`; needs `pip install ff-assistant[redis]`) to share them across replicas. Redis outage falls back to per-process counting with a warning.

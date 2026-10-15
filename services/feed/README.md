@@ -1,6 +1,6 @@
 # feed (port 8113)
 
-Social side of the app: supplier/factory **posts**, **follow** / unfollow, a personalized **home feed** (followed suppliers newest first, falling back to trending), **trending**, **likes**, flat **comments**, **reports** with automatic hiding, and admin moderation. Contract: `contracts/openapi/feed.yaml`. Reached through the gateway at `/v1/feed/*` (the admin routes under `/v1/admin/feed/*` are service-local and not routed by the gateway).
+Social side of the app: supplier/factory **posts**, **follow** / unfollow, a personalized **home feed** (followed suppliers newest first, falling back to trending), **trending**, **likes**, flat **comments**, **reports** with automatic hiding, and admin moderation. Contract: `contracts/openapi/feed.yaml`. Reached through the gateway at `/v1/feed/*` (the admin routes under `/v1/admin/feed/*` are reached through the gateway's allow-listed admin passthrough: `X-Admin-Token` = `FF_GATEWAY_ADMIN_TOKEN`, and the gateway injects `FF_FEED_ADMIN_TOKEN`; 404 when either is unset).
 
 - Identity: `X-User-Id` (required, except anonymous `GET /v1/feed/trending`); posting needs the gateway-verified `X-Supplier-Id` (403 `supplier_required` otherwise). Neither is ever read from a body.
 - Posts: text 1-2000 chars, <= 5 media URLs that must be media-service paths (`/v1/media/files/<32 hex>.<jpg|png|webp>`; absolute only under `FF_FEED_MEDIA_BASE_URL`), <= 5 tags, optional `listing_ref` (not verified against sourcing).
@@ -17,3 +17,30 @@ Env (prefix `FF_FEED_`): `DATABASE_URL`, `DB_AUTO_CREATE`, `ADMIN_TOKEN`, `MEDIA
 
 ## Ops
 `GET /ready` (unauthenticated): 503 when the database is unreachable. One JSON log line per request (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or bodies. `X-Request-Id` is accepted or generated and echoed. Code: `obs.py` (self-contained copy).
+
+## Environment reference (complete)
+Every setting in `src/ff_feed/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_FEED_DATABASE_URL` | sqlite+aiosqlite:///./feed.db |
+| `FF_FEED_DB_AUTO_CREATE` | unset |
+| `FF_INTERNAL_TOKEN` / `FF_FEED_INTERNAL_TOKEN` | unset |
+| `FF_FEED_ADMIN_TOKEN` | unset |
+| `FF_FEED_MEDIA_BASE_URL` / `FF_MEDIA_PUBLIC_BASE_URL` | unset |
+| `FF_FEED_REPORT_HIDE_THRESHOLD` | 3 |
+| `FF_FEED_REPORT_MIN_ACCOUNT_AGE_SECONDS` | 86400 |
+| `FF_FEED_MAX_POSTS_PER_SUPPLIER` | 500 |
+| `FF_FEED_MAX_FOLLOWS_PER_USER` | 500 |
+| `FF_FEED_MAX_COMMENTS_PER_POST` | 1000 |
+| `FF_FEED_MAX_PAGE_SIZE` | 50 |
+| `FF_FEED_DEFAULT_PAGE_SIZE` | 20 |
+| `FF_FEED_TRENDING_WINDOW_DAYS` | 14 |
+| `FF_FEED_RATE_WINDOW_SECONDS` | 3600 |
+| `FF_FEED_RATE_POSTS` | 10 |
+| `FF_FEED_RATE_COMMENTS` | 30 |
+| `FF_FEED_RATE_LIKES` | 200 |
+| `FF_FEED_RATE_FOLLOWS` | 60 |
+| `FF_FEED_RATE_REPORTS` | 20 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).

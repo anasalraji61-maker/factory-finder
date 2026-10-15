@@ -411,3 +411,15 @@ def test_media_attachments_absolute_urls_refused_without_allowed_hosts(client):
     r = _send(client, cid, attachments=[{"url": "https://evil.example.com" + MEDIA, "kind": "image"}])
     assert r.status_code == 422 and r.json()["error"]["code"] == "attachment_url_not_allowed"
     assert _send(client, cid, attachments=[{"url": MEDIA, "kind": "image"}]).status_code == 201
+
+
+def test_websocket_inbound_frame_rate_limit():
+    with make_client(ws_inbound_rate_limit=2) as c:
+        cid = new_conv(c)["id"]
+        with c.websocket_connect(f"/v1/ws/conversations/{cid}?user_id=sup1") as ws:
+            assert ws.receive_json()["type"] == "ready"
+            for _ in range(2):
+                ws.send_json({"type": "ping"})
+                assert ws.receive_json()["type"] == "pong"
+            ws.send_json({"type": "ping"})
+            assert ws.receive_json()["code"] == "rate_limited"

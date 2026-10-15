@@ -31,3 +31,45 @@ Env (prefix `FF_NOTIFICATIONS_`): `DATABASE_URL`, `SOURCING_BASE_URL`, `USE_MOCK
 The digest is only ever sent to the verified `digest_email`. Unsubscribe = disable the `email` channel / clear `digest_email` in prefs
 (no public unsubscribe links). Legacy unverified `email` values are ignored. State lives in table `email_verifications` (migration 0003);
 limits are enforced per process (single replica; use a DB lock/Redis before scaling out).
+
+## Retention
+Alerts older than `FF_NOTIFICATIONS_ALERT_RETENTION_DAYS` (180) and delivery rows older than `FF_NOTIFICATIONS_DELIVERY_RETENTION_DAYS` (30) are pruned by the scheduler loop (`FF_NOTIFICATIONS_SCHEDULER_ENABLED=true`, every `FF_NOTIFICATIONS_SCHEDULER_INTERVAL_SECONDS`, 900); with the scheduler off nothing is pruned.
+
+## Environment reference (complete)
+Every setting in `src/ff_notifications/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_NOTIFICATIONS_DATABASE_URL` | sqlite+aiosqlite:///./notifications.db |
+| `FF_NOTIFICATIONS_DB_AUTO_CREATE` | unset |
+| `FF_INTERNAL_TOKEN` / `FF_NOTIFICATIONS_INTERNAL_TOKEN` | unset |
+| `FF_NOTIFICATIONS_SOURCING_BASE_URL` | http://localhost:8101 |
+| `FF_NOTIFICATIONS_SOURCING_TIMEOUT_SECONDS` | 5.0 |
+| `FF_NOTIFICATIONS_USE_MOCK_SOURCING` | False |
+| `FF_NOTIFICATIONS_COOLDOWN_HOURS` | 24.0 |
+| `FF_NOTIFICATIONS_DEFAULT_DROP_THRESHOLD_PCT` | 5 |
+| `FF_NOTIFICATIONS_EQUIVALENT_MIN_SAVING_PCT` | 0 |
+| `FF_NOTIFICATIONS_MAX_WATCHES_PER_USER` | 100 |
+| `FF_NOTIFICATIONS_MAX_ALERTS_PER_USER` | 1000 |
+| `FF_NOTIFICATIONS_ALERT_RETENTION_DAYS` | 180 |
+| `FF_NOTIFICATIONS_DELIVERY_RETENTION_DAYS` | 30 |
+| `FF_NOTIFICATIONS_PAGE_SIZE_DEFAULT` | 20 |
+| `FF_NOTIFICATIONS_PAGE_SIZE_MAX` | 100 |
+| `FF_NOTIFY_PUSH` / `FF_NOTIFICATIONS_PUSH` | off |
+| `FF_NOTIFY_EMAIL` / `FF_NOTIFICATIONS_EMAIL` | off |
+| `FF_NOTIFY_FCM_PROJECT_ID` | unset |
+| `FF_NOTIFY_FCM_CREDENTIALS_JSON` | unset |
+| `FF_NOTIFY_FCM_CREDENTIALS_FILE` | unset |
+| `FF_NOTIFY_SMTP_HOST` | unset |
+| `FF_NOTIFY_SMTP_PORT` | 587 |
+| `FF_NOTIFY_SMTP_USER` | unset |
+| `FF_NOTIFY_SMTP_PASSWORD` | unset |
+| `FF_NOTIFY_SMTP_FROM` | unset |
+| `FF_NOTIFICATIONS_MAX_DEVICES_PER_USER` | 10 |
+| `FF_NOTIFICATIONS_DELIVERY_MAX_ATTEMPTS` | 5 |
+| `FF_NOTIFICATIONS_DELIVERY_BACKOFF_BASE_SECONDS` | 30.0 |
+| `FF_NOTIFICATIONS_DELIVERY_BACKOFF_MAX_SECONDS` | 3600.0 |
+| `FF_NOTIFICATIONS_SCHEDULER_ENABLED` | False |
+| `FF_NOTIFICATIONS_SCHEDULER_INTERVAL_SECONDS` | 900.0 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).

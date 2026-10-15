@@ -14,6 +14,7 @@ from ff_assistant.config import Settings, get_settings
 from ff_assistant.llm import LlmClient, build_llm
 from ff_assistant.obs import install_observability, ready_response
 from ff_assistant.quota import DailyQuota
+from ff_assistant.ratelimit import make_redis_client
 from ff_assistant.service import Assistant
 
 
@@ -38,7 +39,7 @@ def create_app(settings: Settings | None = None, clients: Clients | None = None,
     app.state.assistant = Assistant(c, s, llm=llm if llm is not None else build_llm(s))
 
     app.state.settings = s
-    app.state.quota = quota or DailyQuota(s.quota_per_day, s.anon_quota_per_day)
+    app.state.quota = quota or DailyQuota(s.quota_per_day, s.anon_quota_per_day, redis=make_redis_client(s.redis_url))
 
     @app.middleware("http")
     async def internal_token(request: Request, call_next):

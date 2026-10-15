@@ -3,7 +3,7 @@ info:
   title: Factory Finder - sourcing
   version: 0.1.0
 servers:
-  - url: http://localhost:8002
+  - url: http://localhost:8101
 paths:
   /health:
     get:

@@ -8,7 +8,7 @@ de-duplicates, enriches with trust bands and ranks. Bilingual (Arabic + English)
 cd services/sourcing
 ../../.venv/bin/python -m pytest -q
 ../../.venv/bin/ruff check .
-../../.venv/bin/uvicorn ff_sourcing.main:app --port 8002
+../../.venv/bin/uvicorn ff_sourcing.main:app --port 8101   # compose + every client default use 8101
 ```
 
 ## Endpoints (contract: `contracts/openapi/sourcing.yaml`)
@@ -70,7 +70,7 @@ Statuses `pending_review` and `hidden` take a listing out of search/detail/suppl
 Env: `ADMIN_TOKEN`, `REPORT_RATE_PER_HOUR`, `REPORT_REVIEW_THRESHOLD`, `REPORTER_HASH_KEY`. Migration `0002_moderation`.
 
 ## Env (prefix `FF_SOURCING_`)
-`ENABLED_SOURCES` (default `mock`; e.g. `mock,alibaba`), `ADAPTER_TIMEOUT_S` (3), `CACHE_TTL_S` (60),
+`ENABLED_SOURCES` (default `mock,native`; e.g. `mock,native,alibaba`), `ADAPTER_TIMEOUT_S` (3), `CACHE_TTL_S` (60),
 `TRUST_MODE` (`mock`|`http`|`off`), `TRUST_BASE_URL`, `TRUST_TIMEOUT_S` (0.8), `MIN_REQUEST_INTERVAL_S` (3),
 `USER_AGENT`, and credentials (empty = adapter unconfigured): `ALIBABA_APP_KEY/_APP_SECRET`,
 `ALIEXPRESS_APP_KEY/_APP_SECRET/_TRACKING_ID`, `MIC_API_BASE/_API_KEY/_ALLOW_PUBLIC_PAGES`,
@@ -128,3 +128,62 @@ listing and with account erasure (`counts.analytics_rows_deleted`). Env: `ANALYT
 `ANALYTICS_DEDUPE_S`, `ANALYTICS_EVENT_RATE_PER_MIN`, `ANALYTICS_UNIQUE_CAP`, `ANALYTICS_MAX_SETS`, `ANALYTICS_DEDUPE_MAX`,
 `ANALYTICS_RETENTION_DAYS`. Code: `analytics.py`, `api/analytics.py`. Gateway: events are public (optional bearer) and get a
 trusted-proxy-resolved `X-Client-Ip`.
+
+## Environment reference (complete)
+Every setting in `src/ff_sourcing/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_SOURCING_ENABLED_SOURCES` | mock,native |
+| `FF_SOURCING_ADAPTERS` | unset |
+| `FF_SOURCING_ADAPTER_TIMEOUT_S` | 3.0 |
+| `FF_SOURCING_LICENSED_MAPPINGS` | unset |
+| `FF_SOURCING_LICENSED_ALLOW_EXAMPLE` | False |
+| `FF_SOURCING_CACHE_TTL_S` | 60.0 |
+| `FF_SOURCING_TRUST_CACHE_TTL_S` | 300.0 |
+| `FF_SOURCING_RECO_CACHE_TTL_S` | 60.0 |
+| `FF_SOURCING_RECO_RESPONSE_TTL_S` | 30.0 |
+| `FF_SOURCING_RECO_CACHE_MAX` | 256 |
+| `FF_SOURCING_PROVIDER_CONCURRENCY` | 6 |
+| `FF_SOURCING_RECO_BUDGET_S` | 5.0 |
+| `FF_SOURCING_DATABASE_URL` | sqlite+aiosqlite:///./sourcing.db |
+| `FF_SOURCING_DB_AUTO_CREATE` | unset |
+| `FF_SOURCING_INTERNAL_TOKEN` | unset |
+| `FF_SOURCING_MAX_LISTINGS_PER_SUPPLIER` | 200 |
+| `FF_SOURCING_CREATE_RATE_PER_HOUR` | 30 |
+| `FF_SOURCING_ADMIN_TOKEN` | unset |
+| `FF_SOURCING_REPORTER_HASH_KEY` | ff-sourcing-reporter |
+| `FF_SOURCING_REPORT_RATE_PER_HOUR` | 10 |
+| `FF_SOURCING_REPORT_REVIEW_THRESHOLD` | 3 |
+| `FF_SOURCING_PRICE_HISTORY_DEDUPE_HOURS` | 6.0 |
+| `FF_SOURCING_PRICE_HISTORY_MAX_POINTS` | 500 |
+| `FF_SOURCING_PRICE_HISTORY_RETENTION_DAYS` | 400 |
+| `FF_SOURCING_ANALYTICS_HASH_KEY` | unset |
+| `FF_SOURCING_ANALYTICS_DEDUPE_S` | 1800.0 |
+| `FF_SOURCING_ANALYTICS_EVENT_RATE_PER_MIN` | 60 |
+| `FF_SOURCING_ANALYTICS_UNIQUE_CAP` | 2000 |
+| `FF_SOURCING_ANALYTICS_MAX_SETS` | 20000 |
+| `FF_SOURCING_ANALYTICS_DEDUPE_MAX` | 50000 |
+| `FF_SOURCING_ANALYTICS_RETENTION_DAYS` | 400 |
+| `FF_SOURCING_TRUST_MODE` | mock |
+| `FF_SOURCING_TRUST_BASE_URL` | http://localhost:8104 |
+| `FF_SOURCING_TRUST_TIMEOUT_S` | 0.8 |
+| `FF_SOURCING_USER_AGENT` | FactoryFinderBot/0.1 (+https://github.com/factory-finder;... |
+| `FF_SOURCING_MIN_REQUEST_INTERVAL_S` | 3.0 |
+| `FF_SOURCING_ALIBABA_APP_KEY` | unset |
+| `FF_SOURCING_ALIBABA_APP_SECRET` | unset |
+| `FF_SOURCING_ALIBABA_API_BASE` | https://openapi-api.alibaba.com |
+| `FF_SOURCING_ALIEXPRESS_APP_KEY` | unset |
+| `FF_SOURCING_ALIEXPRESS_APP_SECRET` | unset |
+| `FF_SOURCING_ALIEXPRESS_TRACKING_ID` | unset |
+| `FF_SOURCING_ALIEXPRESS_API_BASE` | https://api-sg.aliexpress.com/sync |
+| `FF_SOURCING_MIC_API_KEY` | unset |
+| `FF_SOURCING_MIC_API_BASE` | unset |
+| `FF_SOURCING_MIC_ALLOW_PUBLIC_PAGES` | False |
+| `FF_SOURCING_S1688_APP_KEY` | unset |
+| `FF_SOURCING_S1688_APP_SECRET` | unset |
+| `FF_SOURCING_S1688_API_BASE` | https://gw.open.1688.com/openapi |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).
+
+Read straight from the environment (not in `Settings`): `FF_SOURCING_KILL_SWITCH` (all real adapters), `FF_SOURCING_ALIBABA_OPENAPI_DISABLED`, `FF_SOURCING_ALIBABA_ACCESS_TOKEN` (the `alibaba_openapi` adapter also reads `FF_SOURCING_ALIBABA_APP_KEY` / `FF_SOURCING_ALIBABA_APP_SECRET` from the environment).

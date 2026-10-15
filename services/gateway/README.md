@@ -46,3 +46,58 @@ With the admin token set (404 unset / 401 wrong): `GET /v1/admin/overview` (`pen
 ## Account deletion and data export (store requirements)
 `DELETE /v1/me` (body `{"password"}` or `{"refresh_token"}`) revokes every session, anonymizes the user row (id kept) and erases/anonymizes the user's data in all services through durable `deletion_jobs` (retried with backoff by a background loop; `GET /v1/admin/account-deletions` lists open ones). `GET /v1/me/export` streams a size-capped JSON bundle of the profile plus every service's export, reporting failures per service. Both are rate limited per user. Settings: `FF_GATEWAY_DELETION_GRACE_DAYS` (0), `PRIVACY_RATE_LIMIT_PER_MINUTE` (3), `PRIVACY_TIMEOUT_SECONDS` (10), `EXPORT_MAX_BYTES` (5 MiB), `DELETION_MAX_ATTEMPTS` (12), `DELETION_WORKER_INTERVAL_SECONDS` (60). Services expose `POST /v1/internal/users/{id}/export` and `DELETE /v1/internal/users/{id}/data` (internal token, 404 otherwise); the gateway does not route `/v1/internal/*`. Retention exceptions: `docs/decisions/account-deletion.md`.
 
+## Environment reference (complete)
+Every setting in `src/ff_gateway/config.py` (`Settings`, case-insensitive env names). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_GATEWAY_JWT_SECRET` | unset |
+| `FF_GATEWAY_JWT_ALGORITHM` | HS256 |
+| `FF_GATEWAY_ACCESS_TTL_SECONDS` | 900 |
+| `FF_GATEWAY_REFRESH_TTL_SECONDS` | 2592000 |
+| `FF_GATEWAY_DATABASE_URL` | sqlite+aiosqlite:///./gateway.db |
+| `FF_GATEWAY_UPSTREAMS` | {} |
+| `FF_INTERNAL_TOKEN` | unset |
+| `FF_SOURCING_ADMIN_TOKEN` | unset |
+| `FF_MEDIA_ADMIN_TOKEN` | unset |
+| `FF_PAYMENTS_ADMIN_TOKEN` | unset |
+| `FF_TRUST_ADMIN_TOKEN` | unset |
+| `FF_FREIGHT_ADMIN_TOKEN` | unset |
+| `FF_FEED_ADMIN_TOKEN` | unset |
+| `FF_GATEWAY_UPSTREAM_TIMEOUT_SECONDS` | 15.0 |
+| `FF_GATEWAY_WS_TICKET_TTL_SECONDS` | 30 |
+| `FF_GATEWAY_WS_TICKET_MAX` | 10000 |
+| `FF_GATEWAY_WS_ALLOW_TOKEN_PARAM` | True |
+| `FF_GATEWAY_MAX_BODY_BYTES` | 10485760 |
+| `FF_GATEWAY_RATE_LIMIT_PER_MINUTE` | 300 |
+| `FF_GATEWAY_MEDIA_RATE_LIMIT_PER_MINUTE` | 3000 |
+| `FF_GATEWAY_USER_WRITE_RATE_LIMIT_PER_MINUTE` | 120 |
+| `FF_GATEWAY_RATE_LIMIT_MAX_KEYS` | 50000 |
+| `FF_GATEWAY_TRUSTED_PROXIES` | unset |
+| `FF_GATEWAY_AUTH_RATE_LIMIT_PER_MINUTE` | 30 |
+| `FF_GATEWAY_CORS_ORIGINS` | [] |
+| `FF_GATEWAY_ADMIN_TOKEN` | unset |
+| `FF_GATEWAY_SERVE_ADMIN` | False |
+| `FF_GATEWAY_ADMIN_DIR` | unset |
+| `FF_GATEWAY_HOME_CLIENT` | http |
+| `FF_GATEWAY_BCRYPT_ROUNDS` | 12 |
+| `FF_GATEWAY_REDIS_URL` | unset |
+| `FF_GATEWAY_REQUIRE_EMAIL_VERIFIED` | False |
+| `FF_GATEWAY_EMAIL_VERIFICATION_TTL_SECONDS` | 86400 |
+| `FF_GATEWAY_RESEND_VERIFICATION_PER_MINUTE` | 1 |
+| `FF_GATEWAY_MAIL_BACKEND` | off |
+| `FF_GATEWAY_MAIL_FROM` | no-reply@localhost |
+| `FF_GATEWAY_SMTP_HOST` | unset |
+| `FF_GATEWAY_SMTP_PORT` | 587 |
+| `FF_GATEWAY_SMTP_USER` | unset |
+| `FF_GATEWAY_SMTP_PASSWORD` | unset |
+| `FF_GATEWAY_SMTP_STARTTLS` | True |
+| `FF_GATEWAY_VERIFY_URL_TEMPLATE` | unset |
+| `FF_GATEWAY_DELETION_GRACE_DAYS` | 0 |
+| `FF_GATEWAY_PRIVACY_RATE_LIMIT_PER_MINUTE` | 3 |
+| `FF_GATEWAY_PRIVACY_TIMEOUT_SECONDS` | 10.0 |
+| `FF_GATEWAY_EXPORT_MAX_BYTES` | 5242880 |
+| `FF_GATEWAY_DELETION_MAX_ATTEMPTS` | 12 |
+| `FF_GATEWAY_DELETION_WORKER_INTERVAL_SECONDS` | 60.0 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start unless `FF_GATEWAY_JWT_SECRET` and `FF_GATEWAY_ADMIN_TOKEN` are set (see `docs/OPS.md`).

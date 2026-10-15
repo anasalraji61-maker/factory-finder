@@ -41,7 +41,7 @@ def quota_client(request: Request) -> str:
              responses={429: {"description": "Daily per-user quota exceeded (code quota_exceeded, Retry-After)"}})
 async def query(body: AssistantRequest, request: Request, response: Response):
     user_id = caller_id(request)
-    decision = request.app.state.quota.hit(user_id, quota_client(request))
+    decision = await request.app.state.quota.ahit(user_id, quota_client(request))
     if not decision.allowed:
         return JSONResponse(
             status_code=429, headers={"Retry-After": str(decision.retry_after_s)},
@@ -60,10 +60,10 @@ internal = APIRouter(prefix="/v1/internal", tags=["internal"])
 async def export_user(user_id: str, request: Request) -> dict:
     """Account export (internal token only). The assistant stores no conversations; only the daily quota counter exists."""
     return {"service": "assistant", "user_id": user_id, "truncated": False,
-            "data": {"quota_used_today": request.app.state.quota.usage(user_id), "conversations_stored": False}}  # fmt: skip
+            "data": {"quota_used_today": await request.app.state.quota.ausage(user_id), "conversations_stored": False}}  # fmt: skip
 
 
 @internal.delete("/users/{user_id}/data")
 async def erase_user(user_id: str, request: Request) -> dict:
     return {"service": "assistant", "user_id": user_id, "status": "done",
-            "counts": {"quota_counters_removed": request.app.state.quota.forget(user_id)}}  # fmt: skip
+            "counts": {"quota_counters_removed": await request.app.state.quota.aforget(user_id)}}  # fmt: skip

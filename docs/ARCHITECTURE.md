@@ -26,15 +26,18 @@ The mobile app talks **only** to the gateway. Services talk to each other over H
 | Service | Port | Purpose | State |
 |---|---|---|---|
 | gateway | 8000 | Auth (JWT), users & profiles, request routing to services, aggregation endpoints | Postgres (users) |
-| sourcing | 8101 | Search across supplier sources; normalize listings (product / raw material / production line, new / used) | cache only |
+| sourcing | 8101 | Search across supplier sources; normalize listings (product / raw material / production line, new / used) | SQL (native listings, moderation, price history, analytics) |
 | logistics | 8102 | Landed-cost engine: origin inland → main leg (sea/air/rail/road) → destination port → duties/VAT → destination inland; FX; carriers | stateless (data files) |
 | geo | 8103 | Countries, cities, sea ports, airports, land border crossings; nearest-hub lookup; road distance estimates | data files |
-| trust | 8104 | Explainable supplier trust score 0–100 with green/yellow/red band | cache only |
+| trust | 8104 | Explainable supplier trust score 0–100 with green/yellow/red band | SQL (verification documents, audit, reports, score snapshots) |
 | rfq | 8105 | Reverse marketplace: buyer requests, seller offers, deals with commission | Postgres |
 | messaging | 8106 | Conversations & messages (REST + WebSocket) | Postgres |
 | tracking | 8107 | Shipments by container / B/L / AWB / vessel IMO; normalized event timeline | Postgres |
 | notifications | 8108 | Watchlists, price-drop & cheaper-supplier alerts, device push tokens | Postgres |
 | assistant | 8109 | Natural-language (Arabic/English) sourcing assistant: text → structured search → one combined answer | stateless |
+| demand | 8110 | Phase-5 demand matching: public buy-request signals -> draft public replies, human approval, daily cap, kill switch off by default (admin only, via `/v1/admin/demand/*`) | SQL (own tables) |
+| payments | 8111 | Invoices (mock + USDT/TRON skeleton), signed webhooks, ledger, rfq callback outbox, commission (`/v1/payments/*`) | SQL (own tables) |
+| media | 8112 | Image upload/processing, public and private (signed-URL) files (`/v1/media/*`) | SQL metadata + local/S3 files |
 | feed | 8113 | Social side: supplier posts, follow, home/trending feed, likes, comments, reports + moderation (`/v1/feed/*`) | SQL (own tables) |
 | freight | 8114 | Freight-forwarder marketplace: forwarder applications (admin-approved), shipment quote requests, quotes, explainable ranking, award, ratings, reports + moderation (`/v1/freight/*`) | SQL (own tables) |
 

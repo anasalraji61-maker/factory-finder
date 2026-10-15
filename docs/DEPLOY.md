@@ -12,7 +12,7 @@ FF_E2E_BASE_URL=http://localhost:8000 python scripts/e2e.py   # smoke test again
 make compose-e2e            # up -d --wait, e2e, down -v
 docker compose down -v
 ```
-`FF_E2E_BASE_URL` makes `scripts/e2e.py` skip spawning local processes and the two steps that need unpublished service ports. Default behaviour is unchanged. The gateway has `/health` (no `/ready`).
+`FF_E2E_BASE_URL` makes `scripts/e2e.py` skip spawning local processes and the two steps that need unpublished service ports. Default behaviour is unchanged. The gateway has `/health` and `/ready` (the latter adds `upstreams: {name: bool}`).
 
 ## Production-ish checklist
 - Secrets only via env / `.env` (never committed; the repo is public). Generate: `python -c 'import secrets;print(secrets.token_urlsafe(48))'`.
@@ -20,14 +20,16 @@ docker compose down -v
 - Admin: `FF_GATEWAY_ADMIN_TOKEN` enables `/v1/admin/*` (unset = 404). Use a long random value; keep it off client apps.
 - CORS: `FF_GATEWAY_CORS_ORIGINS` is a JSON list, default `[]` (native app needs none). List exact web origins only; never `*`.
 - Only the gateway publishes a port. Put a reverse proxy (Caddy/nginx/Traefik) in front for TLS, bind the gateway to `127.0.0.1:8000`, and do not publish backend ports.
-- PostgreSQL: `FF_DOCKER_EXTRAS=pg`, `FF_POSTGRES_PASSWORD=...`, one DB per service (`FF_RFQ_DATABASE_URL=postgresql://ff:<pw>@postgres:5432/ff_rfq`, same for messaging/tracking/notifications/demand), `docker compose --profile pg up --build`, create the databases, then `docker compose run --rm <svc> alembic upgrade head` (see `docs/DB.md`). Auto-create is off for Postgres.
+- PostgreSQL: `FF_DOCKER_EXTRAS=pg`, `FF_POSTGRES_PASSWORD=...`, one DB per service (`FF_RFQ_DATABASE_URL=postgresql://ff:<pw>@postgres:5432/ff_rfq`, same for sourcing/messaging/tracking/notifications/demand/payments/media/feed/freight/trust), `docker compose --profile pg up --build`, create the databases, then `docker compose run --rm <svc> alembic upgrade head` (see `docs/DB.md`). Auto-create is off for Postgres.
 - Default SQLite files live inside containers and are lost on recreate: use Postgres for anything real. The gateway's own DB (users) is SQLite by default (`FF_GATEWAY_DATABASE_URL`), mount a volume or move it to Postgres before real use.
 - Backups: `pg_dump` per database on a schedule, store off-host, test restores; back up the `pgdata` volume only as a secondary measure.
 - Real provider adapters are OFF by default and unverified against live APIs; keep kill switches (`FF_*_KILL_SWITCH`) documented for operators. Demand matching stays disabled (`FF_DEMAND_ENABLED=false`) unless a human-in-the-loop is in place.
+- Production guard: with `FF_ENV=production` the services listed in `docs/OPS.md` refuse to start without their secrets (`FF_INTERNAL_TOKEN`; gateway also `FF_GATEWAY_JWT_SECRET` + `FF_GATEWAY_ADMIN_TOKEN`; media also `FF_MEDIA_SIGNING_KEY`; trust `FF_TRUST_VERIFICATION_HASH_KEY`).
+- Retention and per-user limits are configurable per service (defaults and what is never purged: `docs/OPS.md`, section Retention and limits).
 - Pin base image digests and dependency versions for reproducible builds; run containers as non-root (already done: user `app`).
 
 ## Env forwarding and feed admin
-`docker-compose.yml` forwards the operator switches (`FF_ENV`, kill switches, gateway mail/admin-UI, sourcing/logistics/tracking/notifications provider vars, assistant LLM, admin tokens) with empty or code-default fallbacks; unset means unchanged behaviour. Full list and exceptions: `docs/RUNBOOK.md` (top). `/v1/admin/feed/*` (`FF_FEED_ADMIN_TOKEN`) is not routed by the gateway; moderate from the private network only. Same for `/v1/admin/freight/*` (`FF_FREIGHT_ADMIN_TOKEN`): forwarder application approval and freight moderation are service-local.
+`docker-compose.yml` forwards the operator switches (`FF_ENV`, kill switches, gateway mail/admin-UI, sourcing/logistics/tracking/notifications provider vars, assistant LLM, admin tokens) with empty or code-default fallbacks; unset means unchanged behaviour. Full list and exceptions: `docs/RUNBOOK.md` (top). The gateway forwards these admin areas (all need `X-Admin-Token` = `FF_GATEWAY_ADMIN_TOKEN` plus the service's own admin token set on the gateway, same value as on the service; either unset = 404): `/v1/admin/feed/*` (`FF_FEED_ADMIN_TOKEN`), `/v1/admin/freight/*` (`FF_FREIGHT_ADMIN_TOKEN`, forwarder approval and freight moderation), `/v1/admin/trust/verification/*` (`FF_TRUST_ADMIN_TOKEN`), `/v1/admin/moderation/*` (`FF_SOURCING_ADMIN_TOKEN`), `/v1/admin/payments/outbox*` (`FF_PAYMENTS_ADMIN_TOKEN`), `/v1/admin/media/files/{name}` (`FF_MEDIA_ADMIN_TOKEN`, read-only view of private verification files), and `/v1/admin/demand/*`, `/v1/admin/supplier-claims*`, `/v1/admin/overview`, `/v1/admin/account-deletions` (gateway-owned or internal token only).
 
 ## Public ingress for payments webhooks
 `POST /v1/payments/webhooks/{provider}` is called by external payment providers, which cannot send a user bearer token, so the gateway

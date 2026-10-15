@@ -38,3 +38,21 @@ Code: `reviews.py`, `domain/review_text.py`; tables `reviews`, `review_events`, 
 
 ## Deal lookup
 `GET /v1/deals?role=buyer|supplier|any&status=&page=&page_size=` lists only the caller's deals (buyer = `X-User-Id` is the buyer, supplier = `X-User-Id` is the offer owner, i.e. the same rule as `GET /v1/deals/{id}`), newest first (`created_at desc, id desc`, stable pages), same Deal JSON. `GET /v1/requests/{id}/deal` returns the accepted deal to the request owner only (404 otherwise / not awarded). Indexes: migration `0004`. Decision: `docs/decisions/rfq-deals-list.md`.
+
+## Environment reference (complete)
+Every setting in `src/ff_rfq/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_RFQ_DATABASE_URL` | sqlite+aiosqlite:///./rfq.db |
+| `FF_RFQ_DB_AUTO_CREATE` | unset |
+| `FF_RFQ_SOURCING_URL` | http://localhost:8101 |
+| `FF_RFQ_SOURCING_CLIENT` | http |
+| `FF_RFQ_COMMISSION_PRODUCT` | 0.03 |
+| `FF_RFQ_COMMISSION_RAW_MATERIAL` | 0.02 |
+| `FF_RFQ_COMMISSION_PRODUCTION_LINE` | 0.04 |
+| `FF_RFQ_MIN_COMMISSION_USD` | 25 |
+| `FF_RFQ_REQUIRE_BOTH_INVOICES` | False |
+| `FF_RFQ_INTERNAL_TOKEN` | unset |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).

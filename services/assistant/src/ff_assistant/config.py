@@ -39,10 +39,12 @@ class Settings(BaseSettings):
     max_listings: int = Field(default=3, ge=1, le=10)
     search_page_size: int = Field(default=10, ge=3, le=50)
 
-    # Per-user daily request quota (in-memory, per process). Identity = X-User-Id set by the gateway;
+    # Per-user daily request quota (in-memory per process unless FF_REDIS_URL is set). Identity = X-User-Id set by the gateway;
     # requests without it share a small per-client-host bucket.
     quota_per_day: int = Field(default=200, ge=1)
     anon_quota_per_day: int = Field(default=30, ge=1)
+    # Share the quota counters across replicas (needs the `redis` extra). Empty = in-memory, per process.
+    redis_url: str | None = Field(default=None, validation_alias=AliasChoices("FF_REDIS_URL", "FF_ASSISTANT_REDIS_URL"))
 
     # Optional LLM (OFF by default): FF_ASSISTANT_LLM=off|mock|anthropic.
     # Used only for low-confidence intent extraction and optional tone rewrite; never invents figures.

@@ -291,6 +291,10 @@ async def conversation_socket(
         )
         while True:
             raw = await websocket.receive_text()
+            ws_decision = await svc.ws_limiter.hit(uid)
+            if not ws_decision.allowed:  # inbound frame flood: drop the frame, keep the socket
+                conn.offer({"type": "error", "code": "rate_limited", "message": "Too many frames"})
+                continue
             try:
                 frame = json.loads(raw) if len(raw) <= settings.ws_max_frame_chars else {}
             except ValueError:

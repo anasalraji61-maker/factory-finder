@@ -35,3 +35,41 @@ SQLAlchemy 2 async, same pattern as feed/rfq. `FF_TRUST_DATABASE_URL` (default `
 - Bounds: `FF_TRUST_VERIFICATION_MAX_TOTAL_DOCS` (only closed docs are evicted, else 503), `FF_TRUST_REPORT_MAX_TOTAL` (20000; evicts rejected, then pending; accepted never, else 503), `FF_TRUST_REPORT_RETENTION_DAYS` (365; rejected and stale pending purged, accepted kept), `FF_TRUST_SNAPSHOT_MAX_PER_SUPPLIER` (500), `FF_TRUST_SNAPSHOT_MAX_TOTAL` (200000), `FF_TRUST_SNAPSHOT_RETENTION_DAYS` (730). Purge runs at startup and at most hourly on writes.
 - Startup stores a check value of the hash key; a different key later aborts startup in production (warns elsewhere), because old fingerprints would silently stop matching.
 - Tests set `FF_TRUST_DATABASE_URL=sqlite+aiosqlite:///:memory:` (`tests/conftest.py`). Decisions: `docs/decisions/trust-persistence.md`.
+
+## Environment reference (complete)
+Every setting in `src/ff_trust/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_TRUST_DATABASE_URL` | sqlite+aiosqlite:///./data/trust.db |
+| `FF_TRUST_DB_AUTO_CREATE` | unset |
+| `FF_TRUST_ADAPTER` | mock |
+| `FF_TRUST_CACHE_TTL_SECONDS` | 300 |
+| `FF_TRUST_CACHE_MAX_ENTRIES` | 5000 |
+| `FF_TRUST_MAX_BATCH` | 50 |
+| `FF_TRUST_REPORT_RATE_LIMIT` | 5 |
+| `FF_TRUST_REPORT_RATE_WINDOW_SECONDS` | 3600 |
+| `FF_TRUST_HISTORY_MONTHS` | 12 |
+| `FF_TRUST_REVIEWS_SOURCE` | off |
+| `FF_TRUST_REVIEWS_BASE_URL` | http://rfq:8105 |
+| `FF_TRUST_REVIEWS_TIMEOUT_SECONDS` | 2.0 |
+| `FF_TRUST_REVIEWS_CACHE_TTL_SECONDS` | 60.0 |
+| `FF_TRUST_ADMIN_TOKEN` | unset |
+| `FF_TRUST_VERIFICATION_RATE_LIMIT` | 10 |
+| `FF_TRUST_VERIFICATION_RATE_WINDOW_SECONDS` | 3600 |
+| `FF_TRUST_VERIFICATION_MAX_DOCS_PER_SUPPLIER` | 30 |
+| `FF_TRUST_VERIFICATION_MAX_DOCS_PER_TYPE` | 5 |
+| `FF_TRUST_VERIFICATION_MAX_FILES` | 10 |
+| `FF_TRUST_VERIFICATION_MAX_TOTAL_DOCS` | 20000 |
+| `FF_TRUST_VERIFICATION_HASH_KEY` | unset |
+| `FF_TRUST_REPORT_MAX_TOTAL` | 20000 |
+| `FF_TRUST_REPORT_RETENTION_DAYS` | 365 |
+| `FF_TRUST_SNAPSHOT_MAX_PER_SUPPLIER` | 500 |
+| `FF_TRUST_SNAPSHOT_MAX_TOTAL` | 200000 |
+| `FF_TRUST_SNAPSHOT_RETENTION_DAYS` | 730 |
+| `FF_TRUST_VERIFICATION_MEDIA_PREFIXES` | ['/v1/media/private/'] |
+| `FF_TRUST_VERIFICATION_MEDIA_HOSTS` | [] |
+| `FF_TRUST_VERIFICATION_ALLOW_HTTP` | False |
+| `FF_INTERNAL_TOKEN` | unset |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_TRUST_VERIFICATION_HASH_KEY` (see `docs/OPS.md`).

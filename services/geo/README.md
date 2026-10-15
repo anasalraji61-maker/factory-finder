@@ -26,3 +26,14 @@ cd services/geo && ../../.venv/bin/python -m uvicorn ff_geo.main:app --port 8103
 
 ## Sea graph (data round 3)
 `domain/sea.py` has 150 lane nodes and 138 sea hubs. Access nodes farther than 400 km are ignored (except the nearest) so ports never jump overland. `tests/test_sea_properties.py` checks distance >= great-circle, symmetry and sane detour ratios.
+
+## Environment reference (complete)
+Every setting in `src/ff_geo/config.py` (`Settings`, case-insensitive env names). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_GEO_PORT` | 8103 |
+| `FF_GEO_INTERNAL_TOKEN` | unset |
+| `FF_GEO_DEFAULT_ROAD_FACTOR` | 1.3 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).

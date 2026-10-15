@@ -1,10 +1,13 @@
-"""Per-user daily request quota (in-memory, per process, UTC day window, injectable clock)."""
+"""Per-user daily request quota: UTC-day window, in-memory by default, Redis when configured."""
 
 from __future__ import annotations
 
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
+
+from ff_assistant.ratelimit import WindowLimiter
 
 DAY = 86400
 MAX_KEYS = 200_000  # per-day counter cap: spoofed ids/addresses cannot grow memory without bound
@@ -19,32 +22,45 @@ class QuotaDecision:
 
 
 class DailyQuota:
-    def __init__(self, per_user: int, per_anon: int, clock: Callable[[], float] = time.time) -> None:
-        self.per_user, self.per_anon, self._clock = per_user, per_anon, clock
-        self._day = -1
-        self._counts: dict[str, int] = {}
+    """``hit``/``usage``/``forget`` are the synchronous in-memory API (tests, single process);
+    ``ahit``/``ausage``/``aforget`` use Redis (``redis`` client) when given, else the same memory counters."""
+
+    def __init__(self, per_user: int, per_anon: int, clock: Callable[[], float] = time.time,
+                 redis: Any = None, prefix: str = "ff:assistant:quota:") -> None:
+        self.per_user, self.per_anon = per_user, per_anon
+        # new keys beyond the cap are refused (fail closed); fixed counters reset at the UTC day boundary
+        self._lim = WindowLimiter(window_seconds=DAY, mode="calendar", clock=clock, max_keys=MAX_KEYS,
+                                  on_full="closed", redis=redis, prefix=prefix, on_error="memory")
+
+    @staticmethod
+    def _key(user_id: str | None, client: str) -> str:
+        return f"u:{user_id}" if user_id else f"a:{client}"
+
+    def _limit(self, user_id: str | None) -> int:
+        return self.per_user if user_id else self.per_anon
+
+    @staticmethod
+    def _out(d, limit: int) -> QuotaDecision:
+        return QuotaDecision(d.allowed, limit, d.remaining, int(d.retry_after) + 1 if not d.allowed else 0)
 
     def hit(self, user_id: str | None, client: str = "unknown") -> QuotaDecision:
-        now = self._clock()
-        day = int(now // DAY)
-        if day != self._day:  # new window: drop every counter (bounded memory)
-            self._day, self._counts = day, {}
-        key, limit = (f"u:{user_id}", self.per_user) if user_id else (f"a:{client}", self.per_anon)
-        used = self._counts.get(key, 0)
-        if key not in self._counts and len(self._counts) >= MAX_KEYS:
-            return QuotaDecision(False, limit, 0, int((day + 1) * DAY - now) + 1)  # fail closed
-        retry = int((day + 1) * DAY - now) + 1
-        if used >= limit:
-            return QuotaDecision(False, limit, 0, retry)
-        self._counts[key] = used + 1
-        return QuotaDecision(True, limit, limit - used - 1, retry)
+        limit = self._limit(user_id)
+        return self._out(self._lim.hit_sync(self._key(user_id, client), limit), limit)
+
+    async def ahit(self, user_id: str | None, client: str = "unknown") -> QuotaDecision:
+        limit = self._limit(user_id)
+        return self._out(await self._lim.hit(self._key(user_id, client), limit), limit)
 
     def usage(self, user_id: str) -> int:
         """Requests counted for the user in the current UTC day window (0 if none)."""
-        if int(self._clock() // DAY) != self._day:
-            return 0
-        return self._counts.get(f"u:{user_id}", 0)
+        return self._lim.count_sync(f"u:{user_id}")
+
+    async def ausage(self, user_id: str) -> int:
+        return await self._lim.count(f"u:{user_id}")
 
     def forget(self, user_id: str) -> int:
         """Drop the user's counter (account erasure). Returns how many counters were removed."""
-        return 1 if self._counts.pop(f"u:{user_id}", None) is not None else 0
+        return min(1, self._lim.reset_sync(f"u:{user_id}"))
+
+    async def aforget(self, user_id: str) -> int:
+        return min(1, await self._lim.reset(f"u:{user_id}"))

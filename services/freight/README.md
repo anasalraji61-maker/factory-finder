@@ -1,6 +1,6 @@
 # freight (port 8114)
 
-Freight-forwarder marketplace. Forwarders (verified companies) **apply**, an admin **approves** them, and they **quote** on buyers' **shipment quote requests**. Buyers **compare** quotes side by side (explainable ranking), **accept** one (idempotent), close the shipment and **rate** the forwarder. Contract: `contracts/openapi/freight.yaml`. Reached through the gateway at `/v1/freight/*`; the admin routes under `/v1/admin/freight/*` are service-local and not routed by the gateway.
+Freight-forwarder marketplace. Forwarders (verified companies) **apply**, an admin **approves** them, and they **quote** on buyers' **shipment quote requests**. Buyers **compare** quotes side by side (explainable ranking), **accept** one (idempotent), close the shipment and **rate** the forwarder. Contract: `contracts/openapi/freight.yaml`. Reached through the gateway at `/v1/freight/*`; the admin routes under `/v1/admin/freight/*` are reached through the gateway's allow-listed admin passthrough (`X-Admin-Token` = `FF_GATEWAY_ADMIN_TOKEN`; the gateway injects `FF_FREIGHT_ADMIN_TOKEN`, 404 when either is unset).
 
 - Identity: `X-User-Id` on every route. Forwarder status is **never read from a header or body**: the service resolves it from its own table of admin-approved forwarders (user -> forwarder). Flow: `POST /v1/freight/applications` -> admin `POST /v1/admin/freight/applications/{id}/approve` -> that user can use the forwarder routes (`/v1/freight/forwarders/me*`, quoting). Before approval 403 `forwarder_required`; while suspended 403 `forwarder_suspended`.
 - Request: origin/destination country + city/port, cargo text, optional HS code, weight kg and/or volume m3 (exact decimal strings), mode sea/air/road/rail, container type (sea/rail), incoterm, ready date, currency, optional landed-cost ref, quote deadline (1-30 days). Only forwarders whose lanes (`*` wildcards allowed), modes and incoterms match see it (`GET /v1/freight/forwarders/me/inbox`) or can quote on it (others get 404).
@@ -19,3 +19,35 @@ Env (prefix `FF_FREIGHT_`): `DATABASE_URL`, `DB_AUTO_CREATE`, `ADMIN_TOKEN`, `RE
 
 ## Ops
 `GET /ready` (unauthenticated): 503 when the database is unreachable. One JSON log line per request (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or bodies. `X-Request-Id` is accepted or generated and echoed. Code: `obs.py` (self-contained copy).
+
+## Environment reference (complete)
+Every setting in `src/ff_freight/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_FREIGHT_DATABASE_URL` | sqlite+aiosqlite:///./freight.db |
+| `FF_FREIGHT_DB_AUTO_CREATE` | unset |
+| `FF_INTERNAL_TOKEN` / `FF_FREIGHT_INTERNAL_TOKEN` | unset |
+| `FF_FREIGHT_ADMIN_TOKEN` | unset |
+| `FF_FREIGHT_REPORT_HIDE_THRESHOLD` | 3 |
+| `FF_FREIGHT_REPORT_MIN_ACCOUNT_AGE_SECONDS` | 86400 |
+| `FF_FREIGHT_RATING_MIN_DELAY_SECONDS` | 86400 |
+| `FF_FREIGHT_RATING_MAX_PER_PAIR` | 2 |
+| `FF_FREIGHT_RATING_PAIR_WINDOW_DAYS` | 365 |
+| `FF_FREIGHT_MAX_OPEN_REQUESTS_PER_BUYER` | 50 |
+| `FF_FREIGHT_MAX_QUOTES_PER_REQUEST` | 50 |
+| `FF_FREIGHT_MAX_LANES_PER_FORWARDER` | 50 |
+| `FF_FREIGHT_MAX_APPLICATIONS_PER_USER` | 5 |
+| `FF_FREIGHT_MAX_PAGE_SIZE` | 50 |
+| `FF_FREIGHT_DEFAULT_PAGE_SIZE` | 20 |
+| `FF_FREIGHT_WEIGHT_PRICE` | 50 |
+| `FF_FREIGHT_WEIGHT_TRANSIT` | 30 |
+| `FF_FREIGHT_WEIGHT_RATING` | 20 |
+| `FF_FREIGHT_RATE_WINDOW_SECONDS` | 3600 |
+| `FF_FREIGHT_RATE_APPLICATIONS` | 3 |
+| `FF_FREIGHT_RATE_REQUESTS` | 10 |
+| `FF_FREIGHT_RATE_QUOTES` | 60 |
+| `FF_FREIGHT_RATE_RATINGS` | 20 |
+| `FF_FREIGHT_RATE_REPORTS` | 20 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).

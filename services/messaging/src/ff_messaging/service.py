@@ -30,7 +30,6 @@ from ff_messaging.domain.models import (
     compute_read_by,
 )
 from ff_messaging.domain.ports import EventPublisher
-from ff_messaging.domain.rate_limit import SlidingWindowRateLimiter
 from ff_messaging.domain.rules import (
     make_preview,
     resolve_participants,
@@ -39,6 +38,7 @@ from ff_messaging.domain.rules import (
 from ff_messaging.domain.safety import ContentPolicy, attachments_preview
 from ff_messaging.persistence.database import Database
 from ff_messaging.persistence.repository import Repository
+from ff_messaging.ratelimit import WindowLimiter
 
 
 class MessagingService:
@@ -48,8 +48,10 @@ class MessagingService:
         db: Database,
         settings: Settings,
         policy: ContentPolicy,
-        limiter: SlidingWindowRateLimiter,
+        limiter: WindowLimiter,
         publisher: EventPublisher,
+        create_limiter: WindowLimiter | None = None,
+        ws_limiter: WindowLimiter | None = None,
         clock: Clock = utc_now,
     ) -> None:
         self.db = db
@@ -58,7 +60,11 @@ class MessagingService:
         self.limiter = limiter
         self.publisher = publisher
         self.clock: Callable = clock
-        self.create_limiter = SlidingWindowRateLimiter(
+        self.ws_limiter = ws_limiter or WindowLimiter(
+            limit=settings.ws_inbound_rate_limit,
+            window_seconds=settings.ws_inbound_rate_window_seconds,
+        )
+        self.create_limiter = create_limiter or WindowLimiter(
             limit=settings.conversation_create_limit,
             window_seconds=settings.conversation_create_window_seconds,
         )
@@ -96,7 +102,7 @@ class MessagingService:
             existing = await repo.get_conversation_by_key(key)
             if existing is not None:
                 return existing, False
-            decision = self.create_limiter.hit(caller)  # only brand-new conversations count
+            decision = await self.create_limiter.hit(caller)  # only brand-new conversations count
             if not decision.allowed:
                 raise RateLimitedError(
                     "Too many new conversations", retry_after_seconds=decision.retry_after
@@ -165,7 +171,7 @@ class MessagingService:
         supplier_id: str | None = None,
     ) -> tuple[Message, bool]:
         checked = self.policy.check_message(draft)
-        decision = self.limiter.hit(caller)
+        decision = await self.limiter.hit(caller)
         if not decision.allowed:
             raise RateLimitedError("Too many messages", retry_after_seconds=decision.retry_after)
         d = checked.draft

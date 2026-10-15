@@ -2,7 +2,7 @@
 
 كُتب هذا الدليل لك (أنس) وليس للمبرمجين. كل شيء هنا مأخوذ من الكود والوثائق الموجودة في المستودع. حيث لا نعرف أو لم نتحقق، كتبنا "تحقق" ولم نخترع أرقاماً. الأوامر والأسماء التقنية تبقى بالإنكليزية كما هي.
 
-آخر تحديث للحالة: 2026-10-14. للتفاصيل التقنية: `docs/STATUS.md` و`docs/DEPLOY.md` و`docs/RUNBOOK.md` و`docs/API_OVERVIEW.md`.
+آخر تحديث للحالة: 2026-10-15. للتفاصيل التقنية: `docs/STATUS.md` و`docs/DEPLOY.md` و`docs/RUNBOOK.md` و`docs/API_OVERVIEW.md`.
 
 ---
 
@@ -11,9 +11,9 @@
 منصة توريد: المشتري في أي دولة يبحث عن منتج أو مادة أولية أو خط إنتاج (جديد/مستعمل)، فيرى الموردين مع تقييم الثقة، ويحسب النظام الكلفة الكاملة حتى باب المشتري (شحن داخلي، بحري/جوي/بري، جمارك، نقل داخلي)، ويمكنه نشر طلب وتلقي عروض، والدردشة، وتتبع الشحنة، ومساعد ذكي بالعربي.
 
 الموجود فعلياً:
-- 13 خدمة خلفية (بوابة gateway + sourcing + logistics + geo + trust + rfq + messaging + tracking + notifications + assistant + demand + payments + media).
+- 15 خدمة خلفية (بوابة gateway + sourcing + logistics + geo + trust + rfq + messaging + tracking + notifications + assistant + demand + payments + media + feed + freight).
 - تطبيق موبايل Flutter (عربي RTL أولاً، إنكليزي ثانياً): اكتشاف، صفحة منتج، صفحة مورد، حاسبة الكلفة الكاملة، أسعار الصرف، الطلبات والعروض، الصفقات، الدردشة، التتبع، المساعد، قائمة المراقبة والتنبيهات، تسجيل الدخول، مطالبة المورد بحسابه.
-- لوحة إدارة بسيطة (`apps/admin`): الموافقة على مطالبات الموردين، مراجعة الإبلاغات وإخفاء الإعلانات، مسودات الرد (demand)، متابعة أحداث الدفع.
+- لوحة إدارة بسيطة (`apps/admin`): الموافقة على مطالبات الموردين، مراجعة الإبلاغات وإخفاء الإعلانات، مسودات الرد (demand)، متابعة أحداث الدفع، مراجعة وثائق توثيق الموردين، والموافقة على وكلاء الشحن (freight) وإدارة المنشورات (feed).
 - اختبارات آلية وفحص end-to-end عبر البوابة في GitHub Actions.
 
 ## 2) ما هو وهمي (Mock) وما هو حقيقي؟
@@ -54,7 +54,7 @@
 6. للإيقاف: `docker compose down` (أو `docker compose down -v` لمسح البيانات).
 7. اختبارات بدون Docker: `make venv` ثم `make test` و`make lint`.
 
-لوحة الإدارة: ضع `FF_GATEWAY_SERVE_ADMIN=true` مع `FF_GATEWAY_ADMIN_TOKEN` ثم افتح `http://localhost:8000/admin/` وأدخل التوكن. **ملاحظة:** ملف `docker-compose.yml` يمرّر الآن للحاويات مفاتيح الإطفاء و`FF_ENV` و`FF_GATEWAY_SERVE_ADMIN` وإعدادات البريد والإشعارات والتتبع والشحن الحقيقي والمحوّلات وتوكنات الإدارة من `.env` (القيم الفارغة تعني السلوك الافتراضي). الإعدادات الدقيقة الأخرى (مثل حدود المعدل `FF_GATEWAY_*_RATE_LIMIT_PER_MINUTE` و`FF_GATEWAY_TRUSTED_PROXIES` و`FF_GATEWAY_REDIS_URL`) غير ممرَّرة بعد؛ أضف سطرها تحت `environment:` للخدمة المعنية. تحقق بالأمر: `docker compose config | grep NAME`. إدارة المنشورات (`/v1/admin/feed/*`) داخلية للخدمة ولا تمر عبر البوابة.
+لوحة الإدارة: ضع `FF_GATEWAY_SERVE_ADMIN=true` مع `FF_GATEWAY_ADMIN_TOKEN` ثم افتح `http://localhost:8000/admin/` وأدخل التوكن. **ملاحظة:** ملف `docker-compose.yml` يمرّر الآن للحاويات مفاتيح الإطفاء و`FF_ENV` و`FF_GATEWAY_SERVE_ADMIN` وإعدادات البريد والإشعارات والتتبع والشحن الحقيقي والمحوّلات وتوكنات الإدارة من `.env` (القيم الفارغة تعني السلوك الافتراضي). الإعدادات الدقيقة الأخرى (مثل حدود المعدل `FF_GATEWAY_*_RATE_LIMIT_PER_MINUTE` و`FF_GATEWAY_TRUSTED_PROXIES` و`FF_GATEWAY_REDIS_URL`) غير ممرَّرة بعد؛ أضف سطرها تحت `environment:` للخدمة المعنية. تحقق بالأمر: `docker compose config | grep NAME`. إدارة المنشورات والشحن والتوثيق (`/v1/admin/feed/*` و`/v1/admin/freight/*` و`/v1/admin/trust/verification/*`) تمر عبر البوابة وتحتاج `FF_GATEWAY_ADMIN_TOKEN` مع توكن الخدمة نفسها (`FF_FEED_ADMIN_TOKEN` و`FF_FREIGHT_ADMIN_TOKEN` و`FF_TRUST_ADMIN_TOKEN`) بالقيمة نفسها على البوابة وعلى الخدمة؛ إن نقص أحدهما فالمسار يعطي 404. وعرض الملفات الخاصة (وثائق التوثيق) يحتاج `FF_MEDIA_ADMIN_TOKEN` بالقيمة نفسها على البوابة وخدمة media.
 
 قاعدة البيانات: افتراضياً SQLite داخل الحاوية وتضيع عند إعادة الإنشاء. للاستخدام الحقيقي استخدم PostgreSQL (الخطوات في `docs/DEPLOY.md` و`docs/DB.md`).
 
@@ -104,19 +104,21 @@
 
 عام: `FF_ENV=production` (الخدمات ترفض البدء بلا رموز)، `FF_LOG_FORMAT=text` (سجلات مقروءة محلياً).
 
-- **gateway** (البادئة `FF_GATEWAY_`): `JWT_SECRET`، `ADMIN_TOKEN`، `DATABASE_URL`، `UPSTREAMS` (JSON)، `CORS_ORIGINS` (قائمة JSON، الافتراضي `[]`)، `TRUSTED_PROXIES`، `RATE_LIMIT_PER_MINUTE`، `AUTH_RATE_LIMIT_PER_MINUTE`، `USER_WRITE_RATE_LIMIT_PER_MINUTE`، `MEDIA_RATE_LIMIT_PER_MINUTE`، `REDIS_URL`، `SERVE_ADMIN`، `ADMIN_DIR`، `MAIL_BACKEND` (off/mock/smtp)، `REQUIRE_EMAIL_VERIFIED`، `MAIL_FROM`، `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`، `VERIFY_URL_TEMPLATE`، `ACCESS_TTL_SECONDS`، `REFRESH_TTL_SECONDS`. كما يقرأ بلا بادئة: `FF_INTERNAL_TOKEN`، `FF_SOURCING_ADMIN_TOKEN` (إدارة الإبلاغات)، `FF_PAYMENTS_ADMIN_TOKEN` (إدارة صندوق أحداث الدفع).
-- **sourcing** (`FF_SOURCING_`): `ENABLED_SOURCES` (الافتراضي `mock,native`)، `ADAPTERS`، `DATABASE_URL`، `DB_AUTO_CREATE`، `TRUST_MODE`، `TRUST_BASE_URL`، `ADMIN_TOKEN`، `ALIBABA_APP_KEY`، `ALIBABA_APP_SECRET`، `ALIBABA_ACCESS_TOKEN`، `ALIBABA_OPENAPI_DISABLED`، `KILL_SWITCH`، `ALIEXPRESS_APP_KEY`/`_APP_SECRET`/`_TRACKING_ID`، `MIC_API_BASE`/`MIC_API_KEY`/`MIC_ALLOW_PUBLIC_PAGES`، `S1688_APP_KEY`/`S1688_APP_SECRET`، `MIN_REQUEST_INTERVAL_S`.
+- **gateway** (البادئة `FF_GATEWAY_`): `JWT_SECRET`، `ADMIN_TOKEN`، `DATABASE_URL`، `UPSTREAMS` (JSON)، `CORS_ORIGINS` (قائمة JSON، الافتراضي `[]`)، `TRUSTED_PROXIES`، `RATE_LIMIT_PER_MINUTE`، `AUTH_RATE_LIMIT_PER_MINUTE`، `USER_WRITE_RATE_LIMIT_PER_MINUTE`، `MEDIA_RATE_LIMIT_PER_MINUTE`، `REDIS_URL`، `SERVE_ADMIN`، `ADMIN_DIR`، `MAIL_BACKEND` (off/mock/smtp)، `REQUIRE_EMAIL_VERIFIED`، `MAIL_FROM`، `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`، `VERIFY_URL_TEMPLATE`، `ACCESS_TTL_SECONDS`، `REFRESH_TTL_SECONDS`، `MAX_BODY_BYTES`، `DELETION_GRACE_DAYS`، `PRIVACY_RATE_LIMIT_PER_MINUTE`. كما يقرأ بلا بادئة: `FF_INTERNAL_TOKEN`، `FF_SOURCING_ADMIN_TOKEN` (إدارة الإبلاغات)، `FF_PAYMENTS_ADMIN_TOKEN` (إدارة صندوق أحداث الدفع)، `FF_TRUST_ADMIN_TOKEN` و`FF_FREIGHT_ADMIN_TOKEN` و`FF_FEED_ADMIN_TOKEN` و`FF_MEDIA_ADMIN_TOKEN`. في `FF_ENV=production` ترفض البوابة البدء بلا `FF_GATEWAY_JWT_SECRET` و`FF_GATEWAY_ADMIN_TOKEN`.
+- **sourcing** (`FF_SOURCING_`): `ENABLED_SOURCES` (الافتراضي `mock,native`)، `ADAPTERS`، `LICENSED_MAPPINGS`، `DATABASE_URL`، `DB_AUTO_CREATE`، `TRUST_MODE`، `TRUST_BASE_URL`، `ADMIN_TOKEN`، `ALIBABA_APP_KEY`، `ALIBABA_APP_SECRET`، `ALIBABA_ACCESS_TOKEN`، `ALIBABA_OPENAPI_DISABLED`، `KILL_SWITCH`، `ALIEXPRESS_APP_KEY`/`_APP_SECRET`/`_TRACKING_ID`، `MIC_API_BASE`/`MIC_API_KEY`/`MIC_ALLOW_PUBLIC_PAGES`، `S1688_APP_KEY`/`S1688_APP_SECRET`، `MIN_REQUEST_INTERVAL_S`، وحدود وإبقاء البيانات: `MAX_LISTINGS_PER_SUPPLIER` (200)، `CREATE_RATE_PER_HOUR` (30)، `PRICE_HISTORY_RETENTION_DAYS` (400)، `ANALYTICS_RETENTION_DAYS` (400).
 - **logistics** (`FF_LOGISTICS_`): `GEO_URL`، `FX_PROVIDER` (mock/ecb)، `FREIGHT_PROVIDER` (mock/http)، `FREIGHT_URL`، `FREIGHT_API_KEY`، `FREIGHT_DISABLED`، `KILL_SWITCH`، `FREIGHT_MIN_INTERVAL_S`.
 - **geo** (`FF_GEO_`): لا إعدادات إلزامية.
-- **trust** (`FF_TRUST_`): `ADAPTER` (mock افتراضياً)، `REVIEWS_SOURCE` (off/mock/http)، `REVIEWS_BASE_URL`؛ الأوزان والعتبات قابلة للضبط (`docs/decisions/trust-v2.md`).
+- **trust** (`FF_TRUST_`): `ADAPTER` (mock افتراضياً)، `DATABASE_URL`، `ADMIN_TOKEN`، `VERIFICATION_HASH_KEY` (إلزامي مع `FF_ENV=production`؛ لا تغيّره بعد الإطلاق)، `REVIEWS_SOURCE` (off/mock/http)، `REVIEWS_BASE_URL`، `REPORT_RETENTION_DAYS` (365)، `SNAPSHOT_RETENTION_DAYS` (730)؛ الأوزان والعتبات قابلة للضبط (`docs/decisions/trust-v2.md`).
 - **rfq** (`FF_RFQ_`): `DATABASE_URL`، `DB_AUTO_CREATE`، `SOURCING_URL`، العمولات `COMMISSION_PRODUCT` (0.03) و`COMMISSION_RAW_MATERIAL` (0.02) و`COMMISSION_PRODUCTION_LINE` (0.04)، `MIN_COMMISSION_USD` (25)، `REQUIRE_BOTH_INVOICES`.
 - **messaging** (`FF_MESSAGING_`): `DATABASE_URL`، `DB_AUTO_CREATE`، `ABUSE_FILTER_ENABLED`، `ABUSE_ACTION` (flag/mask)، `ABUSE_TERMS_EXTRA`، `ATTACHMENT_MAX_BYTES`، `SEND_RATE_LIMIT`.
 - **tracking** (`FF_TRACKING_`): `DATABASE_URL`، `DB_AUTO_CREATE`، `PROVIDER` (mock/http)، `CONTAINER_BASE_URL`/`CONTAINER_API_KEY`، `AWB_BASE_URL`/`AWB_API_KEY`، `VESSEL_BASE_URL`/`VESSEL_API_KEY`، `HTTP_MIN_INTERVAL_SECONDS`، `FALLBACK_TO_MOCK`، `KILL_SWITCH`، `CONTAINER_DISABLED`/`AWB_DISABLED`/`VESSEL_DISABLED`، `REFRESH_JOB_ENABLED`، `REFRESH_JOB_INTERVAL_HOURS`، `NOTIFY_RELAY` (off/on)، `NOTIFY_BASE_URL`.
-- **notifications** (`FF_NOTIFICATIONS_` للأساسيات): `DATABASE_URL`، `DB_AUTO_CREATE`، `SOURCING_BASE_URL`، `SCHEDULER_ENABLED`؛ وللتسليم (بادئة `FF_NOTIFY_`): `PUSH` (off/mock/fcm)، `FCM_PROJECT_ID`، `FCM_CREDENTIALS_FILE`، `FCM_CREDENTIALS_JSON`، `EMAIL` (off/mock/smtp)، `SMTP_HOST`، `SMTP_PORT`، `SMTP_USER`، `SMTP_PASSWORD`، `SMTP_FROM`.
+- **notifications** (`FF_NOTIFICATIONS_` للأساسيات): `DATABASE_URL`، `DB_AUTO_CREATE`، `SOURCING_BASE_URL`، `SCHEDULER_ENABLED` (يشغّل التقييم الدوري وحذف التنبيهات الأقدم من `ALERT_RETENTION_DAYS`=180 والتسليمات الأقدم من `DELIVERY_RETENTION_DAYS`=30)؛ وللتسليم (بادئة `FF_NOTIFY_`): `PUSH` (off/mock/fcm)، `FCM_PROJECT_ID`، `FCM_CREDENTIALS_FILE`، `FCM_CREDENTIALS_JSON`، `EMAIL` (off/mock/smtp)، `SMTP_HOST`، `SMTP_PORT`، `SMTP_USER`، `SMTP_PASSWORD`، `SMTP_FROM`.
 - **assistant** (`FF_ASSISTANT_`): `LLM` (off/mock/anthropic)، `LLM_API_KEY`، `LLM_MODEL`، `LLM_BASE_URL`، `LLM_REWRITE`، `QUOTA_PER_DAY`، `ANON_QUOTA_PER_DAY`، وعناوين الخدمات `SOURCING_URL` وغيرها.
-- **demand** (`FF_DEMAND_`): `ENABLED` (false)، `DAILY_CAP` (20)، `DATABASE_URL`، `DB_AUTO_CREATE`، `SOURCING_BASE_URL`، `USE_MOCK_SOURCING`.
-- **payments** (`FF_PAYMENTS_`): `PROVIDER` (mock/usdt_tron/off)، `DATABASE_URL`، `DB_AUTO_CREATE`، `ADMIN_TOKEN`، `WEBHOOK_SECRET_MOCK`، `WEBHOOK_SECRET_USDT_TRON`، `USDT_RECEIVE_ADDRESS`، `USDT_CONTRACT`، `USDT_EXPLORER_URL`، `USDT_EXPLORER_API_KEY`، `RFQ_URL`، `COMMISSION_*` و`MIN_COMMISSION_USD` (كما في rfq؛ يجب أن تتطابق).
-- **media** (`FF_MEDIA_`): `DATABASE_URL`، `STORAGE_BACKEND` (local/s3)، `STORAGE_ROOT`، `PUBLIC_BASE_URL` (عنوان البوابة العام)، `MAX_UPLOAD_BYTES`، `S3_BUCKET`، `S3_REGION`، `S3_ENDPOINT_URL`، `S3_ACCESS_KEY_ID`، `S3_SECRET_ACCESS_KEY`.
+- **demand** (`FF_DEMAND_`): `ENABLED` (false)، `DAILY_CAP` (20)، `DATABASE_URL`، `DB_AUTO_CREATE`، `SOURCING_BASE_URL`، `USE_MOCK_SOURCING`، `SIGNAL_RETENTION_DAYS` (90)، `REJECTED_DRAFT_RETENTION_DAYS` (90).
+- **payments** (`FF_PAYMENTS_`): `PROVIDER` (mock/usdt_tron/off)، `DATABASE_URL`، `DB_AUTO_CREATE`، `ADMIN_TOKEN`، `WEBHOOK_SECRET_MOCK`، `WEBHOOK_SECRET_USDT_TRON`، `USDT_RECEIVE_ADDRESS`، `USDT_CONTRACT`، `USDT_EXPLORER_URL`، `USDT_EXPLORER_API_KEY`، `RFQ_URL`، `COMMISSION_*` و`MIN_COMMISSION_USD` (كما في rfq؛ يجب أن تتطابق)، وإبقاء البيانات (يعمل داخل `POST /v1/payments/sweep`، والقيمة 0 تعطّله): `WEBHOOK_EVENT_RETENTION_DAYS` (180)، `OUTBOX_DELIVERED_RETENTION_DAYS` (180)، `ATTEMPT_RETENTION_DAYS` (365)؛ ولا تُحذف الفواتير ولا دفتر الأستاذ أبداً. حدود: `MAX_OPEN_INVOICES_PER_USER` (20)، `MAX_INVOICES_PER_USER_PER_DAY` (50).
+- **media** (`FF_MEDIA_`): `DATABASE_URL`، `STORAGE_BACKEND` (local/s3)، `STORAGE_ROOT`، `PUBLIC_BASE_URL` (عنوان البوابة العام)، `MAX_UPLOAD_BYTES`، `S3_BUCKET`، `S3_REGION`، `S3_ENDPOINT_URL`، `S3_ACCESS_KEY_ID`، `S3_SECRET_ACCESS_KEY`، `SIGNING_KEY` (إلزامي مع `FF_ENV=production`؛ لروابط الملفات الخاصة)، `ADMIN_TOKEN`، `MAX_FILES_PER_USER` (200)، `MAX_UPLOADS_PER_HOUR` (30).
+- **feed** (`FF_FEED_`، المنفذ 8113): `DATABASE_URL`، `DB_AUTO_CREATE`، `ADMIN_TOKEN`، `MEDIA_BASE_URL`، `REPORT_HIDE_THRESHOLD` (3 مبلّغين مختلفين)، وحدود: `MAX_POSTS_PER_SUPPLIER` (500)، `MAX_FOLLOWS_PER_USER` (500)، `MAX_COMMENTS_PER_POST` (1000)، و`RATE_POSTS`/`RATE_COMMENTS`/`RATE_LIKES`/`RATE_FOLLOWS`/`RATE_REPORTS` في الساعة (القيمة 0 تعطّل الحد).
+- **freight** (`FF_FREIGHT_`، المنفذ 8114): `DATABASE_URL`، `DB_AUTO_CREATE`، `ADMIN_TOKEN`، `REPORT_HIDE_THRESHOLD` (3)، حدود: `MAX_OPEN_REQUESTS_PER_BUYER` (50)، `MAX_QUOTES_PER_REQUEST` (50)، `MAX_LANES_PER_FORWARDER` (50)، `MAX_APPLICATIONS_PER_USER` (5)، وأوزان الترتيب `WEIGHT_PRICE`/`WEIGHT_TRANSIT`/`WEIGHT_RATING` (50/30/20).
 - **قواعد البيانات**: لكل خدمة `FF_<SVC>_DATABASE_URL` مستقل، و`FF_POSTGRES_PASSWORD` و`FF_DOCKER_EXTRAS=pg` للتشغيل مع PostgreSQL.
 - **التطبيق** (وقت البناء `--dart-define`): `FF_MOCK` و`FF_API_BASE_URL`.
 
@@ -127,7 +129,7 @@
 ## 7) فئات تكاليف الاستضافة (بدون أسعار؛ ماذا تفحص)
 
 لم نضع أرقاماً لأن الأسعار تتغير. افحص عروض مزودين متعددين لكل بند:
-1. **خادم/VPS** يشغّل 13 حاوية: الذاكرة والمعالج المطلوبان، قارن مزودي VPS أو سحابة. ابدأ صغيراً وراقب `docker stats`.
+1. **خادم/VPS** يشغّل 15 حاوية: الذاكرة والمعالج المطلوبان، قارن مزودي VPS أو سحابة. ابدأ صغيراً وراقب `docker stats`.
 2. **PostgreSQL مُدار أو ذاتي** + **نسخ احتياطي خارج الخادم** (تخزين كائنات).
 3. **تخزين الصور** (قرص الخادم أو S3 مع تكلفة نقل البيانات).
 4. **النطاق (Domain)** وشهادة **TLS** (Let's Encrypt مجانية عادة) و**Reverse proxy** (Caddy/nginx).

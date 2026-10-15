@@ -17,3 +17,23 @@ Env (prefix `FF_DEMAND_`): `ENABLED` (default **false**, kill-switch), `DAILY_CA
 `GET /ready` (unauthenticated, exempt from the internal token): 503 when the database is unreachable. Each request emits one JSON log line on stdout (`ts, level, service, request_id, method, path` (route template), `status, duration_ms, user_id`); never query strings, tokens or Authorization. `X-Request-Id` is accepted (safe charset, <=64 chars) or generated and echoed back. `FF_LOG_FORMAT=text` for dev. Code: `obs.py` (self-contained copy).
 
 Retention env: `FF_DEMAND_SIGNAL_RETENTION_DAYS` (90), `FF_DEMAND_REJECTED_DRAFT_RETENTION_DAYS` (90); run after `POST /v1/signals/poll`; approved/published drafts are kept.
+
+## Environment reference (complete)
+Every setting in `src/ff_demand/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_DEMAND_DATABASE_URL` | sqlite+aiosqlite:///./demand.db |
+| `FF_DEMAND_DB_AUTO_CREATE` | unset |
+| `FF_INTERNAL_TOKEN` / `FF_DEMAND_INTERNAL_TOKEN` | unset |
+| `FF_DEMAND_ENABLED` | False |
+| `FF_DEMAND_DAILY_CAP` | 20 |
+| `FF_DEMAND_SOURCING_BASE_URL` | http://localhost:8101 |
+| `FF_DEMAND_SOURCING_TIMEOUT_SECONDS` | 5.0 |
+| `FF_DEMAND_USE_MOCK_SOURCING` | False |
+| `FF_DEMAND_MAX_CANDIDATES` | 3 |
+| `FF_DEMAND_SIGNAL_RETENTION_DAYS` | 90 |
+| `FF_DEMAND_REJECTED_DRAFT_RETENTION_DAYS` | 90 |
+| `FF_DEMAND_SIGNAL_SOURCE` | mock |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default).

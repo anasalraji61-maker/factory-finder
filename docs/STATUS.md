@@ -31,7 +31,7 @@
 ## Known gaps
 - Rate limiting is per-IP in-memory; direct service ports trust X-User-Id when FF_INTERNAL_TOKEN is unset (private network only).
 - Duty and freight tables are approximations; some hub coordinates unverified; some sea regions missing (see docs/requests/data-geo-sea-nodes.md).
-- Admin approval of supplier claims has no UI (HTTP endpoints only).
+- Admin approval of supplier claims: HTTP endpoints plus the admin console (`apps/admin`); both need `FF_GATEWAY_ADMIN_TOKEN`.
 
 ## ملخص الصباح (15 أكتوبر) — بالعربي
 - الخدمات الآن 15: أُضيفت **feed** (منشورات الموردين/متابعة/إعجاب/تعليقات) و**freight** (وكلاء الشحن: عروض أسعار ومقارنة وترسية).

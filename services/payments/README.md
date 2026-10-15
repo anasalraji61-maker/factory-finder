@@ -44,3 +44,40 @@ Every `paid`/`refunded` transition queues an event for rfq in the same transacti
 
 ### Limits and retention (env)
 `FF_PAYMENTS_MAX_OPEN_INVOICES_PER_USER` (20), `_MAX_INVOICES_PER_USER_PER_DAY` (50), `_WEBHOOK_EVENT_RETENTION_DAYS` (180), `_OUTBOX_DELIVERED_RETENTION_DAYS` (180), `_ATTEMPT_RETENTION_DAYS` (365); 0 disables a rule. Retention runs in `POST /v1/payments/sweep` and never touches invoices, ledger, paid/refunded history or undelivered outbox events.
+
+## Environment reference (complete)
+Every setting in `src/ff_payments/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_PAYMENTS_DATABASE_URL` | sqlite+aiosqlite:///./payments.db |
+| `FF_PAYMENTS_DB_AUTO_CREATE` | unset |
+| `FF_PAYMENTS_PROVIDER` | mock |
+| `FF_PAYMENTS_INTERNAL_TOKEN` | unset |
+| `FF_PAYMENTS_ADMIN_TOKEN` | unset |
+| `FF_PAYMENTS_WEBHOOK_SECRET_MOCK` | unset |
+| `FF_PAYMENTS_WEBHOOK_SECRET_USDT_TRON` | unset |
+| `FF_PAYMENTS_WEBHOOK_TOLERANCE_SECONDS` | 300 |
+| `FF_PAYMENTS_INVOICE_TTL_MINUTES` | 60 |
+| `FF_PAYMENTS_RFQ_URL` | http://localhost:8105 |
+| `FF_PAYMENTS_DEAL_CLIENT` | http |
+| `FF_PAYMENTS_OUTBOX_MAX_ATTEMPTS` | 8 |
+| `FF_PAYMENTS_OUTBOX_BACKOFF_SECONDS` | 30 |
+| `FF_PAYMENTS_OUTBOX_LEASE_SECONDS` | 60 |
+| `FF_PAYMENTS_OUTBOX_INLINE_TIMEOUT_SECONDS` | 3.0 |
+| `FF_PAYMENTS_MAX_OPEN_INVOICES_PER_USER` | 20 |
+| `FF_PAYMENTS_MAX_INVOICES_PER_USER_PER_DAY` | 50 |
+| `FF_PAYMENTS_WEBHOOK_EVENT_RETENTION_DAYS` | 180 |
+| `FF_PAYMENTS_OUTBOX_DELIVERED_RETENTION_DAYS` | 180 |
+| `FF_PAYMENTS_ATTEMPT_RETENTION_DAYS` | 365 |
+| `FF_PAYMENTS_COMMISSION_PRODUCT` | 0.03 |
+| `FF_PAYMENTS_COMMISSION_RAW_MATERIAL` | 0.02 |
+| `FF_PAYMENTS_COMMISSION_PRODUCTION_LINE` | 0.04 |
+| `FF_PAYMENTS_MIN_COMMISSION_USD` | 25 |
+| `FF_PAYMENTS_USDT_RECEIVE_ADDRESS` | unset |
+| `FF_PAYMENTS_USDT_EXPLORER_URL` | unset |
+| `FF_PAYMENTS_USDT_EXPLORER_API_KEY` | unset |
+| `FF_PAYMENTS_USDT_CONTRACT` | unset |
+| `FF_PAYMENTS_USDT_MIN_CONFIRMATIONS` | 20 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).

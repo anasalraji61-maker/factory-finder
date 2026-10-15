@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse
 from ff_messaging.api.routes import router
 from ff_messaging.config import Settings
 from ff_messaging.domain import errors as E
-from ff_messaging.domain.rate_limit import SlidingWindowRateLimiter
 from ff_messaging.domain.rules import TypingThrottle
 from ff_messaging.domain.safety import (
     AbuseFilter,
@@ -21,6 +20,7 @@ from ff_messaging.domain.safety import (
 )
 from ff_messaging.obs import db_ready, install_observability, ready_response
 from ff_messaging.persistence.database import Database
+from ff_messaging.ratelimit import WindowLimiter, make_redis_client
 from ff_messaging.realtime.hub import ConversationHub
 from ff_messaging.service import MessagingService
 
@@ -69,10 +69,29 @@ def build_service(settings: Settings, db: Database, hub: ConversationHub) -> Mes
             max_bytes=settings.attachment_max_bytes,
         ),
     )
-    limiter = SlidingWindowRateLimiter(
-        limit=settings.send_rate_limit, window_seconds=settings.send_rate_window_seconds
+    redis = make_redis_client(settings.redis_url)  # None = in-memory limits (per process)
+    limiter = WindowLimiter(
+        limit=settings.send_rate_limit,
+        window_seconds=settings.send_rate_window_seconds,
+        redis=redis,
+        prefix="ff:messaging:send:",
     )
-    return MessagingService(db=db, settings=settings, policy=policy, limiter=limiter, publisher=hub)
+    create_limiter = WindowLimiter(
+        limit=settings.conversation_create_limit,
+        window_seconds=settings.conversation_create_window_seconds,
+        redis=redis,
+        prefix="ff:messaging:create:",
+    )
+    ws_limiter = WindowLimiter(
+        limit=settings.ws_inbound_rate_limit,
+        window_seconds=settings.ws_inbound_rate_window_seconds,
+        redis=redis,
+        prefix="ff:messaging:ws:",
+    )
+    return MessagingService(
+        db=db, settings=settings, policy=policy, limiter=limiter, create_limiter=create_limiter,
+        ws_limiter=ws_limiter, publisher=hub,
+    )
 
 
 

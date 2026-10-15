@@ -52,6 +52,11 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
     )
 
+    # Shared rate-limit counters across replicas (needs the `redis` extra). Empty = in-memory, per process.
+    redis_url: str | None = Field(
+        default=None, validation_alias=AliasChoices("FF_REDIS_URL", "FF_MESSAGING_REDIS_URL")
+    )
+
     # --- persistence -------------------------------------------------------------------------
     database_url: str = "sqlite+aiosqlite:///./messaging.db"
     database_echo: bool = False

@@ -56,3 +56,40 @@ Migration `0003` adds `attempts, next_attempt_at, dead_at, last_error`. Status: 
 | `FF_TRACKING_NOTIFY_{BATCH_SIZE,MAX_ATTEMPTS}` | `100` / `8` |
 | `FF_TRACKING_NOTIFY_BACKOFF_{BASE,MAX}_SECONDS` | `30` / `3600` |
 | `FF_TRACKING_NOTIFY_{POLL,TIMEOUT}_SECONDS` | `30` / `10` |
+
+## Environment reference (complete)
+Every setting in `src/ff_tracking/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_TRACKING_DATABASE_URL` | sqlite+aiosqlite:///./tracking.db |
+| `FF_TRACKING_DB_AUTO_CREATE` | unset |
+| `FF_TRACKING_PROVIDER` | mock |
+| `FF_TRACKING_PROVIDER_API_KEY` | unset |
+| `FF_TRACKING_REFRESH_MIN_INTERVAL_SECONDS` | 60 |
+| `FF_TRACKING_INTERNAL_TOKEN` | unset |
+| `FF_TRACKING_CONTAINER_BASE_URL` | unset |
+| `FF_TRACKING_CONTAINER_API_KEY` | unset |
+| `FF_TRACKING_AWB_BASE_URL` | unset |
+| `FF_TRACKING_AWB_API_KEY` | unset |
+| `FF_TRACKING_VESSEL_BASE_URL` | unset |
+| `FF_TRACKING_VESSEL_API_KEY` | unset |
+| `FF_TRACKING_HTTP_MIN_INTERVAL_SECONDS` | 3.0 |
+| `FF_TRACKING_HTTP_CACHE_TTL_SECONDS` | 3600.0 |
+| `FF_TRACKING_FALLBACK_TO_MOCK` | True |
+| `FF_TRACKING_REFRESH_JOB_ENABLED` | False |
+| `FF_TRACKING_REFRESH_JOB_INTERVAL_HOURS` | 6.0 |
+| `FF_TRACKING_REFRESH_JOB_POLL_SECONDS` | 600.0 |
+| `FF_TRACKING_REFRESH_JOB_BATCH_SIZE` | 50 |
+| `FF_TRACKING_NOTIFY_RELAY` | off |
+| `FF_TRACKING_NOTIFY_BASE_URL` | unset |
+| `FF_TRACKING_NOTIFY_BATCH_SIZE` | 100 |
+| `FF_TRACKING_NOTIFY_MAX_ATTEMPTS` | 8 |
+| `FF_TRACKING_NOTIFY_BACKOFF_BASE_SECONDS` | 30.0 |
+| `FF_TRACKING_NOTIFY_BACKOFF_MAX_SECONDS` | 3600.0 |
+| `FF_TRACKING_NOTIFY_POLL_SECONDS` | 30.0 |
+| `FF_TRACKING_NOTIFY_TIMEOUT_SECONDS` | 10.0 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` (see `docs/OPS.md`).
+
+Read straight from the environment (not in `Settings`): kill switches `FF_TRACKING_KILL_SWITCH` (all HTTP adapters) and `FF_TRACKING_HTTP_DISABLED`, `FF_TRACKING_CONTAINER_DISABLED`, `FF_TRACKING_AWB_DISABLED`, `FF_TRACKING_VESSEL_DISABLED` (per adapter).

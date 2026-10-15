@@ -10,7 +10,7 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 - Re-encode: every image is decoded and re-encoded into a fresh image (EXIF incl. GPS, ICC, XMP, PNG text dropped; EXIF orientation applied first; animated input keeps frame 1). Variants 200/400/800 px wide are generated for widths smaller than the original; `?w=` accepts only those values (others 422), falling back to the original when no variant exists.
 - Ids: 128-bit random hex. Files: `GET /v1/media/files/<id>.<ext>` -> immutable cache headers, ETag/304, `X-Content-Type-Options: nosniff`, CSP `default-src 'none'`. Names are regex-validated and storage paths must resolve inside the storage root.
 - Ownership: owner = `X-User-Id`; `DELETE /v1/media/images/{id}` by anyone else is 404 (never 403). Deleted images can live on in downstream caches for the immutable lifetime (use a CDN purge if that matters).
-- Private files (`visibility=private`, or `kind=verification` which is always private; `kind=verification`+`visibility=public` -> 422): stored under `p-` keys the public route cannot address (public `GET /v1/media/files/*` -> 404), no resized variants, response `url` is the relative ref `/v1/media/private/<id>.<ext>`. Readable by the owner (`X-User-Id`) at that path, by anyone with a signed URL (`POST /v1/media/files/{id}/sign`, owner only -> `?u=&exp=&sig=`, HMAC-SHA256 over id+user+exp, 5 min, constant-time compare, bound to the file's owner) and by admins via `GET /v1/media/admin/files/{id}` (X-Admin-Token; gateway: `/v1/admin/media/files/{id}`). All other cases are one 404. Headers: `Cache-Control: private, no-store`, nosniff, `Referrer-Policy: no-referrer`, CSP. No listing. Dedupe is per (owner, hash, visibility). Rows created before migration 0002 are public; re-upload old verification documents.
+- Private files (`visibility=private`, or `kind=verification` which is always private; `kind=verification`+`visibility=public` -> 422): stored under `p-` keys the public route cannot address (public `GET /v1/media/files/*` -> 404), no resized variants, response `url` is the relative ref `/v1/media/private/<id>.<ext>`. Readable by the owner (`X-User-Id`) at that path, by anyone with a signed URL (`POST /v1/media/files/{id}/sign`, owner only -> `?u=&exp=&sig=`, HMAC-SHA256 over id+user+exp, 5 min, constant-time compare, bound to the file's owner) and by admins via `GET /v1/media/admin/files/{id}` (X-Admin-Token; gateway: `/v1/admin/media/files/{name}`). All other cases are one 404. Headers: `Cache-Control: private, no-store`, nosniff, `Referrer-Policy: no-referrer`, CSP. No listing. Dedupe is per (owner, hash, visibility). Rows created before migration 0002 are public; re-upload old verification documents.
 - Quotas per user: 200 stored files, 30 upload requests per rolling hour (every request counts, valid or not; 429 + `Retry-After`).
 - Dedupe: per owner by SHA-256 of the re-encoded bytes.
 - Storage: `StorageBackend` protocol (`storage/base.py`); `LocalDiskStorage` (default; keep `FF_MEDIA_STORAGE_ROOT` on a persistent volume) and `S3Storage` (UNVERIFIED skeleton, off by default, needs `pip install .[s3]`; credentials only from the environment).
@@ -34,3 +34,32 @@ Image upload and serving for listing photos, avatars and message attachments. Re
 
 ## Ops (logging / readiness)
 `GET /ready`: 503 when the database is unreachable or storage is not writable. One JSON log line per request (route template, status, duration, user id); never query strings, bodies or tokens. Code: `obs.py` (self-contained copy). Migrations: `alembic upgrade head` (see docs/DB.md).
+
+## Environment reference (complete)
+Every setting in `src/ff_media/config.py` (`Settings`, case-insensitive env names; empty values count as unset). Secrets are never defaulted.
+
+| Variable | Default |
+|---|---|
+| `FF_MEDIA_DATABASE_URL` | sqlite+aiosqlite:///./media.db |
+| `FF_MEDIA_DB_AUTO_CREATE` | unset |
+| `FF_MEDIA_INTERNAL_TOKEN` | unset |
+| `FF_MEDIA_PUBLIC_BASE_URL` | unset |
+| `FF_MEDIA_STORAGE_BACKEND` | local |
+| `FF_MEDIA_STORAGE_ROOT` | ./media-data |
+| `FF_MEDIA_S3_BUCKET` | unset |
+| `FF_MEDIA_S3_REGION` | unset |
+| `FF_MEDIA_S3_ENDPOINT_URL` | unset |
+| `FF_MEDIA_S3_PREFIX` | media/ |
+| `FF_MEDIA_S3_ACCESS_KEY_ID` | unset |
+| `FF_MEDIA_S3_SECRET_ACCESS_KEY` | unset |
+| `FF_MEDIA_SIGNING_KEY` | unset |
+| `FF_MEDIA_SIGNED_URL_TTL_SECONDS` | 300 |
+| `FF_MEDIA_ADMIN_TOKEN` | unset |
+| `FF_MEDIA_MAX_UPLOAD_BYTES` | 5242880 |
+| `FF_MEDIA_MAX_DIMENSION` | 8000 |
+| `FF_MEDIA_MAX_PIXELS` | 40000000 |
+| `FF_MEDIA_JPEG_QUALITY` | 85 |
+| `FF_MEDIA_MAX_FILES_PER_USER` | 200 |
+| `FF_MEDIA_MAX_UPLOADS_PER_HOUR` | 30 |
+
+Also read from the environment: `FF_LOG_FORMAT` (`text` for dev; JSON by default), `FF_ENV=production` refuses to start without `FF_INTERNAL_TOKEN` and `FF_MEDIA_SIGNING_KEY` (see `docs/OPS.md`).
