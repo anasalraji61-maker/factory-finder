@@ -423,3 +423,29 @@ def test_websocket_inbound_frame_rate_limit():
                 assert ws.receive_json()["type"] == "pong"
             ws.send_json({"type": "ping"})
             assert ws.receive_json()["code"] == "rate_limited"
+
+
+def test_client_id_idempotent_echo_and_ws(client):
+    cid = new_conv(client)["id"]
+    url = f"/v1/conversations/{cid}/messages"
+    with client.websocket_connect(f"/v1/ws/conversations/{cid}?user_id=sup1") as ws:
+        assert ws.receive_json()["type"] == "ready"
+        a = client.post(url, headers=H("buyer1"), json={"text": "once", "client_id": "cid-1"})
+        evt = ws.receive_json()
+    b = client.post(url, headers=H("buyer1"), json={"text": "once", "client_id": "cid-1"})
+    assert (a.status_code, b.status_code) == (201, 200) and a.json()["id"] == b.json()["id"]
+    assert a.json()["client_id"] == b.json()["client_id"] == "cid-1"
+    assert evt["message"]["client_id"] == "cid-1"
+    assert len(client.get(url, headers=H("buyer1")).json()["items"]) == 1
+    # same id from another sender is independent
+    c = client.post(url, headers=H("sup1"), json={"text": "other", "client_id": "cid-1"})
+    assert c.status_code == 201 and c.json()["id"] != a.json()["id"]
+
+
+def test_client_id_validation(client):
+    cid = new_conv(client)["id"]
+    url = f"/v1/conversations/{cid}/messages"
+    for bad in ("", "x" * 65, "bad id!"):
+        assert client.post(url, headers=H("buyer1"), json={"text": "t", "client_id": bad}).status_code == 422
+    r = client.post(url, headers=H("buyer1"), json={"text": "t", "client_id": "a", "client_message_id": "b"})
+    assert r.status_code == 422

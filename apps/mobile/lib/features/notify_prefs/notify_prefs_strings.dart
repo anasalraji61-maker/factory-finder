@@ -22,6 +22,8 @@ const Map<String, (String, String)> _pairs = {
   'notifyprefs.quiet_enable': ('تفعيل ساعات الهدوء', 'Enable quiet hours'),
   'notifyprefs.quiet_start': ('من', 'From'),
   'notifyprefs.quiet_end': ('إلى', 'To'),
+  'notifyprefs.quiet_summary': ('{start} – {end} ({tz})', '{start} – {end} ({tz})'),
+  'notifyprefs.push_denied': ('الإشعارات الفورية معطّلة في إعدادات الجهاز. فعّلها من إعدادات النظام لتصلك التنبيهات.', 'Push notifications are blocked in your device settings. Enable them in system settings to receive alerts.'),
   'notifyprefs.timezone': ('المنطقة الزمنية', 'Timezone'),
   'notifyprefs.language': ('لغة الإشعارات', 'Notification language'),
   'notifyprefs.email': ('بريد الملخص اليومي', 'Daily digest email'),

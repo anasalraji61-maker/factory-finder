@@ -47,6 +47,7 @@ def message_json(m: Message) -> dict[str, Any]:
         "flags": list(m.flags),
         "flagged": m.flagged,
         "client_message_id": m.client_message_id,
+        "client_id": m.client_message_id,
         "created_at": _ts(m.created_at),
         "read_by": list(m.read_by),
     }

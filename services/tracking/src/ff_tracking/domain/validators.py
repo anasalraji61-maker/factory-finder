@@ -121,9 +121,12 @@ _VESSEL_TITLE = re.compile(r"^(?:M\s*/\s*[VTS]|M\.[VTS]\.?|MV|MT|SS|MS)(?=[\s.:/
 _NAME_IMO = re.compile(r"\(?\s*IMO[\s:#.-]*([0-9]{7})\s*\)?", re.IGNORECASE)
 
 
+MAX_VESSEL_TEXT = 300
+
+
 def clean_vessel_name(raw: str | None) -> str | None:
     """Upper-case, control characters and ``M/V`` / ``MV`` / ``MT`` titles removed, whitespace collapsed."""
-    text = strip_control(raw)
+    text = strip_control((raw or "")[:MAX_VESSEL_TEXT])
     if not text:
         return None
     text = _NAME_IMO.sub(" ", text)
@@ -141,7 +144,7 @@ def parse_vessel(value: object) -> VesselRef | None:
     """
     if not isinstance(value, Mapping):
         return None
-    name_raw = str(value.get("name") or "")
+    name_raw = str(value.get("name") or "")[:MAX_VESSEL_TEXT]  # untrusted provider text: bound regex work (O(n^2) on whitespace)
     imo_raw = str(value.get("imo") or "")
     if not imo_raw and (m := _NAME_IMO.search(name_raw)):
         imo_raw = m.group(1)

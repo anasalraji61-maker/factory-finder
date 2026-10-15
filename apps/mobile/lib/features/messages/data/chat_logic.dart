@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/error_messages.dart';
 import 'package:factory_finder/features/messages/data/message_models.dart';
@@ -36,6 +38,16 @@ List<ChatItem> buildChatItems(List<ChatMessage> messages) {
   return items;
 }
 
+final Random _idRandom = Random.secure();
+
+/// New `client_id` (contract: 1-64 chars of `[A-Za-z0-9_-]`). Generate it once
+/// when the message is composed and reuse it for every retry of that message.
+String newClientId([DateTime? now]) {
+  final t = (now ?? DateTime.now()).microsecondsSinceEpoch.toRadixString(36);
+  final r = _idRandom.nextInt(1 << 32).toRadixString(36);
+  return 'c_${t}_$r';
+}
+
 /// A message shown immediately while the request is in flight.
 ChatMessage optimisticMessage({
   required String conversationId,
@@ -43,9 +55,11 @@ ChatMessage optimisticMessage({
   required DateTime now,
   required int seq,
   List<MessageAttachment> attachments = const <MessageAttachment>[],
+  String? clientId,
 }) =>
     ChatMessage(
       id: 'local_$seq',
+      clientId: clientId,
       conversationId: conversationId,
       senderId: currentUserId,
       body: text.trim(),
@@ -58,11 +72,12 @@ ChatMessage optimisticMessage({
 List<ChatMessage> confirmSent(List<ChatMessage> list, String localId, ChatMessage sent) {
   final out = <ChatMessage>[];
   var replaced = false;
+  final cid = sent.clientId;
   for (final m in list) {
     if (m.id == localId) {
       out.add(sent);
       replaced = true;
-    } else if (m.id != sent.id) {
+    } else if (m.id != sent.id && (cid == null || m.clientId != cid)) {
       out.add(m);
     }
   }
@@ -82,12 +97,17 @@ List<ChatMessage> removeMessage(List<ChatMessage> list, String id) =>
 /// and messages pushed over the socket that a slightly stale poll lacks.
 List<ChatMessage> mergeServer(List<ChatMessage> local, List<ChatMessage> server) {
   final ids = {for (final m in server) m.id};
+  final cids = {
+    for (final m in server)
+      if (m.clientId != null) m.clientId!,
+  };
   DateTime? newest;
   for (final m in server) {
     if (newest == null || m.createdAt.isAfter(newest)) newest = m.createdAt;
   }
   bool keep(ChatMessage m) {
     if (ids.contains(m.id)) return false;
+    if (m.clientId != null && cids.contains(m.clientId)) return false;
     if (m.status != SendStatus.sent) return true;
     return newest == null || m.createdAt.isAfter(newest);
   }

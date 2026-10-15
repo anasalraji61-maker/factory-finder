@@ -75,6 +75,7 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     _touched = true;
     final key = validateReference(_type, _ref.text);
     if (key != null) {
@@ -92,11 +93,11 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
           .add(_ref.text, _type, carrier: _carrier.text);
       if (!mounted) return;
       Navigator.of(context).pop(shipment);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _serverError = 'tracking.err.generic';
+        _serverError = trackingAddErrorKey(e);
       });
     }
   }

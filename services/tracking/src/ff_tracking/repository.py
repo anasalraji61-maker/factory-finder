@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, delete, func, select
+from sqlalchemy import (
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    delete,
+    func,
+    select,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -18,6 +28,16 @@ from sqlalchemy.pool import StaticPool
 from ff_tracking.dburl import is_sqlite, normalize_database_url
 from ff_tracking.domain.models import Shipment
 
+# refresh_marker sentinels: never refreshed sorts first (always due); delivered sorts last (never due)
+NEVER_REFRESHED = datetime(1970, 1, 1, tzinfo=UTC)
+DELIVERED = datetime(9999, 12, 31, tzinfo=UTC)
+
+
+def refresh_marker_for(sh: Shipment) -> datetime:
+    if sh.status.value == "delivered":
+        return DELIVERED
+    return sh.last_refresh_attempt_at or sh.last_refreshed_at or NEVER_REFRESHED
+
 
 class Base(DeclarativeBase):
     pass
@@ -25,7 +45,11 @@ class Base(DeclarativeBase):
 
 class ShipmentRow(Base):
     __tablename__ = "shipments"
-    __table_args__ = (UniqueConstraint("owner_id", "reference_type", "reference"),)
+    __table_args__ = (
+        UniqueConstraint("owner_id", "reference_type", "reference"),
+        Index("ix_shipments_owner_created", "owner_id", "created_at"),  # newest-first list per owner
+        Index("ix_shipments_refresh", "refresh_marker", "created_at"),  # refresh job: oldest-due first
+    )
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     owner_id: Mapped[str] = mapped_column(String(64), index=True)
@@ -34,6 +58,8 @@ class ShipmentRow(Base):
     status: Mapped[str] = mapped_column(String(24), index=True)
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
     data: Mapped[str] = mapped_column(Text)
+    # last refresh attempt (or last success), denormalised from ``data`` so the refresh job can select due rows
+    refresh_marker: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class OutboxRow(Base):
@@ -121,6 +147,7 @@ class ShipmentRepository:
                                   reference=sh.reference, created_at=sh.created_at)
                 s.add(row)
             row.status = sh.status.value
+            row.refresh_marker = refresh_marker_for(sh)
             row.data = sh.model_dump_json()
             await s.commit()
 
@@ -221,6 +248,14 @@ class ShipmentRepository:
             if row:
                 row.delivered_at = when
                 await s.commit()
+
+    async def due_for_refresh(self, cutoff, limit: int) -> list[Shipment]:
+        """Undelivered shipments whose last refresh attempt is at or before ``cutoff`` (never-refreshed first),
+        oldest first (``refresh_marker`` is set to a far-future sentinel for delivered rows), at most ``limit`` (indexed; no scan of every active shipment)."""
+        async with self._sessions() as s:
+            rows = (await s.execute(select(ShipmentRow).where(ShipmentRow.refresh_marker <= cutoff).order_by(
+                ShipmentRow.refresh_marker, ShipmentRow.created_at).limit(limit))).scalars()
+            return [Shipment.model_validate_json(r.data) for r in rows]
 
     async def active(self) -> list[Shipment]:
         """Shipments not yet delivered (the refresh job filters staleness in Python)."""

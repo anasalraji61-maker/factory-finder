@@ -1,0 +1,42 @@
+{
+  "_note": "UNVERIFIED SYNTHETIC fixture; the result.toReturn[] envelope and field names are assumed, NOT recorded from the 1688 Open Platform.",
+  "result": {
+    "success": "true",
+    "total": 9,
+    "toReturn": [
+      {
+        "offerId": 612345678901,
+        "subject": "PP 注塑级 颗粒",
+        "price": "¥12.5-15.00",
+        "unit": "kg",
+        "minOrderQuantity": "100kg",
+        "memberId": "b2b-2200123456",
+        "companyName": "  宁波　塑料 有限公司 ",
+        "city": "宁波",
+        "detailUrl": "https://detail.1688.com/offer/612345678901.html",
+        "imageUrl": "https://cbu01.alicdn.com/img/ibank/fake1.jpg",
+        "tpYear": 3
+      },
+      {
+        "offerId": 612345678902,
+        "subject": "二手 挤出 生产线",
+        "priceMin": 25000,
+        "priceMax": 28000.5,
+        "unit": "套",
+        "minOrderQuantity": 1,
+        "memberId": null,
+        "companyName": "苏州 机械厂",
+        "imageUrl": "//cbu01.alicdn.com/img/ibank/protocol-relative.jpg",
+        "images": ["http://cbu01.alicdn.com/img/ibank/insecure.jpg", "https://cbu01.alicdn.com/img/ibank/ok2.jpg"],
+        "tpYear": 0
+      },
+      {"offerId": 612345678903, "subject": "Null price", "price": null, "memberId": "m1", "companyName": "X"},
+      {"offerId": 612345678904, "subject": "Price on request", "price": "面议", "memberId": "m1", "companyName": "X"},
+      {"offerId": 612345678901, "subject": "PP 注塑级 颗粒 duplicate", "price": "13", "memberId": "b2b-2200123456", "companyName": "宁波塑料有限公司"},
+      {"subject": "No offer id", "price": "5"},
+      {"offerId": 612345678905, "subject": "USD quoted", "price": "US $3.5", "memberId": "m2", "companyName": "Export Co", "detailUrl": "ftp://bad.example/x"},
+      "not-an-object",
+      {"offerId": 612345678906, "price": "9", "memberId": "m3", "companyName": "No Title Co"}
+    ]
+  }
+}

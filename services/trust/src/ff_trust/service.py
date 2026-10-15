@@ -52,6 +52,15 @@ class TrustService:
         self.reviews = reviews
         self.verification = verification or VerificationStore()
 
+    def _finish(self, supplier_id: str, signals: SupplierSignals, accepted: int, evidence) -> TrustScoreOut:
+        if accepted:  # only reviewed (accepted) reports ever touch the score
+            signals = signals.model_copy(update={"confirmed_reports": accepted})
+        if evidence is not None and signals.verification is None:  # approved documents only; pending/rejected never count
+            signals = signals.model_copy(update={"verification": evidence})
+        out = to_out(supplier_id, signals, self.cfg)
+        self.cache.set(supplier_id, out)
+        return out
+
     async def for_supplier(self, supplier_id: str) -> TrustScoreOut | None:
         hit = self.cache.get(supplier_id)
         if hit:
@@ -59,23 +68,48 @@ class TrustService:
         signals = await self.adapter.get_signals(supplier_id)
         if signals is None:
             return None
+        signals = await self._enrich_for(supplier_id, signals)
+        out = self._finish(supplier_id, signals, await self.reports.accepted_count(supplier_id), await self.verification.evidence_for(supplier_id))
+        await self.snapshots.add(supplier_id, Snapshot(out.computed_at, out.score, out.band, out.confidence or 0))
+        return out
+
+    async def _enrich_for(self, supplier_id: str, signals: SupplierSignals) -> SupplierSignals:
         if self.reviews is not None and signals.review_summary is None:
-            try:  # optional enrichment: any failure leaves the score as it was without it
+            try:
                 summary = await self.reviews.fetch(supplier_id)
             except Exception:  # noqa: BLE001
                 summary = None
             if summary is not None:
                 signals = signals.model_copy(update={"review_summary": summary})
-        accepted = await self.reports.accepted_count(supplier_id)
-        if accepted:  # only reviewed (accepted) reports ever touch the score
-            signals = signals.model_copy(update={"confirmed_reports": accepted})
-        evidence = await self.verification.evidence_for(supplier_id)  # approved documents only; pending/rejected never count
-        if evidence is not None and signals.verification is None:
-            signals = signals.model_copy(update={"verification": evidence})
-        out = to_out(supplier_id, signals, self.cfg)
-        self.cache.set(supplier_id, out)
-        await self.snapshots.add(supplier_id, Snapshot(out.computed_at, out.score, out.band, out.confidence or 0))
-        return out
+        return signals
+
+    async def for_suppliers(self, supplier_ids: list[str]) -> list[TrustScoreOut]:
+        """Batch scoring in input order (unknown suppliers skipped). Cache misses share one accepted-report query,
+        one verification-evidence query and one snapshot transaction instead of ~6 statements per supplier."""
+        found: dict[str, TrustScoreOut] = {}
+        misses: list[str] = []
+        for sid in supplier_ids:
+            hit = self.cache.get(sid)
+            if hit:
+                found[sid] = hit
+            else:
+                misses.append(sid)
+        if misses:
+            sigs: dict[str, SupplierSignals] = {}
+            for sid in misses:
+                s = await self.adapter.get_signals(sid)  # AdapterDisabled propagates exactly as in for_supplier
+                if s is not None:
+                    sigs[sid] = await self._enrich_for(sid, s)
+            ids = list(sigs)
+            accepted = await self.reports.accepted_counts(ids)
+            evidence = await self.verification.evidence_for_many(ids)
+            snaps: dict[str, Snapshot] = {}
+            for sid, signals in sigs.items():
+                out = self._finish(sid, signals, accepted.get(sid, 0), evidence.get(sid))
+                found[sid] = out
+                snaps[sid] = Snapshot(out.computed_at, out.score, out.band, out.confidence or 0)
+            await self.snapshots.add_many(snaps)
+        return [found[sid] for sid in supplier_ids if sid in found]
 
     def evaluate(self, signals: SupplierSignals) -> TrustScoreOut:
         return to_out(signals.supplier_id or "adhoc", signals, self.cfg)

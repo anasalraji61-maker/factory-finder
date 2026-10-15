@@ -44,6 +44,9 @@ class NativeListingRow(Base):
     __tablename__ = "native_listings"
     __table_args__ = (
         Index("ix_native_listings_supplier_status", "supplier_id", "status"),
+        # public search window: newest published first, optionally per kind (no sort of every published row)
+        Index("ix_native_listings_status_published", "status", "published_at"),
+        Index("ix_native_listings_status_kind_published", "status", "kind", "published_at"),
         UniqueConstraint("supplier_id", "external_ref", name="uq_native_listings_supplier_ref"),
     )
 

@@ -1,0 +1,202 @@
+[
+ {
+  "text": "أحتاج مكائن تعبئة من الصين",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "ابغى مكينة تعبئة زجاجات",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "ودي اشتري مضخة مياه",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "نبي مكائن تعبئة وتغليف",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "بدي مضخات مياه من الصين",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "عايز ماكنة تعبئة بسعر كويس",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "شلون أحصل مكائن تعبئة؟",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "مطلوب مضخات صناعية",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "أَحْتَاجُ مَكَائِنَ تَعْبِئَة",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "Looking for filling machines from China",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "WTB packaging machine, small factory",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "We need industrial pumps, any supplier?",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "Where can I buy a filling machine?",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "I need a pump for water, from China please",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "求购 灌装机 中国",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "想买 水泵",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "需要采购 包装机",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "أحتاج مضخة، رقمي +964 770 123 4567",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "Need pump, email me at buyer@example.com or call 0770-123-4567",
+  "expect": "drafted",
+  "lang": "en"
+ },
+ {
+  "text": "أحتاج مكائن تعبئة تواصل @buyer_iq",
+  "expect": "drafted",
+  "lang": "ar"
+ },
+ {
+  "text": "بيع سيارة موديل 2019 بحالة ممتازة",
+  "expect": "ignored",
+  "lang": "ar"
+ },
+ {
+  "text": "للبيع مكائن تعبئة جديدة، خصم 50%",
+  "expect": "ignored",
+  "lang": "ar"
+ },
+ {
+  "text": "Filling machines for sale, special offer",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "We are a manufacturer of pumps, contact us",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "WTS packaging machine looking for buyers",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "我们是工厂 供应 灌装机",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "no need for a pump, thanks",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "لا احتاج مضخة شكرا",
+  "expect": "ignored",
+  "lang": "ar"
+ },
+ {
+  "text": "Need pumps http://a.example/x http://b.example/y",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "Looking for pumps aaaaaaaaaaaaaaaa",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "good morning everyone",
+  "expect": "ignored",
+  "lang": "en"
+ },
+ {
+  "text": "أحتاج",
+  "expect": "ignored",
+  "lang": "ar"
+ },
+ {
+  "text": "Looking for flying carpets",
+  "expect": "no_match",
+  "lang": "en"
+ },
+ {
+  "text": "أحتاج ديناصورات",
+  "expect": "no_match",
+  "lang": "ar"
+ },
+ {
+  "text": "Please do not contact me, I need pumps",
+  "expect": "suppressed",
+  "lang": "en"
+ },
+ {
+  "text": "لا تتواصل معي أحتاج مضخة",
+  "expect": "suppressed",
+  "lang": "ar"
+ },
+ {
+  "text": "Need pumps. Stop messaging me",
+  "expect": "suppressed",
+  "lang": "en"
+ },
+ {
+  "text": "unsubscribe me, looking for pumps",
+  "expect": "suppressed",
+  "lang": "en"
+ },
+ {
+  "text": "أحتاج مضخة مياه، لا أريد رسائل",
+  "expect": "suppressed",
+  "lang": "ar"
+ },
+ {
+  "text": "Looking for filling machine? Don't DM me",
+  "expect": "suppressed",
+  "lang": "en"
+ }
+]

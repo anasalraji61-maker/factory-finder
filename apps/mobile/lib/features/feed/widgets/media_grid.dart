@@ -17,7 +17,7 @@ class PostMediaGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shown = urls.take(5).toList();
+    final shown = urls.where((u) => u.trim().isNotEmpty).take(5).toList();
     if (shown.isEmpty) return const SizedBox.shrink();
     final base = ref.watch(apiClientProvider).baseUrl;
 

@@ -247,7 +247,8 @@ components:
         attachment: {$ref: "#/components/schemas/Attachment"}
         attachments: {type: array, maxItems: 5, items: {$ref: "#/components/schemas/MediaAttachment"}, description: "Optional media attachments (max 5, config-limited). Allowed on type text/attachment; an attachments-only message needs no text. Not combinable with attachment/offer_ref. Errors: 422 too_many_attachments | attachment_url_not_allowed | invalid_attachment."}
         offer_ref: {type: object, required: [offer_id], properties: {offer_id: {type: string}, request_id: {type: [string, "null"]}}}
-        client_message_id: {type: string, maxLength: 64}
+        client_message_id: {type: string, minLength: 1, maxLength: 64, pattern: "^[A-Za-z0-9_.:\\-]+$"}
+        client_id: {type: string, minLength: 1, maxLength: 64, pattern: "^[A-Za-z0-9_.:\\-]+$", description: "Alias of client_message_id (must match if both given). Idempotent per (sender, conversation, client_id): replay returns the original message with 200."}
     Message:
       type: object
       required: [id, conversation_id, seq, type, created_at]
@@ -266,6 +267,7 @@ components:
         flags: {type: array, items: {type: string}}
         flagged: {type: boolean}
         client_message_id: {type: [string, "null"]}
+        client_id: {type: [string, "null"], description: "Echo of client_message_id."}
         created_at: {type: string, format: date-time}
         read_by: {type: array, items: {type: string}}
     MessagePage:

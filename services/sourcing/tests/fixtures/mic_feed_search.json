@@ -1,0 +1,37 @@
+{
+  "_note": "UNVERIFIED SYNTHETIC fixture for an ASSUMED licensed Made-in-China feed contract. There is no documented public format; replace with the real partner sample.",
+  "items": [
+    {
+      "id": "mic-1001",
+      "title": "CNC Milling Machine VMC850",
+      "price_min": "18,500",
+      "price_max": "21,000",
+      "currency": "usd",
+      "company_id": "co-77",
+      "company": "Shandong Heavy Machinery Co., Ltd.",
+      "city": "Jinan",
+      "url": "https://example-feed.invalid/p/mic-1001",
+      "images": [{"url": "https://image.made-in-china.com/fake/a.jpg"}, {"url": "http://image.made-in-china.com/fake/insecure.jpg"}],
+      "moq": "1 Set",
+      "unit": "Sets",
+      "audited": "true"
+    },
+    {
+      "id": "mic-1002",
+      "title": "Stainless Steel Valve DN50",
+      "price": "US$ 3.50 - 4.20 /Piece",
+      "company_id": "co-78",
+      "company": "Wenzhou Valve Factory",
+      "images": ["https://image.made-in-china.com/fake/v.jpg", "https://image.made-in-china.com/fake/v.jpg"],
+      "moq": 500,
+      "audited": false
+    },
+    {"id": "mic-1003", "title": "RMB quoted pump", "price_min": "800", "currency": "RMB", "company_id": "co-79", "company": "Pump Co"},
+    {"id": "mic-1004", "title": "No price", "price_min": null, "price_max": null, "company_id": "co-80", "company": "Silent Co"},
+    {"id": "mic-1005", "title": "Euro decimal comma", "price": "12,50 €", "company": "Eurotrade GmbH"},
+    {"id": "mic-1002", "title": "Stainless Steel Valve DN50", "price_min": 3.5, "company_id": "co-78", "company": "Wenzhou Valve Factory"},
+    {"title": "no id", "price_min": 1},
+    {"id": "mic-1006", "title": "Inverted range", "price_min": 9, "price_max": 4, "company_id": "co-81", "company": "Flip Co"},
+    {"id": "mic-1007", "title": "Garbage price", "price_min": "abc", "company_id": "co-82", "company": "G"}
+  ]
+}

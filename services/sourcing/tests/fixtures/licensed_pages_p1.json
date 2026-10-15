@@ -1,0 +1,5 @@
+{"_note": "UNVERIFIED SYNTHETIC page fixture for the FICTIONAL examplia mapping; not a recording.",
+ "data": {"items": [
+  {"product_id": "p-1", "name": "Hydraulic Press 100T", "pricing": {"min": "12000", "max": "14000", "currency": "usd"}, "seller": {"id": "s1", "name": "Acme Press", "country": "cn"}, "photos": ["https://img.examplia.invalid/1.jpg", "http://img.examplia.invalid/2.jpg", "https://evil.example/3.jpg"], "min_order": "1 set", "uom": "pcs"},
+  {"product_id": "p-2", "name": "Null priced thing", "pricing": {"min": null, "max": null}, "seller": {"id": "s1", "name": "Acme Press"}}
+ ]}}

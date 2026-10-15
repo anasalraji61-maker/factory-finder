@@ -6,7 +6,8 @@ currency/unit normalization, image host allowlist, timeouts and cache. The key i
 the repo or the mapping. Compliance (CLAUDE.md rule 6) is inherited from HttpProviderAdapter:
 >= 3 s/host throttle floor, cache, kill switch (global + per-provider), honest User-Agent,
 401/403/429 => SourceBlocked (no retry/bypass). Official/licensed API only: no page scraping.
-On any failure the SourcingService degrades to the mock adapter with a visible warning.
+Only the bundled FICTIONAL examples exist; no real provider mapping is verified, and test fixtures
+are synthetic. On any failure the SourcingService degrades to the mock adapter with a visible warning.
 """
 
 from __future__ import annotations
@@ -30,13 +31,12 @@ from ..domain.quality import (
     normalize_currency_code,
     price_is_sane,
 )
-from ._norm import build_listing, dec
+from ._norm import build_listing, dec, resolve_price
 from .http_provider import (
     MIN_INTERVAL_FLOOR_S,
     HttpProviderAdapter,
     ProviderConfig,
     get_path,
-    parse_price_range,
 )
 
 log = logging.getLogger(__name__)
@@ -368,16 +368,16 @@ class LicensedRestAdapter(HttpProviderAdapter):
         if url is not None and urlsplit(str(url)).scheme.lower() not in ("http", "https"):
             url = None  # never keep javascript:/data: links from a feed
         text_for_ccy = g("price_range") if "price_range" in m else None
-        if "price_range" in m and text_for_ccy is not None:
-            rng = parse_price_range(text_for_ccy)
-            lo, hi = rng if rng else (Decimal(0), Decimal(0))
-        else:
-            lo, hi = dec(g("price_min", 0)), dec(g("price_max", g("price_min", 0)))
+        pi = resolve_price(
+            text=text_for_ccy, lo=g("price_min"), hi=g("price_max"), default_currency="", country=g("country")
+        )
+        if pi is None:
+            return None  # null / zero / unparsable price: never published as 0
         scale = Decimal(s.units.price_scale)
-        lo, hi = lo * scale, hi * scale
+        lo, hi = pi.lo * scale, pi.hi * scale
         ccy = normalize_currency_code(g("currency"), s.currency.aliases)
         if ccy is None and s.currency.detect_from_price_text:
-            ccy = detect_currency(text_for_ccy, s.currency.aliases)
+            ccy = detect_currency(text_for_ccy or g("price_min"), s.currency.aliases) or pi.currency
         ccy = ccy or s.defaults["currency"]
         if s.currency.allowed and ccy not in s.currency.allowed:
             return None
@@ -393,7 +393,7 @@ class LicensedRestAdapter(HttpProviderAdapter):
             source=s.id, native_id=str(native_id), title=str(title).strip(), price_min=lo, price_max=hi,
             currency=ccy, supplier_native_id=str(g("supplier_id", g("supplier_name", ""))),
             supplier_name=str(g("supplier_name", "")).strip()[:200],
-            country=str(g("country", s.defaults.get("country", "CN"))).upper()[:2], city=g("city"),
+            country=g("country", s.defaults.get("country", "CN")), city=g("city"),
             url=url, images=self._images(get_path(raw, m["images"]) if "images" in m else None),
             moq=int(dec(moq_d[0])) if moq_d else None, unit=unit, verified=verified,
         )
@@ -430,13 +430,15 @@ class LicensedRestAdapter(HttpProviderAdapter):
             else:
                 page += 1
         out: list[ListingDetail] = []
+        seen: set[str] = set()
         for raw in raw_items:
             try:
                 item = self.normalize_item(raw)
             except Exception as exc:
                 log.warning("%s: skipped malformed item (%s)", self.id, type(exc).__name__)
                 continue
-            if item is not None:
+            if item is not None and item.id not in seen:  # same id repeated across pages
+                seen.add(item.id)
                 out.append(item)
         deduped = dedupe_listings(out, self.spec.quality.dedupe_threshold)
         return deduped[: query.limit]

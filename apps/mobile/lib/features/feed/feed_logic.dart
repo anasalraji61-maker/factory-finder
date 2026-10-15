@@ -62,7 +62,7 @@ String _contactKey(ContactKind k) => 'feed.err.contact.${k.name}';
 String? validatePostBody(String body) {
   final t = body.trim();
   if (t.isEmpty) return 'feed.err.body_empty';
-  if (t.length > kPostBodyMax) return 'feed.err.post_too_long';
+  if (t.runes.length > kPostBodyMax) return 'feed.err.post_too_long';
   if (_hasControl(t)) return 'feed.err.control_chars';
   final k = findContactDetail(t);
   return k == null ? null : _contactKey(k);
@@ -72,7 +72,7 @@ String? validatePostBody(String body) {
 String? validateCommentBody(String body) {
   final t = body.trim();
   if (t.isEmpty) return 'feed.err.body_empty';
-  if (t.length > kCommentBodyMax) return 'feed.err.comment_too_long';
+  if (t.runes.length > kCommentBodyMax) return 'feed.err.comment_too_long';
   if (_hasControl(t)) return 'feed.err.control_chars';
   final k = findContactDetail(t);
   return k == null ? null : _contactKey(k);
@@ -90,7 +90,7 @@ String? validateTags(List<String> tags) {
 /// Report details are stored redacted, but contact details are still rejected
 /// client-side to keep the UX consistent.
 String? validateReportDetails(String details) {
-  if (details.trim().length > kReportDetailsMax) return 'feed.err.details_too_long';
+  if (details.trim().runes.length > kReportDetailsMax) return 'feed.err.details_too_long';
   return null;
 }
 
@@ -125,6 +125,17 @@ bool hasInvalidTags(String raw) {
     if (t.isNotEmpty && !_tagRe.hasMatch(t)) return true;
   }
   return false;
+}
+
+/// True when [raw] holds more valid, distinct tags than a post may carry
+/// (parseTags would silently drop the rest).
+bool hasTooManyTags(String raw) {
+  final seen = <String>{};
+  for (final part in raw.split(RegExp(r'[\s,#،;]+'))) {
+    final t = part.trim().toLowerCase();
+    if (t.isNotEmpty && _tagRe.hasMatch(t)) seen.add(t);
+  }
+  return seen.length > kPostTagsMax;
 }
 
 /// Upper-case initials (max 2 letters) of a supplier name for the avatar.

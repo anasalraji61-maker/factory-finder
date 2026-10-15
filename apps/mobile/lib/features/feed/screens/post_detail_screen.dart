@@ -73,7 +73,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           message: feedErrorMessage(context, e),
           onRetry: () => ref.invalidate(feedPostDetailProvider(id)),
         ),
-        data: (_) => const SizedBox.shrink(),
+        // The post was removed (e.g. a like answered 404) after it loaded.
+        data: (_) => EmptyState(
+          key: const ValueKey<String>('feed-detail-gone'),
+          icon: Icons.visibility_off_outlined,
+          title: context.tr('feed.err.not_found'),
+        ),
       );
     } else {
       final comments = ref.watch(feedCommentsProvider(id));

@@ -388,6 +388,15 @@ class MockQuoteGenerator {
         ));
       }
 
+      // Always-on estimate label (same wording as the real service).
+      final asOfMonth =
+          '${created.toUtc().year.toString().padLeft(4, '0')}-${created.toUtc().month.toString().padLeft(2, '0')}';
+      warnings.add(quotedMain
+          ? t('Estimate, confidence medium, as of $asOfMonth: main freight is your forwarder quote; the other lines and transit ${days.min}-${days.max} days are indicative.',
+              'تقدير، الثقة متوسطة، حتى $asOfMonth: الشحن الرئيسي من عرض شركة الشحن؛ أما باقي البنود ومدة النقل ${days.min}-${days.max} يوماً فتقديرية.')
+          : t('Estimate, confidence low, as of $asOfMonth: transit ${days.min}-${days.max} days and the cost range are indicative, not a quote; verify with a forwarder.',
+              'تقدير، الثقة منخفضة، حتى $asOfMonth: مدة النقل ${days.min}-${days.max} يوماً ونطاق الكلفة استرشاديان وليسا عرض سعر؛ تحقق من شركة الشحن.'));
+
       // Lines.
       final lines = <CostLine>[];
       void add(String stage, String en, String ar, double usd,

@@ -123,6 +123,8 @@ class _ComposerScreenState extends ConsumerState<ComposerScreen> {
     String? tagsProblem;
     if (hasInvalidTags(_tags.text)) {
       tagsProblem = 'feed.err.tag_invalid';
+    } else if (hasTooManyTags(_tags.text)) {
+      tagsProblem = 'feed.err.tags_too_many';
     } else {
       final tags = parseTags(_tags.text);
       tagsProblem = validateTags(tags);

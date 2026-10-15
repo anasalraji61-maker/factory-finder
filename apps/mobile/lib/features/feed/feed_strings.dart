@@ -105,6 +105,7 @@ const Map<String, (String, String)> _pairs = {
     'الوسم يقبل حروفاً وأرقاماً و _ و - فقط (حتى 30 حرفاً)',
     'Tags allow letters, digits, _ and - only (up to 30 characters)',
   ),
+  'feed.err.tags_too_many': ('الحد الأقصى 5 وسوم', 'Up to 5 tags'),
   'feed.err.image_limit': ('الحد الأقصى 5 صور', 'Up to 5 images'),
   'feed.err.content_rejected': (
     'رُفض النص: أزل بيانات التواصل والروابط والمواد الممنوعة',

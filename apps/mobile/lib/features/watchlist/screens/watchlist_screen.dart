@@ -236,7 +236,9 @@ class _WatchCard extends StatelessWidget {
         ? context.tr('watch.search_watch')
         : w.displayTitle(lang);
     return AppCard(
-      onTap: w.isListing ? () => context.push('/listing/${w.listingId}') : null,
+      onTap: safeListingRoute(w.listingId) != null && w.isListing
+          ? () => context.push(safeListingRoute(w.listingId)!)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -29,14 +29,10 @@ async def batch(request: Request, ids: str = Query(..., max_length=8000, descrip
         raise ApiError(422, "validation_error", "ids must not be empty")
     if len(id_list) > request.app.state.settings.max_batch:
         raise ApiError(422, "too_many_ids", f"at most {request.app.state.settings.max_batch} ids")
-    items = []
-    for sid in id_list:
-        try:
-            r = await svc.for_supplier(sid)
-        except AdapterDisabled as e:
-            raise ApiError(503, "adapter_disabled", str(e)) from e
-        if r:
-            items.append(r)
+    try:
+        items = await svc.for_suppliers(id_list)
+    except AdapterDisabled as e:
+        raise ApiError(503, "adapter_disabled", str(e)) from e
     return BatchOut(items=items)
 
 

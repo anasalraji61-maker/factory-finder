@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/models/models.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/features/settings/session_cleanup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Signed-in user (gateway `Me`). Only the fields the app needs.
@@ -281,6 +283,9 @@ class AuthController extends StateNotifier<Me?> {
       if (mounted) state = null;
     };
     _ref.read(tokenStoreProvider).onExpired = () {
+      // Forced sign-out: wipe the previous user's caches/choices (device
+      // prefs stay), even if this runs while the account was already null.
+      _wipeUserState();
       if (!mounted) return;
       try {
         _ref.read(sessionExpiredProvider.notifier).state = true;
@@ -304,6 +309,10 @@ class AuthController extends StateNotifier<Me?> {
   }
 
   String? _lastUserId;
+
+  void _wipeUserState() {
+    unawaited(clearSignedOutUserStateFromRef(_ref));
+  }
 
   final Ref _ref;
 
@@ -414,6 +423,7 @@ class AuthController extends StateNotifier<Me?> {
       if (me == null) {
         tokens.clear();
         state = null;
+        _wipeUserState();
       } else {
         state = me;
       }
@@ -426,7 +436,10 @@ class AuthController extends StateNotifier<Me?> {
               e.status! >= 500 ||
               e.status == 429 ||
               e.status == 408);
-      if (!transient) _ref.read(tokenStoreProvider).clear();
+      if (!transient) {
+        _ref.read(tokenStoreProvider).clear();
+        _wipeUserState();
+      }
       state = null;
     }
   }
@@ -435,6 +448,7 @@ class AuthController extends StateNotifier<Me?> {
     _repo.logout();
     _setRevokedNotice(false);
     state = null;
+    _wipeUserState();
   }
 
   /// Signs out of every device, then locally. Throws (staying signed in) when

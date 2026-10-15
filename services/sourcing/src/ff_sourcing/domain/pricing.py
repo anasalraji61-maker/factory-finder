@@ -389,9 +389,12 @@ def _find_qty(seg: str, currency_re: re.Pattern[str]) -> tuple[int | None, int |
     return None, None, None, seg
 
 
+MAX_PRICE_TEXT = 500
+
+
 def parse_price_text(text: object, country: str | None = None) -> ParsedPrice:
     """Parse supplier price text into tiers (MOQ ladder), currency, unit and flags. See module docstring."""
-    raw = _fold(text).strip()
+    raw = _fold(text).strip()[:MAX_PRICE_TEXT]  # bound regex work: supplier text is untrusted (some patterns are O(n^2))
     out = ParsedPrice()
     flags: list[str] = []
     if not raw:

@@ -433,6 +433,17 @@ class VerificationStore:
         docs = [VerifiedDoc(doc_type=r.doc_type, approved_on=r.approved_on or r.created_at.date(), expires_on=r.expires_on) for r in rows]  # type: ignore[arg-type]
         return VerificationEvidence(documents=docs) if docs else None
 
+    async def evidence_for_many(self, supplier_ids: list[str]) -> dict[str, VerificationEvidence]:
+        """:meth:`evidence_for` for many suppliers in one query (suppliers without approved documents are absent)."""
+        if not supplier_ids:
+            return {}
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(_D.c.supplier_id, _D.c.doc_type, _D.c.approved_on, _D.c.created_at, _D.c.expires_on).where(_D.c.supplier_id.in_(supplier_ids), _D.c.status == "approved"))).all()
+        by: dict[str, list[VerifiedDoc]] = {}
+        for r in rows:
+            by.setdefault(r.supplier_id, []).append(VerifiedDoc(doc_type=r.doc_type, approved_on=r.approved_on or r.created_at.date(), expires_on=r.expires_on))  # type: ignore[arg-type]
+        return {sid: VerificationEvidence(documents=docs) for sid, docs in by.items()}
+
     def is_expired(self, d: Document, default_validity_days: int) -> bool:
         if d.status != "approved" or d.approved_on is None:
             return False

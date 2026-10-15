@@ -7,6 +7,7 @@ import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_models.dart';
 import 'package:factory_finder/features/notify_prefs/notify_prefs_repository.dart';
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -345,6 +346,20 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: AppSpacing.sm),
+        if (ref.watch(pushPermissionProvider) == PushPermission.denied)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: AppCard(
+              key: const Key('np_push_denied'),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_off_outlined, color: AppColors.danger),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(context.tr('notifyprefs.push_denied'))),
+                ],
+              ),
+            ),
+          ),
         for (final type in kAlertTypes)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -440,6 +455,22 @@ class _NotifyPrefsScreenState extends ConsumerState<NotifyPrefsScreen> {
                     child: Text(d.quietEnd ?? ''),
                   ),
                   onTap: () => _pickTime(start: false),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Text(
+                    context.tr('notifyprefs.quiet_summary', {
+                      'start': d.quietStart ?? '',
+                      'end': d.quietEnd ?? '',
+                      'tz': d.timezone,
+                    }),
+                    key: const Key('np_quiet_summary'),
+                    textDirection: TextDirection.ltr,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ],
               Padding(

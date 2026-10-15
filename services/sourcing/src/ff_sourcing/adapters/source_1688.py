@@ -1,7 +1,13 @@
 """1688.com via the 1688 Open Platform (https://open.1688.com).
 
+*** UNVERIFIED against the live API. *** The endpoint path, signature recipe and the
+`result.toReturn[]` response shape below are an assumption about the 1688 Open Platform, NOT a
+tested integration. `tests/fixtures/s1688_search.json` is a hand-authored SYNTHETIC fixture, not a
+recorded response. Before enabling: confirm the current docs and account entitlement, then replace
+the fixture with a real recording.
+
 Compliance: official Open Platform API, app key/secret from env (FF_SOURCING_S1688_*). 1688 is a
-domestic-China wholesale site: prices are CNY and suppliers may not export; the trust service and
+domestic-China wholesale site: prices default to CNY and suppliers may not export; the trust service and
 landed-cost engine must treat results accordingly. No page scraping.
 """
 
@@ -10,13 +16,21 @@ from __future__ import annotations
 from typing import Any
 
 from ..domain.models import ListingDetail, SearchQuery
-from ._norm import build_listing
+from ._norm import (
+    build_listing,
+    clean_unit,
+    dig,
+    image_list,
+    resolve_price,
+    to_moq,
+    truthy,
+)
 from .http_base import ApiSourceAdapter, HttpRequestSpec, hmac_sign
 
 
 class Source1688Adapter(ApiSourceAdapter):
     id = "source_1688"
-    name = "1688.com (Open Platform API)"
+    name = "1688.com (Open Platform API, UNVERIFIED skeleton)"
     compliance = "Official Open Platform API; signed; <=1 req/3s/host; cached; off by default."
 
     def configured(self) -> bool:
@@ -33,22 +47,36 @@ class Source1688Adapter(ApiSourceAdapter):
         return HttpRequestSpec(url=f"{s.s1688_api_base}/{path}", params=params)
 
     def parse_search_response(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
-        return list(payload.get("result", {}).get("toReturn", []))
+        items = dig(payload, "result", "toReturn")
+        return [i for i in items if isinstance(i, dict)] if isinstance(items, list) else []
 
-    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail:
+    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail | None:
+        native_id = raw.get("offerId")
+        if native_id in (None, ""):
+            return None
+        price = resolve_price(
+            text=raw.get("price"),
+            lo=raw.get("priceMin"),
+            hi=raw.get("priceMax"),
+            default_currency="CNY",  # domestic wholesale: CNY unless the text says otherwise
+            country="CN",
+        )
+        if price is None:
+            return None
+        images = image_list(raw.get("imageUrl")) + image_list(raw.get("images"))
         return build_listing(
             source=self.id,
-            native_id=str(raw["offerId"]),
-            title=raw.get("subject", ""),
-            price_min=raw.get("priceMin", raw.get("price", 0)),
-            price_max=raw.get("priceMax", raw.get("price")),
-            currency="CNY",
-            supplier_native_id=str(raw.get("memberId", "")),
-            supplier_name=raw.get("companyName", ""),
+            native_id=str(native_id),
+            title=raw.get("subject") or "",
+            price_min=price.lo,
+            price_max=price.hi,
+            currency=price.currency or "CNY",
+            supplier_native_id=raw.get("memberId"),
+            supplier_name=raw.get("companyName") or "",
             city=raw.get("city"),
             url=raw.get("detailUrl"),
-            images=[raw["imageUrl"]] if raw.get("imageUrl") else [],
-            moq=raw.get("minOrderQuantity"),
-            unit=raw.get("unit"),
-            verified=bool(raw.get("tpYear")),
+            images=images,
+            moq=to_moq(raw.get("minOrderQuantity")) or price.moq,
+            unit=clean_unit(raw.get("unit")) or price.unit,
+            verified=to_moq(raw.get("tpYear")) is not None or truthy(raw.get("tpYear")),  # years as a TrustPass member
         )

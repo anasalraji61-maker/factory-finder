@@ -98,9 +98,9 @@ _MOCK = [
     ),
 ]
 _MOCK_KEYS = {
-    "lst_pack_1": ("تعبئة", "filling", "packag", "مكائن", "ماكنة"),
-    "lst_pack_2": ("تعبئة", "filling", "packag", "مكائن", "ماكنة"),
-    "lst_pump_1": ("مضخ", "pump"),
+    "lst_pack_1": ("تعبئة", "filling", "packag", "مكائن", "ماكنة", "مكينة", "灌装", "包装"),
+    "lst_pack_2": ("تعبئة", "filling", "packag", "مكائن", "ماكنة", "مكينة", "灌装", "包装"),
+    "lst_pump_1": ("مضخ", "pump", "水泵"),
 }
 
 

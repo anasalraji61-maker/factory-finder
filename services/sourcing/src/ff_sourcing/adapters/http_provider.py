@@ -3,12 +3,16 @@
 Everything provider-specific lives in a `ProviderConfig` (base URL, auth env var names, field
 mapping table), so a new licensed feed is configuration plus, at most, a tiny subclass.
 
+NOTHING here is verified against any real provider: field maps are per-provider assumptions and
+every fixture in tests/ is hand-authored and SYNTHETIC, not a recording. 429 honours Retry-After
+(host cooldown, no retry); an HTML/non-JSON body is treated as a challenge and stops the call.
+
 Compliance built in:
   * official/licensed API only (no page scraping, no robots bypass needed; `tos_note` documents terms)
   * >= 3 s between requests per host (config value is clamped to this floor), response cache
   * honest User-Agent; credentials read from the environment at call time, never stored/printed
   * kill-switch: global `FF_SOURCING_KILL_SWITCH` or the provider's own env var
-  * 401/403/429 raise SourceBlocked, nothing retries or bypasses; callers degrade to mock
+  * 401/403/429 raise SourceBlocked (429 also starts a cooldown), nothing retries or bypasses; callers degrade to mock
 Money is parsed with Decimal; every listing carries its currency.
 """
 
@@ -30,9 +34,15 @@ from pydantic import BaseModel, Field
 from ..domain.cache import TTLCache
 from ..domain.models import ListingDetail, SearchQuery, Supplier
 from ..domain.pricing import parse_price_text
+from ..domain.quality import normalize_currency_code
 from ._norm import build_listing, dec
 from .base import Health, SourceAdapter
-from .http_base import HostRateLimiter, SourceBlocked, SourceNotConfigured
+from .http_base import (
+    HostRateLimiter,
+    SourceBlocked,
+    SourceNotConfigured,
+    cooldown_seconds,
+)
 
 log = logging.getLogger(__name__)
 
@@ -188,20 +198,38 @@ class HttpProviderAdapter(SourceAdapter):
             return hit
         client = self._client or httpx.AsyncClient(timeout=self.config.timeout_s)
         try:
-            await self.limiter.wait(urlsplit(url).netloc)
-            # streamed with a hard size cap: a hostile/misconfigured provider cannot exhaust memory
-            async with client.stream(
-                self.config.method, url, params=params, headers=self.build_headers()
-            ) as r:
-                if r.status_code in (401, 403, 429):
-                    raise SourceBlocked(f"{self.id}: HTTP {r.status_code}; not retrying or bypassing")
-                r.raise_for_status()
-                buf = bytearray()
-                async for chunk in r.aiter_bytes():
-                    buf += chunk
-                    if len(buf) > MAX_RESPONSE_BYTES:
-                        raise ValueError(f"{self.id}: response larger than {MAX_RESPONSE_BYTES} bytes")
-            data = json.loads(bytes(buf))
+            host = urlsplit(url).netloc
+            if (left := self.limiter.cooldown_remaining(host)) > 0:
+                raise SourceBlocked(f"{self.id}: cooling down after HTTP 429", retry_after_s=left)
+            await self.limiter.wait(host)
+            try:
+                # streamed with a hard size cap: a hostile/misconfigured provider cannot exhaust memory
+                async with client.stream(
+                    self.config.method, url, params=params, headers=self.build_headers()
+                ) as r:
+                    if r.status_code == 429:  # Retry-After honoured: no calls to this host until then
+                        secs = cooldown_seconds(r.headers.get("retry-after"))
+                        self.limiter.cool_down(host, secs)
+                        raise SourceBlocked(
+                            f"{self.id}: HTTP 429; not retrying, cooling down {secs:g}s",
+                            retry_after_s=secs,
+                        )
+                    if r.status_code in (401, 403):
+                        raise SourceBlocked(f"{self.id}: HTTP {r.status_code}; not retrying or bypassing")
+                    r.raise_for_status()
+                    buf = bytearray()
+                    async for chunk in r.aiter_bytes():
+                        buf += chunk
+                        if len(buf) > MAX_RESPONSE_BYTES:
+                            raise ValueError(f"{self.id}: response larger than {MAX_RESPONSE_BYTES} bytes")
+            except httpx.HTTPError as exc:  # httpx messages embed the (signed) URL: redact
+                raise RuntimeError(f"{self.id}: upstream error {type(exc).__name__}") from None
+            try:
+                data = json.loads(bytes(buf))
+            except ValueError:  # HTML error/challenge page served with 200: stop, never solve
+                raise SourceBlocked(f"{self.id}: non-JSON response (challenge?); stopping") from None
+            if not isinstance(data, dict):
+                raise SourceBlocked(f"{self.id}: unexpected JSON shape; stopping")
         finally:
             if self._client is None:
                 await client.aclose()
@@ -223,11 +251,15 @@ class HttpProviderAdapter(SourceAdapter):
         native_id, title = g("id"), g("title")
         if native_id is None or title is None:
             return None
+        text_ccy: str | None = None
         if "price_range" in m and g("price_range") is not None:
             rng = parse_price_range(g("price_range"))
             lo, hi = rng if rng else (Decimal(0), Decimal(0))
+            text_ccy = parse_price_text(g("price_range"), g("country", self.config.country_default)).currency
         else:
             lo, hi = g("price_min", 0), g("price_max", g("price_min", 0))
+        if dec(lo) <= 0:
+            return None  # null / zero / unparsable price: skip, never publish a 0 price
         images = g("images", [])
         moq = g("moq")
         moq_digits = _PRICE_NUM.findall(str(moq)) if moq is not None else []
@@ -237,13 +269,13 @@ class HttpProviderAdapter(SourceAdapter):
             title=str(title),
             price_min=lo,
             price_max=hi,
-            currency=str(g("currency", self.config.currency_default)).upper(),
+            currency=normalize_currency_code(g("currency"), None, text_ccy or self.config.currency_default.upper()),
             supplier_native_id=str(g("supplier_id", "")),
             supplier_name=str(g("supplier_name", "")),
-            country=str(g("country", self.config.country_default)).upper()[:2],
+            country=g("country", self.config.country_default),
             city=g("city"),
             url=g("url"),
-            images=[str(i) for i in images] if isinstance(images, list) else [str(images)],
+            images=images,
             moq=int(dec(moq_digits[0])) if moq_digits else None,
             unit=g("unit"),
             verified=str(g("verified", "")).strip().lower() in {"1", "true", "y", "yes"},
@@ -253,13 +285,15 @@ class HttpProviderAdapter(SourceAdapter):
     async def search(self, query: SearchQuery) -> list[ListingDetail]:
         payload = await self.fetch(self.search_url(), self.build_params(query))
         out: list[ListingDetail] = []
+        seen: set[str] = set()
         for raw in self.extract_items(payload):
             try:
                 item = self.normalize_item(raw)
             except Exception as exc:  # one malformed record must not drop the page
                 log.warning("%s: skipped malformed item (%s)", self.id, type(exc).__name__)
                 continue
-            if item is not None:
+            if item is not None and item.id not in seen:  # exact duplicate ids within a payload
+                seen.add(item.id)
                 out.append(item)
         return out
 

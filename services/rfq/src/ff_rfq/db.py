@@ -60,7 +60,8 @@ class RequestRow(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
     __table_args__ = (Index("ix_requests_owner_created", "owner_id", "created_at"),
-                      Index("ix_requests_status_created", "status", "created_at"))
+                      Index("ix_requests_status_created", "status", "created_at"),
+                      Index("ix_requests_status_deadline", "status", "deadline"))
 
 
 class RequestInviteRow(Base):
@@ -73,6 +74,8 @@ class RequestInviteRow(Base):
 
 class OfferRow(Base):
     __tablename__ = "offers"
+    __table_args__ = (Index("ix_offers_status_valid_until", "status", "valid_until"),
+                      Index("ix_offers_request_status", "request_id", "status"))
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     request_id: Mapped[str] = mapped_column(ForeignKey("requests.id"), index=True)
     supplier_user_id: Mapped[str] = mapped_column(String(64), index=True)
@@ -137,6 +140,8 @@ class ReviewRow(Base):
     """One buyer review per deal. ``status`` published|deleted; deleted rows stay for the audit trail."""
 
     __tablename__ = "reviews"
+    __table_args__ = (Index("ix_reviews_supplier_status_created", "supplier_ref", "status", "created_at"),
+                      Index("ix_reviews_supplier_status_rating", "supplier_ref", "status", "rating", "created_at"))
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     deal_id: Mapped[str] = mapped_column(ForeignKey("deals.id"), unique=True)
     buyer_id: Mapped[str] = mapped_column(String(64), index=True)

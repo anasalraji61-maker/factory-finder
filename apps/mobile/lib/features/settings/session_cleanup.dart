@@ -38,6 +38,23 @@ Future<void> clearSignedOutUserState({
   }
 }
 
+/// Same wipe, reading the providers from a provider-side [ref]. Used by the
+/// auth controller so forced expiry, logout, logout-all and account deletion
+/// all clear the previous user's state even when no screen drives it. Never
+/// throws (a disposed scope is ignored). Idempotent with the screen call sites.
+Future<void> clearSignedOutUserStateFromRef(Ref ref) async {
+  try {
+    await clearSignedOutUserState(
+      cache: ref.read(readCacheProvider),
+      destination: ref.read(destinationProvider.notifier),
+      currency: ref.read(displayCurrencyProvider.notifier),
+      role: ref.read(userRoleProvider.notifier),
+    );
+  } catch (_) {
+    // Provider scope already disposed.
+  }
+}
+
 /// Convenience wrapper reading the providers from a widget [ref].
 Future<void> clearSignedOutUserStateOf(WidgetRef ref) =>
     clearSignedOutUserState(

@@ -192,3 +192,23 @@ def validate_reply(
         language == "en" and lat_chars <= ar_chars
     ):
         bad("wrong_language")
+
+
+def scrub_pii(text: str) -> str:
+    """Replace e-mails, phone numbers, @handles and links with placeholders before storage."""
+    text = _EMAIL.sub("[email]", text)
+    text = _LINK.sub("[link]", text)
+    text = _HANDLE.sub("[handle]", text)
+    for ph in sorted(_phones(text), key=len, reverse=True):
+        text = text.replace(ph, "[phone]")
+    # Arabic-Indic digit phone runs: _phones() works on translated text, so retry on that view
+    tr = text.translate(_ARABIC_DIGITS)
+    if tr != text:
+        for ph in _phones(tr):
+            tr = tr.replace(ph, "[phone]")
+        text = tr
+    return text
+
+
+def link_count(text: str) -> int:
+    return len(_LINK.findall(text))

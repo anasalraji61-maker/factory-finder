@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/features/feed/feed_models.dart';
 import 'package:factory_finder/features/feed/feed_repository.dart';
@@ -131,15 +132,22 @@ class FeedListController extends StateNotifier<FeedListState> {
   Future<void> loadMore() async {
     final cursor = state.nextCursor;
     if (cursor == null || state.loadingMore || state.loading) return;
+    // An expired / foreign cursor can never succeed: retrying means starting
+    // over from the first page instead of looping on the same error.
+    final stale = state.moreError;
+    if (stale is ApiException && stale.code == 'invalid_cursor') return refresh();
     final gen = _generation;
     state = state.copyWith(loadingMore: true, moreError: null);
     try {
       final page = await _fetch(cursor);
       if (!mounted || gen != _generation) return;
       _store.putAll(page.items);
+      // The cursor is opaque and passed through untouched. A server that
+      // answers with the very same cursor would make us loop: end the list.
+      final next = page.nextCursor == cursor ? null : page.nextCursor;
       state = state.copyWith(
         ids: _dedupe(<String>[...state.ids, ...page.items.map((p) => p.id)]),
-        nextCursor: page.nextCursor,
+        nextCursor: next,
         loadingMore: false,
       );
     } catch (e) {
@@ -341,8 +349,13 @@ class FollowingController extends StateNotifier<FollowingState> {
   final FeedRepository _repo;
   final void Function()? onChanged;
 
+  /// Suppliers toggled since the last [load] started (their local state wins
+  /// over a list that was fetched before the tap).
+  final Set<String> _touched = <String>{};
+
   /// Reads every page of GET /v1/feed/following (the cap is 500 follows).
   Future<void> load() async {
+    _touched.clear();
     try {
       final ids = <String>{};
       String? cursor;
@@ -353,6 +366,10 @@ class FollowingController extends StateNotifier<FollowingState> {
         if (cursor == null) break;
       }
       if (!mounted) return;
+      // A follow / unfollow tapped while this load was in flight wins.
+      for (final id in _touched) {
+        state.ids.contains(id) ? ids.add(id) : ids.remove(id);
+      }
       state = FollowingState(ids: ids, loaded: true, busy: state.busy);
     } catch (e) {
       if (!mounted) return;
@@ -365,6 +382,7 @@ class FollowingController extends StateNotifier<FollowingState> {
   Future<void> toggle(String supplierId) async {
     if (state.busy.contains(supplierId)) return;
     final was = state.ids.contains(supplierId);
+    _touched.add(supplierId);
     _set(supplierId, !was, busy: true);
     try {
       final s = was ? await _repo.unfollow(supplierId) : await _repo.follow(supplierId);
@@ -397,6 +415,8 @@ final followingProvider = StateNotifierProvider<FollowingController, FollowingSt
 
 // -- actions --------------------------------------------------------------
 
+bool _isGone(Object e) => e is ApiException && (e.status == 404 || e.code == 'not_found');
+
 class FeedActions {
   FeedActions(this._ref);
 
@@ -423,11 +443,16 @@ class FeedActions {
     try {
       final s = want ? await _repo.like(postId) : await _repo.unlike(postId);
       _store.update(postId, (p) => p.copyWith(viewerLiked: s.liked, likeCount: s.likeCount));
-    } catch (_) {
-      _store.update(
-        postId,
-        (p) => p.copyWith(viewerLiked: before.viewerLiked, likeCount: before.likeCount),
-      );
+    } catch (e) {
+      if (_isGone(e)) {
+        // 404: the post was hidden or deleted meanwhile. Drop it everywhere.
+        _store.remove(postId);
+      } else {
+        _store.update(
+          postId,
+          (p) => p.copyWith(viewerLiked: before.viewerLiked, likeCount: before.likeCount),
+        );
+      }
       rethrow;
     } finally {
       _liking.remove(postId);
@@ -457,8 +482,14 @@ class FeedActions {
     return post;
   }
 
-  Future<void> reportPost(String postId, ReportReason reason, String? details) =>
-      _repo.reportPost(postId, reason, details: details);
+  Future<void> reportPost(String postId, ReportReason reason, String? details) async {
+    try {
+      await _repo.reportPost(postId, reason, details: details);
+    } catch (e) {
+      if (_isGone(e)) _store.remove(postId);
+      rethrow;
+    }
+  }
 
   Future<void> reportComment(String commentId, ReportReason reason, String? details) =>
       _repo.reportComment(commentId, reason, details: details);

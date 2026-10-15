@@ -6,6 +6,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/freight/data/freight_prefill.dart' show lastQuoteRequestProvider;
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
 import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart';
+import 'package:factory_finder/features/logistics/data/quote_format.dart';
 import 'package:factory_finder/features/logistics/data/quote_request.dart';
 import 'package:factory_finder/features/logistics/screens/hs_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,20 +14,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-double _num(String s) {
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
-  final buffer = StringBuffer();
-  for (final ch in s.trim().replaceAll(',', '').replaceAll('٫', '.').split('')) {
-    final i = arabic.indexOf(ch);
-    buffer.write(i >= 0 ? '$i' : ch);
-  }
-  return double.tryParse(buffer.toString()) ?? 0;
+/// Positive decimal of [s] as a plain string (null when invalid or zero).
+String? _positive(String s) {
+  final n = normalizeDecimalInput(s);
+  return n == null || isZeroDecimal(n) ? null : n;
 }
 
-String _fmt(double v) {
-  final s = v.toStringAsFixed(4);
-  return s.replaceFirst(RegExp(r'\.?0+$'), '');
-}
+String _fmt(double v) => decimalString(v, digits: 6);
 
 class CalculatorScreen extends ConsumerStatefulWidget {
   const CalculatorScreen({super.key, this.listingId});
@@ -58,6 +52,11 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
   final Set<TransportMode> _modes = <TransportMode>{};
   ListingPrefill? _prefill;
   FreightOverride? _freightOverride;
+  bool _prefillFailed = false;
+  String? _valueError;
+  String? _weightError;
+  String? _volumeError;
+  String? _hsError;
 
   @override
   void initState() {
@@ -74,20 +73,27 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     final id = widget.listingId;
     if (id != null && id.isNotEmpty) {
       ref.read(logisticsRepositoryProvider).prefill(id).then((p) {
-        if (!mounted || p == null) return;
+        if (!mounted) return;
+        if (p == null) {
+          setState(() => _prefillFailed = true);
+          return;
+        }
         setState(() {
           _prefill = p;
+          _prefillFailed = false;
           _byUnit = true;
           _unitPrice.text = _fmt(p.unitPrice);
           _quantity.text = '${p.quantity}';
-          _weight.text = _fmt(p.unitWeightKg * p.quantity);
-          _volume.text = _fmt(p.unitVolumeM3 * p.quantity);
+          _weight.text = decimalMul(_fmt(p.unitWeightKg), '${p.quantity}');
+          _volume.text = decimalMul(_fmt(p.unitVolumeM3), '${p.quantity}');
           _hs.text = p.hsCode ?? '';
           _goodsCurrency = p.currency;
           _origin = p.origin;
           _incoterm = p.incoterm;
         });
-      }).catchError((Object _) {});
+      }).catchError((Object _) {
+        if (mounted) setState(() => _prefillFailed = true);
+      });
     }
   }
 
@@ -104,31 +110,60 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
 
   void _onQuantityChanged(String text) {
     final p = _prefill;
-    if (p == null) return;
-    final q = _num(text);
-    if (q <= 0) return;
-    _weight.text = _fmt(p.unitWeightKg * q);
-    _volume.text = _fmt(p.unitVolumeM3 * q);
+    final q = _positive(text);
+    if (p == null || q == null) return;
+    _weight.text = decimalMul(_fmt(p.unitWeightKg), q);
+    _volume.text = decimalMul(_fmt(p.unitVolumeM3), q);
   }
 
-  void _snack(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  void _snack(String text, {SnackBarAction? action}) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(text), action: action));
   }
 
   Future<void> _submit() async {
-    final value = _byUnit ? _num(_unitPrice.text) * _num(_quantity.text) : _num(_totalValue.text);
-    final weight = _num(_weight.text);
-    if (value <= 0 || weight <= 0) {
+    if (_loading) return;
+    String? valueText;
+    if (_byUnit) {
+      final u = _positive(_unitPrice.text);
+      final q = _positive(_quantity.text);
+      if (u != null && q != null) valueText = decimalMul(u, q);
+    } else {
+      valueText = _positive(_totalValue.text);
+    }
+    final weightText = _positive(_weight.text);
+    final volRaw = _volume.text.trim();
+    final volNorm = volRaw.isEmpty ? null : normalizeDecimalInput(volRaw);
+    final hs = parseHsCode(_hs.text);
+    final badValue = valueText == null;
+    final badWeight = weightText == null;
+    final badVolume = volRaw.isNotEmpty && volNorm == null;
+    final badHs = !hs.ok;
+    setState(() {
+      _valueError = badValue ? context.tr('logistics.calc.invalid_value') : null;
+      _weightError = badWeight ? context.tr('logistics.calc.invalid_weight') : null;
+      _volumeError = badVolume ? context.tr('logistics.calc.invalid_volume') : null;
+      _hsError = badHs ? context.tr('logistics.calc.invalid_hs') : null;
+    });
+    if (badValue || badWeight) {
       _snack(context.tr('logistics.calc.invalid'));
       return;
     }
-    final hs = _hs.text.trim();
+    if (badVolume || badHs) {
+      _snack(context.tr(badVolume ? 'logistics.calc.invalid_volume' : 'logistics.calc.invalid_hs'));
+      return;
+    }
+    final volumeText = volNorm == null || isZeroDecimal(volNorm) ? null : volNorm;
     final request = QuoteRequest(
-      goodsValue: value,
+      goodsValue: double.parse(valueText!),
+      goodsValueText: valueText,
       goodsCurrency: _goodsCurrency,
-      weightKg: weight,
-      volumeM3: _num(_volume.text),
-      hsCode: hs.isEmpty ? null : hs,
+      weightKg: double.parse(weightText!),
+      weightText: weightText,
+      volumeM3: volumeText == null ? 0 : double.parse(volumeText),
+      volumeText: volumeText,
+      hsCode: hs.code,
       dangerousGoods: _dangerous,
       origin: _origin,
       destination: _destination,
@@ -144,12 +179,20 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
       final quote = await ref
           .read(logisticsRepositoryProvider)
           .calculate(request, lang: lang);
+      if (!mounted) return;
       ref.read(lastQuoteProvider.notifier).state = quote;
       ref.read(lastQuoteRequestProvider.notifier).state = request;
-      if (!mounted) return;
       context.push('/logistics/results');
-    } catch (e) {
-      if (mounted) _snack('$e');
+    } catch (_) {
+      if (mounted) {
+        _snack(
+          context.tr('logistics.calc.error'),
+          action: SnackBarAction(
+            label: context.tr('common.retry'),
+            onPressed: _submit,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -170,14 +213,24 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     TextEditingController c,
     String label, {
     String? suffix,
+    String? error,
     ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: c,
-      onChanged: onChanged,
+      onChanged: (v) {
+        if (error != null) {
+          setState(() {
+            _valueError = null;
+            _weightError = null;
+            _volumeError = null;
+          });
+        }
+        onChanged?.call(v);
+      },
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩.,٫]'))],
-      decoration: InputDecoration(labelText: label, suffixText: suffix),
+      decoration: InputDecoration(labelText: label, suffixText: suffix, errorText: error),
     );
   }
 
@@ -226,6 +279,17 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   ),
                 ],
               ),
+            ),
+          if (_prefillFailed)
+            Container(
+              key: const ValueKey<String>('calc_prefill_failed'),
+              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Text(context.tr('logistics.calc.prefill_failed')),
             ),
           if (_freightOverride != null)
             Container(
@@ -287,6 +351,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                           _unitPrice,
                           context.tr('logistics.calc.unit_price'),
                           suffix: _goodsCurrency,
+                          error: _valueError,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -294,6 +359,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                         child: _numberField(
                           _quantity,
                           context.tr('logistics.calc.quantity'),
+                          error: _valueError == null ? null : '',
                           onChanged: _onQuantityChanged,
                         ),
                       ),
@@ -304,16 +370,44 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                     _totalValue,
                     context.tr('logistics.calc.total_value'),
                     suffix: _goodsCurrency,
+                    error: _valueError,
                   ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  context.tr('logistics.calc.goods_currency'),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final c in kUsdRates.keys)
+                      ChoiceChip(
+                        key: ValueKey<String>('calc_goods_cur_$c'),
+                        label: Text(c),
+                        selected: _goodsCurrency == c,
+                        onSelected: (_) => setState(() => _goodsCurrency = c),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(
-                      child: _numberField(_weight, context.tr('logistics.calc.weight')),
+                      child: _numberField(
+                        _weight,
+                        context.tr('logistics.calc.weight'),
+                        error: _weightError,
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: _numberField(_volume, context.tr('logistics.calc.volume')),
+                      child: _numberField(
+                        _volume,
+                        context.tr('logistics.calc.volume'),
+                        error: _volumeError,
+                      ),
                     ),
                   ],
                 ),
@@ -321,6 +415,10 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                 HsCodePicker(
                   controller: _hs,
                   destinationCountry: _destination.countryCode,
+                  errorText: _hsError,
+                  onChanged: (_) {
+                    if (_hsError != null) setState(() => _hsError = null);
+                  },
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

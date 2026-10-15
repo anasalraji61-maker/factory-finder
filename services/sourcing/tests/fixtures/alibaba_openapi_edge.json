@@ -1,0 +1,17 @@
+{
+  "_note": "UNVERIFIED SYNTHETIC edge-case fixture in the same assumed shape as alibaba_openapi_search.json. NOT recorded.",
+  "alibaba_icbu_product_search_response": {
+    "total_count": 7,
+    "products": {
+      "product": [
+        {"product_id": 1, "subject": "Ladder price", "price": "$5.00 - $8.00", "currency": "USD", "min_order_quantity": "1,000 Pieces", "unit": "Pieces", "images": [{"url": "https://s.alicdn.com/1.jpg"}, {"url": "http://s.alicdn.com/insecure.jpg"}, {"url": null}], "supplier": {"id": " cn1 ", "name": "  Foshan   Ceramics\tCo ", "country": "cn", "is_verified": "Y"}},
+        {"product_id": 2, "subject": "RMB text", "price": "RMB 80/pc", "supplier": {"id": "cn2", "name": "Hangzhou Tools", "country": "CN"}},
+        {"product_id": 3, "subject": "Null price", "price": null, "supplier": {"id": "cn3", "name": "N"}},
+        {"product_id": 4, "subject": "Contact supplier", "price": "Negotiable", "supplier": {"id": "cn3", "name": "N"}},
+        {"product_id": 5, "subject": "No supplier object", "price": "10"},
+        {"product_id": 1, "subject": "Ladder price", "price": "$5.00 - $8.00", "supplier": {"id": "cn1", "name": "Foshan Ceramics Co"}},
+        {"product_id": 6, "subject": "Bad country and url", "price": "7", "detail_url": "javascript:alert(1)", "supplier": {"id": "cn6", "name": "Z", "country": "China"}}
+      ]
+    }
+  }
+}

@@ -35,6 +35,7 @@ enum ShipmentStatus {
   gateIn,
   loaded,
   departed,
+  inTransit,
   transshipment,
   arrived,
   discharged,
@@ -42,6 +43,7 @@ enum ShipmentStatus {
   released,
   outForDelivery,
   delivered,
+  exception,
   unknown,
 }
 
@@ -50,6 +52,8 @@ extension ShipmentStatusX on ShipmentStatus {
     switch (this) {
       case ShipmentStatus.gateIn:
         return 'gate_in';
+      case ShipmentStatus.inTransit:
+        return 'in_transit';
       case ShipmentStatus.customsHold:
         return 'customs_hold';
       case ShipmentStatus.outForDelivery:
@@ -60,8 +64,12 @@ extension ShipmentStatusX on ShipmentStatus {
   }
 
   static ShipmentStatus parse(String? v) {
+    final key = v?.trim().toLowerCase();
+    if (key == null || key.isEmpty) return ShipmentStatus.unknown;
+    // Exception events (DELAYED / DAMAGED ...) may arrive under their own name.
+    if (key == 'delayed' || key == 'damaged') return ShipmentStatus.exception;
     for (final s in ShipmentStatus.values) {
-      if (s.wire == v) return s;
+      if (s.wire == key) return s;
     }
     return ShipmentStatus.unknown;
   }
@@ -77,7 +85,9 @@ extension ShipmentStatusX on ShipmentStatus {
         return 0.2;
       case ShipmentStatus.departed:
         return 0.35;
+      case ShipmentStatus.inTransit:
       case ShipmentStatus.transshipment:
+      case ShipmentStatus.exception:
         return 0.5;
       case ShipmentStatus.arrived:
         return 0.7;
@@ -140,12 +150,28 @@ Map<String, DateTime> _milestones(Object? v) {
   return out;
 }
 
+String _transport(Object? vessel, Object? flight) {
+  final parts = <String>[];
+  if (vessel is Map) {
+    final name = (vessel['name'] ?? '').toString();
+    final voyage = (vessel['voyage'] ?? '').toString();
+    if (name.isNotEmpty) parts.add(name);
+    if (voyage.isNotEmpty) parts.add(voyage);
+  }
+  if (flight is Map) {
+    final number = (flight['number'] ?? '').toString();
+    if (number.isNotEmpty) parts.add(number);
+  }
+  return parts.join(' · ');
+}
+
 class TrackingEvent {
   const TrackingEvent({
     required this.status,
     required this.description,
     this.location = '',
     required this.time,
+    this.transport = '',
   });
 
   final ShipmentStatus status;
@@ -153,12 +179,21 @@ class TrackingEvent {
   final String location;
   final DateTime time;
 
+  /// Vessel / voyage or flight of this leg (multi-leg journeys), or ''.
+  final String transport;
+
+  bool get isException => status == ShipmentStatus.exception;
+
+  /// False when the server sent no usable timestamp (epoch fallback).
+  bool get hasTime => time.millisecondsSinceEpoch > 0;
+
   factory TrackingEvent.fromJson(Map<String, dynamic> j) => TrackingEvent(
         status: ShipmentStatusX.parse(j['status']?.toString()),
         description: ((j['description_ar'] ?? j['description']) ?? '').toString(),
         location: _place(j['location'], preferArabic: true),
         time: _dt(j['time'] ?? j['timestamp'] ?? j['occurred_at']) ??
             DateTime.fromMillisecondsSinceEpoch(0),
+        transport: _transport(j['vessel'], j['flight']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -166,6 +201,7 @@ class TrackingEvent {
         'description': description,
         'location': location,
         'time': time.toUtc().toIso8601String(),
+        if (transport.isNotEmpty) 'transport': transport,
       };
 }
 
@@ -216,20 +252,42 @@ class Shipment {
   /// Degraded-data notice, e.g. `provider_unavailable:rate_limited`.
   final String? warning;
 
-  double get progressValue => (progress ?? status.defaultProgress).clamp(0.0, 1.0).toDouble();
+  double get progressValue {
+    var p = progress;
+    if (p == null && status == ShipmentStatus.exception) {
+      // An exception keeps the progress reached by the last normal event.
+      for (final e in events) {
+        if (!e.isException && e.status != ShipmentStatus.unknown) {
+          p = e.status.defaultProgress;
+          break;
+        }
+      }
+    }
+    final v = (p ?? status.defaultProgress).toDouble();
+    return v.isNaN ? 0.0 : v.clamp(0.0, 1.0).toDouble();
+  }
 
   factory Shipment.fromJson(Map<String, dynamic> j) {
     final rawEvents = j['events'];
-    final events = <TrackingEvent>[
+    final parsed = <TrackingEvent>[
       if (rawEvents is List)
         for (final e in rawEvents)
           if (e is Map) TrackingEvent.fromJson(Map<String, dynamic>.from(e)),
-    ]..sort((a, b) => b.time.compareTo(a.time));
+    ];
+    // Newest first. Dart's sort is not stable: tie-break on the original
+    // position (later = newer) so equal timestamps keep a deterministic order.
+    final order = <TrackingEvent, int>{
+      for (var i = 0; i < parsed.length; i++) parsed[i]: i,
+    };
+    final events = [...parsed]..sort((a, b) {
+        final c = b.time.compareTo(a.time);
+        return c != 0 ? c : order[b]!.compareTo(order[a]!);
+      });
     final status = j['status'] != null
         ? ShipmentStatusX.parse(j['status'].toString())
         : (events.isNotEmpty ? events.first.status : ShipmentStatus.unknown);
     return Shipment(
-      id: j['id'].toString(),
+      id: (j['id'] ?? '').toString(),
       reference: (j['reference'] ?? '').toString(),
       referenceType: ReferenceTypeX.parse(j['reference_type']?.toString()),
       carrier: j['carrier'] is Map

@@ -1,0 +1,55 @@
+{
+  "_note": "UNVERIFIED SYNTHETIC fixture hand-authored from the assumed AliExpress affiliate-API envelope. NOT a recorded response; replace with a real recording before trusting the mapping.",
+  "aliexpress_affiliate_product_query_response": {
+    "resp_result": {
+      "resp_code": 200,
+      "resp_msg": "OK",
+      "result": {
+        "current_page_no": 1,
+        "current_record_count": 8,
+        "total_page_no": 1,
+        "total_record_count": 8,
+        "products": {
+          "product": [
+            {
+              "product_id": 1005001234567890,
+              "product_title": "Mini USB Desk Fan 3 Speed",
+              "target_sale_price": "3.20",
+              "target_original_price": "4.99",
+              "target_sale_price_currency": "USD",
+              "product_main_image_url": "https://ae01.alicdn.com/kf/Sfake1.jpg",
+              "product_small_image_urls": {"string": ["https://ae01.alicdn.com/kf/Sfake2.jpg", "http://ae01.alicdn.com/kf/Sinsecure.jpg", "javascript:alert(1)"]},
+              "promotion_link": "https://s.click.aliexpress.com/e/_fakeLink1",
+              "product_detail_url": "https://www.aliexpress.com/item/1005001234567890.html",
+              "shop_id": 1100200300,
+              "shop_url": "https://www.aliexpress.com/store/1100200300"
+            },
+            {
+              "product_id": 1005001234567890,
+              "product_title": "Mini USB Desk Fan 3 Speed (duplicate row)",
+              "target_sale_price": "3.20",
+              "target_sale_price_currency": "USD",
+              "shop_id": 1100200300
+            },
+            {
+              "product_id": 1005009999999991,
+              "product_title": "LED Strip Light 5m",
+              "target_sale_price": "1,299.00",
+              "target_original_price": "1,499.00",
+              "target_sale_price_currency": "CNY",
+              "promotion_link": "javascript:void(0)",
+              "product_detail_url": "https://www.aliexpress.com/item/1005009999999991.html",
+              "product_main_image_url": "//ae01.alicdn.com/kf/Sprotocolrelative.jpg",
+              "shop_id": "55"
+            },
+            {"product_id": 1005000000000002, "product_title": "Null price item", "target_sale_price": null, "shop_id": 7},
+            {"product_id": 1005000000000003, "product_title": "Zero price item", "target_sale_price": "0.00", "shop_id": 7},
+            {"product_title": "No product id", "target_sale_price": "2.00"},
+            {"product_id": 1005000000000004, "target_sale_price": "2.00", "shop_id": 7},
+            {"product_id": 1005000000000005, "product_title": "No shop item", "target_sale_price": "7.5"}
+          ]
+        }
+      }
+    }
+  }
+}

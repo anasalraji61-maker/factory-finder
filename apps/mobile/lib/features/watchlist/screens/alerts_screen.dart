@@ -59,7 +59,7 @@ class AlertsScreen extends ConsumerWidget {
   }
 
   Future<void> _open(BuildContext context, WidgetRef ref, PriceAlert a) async {
-    final listingId = a.listingId;
+    final listingRoute = a.listingRoute;
     final trackingRoute = a.trackingRoute;
     final router = GoRouter.of(context);
     if (!a.read) {
@@ -72,8 +72,8 @@ class AlertsScreen extends ConsumerWidget {
     }
     if (trackingRoute != null) {
       router.push(trackingRoute);
-    } else if (listingId != null) {
-      router.push('/listing/$listingId');
+    } else if (listingRoute != null) {
+      router.push(listingRoute);
     }
   }
 

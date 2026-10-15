@@ -32,6 +32,7 @@ class _FailingChat implements MessagingRepository {
     String conversationId,
     String text, {
     List<MessageAttachment> attachments = const <MessageAttachment>[],
+    String? clientId,
   }) async =>
       throw error;
 

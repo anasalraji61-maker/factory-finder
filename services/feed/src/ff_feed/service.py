@@ -7,6 +7,7 @@ import re
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 from sqlalchemy import and_, case, delete, func, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -205,7 +206,7 @@ class FeedService:
         return {r[0] for r in rows}
 
     async def _post_page(self, c, q, user: str | None, limit: int, kind: str, admin=False, as_of=None) -> dict:
-        rows = (await c.execute(q.limit(limit + 1))).all()
+        rows = q if isinstance(q, list) else (await c.execute(q.limit(limit + 1))).all()
         more = len(rows) > limit
         rows = rows[:limit]
         liked = await self._liked(c, user, [r.id for r in rows])
@@ -318,22 +319,35 @@ class FeedService:
         )  # fmt: skip
         fresh = case((posts.c.created_at > as_of - timedelta(hours=FRESH_HOURS), FRESH_BOOST), else_=0)
         rank = (lk + 2 * cm + fresh).label("rank")
-        base = select(posts, rank).where(
-            posts.c.status == "published", posts.c.created_at >= since, posts.c.created_at <= as_of
-        )
-        sub = base.subquery()
-        q = select(sub)
-        if d:
-            q = q.where(
-                or_(
-                    sub.c.rank < d["s"],
-                    and_(sub.c.rank == d["s"], sub.c.created_at < d["t"]),
-                    and_(sub.c.rank == d["s"], sub.c.created_at == d["t"], sub.c.id < d["i"]),
-                )
-            )
-        q = q.order_by(sub.c.rank.desc(), sub.c.created_at.desc(), sub.c.id.desc())
+        window = (posts.c.status == "published", posts.c.created_at >= since, posts.c.created_at <= as_of)
+        # ``posts.score`` (external likes + 2 * external comments, maintained on write) is an upper bound of
+        # the exact snapshot engagement, so we only compute the exact rank for the top-scored candidates
+        # (index ix_posts_status_score) and widen the pool until no unseen post can beat the page.
+        # Reading every post in the window and ranking it (two correlated subqueries per row) cost
+        # ~0.3-0.5 s at 50k posts.
+        k = max(400, 20 * (limit + 1))
         async with self.engine.connect() as c:
-            page = await self._post_page(c, q, user, limit, "t", as_of=as_of)
+            while True:
+                cand_q = select(posts.c.id, posts.c.score).where(*window)
+                cands = (await c.execute(cand_q.order_by(posts.c.score.desc()).limit(k))).all()
+                exhausted = len(cands) < k
+                scored = (
+                    await c.execute(
+                        select(posts.c.id, posts.c.created_at, rank).where(*window, posts.c.id.in_([r.id for r in cands]))
+                    )
+                ).all()
+                if d:  # cursor: strictly after (rank, created_at, id) in descending order
+                    scored = [r for r in scored if (r.rank, r.created_at, r.id) < (d["s"], d["t"], d["i"])]
+                # sorted in Python: a SQL ORDER BY on the correlated rank re-evaluates the subqueries per row
+                top = sorted(scored, key=lambda r: (r.rank, r.created_at, r.id), reverse=True)[: limit + 1]
+                bound = cands[-1].score + FRESH_BOOST if cands else 0  # no unseen post can rank above this
+                if exhausted or (len(top) > limit and top[limit].rank > bound):
+                    break
+                k *= 4
+            ranks = {r.id: r.rank for r in top[:limit]}
+            full = (await c.execute(select(posts).where(posts.c.id.in_(list(ranks))))).all() if ranks else []
+            by_id = {r.id: SimpleNamespace(**r._mapping, rank=ranks[r.id]) for r in full}
+            page = await self._post_page(c, [by_id[i] for i in ranks] + top[limit:], user, limit, "t", as_of=as_of)
         return {**page, "source": "trending"}
 
     async def home(self, user: str, cursor: str | None, limit: int | None) -> dict:

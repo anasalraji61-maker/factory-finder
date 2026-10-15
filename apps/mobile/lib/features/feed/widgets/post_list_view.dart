@@ -28,8 +28,15 @@ class PostListView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final st = ref.watch(feedListProvider(listKey));
+    final raw = ref.watch(feedListProvider(listKey));
     final ctrl = ref.read(feedListProvider(listKey).notifier);
+    // Posts that vanished from the store (hidden / deleted, e.g. a like got
+    // 404) disappear from the list; rebuild only when that count changes.
+    ref.watch(feedPostStoreProvider.select((m) => raw.ids.where(m.containsKey).length));
+    final known = ref.read(feedPostStoreProvider);
+    final st = raw.ids.every(known.containsKey)
+        ? raw
+        : raw.copyWith(ids: raw.ids.where(known.containsKey).toList());
 
     // Banner when the personalised feed fell back to trending.
     final showFallback = listKey == 'home' && st.source == FeedSource.trending && st.ids.isNotEmpty;
@@ -38,6 +45,25 @@ class PostListView extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: OfflineBanner(savedNote: true, onRetry: ctrl.refresh),
+        ),
+      if (st.error != null && st.ids.isNotEmpty && !st.loading)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: Row(
+            key: const ValueKey<String>('feed-refresh-error'),
+            children: [
+              Expanded(
+                child: Text(
+                  feedErrorMessage(context, st.error!),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+              TextButton(
+                onPressed: ctrl.refresh,
+                child: Text(context.tr('common.retry')),
+              ),
+            ],
+          ),
         ),
       if (header != null) header!,
       if (showFallback)

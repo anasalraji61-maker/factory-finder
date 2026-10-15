@@ -81,6 +81,9 @@ def norm_code(code: Any) -> str:
     return re.sub(r"[^A-Z0-9]+", "_", str(code or "").upper()).strip("_")
 
 
+MAX_TS_CHARS = 64
+
+
 def parse_ts(value: Any) -> datetime | None:
     """ISO-8601 (any offset) or epoch seconds/ms -> aware UTC. Naive strings are taken as UTC."""
     if value is None or value == "":
@@ -89,7 +92,11 @@ def parse_ts(value: Any) -> datetime | None:
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             v = float(value) / (1000 if value > 1e11 else 1)
             return datetime.fromtimestamp(v, UTC)
-        text = re.sub(r"\s*(?:UTC|GMT)$", "Z", str(value).strip(), flags=re.IGNORECASE)
+        text = str(value).strip()
+        if len(text) > MAX_TS_CHARS:  # untrusted provider text; also keeps the suffix handling linear
+            return None
+        if text[-3:].upper() in ("UTC", "GMT"):  # (a regex ``\s*(?:UTC|GMT)$`` is quadratic on whitespace runs)
+            text = text[:-3].rstrip() + "Z"
         dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     except (ValueError, OverflowError, OSError):
         return None

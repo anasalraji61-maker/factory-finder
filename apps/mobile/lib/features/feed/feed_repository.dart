@@ -176,7 +176,9 @@ class LiveFeedRepository implements FeedRepository {
     final d = details?.trim() ?? '';
     return <String, dynamic>{
       'reason': reason.json,
-      if (d.isNotEmpty) 'details': d.length > kReportDetailsMax ? d.substring(0, kReportDetailsMax) : d,
+      if (d.isNotEmpty) 'details': d.runes.length > kReportDetailsMax
+          ? String.fromCharCodes(d.runes.take(kReportDetailsMax))
+          : d,
     };
   }
 

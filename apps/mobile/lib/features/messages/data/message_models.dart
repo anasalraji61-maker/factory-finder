@@ -255,11 +255,16 @@ class ChatMessage {
     this.attachments = const <MessageAttachment>[],
     required this.createdAt,
     this.status = SendStatus.sent,
+    this.clientId,
   });
 
   final String id;
   final String conversationId;
   final String senderId;
+
+  /// Idempotency key chosen by the sender (contract `client_id`, 1-64 chars of
+  /// `[A-Za-z0-9_-]`). Null for messages from older servers or other senders.
+  final String? clientId;
   final MessageKind kind;
   final String body;
   final String? attachmentUrl;
@@ -272,7 +277,12 @@ class ChatMessage {
   bool get isMine => senderId == currentUserId;
   bool get isSystem => kind == MessageKind.system;
 
-  ChatMessage copyWith({String? id, SendStatus? status, DateTime? createdAt}) =>
+  ChatMessage copyWith({
+    String? id,
+    SendStatus? status,
+    DateTime? createdAt,
+    String? clientId,
+  }) =>
       ChatMessage(
         id: id ?? this.id,
         conversationId: conversationId,
@@ -283,6 +293,7 @@ class ChatMessage {
         attachments: attachments,
         createdAt: createdAt ?? this.createdAt,
         status: status ?? this.status,
+        clientId: clientId ?? this.clientId,
       );
 
   /// Accepts both the mock shape (`kind`, `body`) and the messaging contract
@@ -300,11 +311,13 @@ class ChatMessage {
       attachmentUrl: (att is Map ? att['url'] : j['attachment_url'])?.toString(),
       attachments: parseAttachments(j['attachments']),
       createdAt: _date(j['created_at']),
+      clientId: validClientId(j['client_id'] ?? j['client_message_id']),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        if (clientId != null) 'client_id': clientId,
         'conversation_id': conversationId,
         'sender_id': senderId,
         'kind': kind.name,
@@ -315,6 +328,12 @@ class ChatMessage {
         'created_at': createdAt.toUtc().toIso8601String(),
       };
 }
+
+final RegExp _clientIdPattern = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
+/// [v] when it is a well-formed `client_id`, else null (tolerant parsing).
+String? validClientId(Object? v) =>
+    v is String && _clientIdPattern.hasMatch(v) ? v : null;
 
 /// Oldest-first copy of [list]. Dart's `List.sort` is not stable, so messages
 /// sharing a timestamp are kept in their original relative order explicitly.

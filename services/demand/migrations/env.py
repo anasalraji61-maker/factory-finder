@@ -23,7 +23,9 @@ target_metadata = metadata
 
 
 def _url() -> str:
-    return normalize_database_url(config.get_main_option("sqlalchemy.url") or Settings().database_url)
+    return normalize_database_url(
+        config.get_main_option("sqlalchemy.url") or Settings().database_url
+    )
 
 
 def _configure(**kw) -> None:

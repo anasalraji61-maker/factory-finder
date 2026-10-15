@@ -70,9 +70,21 @@ ChatMessage? parseMessageFrame(
 /// replaces the matching optimistic (`sending`) copy instead of showing twice.
 List<ChatMessage> appendIncoming(List<ChatMessage> list, ChatMessage incoming) {
   if (list.any((m) => m.id == incoming.id)) return list;
+  // client_id is the primary key for echoes: it matches the optimistic copy (or
+  // an already confirmed one) exactly, whatever the body/attachments look like.
+  final cid = incoming.clientId;
+  if (cid != null) {
+    final i = list.indexWhere((m) => m.clientId == cid);
+    if (i >= 0) {
+      final out = [...list];
+      out[i] = incoming;
+      return sortedByTime(out);
+    }
+  }
   if (incoming.isMine) {
     final i = list.indexWhere((m) =>
         m.status == SendStatus.sending &&
+        m.clientId == null &&
         m.isMine &&
         m.body == incoming.body &&
         _sameAttachments(m, incoming));

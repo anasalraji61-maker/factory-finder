@@ -283,11 +283,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
   Future<void> _send(
     String text, {
     String? retryId,
+    String? clientId,
     List<MessageAttachment> attachments = const <MessageAttachment>[],
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty && attachments.isEmpty) return;
     final localId = retryId ?? 'local_${++_seq}';
+    // Generated once at compose; a retry passes the failed message's id along.
+    final cid = validClientId(clientId) ?? newClientId();
     if (retryId == null) {
       final pending = optimisticMessage(
         conversationId: widget.conversationId,
@@ -295,6 +298,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         now: DateTime.now(),
         seq: _seq,
         attachments: attachments,
+        clientId: cid,
       );
       setState(() {
         _messages = [..._messages, pending];
@@ -314,6 +318,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
         widget.conversationId,
         trimmed,
         attachments: attachments,
+        clientId: cid,
       );
       if (!mounted) return;
       setState(() => _messages = confirmSent(_messages, localId, sent));
@@ -553,7 +558,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
           message: m,
           baseUrl: ref.read(apiClientProvider).baseUrl,
           onOpenImage: _openImage,
-          onRetry: () => _send(m.body, retryId: m.id, attachments: m.attachments),
+          onRetry: () => _send(m.body,
+            retryId: m.id, clientId: m.clientId, attachments: m.attachments),
         );
       },
     );

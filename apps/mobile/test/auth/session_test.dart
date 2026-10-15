@@ -5,7 +5,11 @@ import 'package:dio/dio.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/api/auth.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/core/storage/read_cache.dart';
+import 'package:factory_finder/features/onboarding/onboarding_state.dart';
 import 'package:factory_finder/features/auth/password_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -275,6 +279,71 @@ void main() {
       await expectLater(api.get('/v1/me'), throwsA(isA<ApiException>()));
       expect(tokens.refreshToken, 'old-refresh');
       expect(a.calls.length, 2);
+    });
+  });
+
+  group('sign-out wipes the previous user state', () {
+    ProviderContainer build(MemoryStore prefs, _Adapter a) {
+      final c = ProviderContainer(overrides: [
+        keyValueStoreProvider.overrideWithValue(prefs),
+        secureStoreProvider.overrideWithValue(MemoryStore()),
+        apiClientProvider.overrideWith(
+            (ref) => _client(a, ref.watch(tokenStoreProvider))),
+      ]);
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    Future<void> seed(ProviderContainer c) async {
+      await c.read(readCacheProvider).put(kSearchCacheSlot, 'q', {'a': 1});
+      c.read(destinationProvider.notifier).state =
+          const Location(countryCode: 'TR', city: 'Istanbul');
+      c.read(displayCurrencyProvider.notifier).state = 'AED';
+      c.read(userRoleProvider.notifier).state = UserRole.supplier;
+      c.read(localeProvider.notifier).state = const Locale('en');
+    }
+
+    Future<void> expectWiped(ProviderContainer c) async {
+      expect(await c.read(readCacheProvider).get(kSearchCacheSlot, 'q'), isNull);
+      expect(c.read(destinationProvider)?.city, 'Baghdad');
+      expect(c.read(displayCurrencyProvider), 'IQD');
+      expect(c.read(userRoleProvider), UserRole.buyer);
+      expect(c.read(localeProvider), const Locale('en'));
+    }
+
+    test('forced expiry (refresh rejected) clears caches and choices', () async {
+      final c = build(MemoryStore(), _Adapter((o) => _json(<String, dynamic>{}, 401)));
+      final auth = c.read(authProvider.notifier);
+      auth.state = const Me(id: 'usr_t', name: 'T');
+      c.read(tokenStoreProvider).set('a', 'r');
+      await seed(c);
+      await expectLater(c.read(apiClientProvider).get('/v1/me'), throwsA(isA<ApiException>()));
+      await Future<void>.delayed(Duration.zero);
+      expect(c.read(sessionExpiredProvider), isTrue);
+      expect(c.read(authProvider), isNull);
+      await expectWiped(c);
+    });
+
+    test('plain logout clears them too', () async {
+      final c = build(MemoryStore(), _Adapter((o) => _json(<String, dynamic>{}, 204)));
+      c.read(authProvider.notifier).state = const Me(id: 'usr_t', name: 'T');
+      c.read(tokenStoreProvider).set('a', 'r');
+      await seed(c);
+      c.read(authProvider.notifier).logout();
+      await Future<void>.delayed(Duration.zero);
+      await expectWiped(c);
+    });
+
+    test('a transient refresh failure does not wipe anything', () async {
+      final c = build(MemoryStore(),
+          _Adapter((o) => _json(<String, dynamic>{}, o.path == '/v1/me' ? 401 : 503)));
+      c.read(authProvider.notifier).state = const Me(id: 'usr_t', name: 'T');
+      c.read(tokenStoreProvider).set('a', 'r');
+      await seed(c);
+      await expectLater(c.read(apiClientProvider).get('/v1/me'), throwsA(isA<ApiException>()));
+      await Future<void>.delayed(Duration.zero);
+      expect(c.read(destinationProvider)?.city, 'Istanbul');
+      expect(await c.read(readCacheProvider).get(kSearchCacheSlot, 'q'), isNotNull);
     });
   });
 

@@ -24,8 +24,10 @@ from ff_demand.sourcing import Candidate, SourcingClient, SourcingUnavailableErr
 from ff_demand.store import Store
 
 DISCLOSURE = {
-    "ar": "ملاحظة: هذا الرد من منصة مُوَرِّد (Factory Finder) للتوريد، وليس من شخص عادي.",
-    "en": "Note: this reply is from the Factory Finder sourcing platform, not an individual.",
+    "ar": "ملاحظة: هذا الرد من منصة مُوَرِّد (Factory Finder)، وسيط توريد "
+    "يتقاضى عمولة، وليس من شخص عادي.",
+    "en": "Note: this reply is from Factory Finder, a sourcing intermediary that earns a "
+    "commission, not an individual.",
 }
 OUTCOMES = ("replied", "converted", "no_response")
 MAX_AUDIT = 50  # per-draft audit cap: repeatable calls cannot grow the document forever
@@ -150,12 +152,14 @@ class DemandService:
             if lost:
                 return lost
             return {"signal": sig, "draft": None, "duplicate": False, "created": True}
-        intent = extract_intent(raw.text)
+        clean_text = compliance.scrub_pii(raw.text)
+        spam_links = compliance.link_count(raw.text) >= 2
+        intent = None if spam_links else extract_intent(clean_text)
         sig = {
             "id": f"sig_{uuid.uuid4().hex[:16]}",
             "status": "ignored",
             "language": lang,
-            "text": raw.text,
+            "text": clean_text,
             "url": raw.url,
             "source": raw.source,
             "intent": None,

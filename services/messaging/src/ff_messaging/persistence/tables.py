@@ -19,6 +19,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     false,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import TypeDecorator
@@ -141,6 +142,16 @@ messages = Table(
     Column("created_at", UTCDateTime(), nullable=False),
     UniqueConstraint("conversation_id", "seq"),
     UniqueConstraint("conversation_id", "dedupe_key"),
+    # idempotent sends: one message per (conversation, sender, client id); NULL ids never collide
+    Index(
+        "uq_messages_client_id",
+        "conversation_id",
+        "sender_id",
+        "client_message_id",
+        unique=True,
+        sqlite_where=text("client_message_id IS NOT NULL"),
+        postgresql_where=text("client_message_id IS NOT NULL"),
+    ),
 )
 
 # blocker_id no longer wants direct messages from blocked_id; never exposed to blocked_id.

@@ -300,11 +300,17 @@ class NativeStore:
         return {"listings_deleted": n, "analytics_rows_deleted": stats, "report_details_cleared": int(res.rowcount or 0)}
 
     # ---- public (published only) ----------------------------------------
-    async def published(self, limit: int = 200, supplier_id: str | None = None) -> list[NativeListingRow]:
+    async def published(
+        self, limit: int = 200, supplier_id: str | None = None, kind: str | None = None, condition: str | None = None
+    ) -> list[NativeListingRow]:
         await self.ensure_ready()
         cond = [NativeListingRow.status == "published"]
         if supplier_id:
             cond.append(NativeListingRow.supplier_id == supplier_id)
+        if kind:  # exact-match filters the engine applies anyway: pushed down so the newest-N window is of matches
+            cond.append(NativeListingRow.kind == kind)
+        if condition and condition != "any":
+            cond.append(NativeListingRow.condition == condition)
         async with self.sm() as s:
             q = select(NativeListingRow).where(*cond)
             q = q.order_by(NativeListingRow.published_at.desc(), NativeListingRow.id).limit(limit)
@@ -562,8 +568,19 @@ class NativeAdapter(SourceAdapter):
 
     # ---- SourceAdapter ----------------------------------------------------
     async def search(self, query: SearchQuery) -> list[ListingDetail]:
-        rows = await self.store.published(query.limit)
+        rows = await self.store.published(query.limit, kind=query.kind, condition=query.condition)
         cache: dict[str, SupplierSummary] = {}
+        # resolve every distinct supplier concurrently (bounded) instead of one awaited lookup per new supplier
+        first_origin: dict[str, dict] = {}
+        for r in rows:
+            first_origin.setdefault(r.supplier_id, r.origin)
+        gate = asyncio.Semaphore(8)
+
+        async def one(sid: str) -> None:
+            async with gate:
+                cache[sid] = await self.summary_for(sid, first_origin[sid])
+
+        await asyncio.gather(*(one(sid) for sid in first_origin))
         return [await self.to_detail(r, cache) for r in rows]
 
     async def get_listing(self, listing_id: str) -> ListingDetail | None:

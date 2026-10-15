@@ -3,6 +3,8 @@
 from collections.abc import Callable
 from datetime import datetime
 
+from sqlalchemy.exc import IntegrityError
+
 from ff_messaging.config import Settings
 from ff_messaging.domain.clock import Clock, utc_now
 from ff_messaging.domain.cursor import decode_cursor, encode_cursor
@@ -179,6 +181,21 @@ class MessagingService:
     # ------------------------------------------------------------ messages
 
     async def send_message(
+        self,
+        caller: str,
+        conversation_id: str,
+        draft: MessageDraft,
+        supplier_id: str | None = None,
+    ) -> tuple[Message, bool]:
+        try:
+            return await self._send_message_once(caller, conversation_id, draft, supplier_id)
+        except IntegrityError:
+            if not draft.client_message_id:
+                raise
+            # concurrent duplicate lost the unique-index race: replay the winner's message
+            return await self._send_message_once(caller, conversation_id, draft, supplier_id)
+
+    async def _send_message_once(
         self,
         caller: str,
         conversation_id: str,

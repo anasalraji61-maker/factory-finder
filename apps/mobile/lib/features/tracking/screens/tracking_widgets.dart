@@ -1,3 +1,4 @@
+import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/features/tracking/data/tracking_models.dart';
@@ -11,7 +12,21 @@ String _two(int n) => n.toString().padLeft(2, '0');
 
 String dateLabel(DateTime d) => '${d.year}/${_two(d.month)}/${_two(d.day)}';
 
-String dateTimeLabel(DateTime d) => '${dateLabel(d)} ${_two(d.hour)}:${_two(d.minute)}';
+/// `UTC` / `UTC+3` / `UTC-5:30` for the zone [d] is expressed in.
+String utcOffsetLabel(DateTime d) {
+  if (d.isUtc) return 'UTC';
+  final o = d.timeZoneOffset;
+  if (o == Duration.zero) return 'UTC';
+  final abs = o.abs();
+  final h = abs.inHours;
+  final m = abs.inMinutes.remainder(60);
+  return 'UTC${o.isNegative ? '-' : '+'}$h${m == 0 ? '' : ':${_two(m)}'}';
+}
+
+/// Date + time with an explicit zone label; the zone is wrapped in LRM marks so
+/// it stays intact inside right-to-left text.
+String dateTimeLabel(DateTime d) =>
+    '${dateLabel(d)} ${_two(d.hour)}:${_two(d.minute)} \u200E(${utcOffsetLabel(d)})\u200E';
 
 Color statusColor(ShipmentStatus s) {
   switch (s) {
@@ -19,6 +34,7 @@ Color statusColor(ShipmentStatus s) {
     case ShipmentStatus.released:
       return AppColors.success;
     case ShipmentStatus.customsHold:
+    case ShipmentStatus.exception:
       return AppColors.warning;
     case ShipmentStatus.unknown:
       return AppColors.textSecondary;
@@ -37,6 +53,10 @@ IconData statusIcon(ShipmentStatus s) {
       return Icons.upload_outlined;
     case ShipmentStatus.departed:
       return Icons.directions_boat_outlined;
+    case ShipmentStatus.inTransit:
+      return Icons.directions_boat_outlined;
+    case ShipmentStatus.exception:
+      return Icons.report_problem_outlined;
     case ShipmentStatus.transshipment:
       return Icons.swap_horiz;
     case ShipmentStatus.arrived:
@@ -71,6 +91,8 @@ class StatusChip extends StatelessWidget {
       ),
       child: Text(
         context.tr(statusKey(status)),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w800),
       ),
     );
@@ -91,6 +113,22 @@ String trackingWarningKey(String warning) {
     'bad_payload',
   };
   return known.contains(reason) ? 'tracking.warning.$reason' : 'tracking.warning.generic';
+}
+
+/// i18n key explaining why adding a shipment failed (duplicate, limit, ...).
+String trackingAddErrorKey(Object error) {
+  if (error is ApiException) {
+    if (error.code == 'duplicate_shipment') return 'tracking.err.duplicate';
+    if (error.code == 'shipment_limit_reached') return 'tracking.err.limit';
+    if (error.status == 422 || error.code == 'invalid_reference') {
+      return 'tracking.err.invalid';
+    }
+    if (error.status == 429 || error.code == 'rate_limited') return 'error.rate_limited';
+    if (error.code == 'network_error' || error.code == 'timeout') {
+      return 'tracking.err.offline';
+    }
+  }
+  return 'tracking.err.generic';
 }
 
 /// Amber banner: icon, bold title and an optional message (overflow-safe).

@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/features/logistics/data/quote_format.dart';
 
 /// Inputs of the landed-cost calculator form.
 class QuoteRequest {
@@ -16,7 +17,16 @@ class QuoteRequest {
     this.insurance = true,
     this.modes = const {},
     this.freightOverride,
+    this.goodsValueText,
+    this.weightText,
+    this.volumeText,
   });
+
+  /// Exact decimal strings typed by the user. When set they are sent on the
+  /// wire instead of the (binary float) numbers below, so no digits are lost.
+  final String? goodsValueText;
+  final String? weightText;
+  final String? volumeText;
 
   /// Value of the goods in [goodsCurrency].
   final double goodsValue;
@@ -37,31 +47,50 @@ class QuoteRequest {
   /// Optional awarded forwarder quote used as the exact main-leg price.
   final FreightOverride? freightOverride;
 
-  /// Copy without the forwarder override.
-  QuoteRequest withoutOverride() => QuoteRequest(
+  /// Copy with the given fields replaced (the override can be cleared).
+  QuoteRequest copyWith({
+    String? goodsCurrency,
+    String? displayCurrency,
+    Incoterm? incoterm,
+    Set<TransportMode>? modes,
+    bool clearOverride = false,
+  }) =>
+      QuoteRequest(
         goodsValue: goodsValue,
         weightKg: weightKg,
         volumeM3: volumeM3,
         origin: origin,
         destination: destination,
-        goodsCurrency: goodsCurrency,
+        goodsCurrency: goodsCurrency ?? this.goodsCurrency,
         hsCode: hsCode,
         dangerousGoods: dangerousGoods,
-        incoterm: incoterm,
-        displayCurrency: displayCurrency,
+        incoterm: incoterm ?? this.incoterm,
+        displayCurrency: displayCurrency ?? this.displayCurrency,
         insurance: insurance,
-        modes: modes,
+        modes: modes ?? this.modes,
+        freightOverride: clearOverride ? null : freightOverride,
+        goodsValueText: goodsValueText,
+        weightText: weightText,
+        volumeText: volumeText,
       );
+
+  /// Copy without the forwarder override.
+  QuoteRequest withoutOverride() => copyWith(clearOverride: true);
 
   /// Body of POST /v1/quotes/landed-cost (contracts/openapi/logistics.yaml).
   Map<String, dynamic> toJson() => {
         'goods': {
           'total_value': {
-            'amount': goodsValue.toStringAsFixed(2),
+            'amount': goodsValueText != null
+                ? decimalAtLeast2(goodsValueText!)
+                : goodsValue.toStringAsFixed(2),
             'currency': goodsCurrency,
           },
-          'total_weight_kg': decimalString(weightKg),
-          if (volumeM3 > 0) 'total_volume_m3': decimalString(volumeM3),
+          'total_weight_kg': weightText ?? decimalString(weightKg),
+          if (volumeText != null
+              ? !isZeroDecimal(volumeText!)
+              : volumeM3 > 0)
+            'total_volume_m3': volumeText ?? decimalString(volumeM3),
           if (hsCode != null && hsCode!.isNotEmpty) 'hs_code': hsCode,
           'dangerous_goods': dangerousGoods,
         },
@@ -134,8 +163,8 @@ class FreightOverride {
 }
 
 /// Plain decimal string (no exponent, no trailing zeros): 12.5 -> "12.5".
-String decimalString(double v) {
-  var s = v.toStringAsFixed(4);
+String decimalString(double v, {int digits = 4}) {
+  var s = v.toStringAsFixed(digits);
   if (s.contains('.')) {
     s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
   }

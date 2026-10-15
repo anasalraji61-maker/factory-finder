@@ -11,7 +11,7 @@ import time
 from typing import Any
 
 from ..domain.models import ListingDetail, SearchQuery
-from ._norm import build_listing
+from ._norm import build_listing, resolve_price, to_moq
 from .http_base import ApiSourceAdapter, HttpRequestSpec, hmac_sign
 
 
@@ -41,8 +41,14 @@ class AlibabaAdapter(ApiSourceAdapter):
     def parse_search_response(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         return list(payload.get("result", {}).get("products", []))
 
-    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail:
-        price = raw.get("price", {})
+    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail | None:
+        if raw.get("id") in (None, ""):
+            return None
+        price = raw.get("price")
+        if not isinstance(price, dict) or resolve_price(
+            lo=price.get("min"), default_currency="USD"
+        ) is None:
+            return None
         return build_listing(
             source=self.id,
             native_id=str(raw["id"]),
@@ -56,7 +62,7 @@ class AlibabaAdapter(ApiSourceAdapter):
             city=raw.get("city"),
             url=raw.get("detail_url"),
             images=raw.get("images", []),
-            moq=int(raw["moq"]) if raw.get("moq") else None,
+            moq=to_moq(raw.get("moq")),
             unit=raw.get("unit"),
             verified=bool(raw.get("verified_supplier")),
         )

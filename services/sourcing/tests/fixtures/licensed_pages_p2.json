@@ -1,0 +1,5 @@
+{"_note": "UNVERIFIED SYNTHETIC page 2: repeats p-1 (duplicate id) and adds p-3.",
+ "data": {"items": [
+  {"product_id": "p-1", "name": "Hydraulic Press 100T", "pricing": {"min": "12000", "max": "14000", "currency": "usd"}, "seller": {"id": "s1", "name": "Acme Press"}},
+  {"product_id": "p-3", "name": "Lathe Machine C6140", "pricing": {"min": "RMB 9,800", "currency": null}, "seller": {"id": "s2", "name": "Wuxi Lathes"}}
+ ]}}

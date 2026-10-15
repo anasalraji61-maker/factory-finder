@@ -9,6 +9,9 @@ abstract class TrackingRepository {
   Future<Shipment> add(String reference, ReferenceType type, {String? carrier});
   Future<Shipment> refresh(String id);
 
+  /// Stops tracking (DELETE). A shipment that is already gone is not an error.
+  Future<void> delete(String id);
+
   /// Best-effort reference check with did-you-mean and carrier hints.
   Future<ReferenceCheck> validate(ReferenceType type, String reference);
 }
@@ -41,6 +44,15 @@ class LiveTrackingRepository implements TrackingRepository {
         'reference_type': type.wire,
         if (carrier != null && carrier.trim().isNotEmpty) 'carrier': carrier.trim(),
       }));
+
+  @override
+  Future<void> delete(String id) async {
+    try {
+      await _api.delete('/v1/shipments/$id');
+    } on ApiException catch (e) {
+      if (e.status != 404) rethrow;
+    }
+  }
 
   @override
   Future<ReferenceCheck> validate(ReferenceType type, String reference) async {
@@ -216,7 +228,7 @@ class MockTrackingRepository implements TrackingRepository {
     }
     final ref = normalizeReference(reference);
     for (final s in _items.values) {
-      if (s.reference == ref) return s;
+      if (s.reference == ref && s.referenceType == type) return s;
     }
     final id = 'shp_${(++_seq).toString().padLeft(3, '0')}';
     final journey = type == ReferenceType.awb ? _airJourney : _seaJourney;
@@ -236,6 +248,13 @@ class MockTrackingRepository implements TrackingRepository {
     _done[id] = done;
     _journeys[id] = journey;
     return s;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _items.remove(id);
+    _done.remove(id);
+    _journeys.remove(id);
   }
 
   static const Map<String, String> _lookalikes = {

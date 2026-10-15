@@ -122,7 +122,7 @@ class _ShipmentCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${s.origin} ← ${s.destination}',
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall,
                 ),

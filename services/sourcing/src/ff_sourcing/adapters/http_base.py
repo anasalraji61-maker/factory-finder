@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import hmac
+import logging
 import os
 import time
 from collections.abc import Awaitable, Callable
@@ -29,6 +30,7 @@ from ..domain.cache import TTLCache
 from ..domain.models import ListingDetail, SearchQuery, Supplier
 from .base import Health, SourceAdapter
 
+log = logging.getLogger(__name__)
 _VOLATILE = {"timestamp", "sign", "_aop_signature"}  # excluded from cache keys
 MIN_INTERVAL_FLOOR_S = 3.0  # CLAUDE.md rule 6: never configurable below this
 GLOBAL_KILL_SWITCH_ENV = "FF_SOURCING_KILL_SWITCH"
@@ -41,7 +43,41 @@ class SourceNotConfigured(RuntimeError):
 
 
 class SourceBlocked(RuntimeError):
-    pass
+    """Upstream refused us (401/403/429/challenge). Never retried or bypassed.
+
+    ``retry_after_s`` is set for 429 (Retry-After header honoured, or DEFAULT_COOLDOWN_S).
+    """
+
+    def __init__(self, message: str = "", retry_after_s: float | None = None):
+        super().__init__(message)
+        self.retry_after_s = retry_after_s
+
+
+DEFAULT_COOLDOWN_S = 60.0
+MAX_COOLDOWN_S = 3600.0
+
+
+def parse_retry_after(value: str | None, now_epoch: float | None = None) -> float | None:
+    """Retry-After as delta-seconds or HTTP-date -> seconds (>= 0), or None when absent/garbage."""
+    if not value:
+        return None
+    v = value.strip()
+    if v.isdigit():
+        return float(v)
+    try:
+        from email.utils import parsedate_to_datetime
+
+        when = parsedate_to_datetime(v)
+    except (TypeError, ValueError, IndexError):
+        return None
+    if when is None:
+        return None
+    return max(0.0, when.timestamp() - (time.time() if now_epoch is None else now_epoch))
+
+
+def cooldown_seconds(retry_after: str | None) -> float:
+    secs = parse_retry_after(retry_after)
+    return min(secs if secs is not None else DEFAULT_COOLDOWN_S, MAX_COOLDOWN_S)
 
 
 class SourceDisabled(RuntimeError):
@@ -66,7 +102,15 @@ class HostRateLimiter:
         self.min_interval_s = max(min_interval_s, MIN_INTERVAL_FLOOR_S)
         self._clock, self._sleep = clock, sleep
         self._next: dict[str, float] = {}
+        self._cool: dict[str, float] = {}
         self._lock = asyncio.Lock()
+
+    def cool_down(self, host: str, seconds: float) -> None:
+        """A 429 said 'back off': no request to ``host`` until ``seconds`` have passed."""
+        self._cool[host] = max(self._cool.get(host, 0.0), self._clock() + max(0.0, seconds))
+
+    def cooldown_remaining(self, host: str) -> float:
+        return max(0.0, self._cool.get(host, 0.0) - self._clock())
 
     async def wait(self, host: str) -> None:
         async with self._lock:
@@ -149,7 +193,7 @@ class ApiSourceAdapter(SourceAdapter):
     def parse_search_response(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         raise NotImplementedError
 
-    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail:
+    def normalize_item(self, raw: dict[str, Any]) -> ListingDetail | None:
         raise NotImplementedError
 
     # ---- common ---------------------------------------------------------
@@ -178,7 +222,10 @@ class ApiSourceAdapter(SourceAdapter):
                     raise SourceBlocked(
                         f"{self.id}: robots.txt disallows {urlsplit(spec.url).path}"
                     )
-            await self.limiter.wait(urlsplit(spec.url).netloc)
+            host = urlsplit(spec.url).netloc
+            if (left := self.limiter.cooldown_remaining(host)) > 0:
+                raise SourceBlocked(f"{self.id}: cooling down after HTTP 429", retry_after_s=left)
+            await self.limiter.wait(host)
             try:
                 r = await client.request(
                     spec.method,
@@ -187,7 +234,14 @@ class ApiSourceAdapter(SourceAdapter):
                     headers=headers,
                     follow_redirects=False,
                 )
-                if r.status_code in (401, 403, 429):
+                if r.status_code == 429:
+                    secs = cooldown_seconds(r.headers.get("retry-after"))
+                    self.limiter.cool_down(host, secs)
+                    raise SourceBlocked(
+                        f"{self.id}: HTTP 429; not retrying, cooling down {secs:g}s",
+                        retry_after_s=secs,
+                    )
+                if r.status_code in (401, 403):
                     raise SourceBlocked(
                         f"{self.id}: HTTP {r.status_code}; not retrying or bypassing"
                     )
@@ -198,6 +252,8 @@ class ApiSourceAdapter(SourceAdapter):
                     data = r.json()
                 except ValueError:  # HTML challenge / CAPTCHA page: stop, never solve
                     raise SourceBlocked(f"{self.id}: non-JSON response (challenge?); stopping") from None
+                if not isinstance(data, dict):
+                    raise SourceBlocked(f"{self.id}: unexpected JSON shape; stopping") from None
             except httpx.HTTPError as exc:  # httpx messages embed the URL (signed query): redact
                 raise RuntimeError(f"{self.id}: upstream error {type(exc).__name__}") from None
         finally:
@@ -208,7 +264,18 @@ class ApiSourceAdapter(SourceAdapter):
 
     async def search(self, query: SearchQuery) -> list[ListingDetail]:
         payload = await self.fetch(self.build_search_request(query))
-        return [self.normalize_item(r) for r in self.parse_search_response(payload)]
+        out: list[ListingDetail] = []
+        seen: set[str] = set()
+        for raw in self.parse_search_response(payload):
+            try:  # one malformed record must not drop the page
+                item = self.normalize_item(raw) if isinstance(raw, dict) else None
+            except Exception as exc:
+                log.warning("%s: skipped malformed item (%s)", self.id, type(exc).__name__)
+                continue
+            if item is not None and item.id not in seen:  # providers repeat items across/within pages
+                seen.add(item.id)
+                out.append(item)
+        return out
 
     async def get_listing(self, listing_id: str) -> ListingDetail | None:
         return None  # TODO: product-detail endpoint of the provider

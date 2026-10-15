@@ -71,7 +71,7 @@ def test_normalization_skeletons():
     assert a.id == "lst_alibaba_7" and str(a.price.max.amount) == "1100" and a.supplier.verified
     b = Source1688Adapter(s).normalize_item({"offerId": 1, "subject": "t", "price": "12.5"})
     assert b.price.min.currency == "CNY" and b.price.max.amount == b.price.min.amount
-    c = AliExpressAdapter(s).normalize_item({"product_id": 9, "target_sale_price": "3.2"})
+    c = AliExpressAdapter(s).normalize_item({"product_id": 9, "product_title": "Mini fan", "target_sale_price": "3.2"})
     assert c.moq == 1
     d = MadeInChinaAdapter(s).normalize_item(
         {"id": 5, "title": "x", "price_min": 5, "price_max": 4}

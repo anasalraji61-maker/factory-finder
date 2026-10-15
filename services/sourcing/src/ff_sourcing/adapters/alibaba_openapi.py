@@ -5,7 +5,8 @@ shape below follow the public shape of Alibaba's TOP-style Open Platform
 (`/sync?method=...&app_key&timestamp&sign_method=sha256&sign`, `*_response` envelope) as best
 known, not a tested integration. Before enabling: check the current docs at
 https://open.alibaba.com, confirm buyer-side search is available to the account, and replace
-`tests/fixtures/alibaba_openapi_search.json` with a REAL recorded response.
+`tests/fixtures/alibaba_openapi_search.json` (a hand-authored SYNTHETIC fixture, NOT a recording)
+with a REAL recorded response. Nothing here has been verified against Alibaba's servers.
 
 Credentials (env only): FF_SOURCING_ALIBABA_APP_KEY, FF_SOURCING_ALIBABA_APP_SECRET,
 FF_SOURCING_ALIBABA_ACCESS_TOKEN. Kill switch: FF_SOURCING_ALIBABA_OPENAPI_DISABLED.

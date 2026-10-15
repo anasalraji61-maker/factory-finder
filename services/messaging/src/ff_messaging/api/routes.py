@@ -14,7 +14,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ff_messaging import privacy
 from ff_messaging.api.serializers import (
@@ -99,6 +99,16 @@ class MessageCreate(_Body):
     client_message_id: str | None = Field(
         default=None, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:\-]+$"
     )
+    # short alias of client_message_id (same idempotency semantics)
+    client_id: str | None = Field(
+        default=None, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:\-]+$"
+    )
+
+    @model_validator(mode="after")
+    def _client_ids_agree(self) -> "MessageCreate":
+        if self.client_id and self.client_message_id and self.client_id != self.client_message_id:
+            raise ValueError("client_id and client_message_id must match")
+        return self
 
 
 class PreferencesIn(_Body):
@@ -237,7 +247,7 @@ async def send_message(
         attachment=Attachment(**body.attachment.model_dump()) if body.attachment else None,
         attachments=tuple(MediaAttachment(**a.model_dump()) for a in body.attachments),
         offer_ref=OfferRef(**body.offer_ref.model_dump()) if body.offer_ref else None,
-        client_message_id=body.client_message_id,
+        client_message_id=body.client_id or body.client_message_id,
     )
     message, created = await svc.send_message(user, conversation_id, draft, supplier)
     if not created:

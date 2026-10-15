@@ -127,28 +127,30 @@ class RfqService:
         if (not self._dirty and self._swept_at is not None and now - self._swept_at < SWEEP_MAX_AGE
                 and (self._next_due is None or now < self._next_due)):
             return
-        late = (await s.execute(select(RequestRow).where(
-            RequestRow.status.in_(LIVE), RequestRow.deadline.is_not(None), RequestRow.deadline < now))).scalars()
-        for r in late:
-            r.status = request_transition(RequestStatus(r.status), "expire", r.id).value
-            r.updated_at = now
-        stale = (await s.execute(select(OfferRow).where(
+        # Set-based (the state machine allows "expire" from every LIVE status and from ACTIVE offers, and
+        # "release" only from NEGOTIATING): a backlog of N lapsed rows costs a constant number of statements.
+        await s.execute(update(RequestRow).where(
+            RequestRow.status.in_(LIVE), RequestRow.deadline.is_not(None), RequestRow.deadline < now,
+        ).values(status=RequestStatus.EXPIRED.value, updated_at=now).execution_options(synchronize_session=False))
+        stale_cond = and_(
             OfferRow.status == OfferStatus.ACTIVE.value,
             or_(OfferRow.valid_until.is_not(None) & (OfferRow.valid_until < now),
-                OfferRow.request_id.in_(select(RequestRow.id).where(
-                    RequestRow.status == RequestStatus.EXPIRED.value)))))).scalars()
-        touched = set()
-        for o in stale:
-            o.status = offer_transition(OfferStatus(o.status), "expire", o.id).value
-            o.updated_at = now
-            touched.add(o.request_id)
-        await s.flush()
-        for rid in touched:  # last active offer lapsed: the request is open for offers again
-            r = await s.get(RequestRow, rid)
-            if r is not None and r.status == RequestStatus.NEGOTIATING.value and await self._active_count(s, rid) == 0:
-                r.status = request_transition(RequestStatus.NEGOTIATING, "release", rid).value
-                r.updated_at = now
-        await s.flush()
+                OfferRow.request_id.in_(select(RequestRow.id).where(RequestRow.status == RequestStatus.EXPIRED.value))))
+        touched = set((await s.execute(select(OfferRow.request_id).where(stale_cond).distinct())).scalars())
+        if touched:
+            await s.execute(update(OfferRow).where(stale_cond).values(
+                status=OfferStatus.EXPIRED.value, updated_at=now).execution_options(synchronize_session=False))
+            # last active offer lapsed: the request is open for offers again
+            ids = list(touched)
+            for i in range(0, len(ids), 500):
+                chunk = ids[i:i + 500]
+                still_active = set((await s.execute(select(OfferRow.request_id).where(
+                    OfferRow.request_id.in_(chunk), OfferRow.status == OfferStatus.ACTIVE.value).distinct())).scalars())
+                free = [rid for rid in chunk if rid not in still_active]
+                if free:
+                    await s.execute(update(RequestRow).where(
+                        RequestRow.id.in_(free), RequestRow.status == RequestStatus.NEGOTIATING.value,
+                    ).values(status=RequestStatus.OPEN.value, updated_at=now).execution_options(synchronize_session=False))
         due = [d for d in (
             (await s.execute(select(func.min(RequestRow.deadline)).where(
                 RequestRow.status.in_(LIVE), RequestRow.deadline.is_not(None)))).scalar_one(),
@@ -260,8 +262,13 @@ class RfqService:
             rows = (await s.execute(select(RequestRow).where(*cond).order_by(
                 RequestRow.created_at.desc(), RequestRow.id).offset((p - 1) * size).limit(size))).scalars().all()
             counts = await self._counts(s, [r.id for r in rows])
-            items = [request_dict(r, counts.get(r.id, 0), await self._invited(s, r.id) if r.owner_id == user else None)
-                     for r in rows]
+            own = [r.id for r in rows if r.owner_id == user]
+            invited: dict[str, list[str]] = {rid: [] for rid in own}
+            if own:  # one query for every owned row (was one per row)
+                for rid, sid in (await s.execute(select(RequestInviteRow.request_id, RequestInviteRow.supplier_id).where(
+                        RequestInviteRow.request_id.in_(own)).order_by(RequestInviteRow.supplier_id))).all():
+                    invited[rid].append(sid)
+            items = [request_dict(r, counts.get(r.id, 0), invited[r.id] if r.owner_id == user else None) for r in rows]
         return page(items, total, p, size)
 
     async def get_request(self, user: str, request_id: str, supplier_id: str | None = None) -> dict[str, Any]:

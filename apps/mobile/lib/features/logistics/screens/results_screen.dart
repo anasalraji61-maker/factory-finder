@@ -1,13 +1,19 @@
 import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/models/models.dart';
+import 'package:factory_finder/core/providers.dart';
 import 'package:factory_finder/core/theme/app_theme.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
-import 'package:factory_finder/features/freight/data/freight_prefill.dart' show lastQuoteRequestProvider;
 import 'package:factory_finder/features/freight/screens/freight_quote_button.dart';
 import 'package:factory_finder/features/freight/widgets/freight_widgets.dart' show formatDate;
+import 'package:factory_finder/features/freight/data/freight_prefill.dart' show lastQuoteRequestProvider;
 import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
+import 'package:factory_finder/features/logistics/data/mock_quote_generator.dart' show kUsdRates;
+import 'package:factory_finder/features/logistics/data/quote_format.dart';
+import 'package:factory_finder/features/logistics/data/quote_request.dart';
+import 'package:factory_finder/features/logistics/data/saved_quotes.dart';
 import 'package:factory_finder/features/logistics/screens/sensitivity_section.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const Map<String, Color> _stageColors = {
@@ -43,31 +49,155 @@ IconData modeIcon(TransportMode m) {
   }
 }
 
-class ResultsScreen extends ConsumerWidget {
+class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends ConsumerState<ResultsScreen> {
+  bool _busy = false;
+  String? _failedCurrency;
+
+  /// The request that produced the quote on screen, or null when unknown
+  /// (e.g. a saved quote) - then the currency cannot be recomputed.
+  QuoteRequest? _requestFor(LandedCostQuote quote) {
+    final r = ref.read(lastQuoteRequestProvider);
+    if (r == null || r.displayCurrency != quote.currency) return null;
+    return r;
+  }
+
+  Future<void> _recalc(String currency) async {
+    final quote = ref.read(lastQuoteProvider);
+    final req = quote == null ? null : _requestFor(quote);
+    if (req == null || _busy || currency == req.displayCurrency) return;
+    final next = req.copyWith(displayCurrency: currency);
+    final lang = ref.read(localeProvider).languageCode;
+    setState(() {
+      _busy = true;
+      _failedCurrency = null;
+    });
+    try {
+      final q = await ref.read(logisticsRepositoryProvider).calculate(next, lang: lang);
+      if (!mounted) return;
+      ref.read(lastQuoteProvider.notifier).state = q;
+      ref.read(lastQuoteRequestProvider.notifier).state = next;
+      setState(() => _busy = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _failedCurrency = currency;
+      });
+    }
+  }
+
+  void _snack(String text) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _copy(LandedCostQuote quote, Incoterm? incoterm) async {
+    final text = buildQuoteShareText(
+      quote,
+      incoterm: incoterm,
+      t: (String k, [Map<String, String> a = const {}]) => context.tr(k, a),
+      modeName: (m) => context.tr('logistics.mode.${m.json}'),
+    );
+    final done = context.tr('logistics.results.copied');
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (_) {
+      // Clipboard unavailable: nothing else to do.
+    }
+    if (mounted) _snack(done);
+  }
+
+  Future<void> _save(LandedCostQuote quote, Incoterm? incoterm) async {
+    final done = context.tr('logistics.results.saved');
+    await ref.read(savedQuotesProvider.notifier).save(quote, incoterm: incoterm);
+    if (mounted) _snack(done);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final quote = ref.watch(lastQuoteProvider);
-    final validUntil = ref.watch(lastQuoteRequestProvider)?.freightOverride?.validUntil;
+    ref.watch(lastQuoteRequestProvider);
+    final savedList = ref.watch(savedQuotesProvider);
+    final request = quote == null ? null : _requestFor(quote);
+    SavedQuote? saved;
+    if (quote != null) {
+      for (final s in savedList) {
+        if (s.quote.id == quote.id) {
+          saved = s;
+          break;
+        }
+      }
+    }
+    final incoterm = request?.incoterm ?? saved?.incoterm;
+    final validUntil = request?.freightOverride?.validUntil;
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('logistics.results.title'))),
+      appBar: AppBar(
+        title: Text(context.tr('logistics.results.title')),
+        actions: [
+          if (quote != null && quote.options.isNotEmpty) ...[
+            IconButton(
+              key: const ValueKey<String>('results_copy'),
+              tooltip: context.tr('logistics.results.copy'),
+              icon: const Icon(Icons.ios_share_outlined),
+              onPressed: () => _copy(quote, incoterm),
+            ),
+            IconButton(
+              key: const ValueKey<String>('results_save'),
+              tooltip: context.tr('logistics.results.save'),
+              icon: Icon(saved != null ? Icons.bookmark : Icons.bookmark_border),
+              onPressed: () => _save(quote, incoterm),
+            ),
+          ],
+        ],
+      ),
       body: quote == null
           ? EmptyState(
               icon: Icons.receipt_long_outlined,
               title: context.tr('logistics.results.none'),
               message: context.tr('logistics.results.none_msg'),
             )
-          : _QuoteView(quote: quote, quotedValidUntil: validUntil),
+          : _QuoteView(
+              quote: quote,
+              quotedValidUntil: validUntil,
+              incoterm: incoterm,
+              canRecalc: request != null,
+              busy: _busy,
+              failedCurrency: _failedCurrency,
+              onCurrency: _recalc,
+              savedAt: request == null ? saved?.savedAt : null,
+            ),
     );
   }
 }
 
 class _QuoteView extends StatelessWidget {
-  const _QuoteView({required this.quote, this.quotedValidUntil});
+  const _QuoteView({
+    required this.quote,
+    this.quotedValidUntil,
+    this.incoterm,
+    this.canRecalc = false,
+    this.busy = false,
+    this.failedCurrency,
+    this.onCurrency,
+    this.savedAt,
+  });
 
   final LandedCostQuote quote;
   final DateTime? quotedValidUntil;
+  final Incoterm? incoterm;
+  final bool canRecalc;
+  final bool busy;
+  final String? failedCurrency;
+  final ValueChanged<String>? onCurrency;
+  final DateTime? savedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -77,21 +207,88 @@ class _QuoteView extends StatelessWidget {
       children: [
         AppCard(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CountryFlag(countryCode: quote.origin?.countryCode ?? 'CN', size: 24),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  '${locationLabel(context, quote.origin)}  ›  ${locationLabel(context, quote.destination)}',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
+              Row(
+                children: [
+                  CountryFlag(countryCode: quote.origin?.countryCode ?? 'CN', size: 24),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      '${locationLabel(context, quote.origin)}  ›  ${locationLabel(context, quote.destination)}',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  CountryFlag(countryCode: quote.destination?.countryCode ?? 'IQ', size: 24),
+                ],
               ),
-              CountryFlag(countryCode: quote.destination?.countryCode ?? 'IQ', size: 24),
+              if (incoterm != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  context.tr('logistics.results.incoterm', {'i': incoterm!.json}),
+                  key: const ValueKey<String>('results_incoterm'),
+                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
             ],
           ),
         ),
+        if (savedAt != null)
+          WarningBanner(
+            text: context.tr('logistics.results.saved_note', {'d': formatDate(context, savedAt)}),
+          ),
         for (final w in quote.warnings) WarningBanner(text: w),
+        if (canRecalc) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            context.tr('logistics.results.currency'),
+            style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final c in kUsdRates.keys)
+                ChoiceChip(
+                  key: ValueKey<String>('results_cur_$c'),
+                  label: Text(c),
+                  selected: quote.currency == c,
+                  onSelected: busy ? null : (_) => onCurrency?.call(c),
+                ),
+            ],
+          ),
+          if (busy) ...[
+            const SizedBox(height: AppSpacing.sm),
+            const LinearProgressIndicator(key: ValueKey<String>('results_recalc_progress')),
+            const SizedBox(height: 4),
+            Text(
+              context.tr('logistics.results.recalculating'),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          if (failedCurrency != null && !busy)
+            Container(
+              key: const ValueKey<String>('results_recalc_error'),
+              margin: const EdgeInsets.only(top: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.tr('logistics.results.recalc_failed'),
+                      style: const TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+                  TextButton(
+                    key: const ValueKey<String>('results_recalc_retry'),
+                    onPressed: () => onCurrency?.call(failedCurrency!),
+                    child: Text(context.tr('common.retry')),
+                  ),
+                ],
+              ),
+            ),
+        ],
         const SizedBox(height: AppSpacing.md),
         if (quote.options.isEmpty)
           EmptyState(
@@ -102,7 +299,11 @@ class _QuoteView extends StatelessWidget {
           for (final o in quote.options)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: OptionCard(option: o, quotedValidUntil: quotedValidUntil),
+              child: OptionCard(
+                option: o,
+                quotedValidUntil: quotedValidUntil,
+                incoterm: incoterm,
+              ),
             ),
         FreightQuoteButton(quote: quote),
         const SizedBox(height: AppSpacing.sm),
@@ -130,10 +331,97 @@ class _QuoteView extends StatelessWidget {
   }
 }
 
+/// Estimate / confidence / as-of chips plus the honest range note.
+class EstimateBadges extends StatelessWidget {
+  const EstimateBadges({super.key, required this.label});
+
+  final EstimateLabel label;
+
+  Widget _chip(String text, Color color, {Key? key}) => Container(
+        key: key,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (!label.isEstimate) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _chip(context.tr('logistics.exact'), AppColors.success,
+              key: const ValueKey<String>('est_exact')),
+          const SizedBox(height: 4),
+          Text(
+            context.tr('logistics.exact_note'),
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      );
+    }
+    final c = label.confidence;
+    final confColor = c == QuoteConfidence.high
+        ? AppColors.success
+        : (c == QuoteConfidence.medium ? AppColors.warning : AppColors.danger);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            _chip(context.tr('common.estimate'), AppColors.warning,
+                key: const ValueKey<String>('est_badge')),
+            _chip(
+              context.tr('logistics.confidence.label', {
+                'c': confidenceText(
+                  (String k, [Map<String, String> a = const {}]) => context.tr(k, a),
+                  c,
+                ),
+              }),
+              confColor,
+              key: const ValueKey<String>('est_confidence'),
+            ),
+            if (label.asOf != null)
+              _chip(
+                context.tr('logistics.as_of', {'d': label.asOf!}),
+                AppColors.primary,
+                key: const ValueKey<String>('est_as_of'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          context.tr('logistics.range_note'),
+          key: const ValueKey<String>('est_range_note'),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+        ),
+      ],
+    );
+  }
+}
+
 class OptionCard extends StatelessWidget {
-  const OptionCard({super.key, required this.option, this.quotedValidUntil});
+  const OptionCard({
+    super.key,
+    required this.option,
+    this.quotedValidUntil,
+    this.incoterm,
+  });
 
   final LandedCostOption option;
+
+  /// Supplier incoterm of the request (explains zero "included" lines).
+  final Incoterm? incoterm;
 
   /// Expiry of the forwarder quote behind a `quoted` main-leg line (if known).
   final DateTime? quotedValidUntil;
@@ -142,6 +430,7 @@ class OptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final o = option;
+    final label = estimateLabelOf(o);
     return AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -205,7 +494,9 @@ class OptionCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  context.tr('logistics.results.total'),
+                  label.isEstimate
+                      ? context.tr('logistics.estimate_total')
+                      : context.tr('logistics.results.total'),
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: AppColors.textSecondary),
                 ),
@@ -217,6 +508,8 @@ class OptionCard extends StatelessWidget {
                     color: theme.colorScheme.primary,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.xs),
+                EstimateBadges(label: label),
                 if (o.routeSummary != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
@@ -245,7 +538,8 @@ class OptionCard extends StatelessWidget {
                 AppSpacing.lg,
               ),
               children: [
-                for (final l in o.lines) _LineRow(line: l, validUntil: quotedValidUntil),
+                for (final l in o.lines)
+                  _LineRow(line: l, validUntil: quotedValidUntil, incoterm: incoterm),
               ],
             ),
           ),
@@ -257,10 +551,11 @@ class OptionCard extends StatelessWidget {
 }
 
 class _LineRow extends StatelessWidget {
-  const _LineRow({required this.line, this.validUntil});
+  const _LineRow({required this.line, this.validUntil, this.incoterm});
 
   final CostLine line;
   final DateTime? validUntil;
+  final Incoterm? incoterm;
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +646,21 @@ class _LineRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          MoneyText(line.amount),
+          if (incoterm != null &&
+              !line.quoted &&
+              isZeroDecimal(line.amount.amount) &&
+              supplierCoversStage(incoterm!, line.stage))
+            Text(
+              context.tr('logistics.included'),
+              key: ValueKey<String>('line_included_${line.stage}'),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
+            MoneyText(line.amount),
         ],
       ),
     );

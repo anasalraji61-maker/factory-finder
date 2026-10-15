@@ -96,7 +96,7 @@ def test_arabic_draft_has_disclosure_and_no_promises(env):
 
 def test_english_draft_language(env):
     d = env.signal(EN)["draft"]
-    assert d["language"] == "en" and "not an individual" in d["text"]
+    assert d["language"] == "en" and "not an individual" in d["text"] and "commission" in d["text"]
     assert "indicative" in d["text"]
 
 

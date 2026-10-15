@@ -76,6 +76,30 @@ class SnapshotStore:
                 await conn.execute(delete(t).where(t.c.id.in_(old.scalar_subquery())))
         await self._maybe_purge()
 
+    async def add_many(self, snaps: dict[str, Snapshot]) -> None:
+        """Batch form of :meth:`add`: one transaction and a constant number of statements for N suppliers
+        (latest row per supplier via a window function, one multi-row insert, per-supplier trim only when over cap)."""
+        if not snaps:
+            return
+        t = score_snapshots
+        ids = list(snaps)
+        async with self.db.begin() as conn:
+            ranked = (
+                select(t.c.supplier_id, t.c.score, t.c.band, t.c.confidence,
+                       func.row_number().over(partition_by=t.c.supplier_id, order_by=(t.c.at.desc(), t.c.id.desc())).label("rn"))
+                .where(t.c.supplier_id.in_(ids)).subquery()
+            )
+            last = {r.supplier_id: (r.score, r.band, r.confidence) for r in (await conn.execute(select(ranked).where(ranked.c.rn == 1))).all()}
+            fresh = {sid: sn for sid, sn in snaps.items() if last.get(sid) != (sn.score, sn.band, sn.confidence)}
+            if fresh:
+                await conn.execute(insert(t), [dict(supplier_id=sid, at=sn.at, score=sn.score, band=sn.band, confidence=sn.confidence) for sid, sn in fresh.items()])
+                counts = (await conn.execute(select(t.c.supplier_id, func.count()).where(t.c.supplier_id.in_(list(fresh))).group_by(t.c.supplier_id))).all()
+                for sid, n in counts:
+                    if n > self.max_per_supplier:
+                        old = select(t.c.id).where(t.c.supplier_id == sid).order_by(t.c.at, t.c.id).limit(n - self.max_per_supplier)
+                        await conn.execute(delete(t).where(t.c.id.in_(old.scalar_subquery())))
+        await self._maybe_purge()
+
     async def list(self, supplier_id: str) -> list[Snapshot]:
         t = score_snapshots
         async with self.db.begin() as conn:
@@ -183,6 +207,16 @@ class ReportStore:
         t = reports
         async with self.db.begin() as conn:
             return (await conn.execute(select(func.count(func.distinct(t.c.reporter_id))).where(t.c.supplier_id == supplier_id, t.c.status == "accepted"))).scalar_one()
+
+    async def accepted_counts(self, supplier_ids: list[str]) -> dict[str, int]:
+        """:meth:`accepted_count` for many suppliers in one grouped query."""
+        if not supplier_ids:
+            return {}
+        t = reports
+        async with self.db.begin() as conn:
+            rows = (await conn.execute(select(t.c.supplier_id, func.count(func.distinct(t.c.reporter_id))).where(
+                t.c.supplier_id.in_(supplier_ids), t.c.status == "accepted").group_by(t.c.supplier_id))).all()
+        return {sid: n for sid, n in rows}
 
     async def purge(self) -> int:
         """Retention: rejected and stale pending reports older than ``retention_days``. Accepted reports are kept."""

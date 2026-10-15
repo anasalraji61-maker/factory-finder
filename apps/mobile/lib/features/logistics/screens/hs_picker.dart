@@ -13,10 +13,14 @@ class HsCodePicker extends ConsumerStatefulWidget {
     super.key,
     required this.controller,
     this.destinationCountry,
+    this.errorText,
+    this.onChanged,
   });
 
   final TextEditingController controller;
   final String? destinationCountry;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
 
   @override
   ConsumerState<HsCodePicker> createState() => _HsCodePickerState();
@@ -36,6 +40,7 @@ class _HsCodePickerState extends ConsumerState<HsCodePicker> {
   }
 
   void _onChanged(String text) {
+    widget.onChanged?.call(text);
     final selected = _selected;
     if (selected != null && selected.code != text.trim()) {
       setState(() => _selected = null);
@@ -102,6 +107,7 @@ class _HsCodePickerState extends ConsumerState<HsCodePicker> {
             labelText: context.tr('logistics.calc.hs'),
             hintText: context.tr('logistics.hs.search_hint'),
             suffixIcon: const Icon(Icons.search),
+            errorText: widget.errorText,
           ),
         ),
         if (_items.isNotEmpty)

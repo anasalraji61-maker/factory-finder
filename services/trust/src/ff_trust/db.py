@@ -127,6 +127,8 @@ reports = Table(
     Index("ix_reports_supplier_status", "supplier_id", "status"),
     Index("ix_reports_reporter_created", "reporter_id", "created_at"),
     Index("ix_reports_status_created", "status", "created_at"),
+    # low-trust bucket count (every report add) and per-bucket eviction: index-only instead of a table scan
+    Index("ix_reports_lowtrust_status_created", "low_trust", "status", "created_at"),
 )
 
 score_snapshots = Table(

@@ -163,6 +163,17 @@ class AlertShipment {
   }
 }
 
+final RegExp _routeIdPattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9_.:\-]{0,127}$');
+
+/// True for an opaque id that is safe as ONE path segment (no slashes, query,
+/// fragment, whitespace, `..`).
+bool isSafeRouteId(String? id) =>
+    id != null && _routeIdPattern.hasMatch(id) && !id.contains('..');
+
+/// `/listing/<id>` for a safe id, else null.
+String? safeListingRoute(String? id) =>
+    isSafeRouteId(id) ? '/listing/${Uri.encodeComponent(id!)}' : null;
+
 /// One inbox alert from `GET /v1/alerts`.
 class PriceAlert {
   const PriceAlert({
@@ -197,9 +208,16 @@ class PriceAlert {
   /// First listing id in `payload.listing_ids`, if any.
   String? get listingId {
     final ids = payload['listing_ids'];
-    if (ids is List && ids.isNotEmpty) return ids.first.toString();
+    if (ids is List && ids.isNotEmpty) {
+      final first = ids.first;
+      if (first is String || first is num) return first.toString();
+    }
     return null;
   }
+
+  /// Internal listing route for this alert, or null when the id is missing or
+  /// unsafe (server-supplied data must never shape an arbitrary path).
+  String? get listingRoute => safeListingRoute(listingId);
 
   bool get isShipment => rule == kRuleShipmentStatus || rule == kRuleShipmentDelayed;
 
@@ -209,7 +227,7 @@ class PriceAlert {
   /// Tracking detail route for shipment alerts, else null.
   String? get trackingRoute {
     final sh = shipment;
-    if (sh == null) return null;
+    if (sh == null || !isSafeRouteId(sh.shipmentId)) return null;
     return '/logistics/tracking/${Uri.encodeComponent(sh.shipmentId)}';
   }
 

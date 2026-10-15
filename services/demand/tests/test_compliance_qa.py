@@ -502,6 +502,7 @@ def test_opt_out_arriving_between_draft_and_approve_blocks_approval(env):
 def test_polite_client_robots_5xx_429_and_network_error_fail_closed():
     async def go():
         for status in (429, 500, 503):
+
             def h429(r, s=status):
                 return httpx.Response(s)
 

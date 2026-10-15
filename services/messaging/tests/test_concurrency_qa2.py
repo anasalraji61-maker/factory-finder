@@ -132,3 +132,29 @@ def test_typing_frames_stop_after_block(tmp_path):
                 assert closed.value.code == 4403
                 sup_ws.send_json({"type": "ping"})
                 assert sup_ws.receive_json()["type"] == "pong"
+
+
+async def test_client_id_unique_index_catches_race(svc):
+    """Bypass the pre-check: a raw duplicate insert hits the partial unique index."""
+    import dataclasses
+
+    from sqlalchemy.exc import IntegrityError
+
+    from ff_messaging.persistence.repository import Repository
+
+    cid = await _conv(svc)
+    m, _ = await svc.send_message("buyer1", cid, _draft(cid="dup"))
+    async with svc.db.transaction() as conn:
+        with pytest.raises(IntegrityError):
+            await Repository(conn).insert_message(
+                dataclasses.replace(m, id="msg_other", seq=99), dedupe_key=None
+            )
+
+
+async def test_gather_duplicates_many_ids(svc):
+    cid = await _conv(svc)
+    res = await asyncio.gather(
+        *[svc.send_message("buyer1", cid, _draft(f"m{i % 3}", f"id-{i % 3}")) for i in range(15)]
+    )
+    assert sum(1 for _, created in res if created) == 3
+    assert len({m.id for m, _ in res}) == 3

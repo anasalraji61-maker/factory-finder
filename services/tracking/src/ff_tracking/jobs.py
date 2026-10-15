@@ -27,14 +27,9 @@ class RefreshJob:
 
     async def _run_once(self) -> dict[str, int]:
         now = self.clock()
-        due = []
-        for sh in await self.repo.active():
-            last = sh.last_refresh_attempt_at or sh.last_refreshed_at
-            if last is None or now - last >= self.interval:
-                due.append((last or sh.created_at, sh))
-        due.sort(key=lambda t: t[0])
+        due = await self.repo.due_for_refresh(now - self.interval, self.batch_size)
         stats = {"refreshed": 0, "failed": 0, "events": 0}
-        for _, sh in due[: self.batch_size]:
+        for sh in due:
             try:
                 stats["events"] += await self.service.refresh_system(sh)
                 stats["refreshed"] += 1

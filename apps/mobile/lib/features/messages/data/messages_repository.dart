@@ -12,6 +12,7 @@ abstract class MessagingRepository {
     String conversationId,
     String text, {
     List<MessageAttachment> attachments = const <MessageAttachment>[],
+    String? clientId,
   });
   Future<void> markRead(String conversationId);
 
@@ -78,17 +79,21 @@ class LiveMessagingRepository implements MessagingRepository {
     String id,
     String text, {
     List<MessageAttachment> attachments = const <MessageAttachment>[],
+    String? clientId,
   }) async {
+    final cid = validClientId(clientId) ?? newClientId();
     final data = await _api.post('/v1/conversations/$id/messages',
         body: {
           'type': 'text',
           if (text.trim().isNotEmpty) 'text': text,
           if (attachments.isNotEmpty)
             'attachments': [for (final a in attachments) a.toJson()],
-          'client_message_id': 'app_${DateTime.now().microsecondsSinceEpoch}',
+          'client_id': cid,
+          'client_message_id': cid,
         });
-    return ChatMessage.fromJson(Map<String, dynamic>.from(data as Map),
+    final sent = ChatMessage.fromJson(Map<String, dynamic>.from(data as Map),
         myUserId: _me);
+    return sent.clientId == null ? sent.copyWith(clientId: cid) : sent;
   }
 
   @override
@@ -347,6 +352,7 @@ class MockMessagingRepository implements MessagingRepository {
     String id,
     String text, {
     List<MessageAttachment> attachments = const <MessageAttachment>[],
+    String? clientId,
   }) async {
     final conv = _convs[id];
     if (conv == null) {
@@ -362,6 +368,14 @@ class MockMessagingRepository implements MessagingRepository {
     if (text.trim().isEmpty && attachments.isEmpty) {
       throw ApiException(status: 422, code: 'validation_error', message: 'Empty message');
     }
+    final cid = validClientId(clientId);
+    final list = _messages.putIfAbsent(id, () => []);
+    if (cid != null) {
+      // Idempotent replay: the same client_id returns the stored message.
+      for (final m in list) {
+        if (m.clientId == cid) return m;
+      }
+    }
     final now = _clock();
     final msg = ChatMessage(
       id: 'srv_${++_seq}',
@@ -370,8 +384,8 @@ class MockMessagingRepository implements MessagingRepository {
       body: text.trim(),
       attachments: attachments,
       createdAt: now,
+      clientId: cid,
     );
-    final list = _messages.putIfAbsent(id, () => []);
     list.add(msg);
     final last = conv.copyWith(
       lastMessage: localPreview(msg.body, attachments),
