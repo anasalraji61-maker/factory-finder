@@ -12,9 +12,11 @@ import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy.exc import IntegrityError
+
 from ff_demand import compliance
 from ff_demand.config import Settings
-from ff_demand.errors import CapReached, Conflict, Forbidden, Invalid, NotFound
+from ff_demand.errors import ApiError, CapReached, Conflict, Forbidden, Invalid, NotFound
 from ff_demand.intent import detect_language, extract_intent, signal_key
 from ff_demand.publisher import Publisher, guard_publish, text_sha
 from ff_demand.signals import RawSignal, SignalSource
@@ -100,6 +102,21 @@ class DemandService:
         self.clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
     # ---- ingestion -------------------------------------------------------------------------
+    @staticmethod
+    def _dup(signal: dict, draft: dict | None) -> dict:
+        return {"signal": signal, "draft": draft, "duplicate": True, "created": False}
+
+    async def _add_signal(self, sig: dict, key: str, now: datetime) -> dict | None:
+        """Insert; None on success, or the winner's result if a concurrent import won."""
+        try:
+            await self.store.add_signal(sig, key, now)
+        except IntegrityError:
+            winner = await self.store.signal_by_key(key)
+            if winner is None:
+                raise
+            return self._dup(winner, await self.store.draft_for_signal(winner["id"]))
+        return None
+
     async def import_signal(self, raw: RawSignal, language: str | None = None) -> dict:
         if raw.scraping_disallowed or raw.source.casefold() in self.settings.blocked_source_set:
             raise Forbidden(
@@ -109,12 +126,7 @@ class DemandService:
         key = signal_key(raw.text, raw.url)
         existing = await self.store.signal_by_key(key)
         if existing:
-            return {
-                "signal": existing,
-                "draft": await self.store.draft_for_signal(existing["id"]),
-                "duplicate": True,
-                "created": False,
-            }
+            return self._dup(existing, await self.store.draft_for_signal(existing["id"]))
         now = self.clock()
         lang = detect_language(raw.text, language)
         tkey = compliance.thread_key(raw.url, key)
@@ -134,7 +146,9 @@ class DemandService:
                 "intent": None,
                 "created_at": _iso(now),
             }
-            await self.store.add_signal(sig, key, now)
+            lost = await self._add_signal(sig, key, now)
+            if lost:
+                return lost
             return {"signal": sig, "draft": None, "duplicate": False, "created": True}
         intent = extract_intent(raw.text)
         sig = {
@@ -157,7 +171,9 @@ class DemandService:
             except SourcingUnavailableError:
                 candidates = []
             sig["status"] = "drafted" if candidates else "no_match"
-        await self.store.add_signal(sig, key, now)
+        lost = await self._add_signal(sig, key, now)
+        if lost:
+            return lost
         draft = None
         if candidates:
             listings = [
@@ -307,6 +323,8 @@ class DemandService:
         prev = d["status"]
         if prev not in ("draft", "approved"):
             raise Conflict(f"Cannot edit a {prev} draft")
+        if d.get("publish_claimed_by"):
+            raise Conflict("Draft is being published")
         text = text.strip()
         if len(text) < 5:
             raise Invalid("Edited text is too short")
@@ -400,15 +418,31 @@ class DemandService:
             raise Forbidden("No publisher adapter configured", code="publisher_disabled")
         d = await self.get_draft(did)
         guard_publish(d, actor)
-        url = await self.publisher.publish(d, actor)
-        return await self.mark_published(did, actor, url)
+        # Claim BEFORE sending: concurrent/repeated calls lose it and never reach the adapter.
+        claimed = await self.store.claim_publish(did, actor, _iso(self.clock()))
+        if claimed is None:
+            raise Conflict("Draft is already being published or is no longer approved")
+        try:
+            url = await self.publisher.publish(claimed, actor)
+        except (ApiError, NotImplementedError):  # refused before anything was sent: free the claim
+            await self.store.release_publish(did)
+            raise
+        # any other failure is ambiguous (may have been posted): the claim stays, never re-sent
+        return await self._mark_published(did, actor, url, claimed=True)
 
     async def mark_published(self, did: str, actor: str, url: str | None) -> dict:
+        return await self._mark_published(did, actor, url, claimed=False)
+
+    async def _mark_published(
+        self, did: str, actor: str, url: str | None, *, claimed: bool
+    ) -> dict:
         compliance.require_human(actor)
         self._require_enabled()
         d = await self.get_draft(did)
         if d["status"] != "approved":
             raise Conflict("Only an approved draft can be marked published")
+        if d.get("publish_claimed_by") and not claimed:
+            raise Conflict("Draft is being published by the adapter")
         guard_publish(d, actor)
         d["status"] = "published"
         d["published_url"] = url

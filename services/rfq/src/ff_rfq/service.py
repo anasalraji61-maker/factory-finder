@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, localcontext
 from typing import Any
 
-from sqlalchemy import and_, exists, func, not_, or_, select
+from sqlalchemy import and_, exists, func, not_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -150,6 +150,10 @@ class RfqService:
     async def _request(self, s: AsyncSession, request_id: str, lock: bool = False) -> RequestRow:
         """``lock`` = SELECT ... FOR UPDATE (serialises writers on PostgreSQL; a no-op on SQLite)."""
         if lock:
+            if s.bind is not None and s.bind.dialect.name == "sqlite":
+                # SQLite ignores FOR UPDATE and opens its transaction lazily: take the write lock with a no-op
+                # UPDATE so the reads that follow (offer caps, status checks) are serialised across connections.
+                await s.execute(update(RequestRow).where(RequestRow.id == request_id).values(id=RequestRow.id))
             r = (await s.execute(select(RequestRow).where(RequestRow.id == request_id).with_for_update())).scalar_one_or_none()
         else:
             r = await s.get(RequestRow, request_id)

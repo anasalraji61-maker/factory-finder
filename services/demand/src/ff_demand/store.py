@@ -67,6 +67,17 @@ class Store:
         self.engine: AsyncEngine = create_async_engine(normalize_database_url(url), **opts)
         self._cap_lock = asyncio.Lock()  # serialises cap-checked approvals within this process
 
+    @staticmethod
+    async def _write_lock(c) -> None:
+        """Serialise check-then-write sections across processes: advisory lock on PostgreSQL; on
+        SQLite a no-op UPDATE opens the write transaction up front (the driver begins lazily)."""
+        if c.dialect.name == "postgresql":
+            await c.execute(text("SELECT pg_advisory_xact_lock(727001)"))
+        elif c.dialect.name == "sqlite":
+            await c.execute(
+                update(drafts).where(drafts.c.id == "").values(version=drafts.c.version)
+            )
+
     async def create_all(self) -> None:
         async with self.engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
@@ -163,8 +174,7 @@ class Store:
     ) -> bool:
         async with self.engine.begin() as c:
             if cap is not None:
-                if c.dialect.name == "postgresql":
-                    await c.execute(text("SELECT pg_advisory_xact_lock(727001)"))
+                await self._write_lock(c)
                 n = (
                     await c.execute(
                         select(func.count())
@@ -237,8 +247,7 @@ class Store:
         one serialised transaction (process lock + PostgreSQL advisory lock across replicas).
         Returns ok | conflict | opted_out | cooldown | cap."""
         async with self._cap_lock, self.engine.begin() as c:
-            if c.dialect.name == "postgresql":
-                await c.execute(text("SELECT pg_advisory_xact_lock(727001)"))
+            await self._write_lock(c)
             keys = [k for k in (doc.get("thread_key"), doc.get("author_key")) if k]
             if await self._suppressed(c, keys):
                 return "opted_out"
@@ -292,6 +301,51 @@ class Store:
                 await c.rollback()
                 return False
         return True
+
+    async def claim_publish(self, did: str, actor: str, at: str) -> dict | None:
+        """Atomically claim an approved draft for publishing (compare-and-set on status + version).
+
+        Exactly one caller gets the document back; concurrent or repeated callers get None, so a
+        publisher adapter is never invoked twice for the same draft."""
+        async with self.engine.begin() as c:
+            row = (
+                await c.execute(
+                    select(drafts.c.doc, drafts.c.version, drafts.c.status).where(
+                        drafts.c.id == did
+                    )
+                )
+            ).first()
+            if row is None or row[2] != "approved" or row[0].get("publish_claimed_by"):
+                return None
+            doc = {**row[0], "publish_claimed_by": actor, "publish_claimed_at": at}
+            res = await c.execute(
+                update(drafts)
+                .where(
+                    drafts.c.id == did, drafts.c.status == "approved", drafts.c.version == row[1]
+                )
+                .values(doc=doc, version=drafts.c.version + 1)
+            )
+            return doc if res.rowcount == 1 else None
+
+    async def release_publish(self, did: str) -> None:
+        """Drop the claim after a failure known to have happened before anything was sent."""
+        async with self.engine.begin() as c:
+            row = (
+                await c.execute(
+                    select(drafts.c.doc).where(drafts.c.id == did, drafts.c.status == "approved")
+                )
+            ).first()
+            if row and row[0].get("publish_claimed_by"):
+                doc = {
+                    k: v
+                    for k, v in row[0].items()
+                    if k not in ("publish_claimed_by", "publish_claimed_at")
+                }
+                await c.execute(
+                    update(drafts)
+                    .where(drafts.c.id == did, drafts.c.status == "approved")
+                    .values(doc=doc, version=drafts.c.version + 1)
+                )
 
     async def count_approved(self, day_start: datetime, day_end: datetime) -> int:
         async with self.engine.connect() as c:
