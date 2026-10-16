@@ -10,6 +10,13 @@ import '../widgets/test_app.dart';
 
 Finder _k(String key) => find.byKey(ValueKey<String>(key));
 
+void _tall(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 2.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
 Widget _app(Widget home, Locale locale) => MaterialApp(
       locale: locale,
       supportedLocales: const [Locale('ar'), Locale('en')],
@@ -22,6 +29,7 @@ void main() {
   setUpAll(() => AppStrings.register(legalStrings));
 
   testWidgets('shows draft banner, summary and copyable URL', (tester) async {
+    _tall(tester);
     String? clip;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -44,7 +52,7 @@ void main() {
     expect(_k('legal-draft'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(_k('legal-url'), findsOneWidget);
-    await tester.tap(_k('legal-copy-url'));
+    await tester.tap(_k('legal-copy-url').hitTestable());
     await settle(tester, frames: 2);
     expect(clip, 'https://example.test/privacy');
     expect(_k('legal-url-copied'), findsOneWidget);
@@ -52,6 +60,7 @@ void main() {
 
   testWidgets('terms in Arabic without URL shows unavailable note',
       (tester) async {
+    _tall(tester);
     await tester.pumpWidget(_app(
       const LegalScreen(kind: LegalKind.terms, url: ''),
       const Locale('ar'),

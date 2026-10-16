@@ -87,3 +87,21 @@ def test_no_duplicate_json_keys():
         return dict(pairs)
 
     json.loads((DATA / "duties.json").read_text(encoding="utf-8"), object_pairs_hook=hook)
+
+
+def test_verified_vat_items_have_official_source():
+    ok = {"SA", "GB", "EG", "DE", "AE"}
+    got = {c for c, v in COUNTRIES.items() if "vat_verification" in v}
+    assert got == ok
+    for c in got:
+        vv = COUNTRIES[c]["vat_verification"]
+        assert vv["status"] == "verified" and vv["vat_pct"] == COUNTRIES[c]["vat_pct"], c
+        assert re.fullmatch(r"https://[\w.-]+\.(gov\.\w\w|gov|de)/\S+", vv["source_url"]), c
+        assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", vv["checked"]), c
+        assert COUNTRIES[c]["confidence"] != "high"  # duty rates still unverified
+
+
+def test_us_de_minimis_verification():
+    v = COUNTRIES["US"]["de_minimis"]["verification"]
+    assert v["status"] == "verified" and "whitehouse.gov" in v["source_url"]
+    assert COUNTRIES["US"]["de_minimis"]["status"] == "suspended"

@@ -66,3 +66,7 @@ Per-user and abuse limits (all env-tunable, 0 disables where the service README 
 - notifications: `FF_NOTIFICATIONS_MAX_WATCHES_PER_USER` (100), `MAX_ALERTS_PER_USER` (1000), `MAX_DEVICES_PER_USER` (10).
 - assistant: `FF_ASSISTANT_QUOTA_PER_DAY` (200), `ANON_QUOTA_PER_DAY` (30). demand: `FF_DEMAND_DAILY_CAP` (20 approvals per UTC day).
 - trust: `FF_TRUST_REPORT_RATE_LIMIT` (5 per window), `FF_TRUST_VERIFICATION_RATE_LIMIT` (10 per window), `MAX_DOCS_PER_SUPPLIER` (30), `MAX_DOCS_PER_TYPE` (5), `MAX_TOTAL_DOCS` (20000).
+
+## Metrics scraping
+
+Each service exposes Prometheus `/metrics` only when `FF_<SVC>_METRICS=1` (docker-compose forwards the var to every service, default off; the prod override inherits it). The endpoint needs `X-Internal-Token`; Prometheus alone cannot send that header, so scrape through a small internal collector/proxy. See `infra/README.md` and `infra/prometheus/prometheus.example.yml`; series and alerts are in `docs/RUNBOOK.md`. `make compose-check` fails if a service lacks its `FF_<SVC>_METRICS` passthrough.

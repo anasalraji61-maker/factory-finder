@@ -1,0 +1,16 @@
+# EXAMPLE ONLY. Prometheus cannot send a custom request header such as X-Internal-Token
+# (see infra/README.md), so it scrapes a tiny header-injecting collector/proxy instead of the
+# services directly. The collector holds FF_INTERNAL_TOKEN; this file never contains a secret.
+global:
+  scrape_interval: 30s
+
+scrape_configs:
+  - job_name: ff-services
+    metrics_path: /metrics
+    # `metrics-proxy` = your collector (OTel Collector / Grafana Agent / Vector / nginx) on the
+    # internal network, forwarding to http://<svc>:<port>/metrics with X-Internal-Token added.
+    # One path per service, e.g. /gateway/metrics -> http://gateway:8000/metrics
+    static_configs:
+      - targets: ["metrics-proxy:9100"]
+    # If the collector exposes one path per service instead of one merged endpoint:
+    # metrics_path: /gateway/metrics   (repeat the job per service)

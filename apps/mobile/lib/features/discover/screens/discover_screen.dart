@@ -5,6 +5,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/discover/data/discover_models.dart';
 import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/features/discover/data/search_facets.dart';
+import 'package:factory_finder/features/discover/widgets/assistant_entry_card.dart';
 import 'package:factory_finder/features/discover/widgets/compare_tray.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
@@ -135,6 +136,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: AssistantEntryCard()),
               SliverToBoxAdapter(
                 child: FilterChipBar(
                   labels: [

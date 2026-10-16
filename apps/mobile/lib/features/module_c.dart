@@ -25,7 +25,8 @@ final FeatureModule featureModuleC = FeatureModule(
     ...feedRoutes,
     GoRoute(
       path: '/assistant',
-      builder: (context, state) => const AssistantScreen(),
+      builder: (context, state) =>
+          AssistantScreen(initialQuestion: state.uri.queryParameters['q']),
     ),
     GoRoute(
       path: '/import-checklist',

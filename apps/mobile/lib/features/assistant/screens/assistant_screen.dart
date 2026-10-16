@@ -31,7 +31,10 @@ class _Msg {
 }
 
 class AssistantScreen extends ConsumerStatefulWidget {
-  const AssistantScreen({super.key});
+  const AssistantScreen({super.key, this.initialQuestion});
+
+  /// Optional question prefilled in the input (not sent automatically).
+  final String? initialQuestion;
 
   @override
   ConsumerState<AssistantScreen> createState() => _AssistantScreenState();
@@ -42,6 +45,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   final _scroll = ScrollController();
   final List<_Msg> _messages = [];
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final q = widget.initialQuestion;
+    if (q != null && q.trim().isNotEmpty) _controller.text = q.trim();
+  }
 
   @override
   void dispose() {

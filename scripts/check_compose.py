@@ -73,6 +73,11 @@ def main() -> int:
             err(f"{name}: FF_ENV not passed through")
         if "FF_INTERNAL_TOKEN" not in env:
             err(f"{name}: FF_INTERNAL_TOKEN not passed through")
+        mvar = f"FF_{name.upper()}_METRICS"
+        if mvar not in env:
+            err(f"{name}: {mvar} not passed through (obs.py reads it dynamically)")
+        elif env[mvar] != "${" + mvar + ":-}":
+            err(f"{name}: {mvar} must default to empty/off, expected ${{{mvar}:-}}, got {env[mvar]!r}")
         main_py = ROOT / "services" / name / "src" / f"ff_{name}" / "main.py"
         if not main_py.is_file():
             err(f"{name}: {main_py.relative_to(ROOT)} missing (Dockerfile runs ff_{name}.main:app)")
@@ -109,7 +114,7 @@ def main() -> int:
         if m:
             cfg_prefix = m.group(1)
         for k in env_of(svc):
-            if k in ("PORT", "FF_ENV", "FF_INTERNAL_TOKEN") or k in src:
+            if k in ("PORT", "FF_ENV", "FF_INTERNAL_TOKEN", f"FF_{name.upper()}_METRICS") or k in src:
                 continue
             if cfg_prefix and k.startswith(cfg_prefix) and re.search(rf"\b{k[len(cfg_prefix):].lower()}\b", src):
                 continue
@@ -183,7 +188,9 @@ def main() -> int:
             if "${{" not in p and not (ROOT / p).exists():
                 err(f"{wf.name}: references missing {p}")
         for wd in re.findall(r"working-directory:\s*([\w./-]+)", text):
-            if not (ROOT / wd).is_dir():
+            # apps/mobile/android and ios are generated in CI, not checked in
+            generated = wd.rstrip("/") in ("apps/mobile/android", "apps/mobile/ios")
+            if not generated and not (ROOT / wd).is_dir():
                 err(f"{wf.name}: working-directory {wd} missing")
     be = (ROOT / ".github" / "workflows" / "backend.yml").read_text(encoding="utf-8")
     for d in sorted(dirs):

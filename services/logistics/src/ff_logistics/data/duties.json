@@ -1,5 +1,5 @@
 {
- "note": "approximate table, verify with a customs broker. All entries carry as_of and confidence ('low'/'medium', never verified); round-3 entries also carry duty_range_pct, vat_range_pct, source, as_of, confidence and (where known) de_minimis; they are simplified by HS chapter and not verified against live tariff lines.",
+ "note": "approximate table, verify with a customs broker. All entries carry as_of and confidence ('low'/'medium', never verified); round-3 entries also carry duty_range_pct, vat_range_pct, source, as_of, confidence and (where known) de_minimis; they are simplified by HS chapter and not verified against live tariff lines. Verified items (VAT standard rate for SA, GB, EG, DE, AE; US de minimis status) carry a vat_verification / de_minimis.verification object with source_url and checked date; duty rates remain unverified everywhere.",
  "category_chapters": {
   "electronics": "85",
   "machinery": "84",
@@ -182,7 +182,14 @@
    "vat_range_pct": [
     13,
     17
-   ]
+   ],
+   "vat_verification": {
+    "status": "verified",
+    "vat_pct": 15,
+    "source_url": "https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-on-Imports-and-Exports-under-VAT-Provision.pdf",
+    "checked": "2026-10-16",
+    "note": "ZATCA import/export VAT guideline: worked example SAR 600,000 CIF gives SAR 90,000 import VAT (15%)"
+   }
   },
   "AE": {
    "default_duty_pct": 5,
@@ -222,7 +229,14 @@
    "vat_range_pct": [
     5,
     5
-   ]
+   ],
+   "vat_verification": {
+    "status": "verified",
+    "vat_pct": 5,
+    "source_url": "https://tax.gov.ae/en/taxes/vat.aspx",
+    "checked": "2026-10-16",
+    "note": "FTA VAT page (calculator labelled 'VAT 5%')"
+   }
   },
   "KW": {
    "default_duty_pct": 5,
@@ -280,7 +294,14 @@
    "vat_range_pct": [
     12,
     16
-   ]
+   ],
+   "vat_verification": {
+    "status": "verified",
+    "vat_pct": 14,
+    "source_url": "https://www.eta.gov.eg/sites/default/files/2024-02/Law-english-no.67-2016.pdf.pdf",
+    "checked": "2026-10-16",
+    "note": "Egypt VAT Law 67/2016 Art. 3: 14% from fiscal year 2017/2018"
+   }
   },
   "US": {
    "default_duty_pct": 3,
@@ -310,7 +331,13 @@
     "scope": "courier/postal and low-value consignments; commercial freight usually does not qualify",
     "note": "Section 321 de minimis suspended for all origins from 2025-08-29; statutory repeal scheduled 2027",
     "as_of": "2026-10",
-    "source": "internal estimate; not verified against customs authority notice"
+    "source": "internal estimate; not verified against customs authority notice",
+    "verification": {
+     "status": "verified",
+     "checked": "2026-10-16",
+     "source_url": "https://www.whitehouse.gov/fact-sheets/2026/06/fact-sheet-president-donald-j-trump-strengthens-customs-enforcement/",
+     "note": "White House fact sheet (Jun 2026): de minimis suspended; statutory basis repealed worldwide effective 2027-07-01. USD 800 is the historical threshold (CBP e-commerce FAQ https://www.cbp.gov/trade/basic-import-export/e-commerce/faqs)."
+    }
    },
    "as_of": "2026-10",
    "confidence": "low",
@@ -363,7 +390,14 @@
    "vat_range_pct": [
     17,
     21
-   ]
+   ],
+   "vat_verification": {
+    "status": "verified",
+    "vat_pct": 19,
+    "source_url": "https://www.zoll.de/DE/Fachthemen/Arbeit/Steuern/Umsatzsteuer/umsatzsteuer_node.html",
+    "checked": "2026-10-16",
+    "note": "zoll.de Umsatzsteuer: standard rate 19% (reduced 7%); import VAT rates mirror domestic rates"
+   }
   },
   "FR": {
    "default_duty_pct": 4,
@@ -443,7 +477,14 @@
    "vat_range_pct": [
     18,
     22
-   ]
+   ],
+   "vat_verification": {
+    "status": "verified",
+    "vat_pct": 20,
+    "source_url": "https://www.gov.uk/vat-rates",
+    "checked": "2026-10-16",
+    "note": "GOV.UK VAT rates page: standard rate 20%"
+   }
   },
   "IT": {
    "default_duty_pct": 4,
