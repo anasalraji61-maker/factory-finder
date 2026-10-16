@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/requests/data/mock_rfq.dart';
-import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
