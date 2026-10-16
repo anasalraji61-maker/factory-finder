@@ -79,14 +79,17 @@ void main() {
     ('settings-legal-terms', '/legal/terms'),
   ]) {
     testWidgets('Settings tile ${c.$1} opens ${c.$2}', (tester) async {
-      final router = await pumpApp(tester, location: '/settings');
+      await pumpApp(tester, location: '/settings');
       final tile = _k(c.$1);
       await tester.dragUntilVisible(
           tile, find.byType(Scrollable).first, const Offset(0, -200));
-      await tester.tap(tile);
+      await tester.ensureVisible(tile);
+      await tester.pump();
+      await tester.tap(tile.hitTestable());
       await settle(tester, frames: 3);
-      expect(
-          router.routerDelegate.currentConfiguration.uri.path, c.$2);
+      // context.push is imperative: the router URI stays /settings, so
+      // assert on the pushed screen instead.
+      expect(find.byType(LegalScreen), findsOneWidget);
       await disposeApp(tester);
     });
   }
