@@ -33,7 +33,16 @@ class SupplierScreen extends ConsumerWidget {
           error: e,
           onRetry: () => ref.invalidate(supplierProvider(supplierId)),
         ),
-        data: (s) => CustomScrollView(
+        data: (s) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(supplierProvider(supplierId));
+            ref.invalidate(listingsProvider(ListingQuery(supplierId: supplierId)));
+            try {
+              await ref.read(supplierProvider(supplierId).future);
+            } catch (_) {}
+          },
+          child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
@@ -161,7 +170,14 @@ class SupplierScreen extends ConsumerWidget {
                 const SliverToBoxAdapter(child: LoadingList(itemCount: 3)),
               ],
               error: (e, _) => <Widget>[
-                SliverToBoxAdapter(child: ErrorState(error: e)),
+                SliverToBoxAdapter(
+                  child: ErrorState(
+                    error: e,
+                    onRetry: () => ref.invalidate(
+                      listingsProvider(ListingQuery(supplierId: supplierId)),
+                    ),
+                  ),
+                ),
               ],
               data: (page) => page.items.isEmpty
                   ? <Widget>[
@@ -176,6 +192,7 @@ class SupplierScreen extends ConsumerWidget {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
           ],
+          ),
         ),
       ),
     );

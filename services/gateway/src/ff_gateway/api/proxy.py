@@ -142,7 +142,7 @@ def _suspicious_path(path: str) -> bool:
     if segs and segs[-1] == "":
         segs = segs[:-1]  # one trailing slash is fine
     low = path.lower()
-    return any(s in ("", ".", "..") for s in segs) or "\\" in path or any(t in low for t in _ENCODED_TRICKS)
+    return any(s in ("", ".", "..") for s in segs) or "\\" in path or any(ord(ch) < 32 or ord(ch) == 127 for ch in path) or any(t in low for t in _ENCODED_TRICKS)
 
 
 @router.api_route("/{full_path:path}", methods=METHODS, include_in_schema=False)

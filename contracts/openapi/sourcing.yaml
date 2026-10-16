@@ -324,6 +324,7 @@ paths:
       operationId: listCategories
       summary: Bilingual category tree (top level = listing kinds)
       responses:
+        "429": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200":
           description: Tree
           content:
@@ -336,6 +337,7 @@ paths:
       operationId: listSources
       summary: Registered sources, enabled flag, health and compliance note
       responses:
+        "429": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200":
           description: Sources
           content:
@@ -712,7 +714,7 @@ paths:
                   user_id: {type: string}
                   truncated: {type: boolean}
                   data: {type: object, additionalProperties: true}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
   /v1/internal/users/{user_id}/data:
     delete:
       operationId: internalUserErase
@@ -735,7 +737,7 @@ paths:
                   status: {type: string, const: done}
                   counts: {type: object, additionalProperties: {type: integer}}
                   retained: {type: array, items: {type: string}}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
 components:
   parameters:
     AdminToken:

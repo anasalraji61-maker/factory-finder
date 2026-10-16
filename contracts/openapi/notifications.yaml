@@ -142,6 +142,7 @@ paths:
       summary: "Create alerts read-all"
       operationId: markAllAlertsRead
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: Count marked, content: {application/json: {schema: {type: object, properties: {marked: {type: integer}}}}}}
   /v1/alerts/{id}/read:
     post:
@@ -157,6 +158,7 @@ paths:
       summary: "Get devices"
       operationId: listDevices
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: Caller's devices, content: {application/json: {schema: {type: object, properties: {items: {type: array, items: {$ref: "#/components/schemas/Device"}}}}}}}
     post:
       summary: "Create devices"
@@ -173,6 +175,7 @@ paths:
       operationId: getNotificationPrefs
       description: Caller's delivery preferences (defaults when never saved).
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: Preferences, content: {application/json: {schema: {$ref: "#/components/schemas/NotificationPrefs"}}}}
     put:
       summary: "Update notification-prefs"
@@ -208,6 +211,7 @@ paths:
       operationId: sendDigests
       description: Internal (X-Internal-Token). Enqueues and sends the daily email digest (idempotent per user per local day).
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: Sent, content: {application/json: {schema: {type: object, properties: {sent: {type: integer}}}}}}
   /v1/devices/{id}:
     delete:
@@ -238,7 +242,7 @@ paths:
                   user_id: {type: string}
                   truncated: {type: boolean}
                   data: {type: object, additionalProperties: true}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
   /v1/internal/users/{user_id}/data:
     delete:
       operationId: internalUserErase
@@ -260,7 +264,7 @@ paths:
                   status: {type: string, const: done}
                   counts: {type: object, additionalProperties: {type: integer}}
                   retained: {type: array, items: {type: string}}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
 components:
   parameters:
     Id: {name: id, in: path, required: true, schema: {type: string}}

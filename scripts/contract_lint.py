@@ -28,6 +28,18 @@ ERROR_REFS = ("#/components/responses/Error", "common.schema.json#/$defs/Error",
               "#/components/schemas/Error")
 _json_cache: dict[Path, object] = {}
 
+# Liveness/readiness probes: no client-error path exists, so no 4xx is required.
+PROBE_PATHS = {"/health", "/ready"}
+# WebSocket upgrade: success is 101 Switching Protocols, not 2xx.
+NO_2XX_OK = {("gateway.yaml", "GET", "/v1/ws/conversations/{conversation_id}")}
+# Accepted deviations (float `number` for money-like names). Changing the type
+# would break existing clients; see docs/fixes/contract-lint.md.
+MONEY_FLOAT_ALLOW = {
+    ("freight.yaml", "/components/schemas/Comparison/properties/items/items/properties/price_delta"),
+    ("sourcing.yaml", "/paths//v1/search/get/parameters/5"),  # min_price
+    ("sourcing.yaml", "/paths//v1/search/get/parameters/6"),  # max_price
+}
+
 
 def resolve_ref(ref: str, doc: dict, base: Path):
     """Return (found, target)."""
@@ -73,6 +85,8 @@ def lint_file(f: Path, out: list):
     name = f.name
 
     def add(cat, where, msg):
+        if cat == "money-float" and (name, where.split(":")[0]) in MONEY_FLOAT_ALLOW:
+            return
         out.append({"category": cat, "file": name, "where": where, "message": msg})
 
     ids = Counter()
@@ -90,10 +104,12 @@ def lint_file(f: Path, out: list):
                 add("summary", where, "missing summary")
             resp = op.get("responses") or {}
             codes = [str(c) for c in resp]
-            if not any(c.startswith("2") for c in codes):
+            if not any(c.startswith("2") for c in codes) and (name, m.upper(), p) not in NO_2XX_OK:
                 add("responses", where, "no 2xx response")
             fours = [c for c in codes if c.startswith("4")]
-            if not fours:
+            if p in PROBE_PATHS:
+                pass
+            elif not fours:
                 add("responses", where, "no 4xx response")
             elif not any(mentions_error(resp[c]) or mentions_error(resp.get(int(c), "")) for c in fours):
                 add("responses", where, "4xx responses do not reference the shared Error schema")

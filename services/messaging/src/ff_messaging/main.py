@@ -3,9 +3,10 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from ff_messaging.api.routes import router
 from ff_messaging.config import Settings
@@ -18,6 +19,7 @@ from ff_messaging.domain.safety import (
     MediaRules,
     load_default_abuse_terms,
 )
+from ff_messaging.i18n import message_ar
 from ff_messaging.obs import db_ready, install_observability, ready_response
 from ff_messaging.persistence.database import Database
 from ff_messaging.ratelimit import WindowLimiter, make_redis_client
@@ -41,7 +43,14 @@ def _error(
     status: int, code: str, message: str, details: dict | None = None, headers: dict | None = None
 ):
     return JSONResponse(
-        {"error": {"code": code, "message": message, "details": details or {}}},
+        {
+            "error": {
+                "code": code,
+                "message": message,
+                "message_ar": message_ar(code),
+                "details": details or {},
+            }
+        },
         status_code=status,
         headers=headers,
     )

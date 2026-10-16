@@ -123,6 +123,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final results = ref.watch(listingsProvider(_query));
+    Future<void> refresh() async {
+      ref.invalidate(listingsProvider(_query));
+      try {
+        await ref.read(listingsProvider(_query).future);
+      } catch (_) {}
+    }
     final pageFacets = results.valueOrNull;
     if (pageFacets is ListingPage && pageFacets.facets != null) {
       _facets = pageFacets.facets;
@@ -207,13 +213,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
               data: (page) {
                 if (page.items.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.search_off,
-                    title: context.tr('discover.empty_title'),
-                    message: context.tr('discover.empty_msg'),
+                  return RefreshIndicator(
+                    onRefresh: refresh,
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: EmptyState(
+                            icon: Icons.search_off,
+                            title: context.tr('discover.empty_title'),
+                            message: context.tr('discover.empty_msg'),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
-                return CustomScrollView(
+                return RefreshIndicator(
+                  onRefresh: refresh,
+                  child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
@@ -246,6 +266,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ListingGrid(items: page.items),
                     const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
                   ],
+                  ),
                 );
               },
             ),

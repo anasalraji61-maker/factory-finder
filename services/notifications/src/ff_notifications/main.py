@@ -7,9 +7,10 @@ import contextlib
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from ff_notifications.adapters.email import EmailProvider, MockEmail, SmtpEmail
 from ff_notifications.adapters.push import (
@@ -22,6 +23,7 @@ from ff_notifications.api.routes import router
 from ff_notifications.clients.sourcing import HttpSourcingClient, MockSourcingClient, SourcingClient
 from ff_notifications.config import Settings
 from ff_notifications.errors import ApiError
+from ff_notifications.i18n import message_ar
 from ff_notifications.obs import db_ready, install_observability, ready_response
 from ff_notifications.persistence.store import Store
 from ff_notifications.service import NotificationService
@@ -31,7 +33,15 @@ VERSION = "0.1.0"
 
 def _error(status: int, code: str, message: str, details: dict | None = None) -> JSONResponse:
     return JSONResponse(
-        {"error": {"code": code, "message": message, "details": details or {}}}, status_code=status
+        {
+            "error": {
+                "code": code,
+                "message": message,
+                "message_ar": message_ar(code),
+                "details": details or {},
+            }
+        },
+        status_code=status,
     )
 
 

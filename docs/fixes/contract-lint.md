@@ -352,3 +352,9 @@ Not flagged: refs all resolve, enums all non-empty, examples all valid (via `scr
 - [summary] trust.yaml GET /v1/trust/suppliers/{supplier_id}: missing summary
 - [summary] trust.yaml GET /v1/trust/suppliers:batch: missing summary
 - [summary] trust.yaml POST /v1/trust/evaluate: missing summary
+
+## Update 2026-10-16: responses / money-float resolved
+
+- Added shared Error 4xx responses (documentation only) to the internal `export`/`data` endpoints of all services (404, non-internal caller) and to the flagged public ops (401/404/429).
+- `scripts/contract_lint.py` no longer requires a 4xx on the probe paths `/health` and `/ready`, and accepts 101 (no 2xx) for the gateway WebSocket proxy.
+- Accepted money-float deviations (allowlist `MONEY_FLOAT_ALLOW`; changing types would break clients; revisit in `/v2`): freight `Comparison.items[].price_delta`, sourcing `min_price` / `max_price` query params.

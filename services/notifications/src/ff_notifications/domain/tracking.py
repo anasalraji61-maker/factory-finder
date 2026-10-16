@@ -99,13 +99,14 @@ def status_texts(status: str | None) -> tuple[str, str]:
     return human, human  # unknown code: shown as-is in both languages
 
 
-def _name(p: dict[str, Any]) -> str:
-    return _txt(p.get("label"), 60) or _txt(p.get("reference"), 40) or "shipment"
+def _name(p: dict[str, Any], default: str = "shipment") -> str:
+    return _txt(p.get("label"), 60) or _txt(p.get("reference"), 40) or default
 
 
 def build(event: TrackingEvent) -> tuple[AlertMessage, AlertPayload]:
     p = event.payload
     name = _name(p)
+    name_ar = _name(p, "بدون اسم")
     status = _txt(p.get("status"), 40)
     en, ar = status_texts(status)
     eta = _txt(p.get("eta"), 40)
@@ -128,7 +129,7 @@ def build(event: TrackingEvent) -> tuple[AlertMessage, AlertPayload]:
             + "."
         )
         body_ar = (
-            f"الشحنة {name} متأخرة"
+            f"الشحنة {name_ar} متأخرة"
             + (f" بحدود {h} ساعة" if h else "")
             + (f"؛ الموعد المتوقع الجديد {eta}" if eta else "")
             + "."
@@ -136,7 +137,7 @@ def build(event: TrackingEvent) -> tuple[AlertMessage, AlertPayload]:
         msg = AlertMessage("Shipment delayed", "تأخر في الشحنة", body, body_ar)
     else:
         body = f"Shipment {name}: {en}" + (f" (ETA {eta})" if eta else "") + "."
-        body_ar = f"الشحنة {name}: {ar}" + (f" (الوصول المتوقع {eta})" if eta else "") + "."
+        body_ar = f"الشحنة {name_ar}: {ar}" + (f" (الوصول المتوقع {eta})" if eta else "") + "."
         msg = AlertMessage("Shipment update", "تحديث الشحنة", body, body_ar)
     shipment = {"shipment_id": event.shipment_id, "kind": event.kind}
     for k, lim in (

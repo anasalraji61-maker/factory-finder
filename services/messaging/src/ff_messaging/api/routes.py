@@ -44,6 +44,7 @@ from ff_messaging.domain.models import (
     ParticipantSpec,
     Role,
 )
+from ff_messaging.i18n import message_ar
 from ff_messaging.service import MessagingService
 
 router = APIRouter(prefix="/v1")
@@ -354,7 +355,7 @@ async def conversation_socket(
             raw = await websocket.receive_text()
             ws_decision = await svc.ws_limiter.hit(uid)
             if not ws_decision.allowed:  # inbound frame flood: drop the frame, keep the socket
-                conn.offer({"type": "error", "code": "rate_limited", "message": "Too many frames"})
+                conn.offer({"type": "error", "code": "rate_limited", "message": "Too many frames", "message_ar": message_ar("rate_limited")})
                 continue
             try:
                 frame = json.loads(raw) if len(raw) <= settings.ws_max_frame_chars else {}
@@ -383,10 +384,10 @@ async def conversation_socket(
                         uid, conversation_id, mid if isinstance(mid, str) and len(mid) <= 64 else None
                     )
                 except MessagingError as exc:
-                    conn.offer({"type": "error", "code": exc.code, "message": exc.message})
+                    conn.offer({"type": "error", "code": exc.code, "message": exc.message, "message_ar": message_ar(exc.code)})
             else:
                 conn.offer(
-                    {"type": "error", "code": "unknown_frame", "message": "Unsupported frame"}
+                    {"type": "error", "code": "unknown_frame", "message": "Unsupported frame", "message_ar": message_ar("unknown_frame")}
                 )
     except WebSocketDisconnect:
         pass

@@ -54,6 +54,7 @@ paths:
       operationId: listCountries
       summary: List supported countries
       responses:
+        "429": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200":
           description: Countries
           content:

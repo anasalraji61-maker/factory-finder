@@ -138,6 +138,7 @@ paths:
         - {name: page, in: query, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
         - {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
+        "404": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200":
           description: One page
           content:
@@ -333,6 +334,7 @@ paths:
       summary: Review aggregates of a supplier (public, no auth; input for the trust rating signal)
       parameters: [{name: supplier_ref, in: path, required: true, schema: {type: string, maxLength: 64}}]
       responses:
+        "404": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: OK, content: {application/json: {schema: {$ref: "#/components/schemas/ReviewSummary"}}}}
   /v1/reviews/{id}:
     put:
@@ -439,7 +441,7 @@ paths:
                   user_id: {type: string}
                   truncated: {type: boolean}
                   data: {type: object, additionalProperties: true}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
   /v1/internal/users/{user_id}/data:
     delete:
       operationId: internalUserErase
@@ -461,7 +463,7 @@ paths:
                   status: {type: string, const: done}
                   counts: {type: object, additionalProperties: {type: integer}}
                   retained: {type: array, items: {type: string}}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
 components:
   parameters:
     UserId: {name: X-User-Id, in: header, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_.:@+\-]{1,128}$'}}

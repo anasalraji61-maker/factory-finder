@@ -110,10 +110,13 @@ class ListingDetailScreen extends ConsumerWidget {
         appBar: AppBar(),
         body: const SingleChildScrollView(child: LoadingList(itemCount: 5)),
       ),
-      error: (_, __) => Scaffold(
+      error: (e, _) => Scaffold(
         appBar: AppBar(),
         body: ErrorState(
-          message: context.tr('listing.not_found'),
+          error: e,
+          message: e is ApiException && e.status == 404
+              ? context.tr('listing.not_found')
+              : null,
           onRetry: () => ref.invalidate(listingProvider(listingId)),
         ),
       ),

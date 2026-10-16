@@ -10,7 +10,7 @@ message, idempotency keys that embed their id, and titles of threads they create
 import hashlib
 from typing import Any
 
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import delete, select, update
 
 from ff_messaging.persistence.database import Database
 from ff_messaging.persistence.tables import conversation_participants as parts
@@ -78,7 +78,10 @@ async def erase_user(db: Database, user_id: str) -> dict[str, int]:
         )  # fmt: skip
         await conn.execute(update(convs).where(convs.c.last_message_sender_id == user_id).values(last_message_sender_id=tomb))
         await conn.execute(update(convs).where(convs.c.created_by == user_id).values(created_by=tomb))
-        await conn.execute(delete(blocks).where(or_(blocks.c.blocker_id == user_id, blocks.c.blocked_id == user_id)))
+        await conn.execute(delete(blocks).where(blocks.c.blocker_id == user_id))
+        # others' blocks of the erased user stay (re-pointed at the tombstone) so a blocked thread
+        # does not reappear, with unread, in the blocker's inbox once the account is gone
+        await conn.execute(update(blocks).where(blocks.c.blocked_id == user_id).values(blocked_id=tomb))
         p = await conn.execute(
             update(parts).where(parts.c.user_id == user_id).values(user_id=tomb, unread_count=0)
         )

@@ -176,8 +176,16 @@ class VerificationScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(myVerificationProvider),
         );
       },
-      data: (list) => ListView(
+      data: (list) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(myVerificationProvider);
+          try {
+            await ref.read(myVerificationProvider.future);
+          } catch (_) {}
+        },
+        child: ListView(
         key: const ValueKey<String>('ver-list'),
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           Text(context.tr('ver.intro')),
@@ -233,6 +241,7 @@ class VerificationScreen extends ConsumerWidget {
                 child: _docCard(context, ref, d),
               ),
         ],
+        ),
       ),
     );
   }

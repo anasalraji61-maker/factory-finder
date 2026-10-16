@@ -73,6 +73,7 @@ paths:
       security: []
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refresh_token], properties: {refresh_token: {type: string}}}}}}
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "204": {description: Revoked}
   /v1/auth/logout-all:
     post:
@@ -541,6 +542,7 @@ paths:
         - {name: ticket, in: query, required: false, schema: {type: string}}
         - {name: token, in: query, required: false, schema: {type: string}, deprecated: true}
       responses:
+        "401": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "101": {description: Switching Protocols}
 components:
   securitySchemes:

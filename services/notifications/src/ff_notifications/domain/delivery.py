@@ -40,6 +40,13 @@ def valid_timezone(name: str) -> bool:
     return True
 
 
+def zone_for(name: str | None) -> ZoneInfo:
+    """Recipient timezone; unknown/empty names fall back to ``DEFAULT_TIMEZONE``."""
+    if name and valid_timezone(name):
+        return ZoneInfo(name)
+    return ZoneInfo(DEFAULT_TIMEZONE)
+
+
 @dataclass(frozen=True, slots=True)
 class QuietHours:
     start: str  # "HH:MM" local time, may wrap midnight (22:00 -> 07:00)
@@ -79,7 +86,7 @@ class Prefs:
         return channel in self.channels.get(rule, DEFAULT_CHANNELS)
 
     def in_quiet_hours(self, now: datetime) -> QuietHours | None:
-        if self.quiet_hours and self.quiet_hours.active(now.astimezone(ZoneInfo(self.timezone))):
+        if self.quiet_hours and self.quiet_hours.active(now.astimezone(zone_for(self.timezone))):
             return self.quiet_hours
         return None
 
@@ -87,7 +94,7 @@ class Prefs:
         qh = self.in_quiet_hours(now)
         if qh is None:
             return None
-        return qh.ends_at(now.astimezone(ZoneInfo(self.timezone))).astimezone(now.tzinfo)
+        return qh.ends_at(now.astimezone(zone_for(self.timezone))).astimezone(now.tzinfo)
 
 
 @dataclass(frozen=True, slots=True)

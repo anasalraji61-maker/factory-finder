@@ -76,6 +76,7 @@ paths:
         - {name: destination_country, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/CountryCode"}}
         - {name: mode, in: query, schema: {$ref: "../schemas/common.schema.json#/$defs/TransportMode"}}
       responses:
+        "429": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: carriers, content: {application/json: {schema: {$ref: "#/components/schemas/CarrierList"}}}}
   /v1/hs/search:
     get:
@@ -115,6 +116,7 @@ paths:
       operationId: listComplianceCountries
       summary: Destinations covered by the import-compliance advisor (indicative)
       responses:
+        "429": {description: Error, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
         "200": {description: coverage list, content: {application/json: {schema: {$ref: "#/components/schemas/ComplianceCountryList"}}}}
   /v1/compliance/countries/{code}:
     get:

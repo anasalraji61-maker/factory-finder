@@ -97,7 +97,7 @@ def _seg(value: str) -> str:
     """Path params are single segments already; refuse anything that could alter the upstream path."""
     from starlette.exceptions import HTTPException
 
-    if not value or value in (".", "..") or "/" in value or "\\" in value or "%" in value:
+    if not value or value in (".", "..") or "/" in value or "\\" in value or "%" in value or any(ord(c) < 32 or ord(c) == 127 for c in value):
         raise HTTPException(404, "Not Found")
     return value
 

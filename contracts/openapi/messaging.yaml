@@ -166,7 +166,7 @@ paths:
                   user_id: {type: string}
                   truncated: {type: boolean}
                   data: {type: object, additionalProperties: true}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
   /v1/internal/users/{user_id}/data:
     delete:
       operationId: internalUserErase
@@ -188,7 +188,7 @@ paths:
                   status: {type: string, const: done}
                   counts: {type: object, additionalProperties: {type: integer}}
                   retained: {type: array, items: {type: string}}
-        "404": {description: Not an internal caller}
+        "404": {description: Not an internal caller, content: {application/json: {schema: {$ref: ../schemas/common.schema.json#/$defs/Error}}}}
 components:
   parameters:
     Id: {name: id, in: path, required: true, schema: {type: string}}

@@ -11,7 +11,6 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
-from zoneinfo import ZoneInfo
 
 from ff_notifications.adapters.email import EmailProvider
 from ff_notifications.adapters.push import PushProvider
@@ -25,6 +24,7 @@ from ff_notifications.domain.delivery import (
     Prefs,
     backoff_seconds,
     delivery_id,
+    zone_for,
 )
 from ff_notifications.domain.models import Alert, Device, Locale
 from ff_notifications.persistence.store import Store
@@ -100,7 +100,7 @@ class DeliveryPipeline:
         now, created = self.clock(), 0
         utc_day = now.astimezone(UTC).date().isoformat()  # tz changes cannot mint a 2nd digest
         async for prefs in self.store.iter_owners_with_email_prefs():
-            local = now.astimezone(ZoneInfo(prefs.timezone))
+            local = now.astimezone(zone_for(prefs.timezone))
             if local.hour < DIGEST_HOUR:
                 continue
             items, _, _ = await self.store.list_alerts(

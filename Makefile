@@ -1,5 +1,5 @@
 SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight
-.PHONY: venv test lint contract-lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check secrets-scan $(addprefix test-,$(SERVICES))
+.PHONY: fuzz venv test lint contract-lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check secrets-scan $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml pillow python-multipart
 test:
@@ -29,6 +29,8 @@ e2e-scenarios:  # 5 focused edge scenarios: landed-cost labels + geo avoid, trac
 	.venv/bin/python scripts/e2e_scenarios.py
 e2e-privacy:  # account export + erasure across services (retention, tokens, bystander isolation)
 	.venv/bin/python scripts/e2e_privacy.py
+fuzz:  # malformed-input fuzzer over the gateway contract (boots the stack; writes docs/fixes/fuzz-findings.md)
+	.venv/bin/python scripts/fuzz_contracts.py
 smoke:  # post-deploy read-only checks: FF_E2E_BASE_URL=https://api.example.com make smoke
 	.venv/bin/python scripts/smoke_prod.py
 audit:  # dependency vulnerability scan; non-fatal and skipped if pip-audit is not installed

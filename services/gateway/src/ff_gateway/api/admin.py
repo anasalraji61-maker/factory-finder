@@ -49,7 +49,7 @@ def _claim(u: User) -> dict:
 async def list_claims(
     request: Request,
     status: Literal["pending", "verified"] = "pending",
-    page: int = Query(1, ge=1),
+    page: int = Query(1, ge=1, le=1_000_000),
     limit: int = Query(50, ge=1, le=200),
 ) -> dict:
     require_admin(request)
