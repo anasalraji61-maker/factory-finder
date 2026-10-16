@@ -1,5 +1,7 @@
 # Fuzz findings (scripts/fuzz_contracts.py)
 
+**Status 2026-10-16: addressed, pending re-run.** The gateway `/v1/home` now applies a per-section timeout and returns `degraded` with warnings instead of stalling, and non-envelope 4xx responses from upstreams are normalised to the `{error:{code,message}}` envelope. Re-run `make fuzz` to confirm 0 findings; the run below is the historic one.
+
 _Run 2026-10-16: 150 operations, 25257 requests, 1 distinct findings._
 
 Checks: no 5xx, `{error:{code,message}}` envelope on every 4xx, no stack traces / filesystem paths / driver names in bodies, latency < 5s. Re-run: `make fuzz`.

@@ -24,6 +24,29 @@ String? validateRfqTargetPrice(String? v) {
   return null;
 }
 
+/// Required offer unit price: a positive decimal.
+String? validateOfferPrice(String? v) {
+  final t = (v ?? '').trim();
+  if (t.isEmpty) return 'req.err.price_required';
+  final n = double.tryParse(t);
+  if (n == null || n <= 0) return 'req.err.price_invalid';
+  return null;
+}
+
+String? validateOfferSupplierName(String? v) {
+  if ((v ?? '').trim().isEmpty) return 'req.err.supplier_name_required';
+  return null;
+}
+
+/// Optional whole number in [0, [max]]: empty is valid.
+String? validateOfferInt(String? v, {int max = 1000000000}) {
+  final t = (v ?? '').trim();
+  if (t.isEmpty) return null;
+  final n = int.tryParse(t);
+  if (n == null || n < 0 || n > max) return 'req.err.int_invalid';
+  return null;
+}
+
 /// Optional: null is valid; otherwise must not be before [today].
 String? validateRfqDeadline(DateTime? deadline, DateTime today) {
   if (deadline == null) return null;

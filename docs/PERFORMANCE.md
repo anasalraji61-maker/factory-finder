@@ -91,3 +91,22 @@ Mixed workload through the gateway: 50 synthetic users (registered up front), 60
 | total | 2219 | 36.7 | | | | 0 | 0 |
 
 Result: zero 5xx and zero 4xx; the run FAILS the p95 gate on `search` (2037 ms, marginal) and `assistant` (3268 ms). The box is CPU-saturated at concurrency 30 (every endpoint's p50 rises 5-10x versus concurrency 5: tracking list 45 ms -> 344 ms), so most of the latency is queueing. Findings from a single-client probe: sequential warm search costs 200-600 ms on its own (a broad query like "machine" returns a 21 KB body in ~600 ms) and the first, cold request per query is 1.1-4.7 s; the assistant calls sourcing search plus a landed-cost quote, so it inherits that. Search is the lever to pull next (CPU per request in sourcing ranking / trust enrichment / gateway serialization), not a correctness bug. No service code was changed.
+
+
+## Update 2026-10-16: search path (sourcing) after the load test
+In-process profile (cProfile, one search through the app, mock adapters + native, mock trust). The gateway proxy is a plain pass-through (no per-listing work, no serialization of the body), so nothing was changed there. Findings and fixes, all in `services/sourcing`:
+- **Trust enrichment (the cold-query cost under the real stack):** `HttpTrustClient` built a new `httpx.AsyncClient` (fresh connection and SSL context) for every supplier lookup and a cold search fired one request per distinct supplier (about 30 for "machine") at the trust service, each with a 0.8 s timeout; failures are 'unknown' and not cached, so under load the same cold work repeated. Now: one pooled keep-alive client, plus `get_many` using the existing `GET /v1/trust/suppliers:batch` (chunks of 50; falls back to per-id lookups when the batch call fails, ids containing a comma go per-id). `_enrich` serves cache hits first and batches only the misses; unknown results are still never cached. The client is closed in the app lifespan.
+- **Tokenisation (cold CPU):** `normalize` ran a per-character Python generator (`unicodedata.category`) over every title/description; replaced by one `str.translate` with a lazily built fold table (marks, Arabic diacritics and the alef/yaa map; verified identical to the old function on 30k random strings, now pinned by a test), ASCII fast path, `stem` memoised, `tokens` cache 16k -> 64k entries. `_term_score` no longer re-splits strong/weak synonyms per listing.
+- No response cache added: adapter results are already cached per adapter for 60 s, and a search response embeds per-listing trust bands and records price observations, so a second cache buys little and changes behaviour.
+
+| measurement | before | after |
+|---|---|---|
+| in-process cold "machine" (21 KB body), mock trust | 151-293 ms | 83 ms |
+| in-process warm "machine" | 27 ms | 16 ms |
+| trust requests for a cold "machine" search | about 30 (+30 new clients) | 1 batch request |
+| load test search p50 / p95 / p99 | 805 / 2037 / 4598 ms | 397 / 631 / 775 ms (1453 requests, 24.1 req/s vs 687, 11.4) |
+| load test assistant p50 / p95 | 1434 / 3268 ms | 716 / 1203 ms |
+| landed-cost, feed home, rfq, tracking p95 | 751 / 1242 / 1115 / 1007 ms | 335 / 572 / 623 / 480 ms |
+| total throughput, 5xx | 36.7 req/s, 0 | 78.8 req/s, 0 (gate passes: every p95 < 2 s) |
+
+The other endpoints improved too because the box is CPU-saturated and search was the biggest consumer (same caveat as above: mock adapters, SQLite, 2 cores). Tests: `services/sourcing/tests/test_perf_search_path.py`.

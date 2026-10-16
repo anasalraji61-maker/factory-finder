@@ -30,6 +30,23 @@ _ARABIC_MAP = str.maketrans(
         **{chr(0x06F0 + i): str(i) for i in range(10)},
     }
 )
+
+
+class _FoldTable(dict):
+    """str.translate table: drops combining marks and Arabic diacritics/tatweel, applies _ARABIC_MAP.
+    Entries are computed lazily per code point (scanning all of Unicode up front is slow) and then cached."""
+
+    def __missing__(self, cp: int):
+        ch = chr(cp)
+        if unicodedata.category(ch) == "Mn" or _DIACRITICS.match(ch):
+            val = None
+        else:
+            val = _ARABIC_MAP.get(cp, cp)
+        self[cp] = val
+        return val
+
+
+_FOLD = _FoldTable()
 _NON_WORD = re.compile(r"[^\w]+", re.UNICODE)
 _CJK = re.compile(r"([\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff])")
 
@@ -65,9 +82,12 @@ STOPWORDS = {
 
 def normalize(text: str) -> str:
     """Lowercase, strip diacritics/tatweel/accents, unify alef/yaa/taa-marbuta, ASCII digits."""
-    text = unicodedata.normalize("NFKD", text or "").lower()
-    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
-    text = _DIACRITICS.sub("", text).translate(_ARABIC_MAP)
+    if not text:
+        return ""
+    if text.isascii():  # NFKD, mark stripping, the Arabic map and the CJK split are all no-ops on ASCII
+        return _NON_WORD.sub(" ", text.lower()).strip()
+    text = unicodedata.normalize("NFKD", text).lower()
+    text = text.translate(_FOLD)
     text = _CJK.sub(r" \1 ", text)  # each Chinese character is its own token
     return _NON_WORD.sub(" ", text).strip()
 
@@ -75,6 +95,7 @@ def normalize(text: str) -> str:
 _AR_PREFIXES = ("وال", "بال", "فال", "كال", "لل", "ال")
 
 
+@lru_cache(maxsize=65536)
 def stem(token: str) -> str:
     """Strip Arabic definite article/clitic prefixes and English plural endings."""
     while len(token) > 3:
@@ -113,7 +134,7 @@ _UNIT.update({normalize(sp): canon for canon, sps in _UNIT_SPELLINGS.items() for
 _NUM_UNIT = re.compile(r"^(\d+)([^\W\d_]+)$", re.UNICODE)  # 250kg / 250كغم (digits then letters, nothing else)
 
 
-@lru_cache(maxsize=16384)
+@lru_cache(maxsize=65536)
 def tokens(text: str) -> tuple[str, ...]:
     out: list[str] = []
     for raw in normalize(text).split():

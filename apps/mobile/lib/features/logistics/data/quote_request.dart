@@ -184,8 +184,26 @@ class ListingPrefill {
     required this.incoterm,
     required this.origin,
     this.hsCode,
+    this.listingId,
   });
 
+  /// Quantity is the listing's MOQ (1 when unknown); the unit price is the
+  /// middle of its price range.
+  factory ListingPrefill.fromListing(Listing l) => ListingPrefill(
+        listingId: l.id,
+        title: l.title,
+        unitPrice: (l.price.min.value + l.price.max.value) / 2,
+        currency: l.price.min.currency,
+        quantity: l.moq ?? 1,
+        unitWeightKg: l.unitWeightKg ?? 1,
+        unitVolumeM3: l.unitVolumeM3 ?? 0.01,
+        incoterm: l.incoterm ?? Incoterm.fob,
+        origin: l.origin ?? l.supplier.location,
+        hsCode: l.hsCode,
+      );
+
+  /// Set when built from a real listing (matches the `listing_id` route query).
+  final String? listingId;
   final String title;
   final double unitPrice;
   final String currency;

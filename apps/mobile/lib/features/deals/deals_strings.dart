@@ -17,6 +17,8 @@ const Map<String, (String, String)> _pairs = {
   'deals.detail.open_request': ('فتح الطلب', 'Open request'),
   'deals.detail.goods': ('قيمة البضاعة', 'Goods value'),
   'deals.detail.commission': ('العمولة', 'Commission'),
+  'deals.detail.track': ('تتبع الشحنة', 'Track shipment'),
+  'deals.detail.track_hint': ('لم تُسجَّل شحنة لهذه الصفقة بعد. أضف رقم الحاوية أو البوليصة لتتبعها.', 'No shipment is linked to this deal yet. Add the container or AWB number to track it.'),
   'deals.section.title': ('حالة الصفقة', 'Deal progress'),
   'deals.status.pending_payment': ('بانتظار الدفع', 'Awaiting payment'),
   'deals.status.paid': ('مدفوعة', 'Paid'),

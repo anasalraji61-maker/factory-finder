@@ -7,6 +7,7 @@ import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:factory_finder/features/deals/deals_models.dart';
 import 'package:factory_finder/features/deals/deals_repository.dart';
 import 'package:factory_finder/features/deals/widgets/deal_lifecycle_section.dart';
+import 'package:factory_finder/features/deals/widgets/deal_track_button.dart';
 import 'package:factory_finder/features/requests/data/rfq_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,6 +86,10 @@ class DealDetailScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (role.isBuyer && dealHasShipment(deal)) ...[
+                const SizedBox(height: AppSpacing.lg),
+                DealTrackButton(deal: deal),
+              ],
               if (role != DealRole.none) ...[
                 const SizedBox(height: AppSpacing.lg),
                 DealLifecycleSection(deal: deal, role: role),

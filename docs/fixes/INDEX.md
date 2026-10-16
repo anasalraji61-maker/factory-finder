@@ -1,12 +1,13 @@
 # Fixes index
 
-_Generated 2026-10-15 by reading every file in `docs/fixes/` (23 files). Status rules: **closed** = every finding is fixed, resolved or explicitly accepted; **open** = at least one finding still needs work or a decision (the open items are named). CLAUDE.md rule 12: open items block the phase until fixed or accepted by the orchestrator._
+_Updated 2026-10-16 (fuzz-findings and security-review-l added; 25 files). Status rules: **closed** = every finding is fixed, resolved or explicitly accepted; **open** = at least one finding still needs work or a decision (the open items are named). CLAUDE.md rule 12: open items block the phase until fixed or accepted by the orchestrator._
 
 | File | Topic | Status | What remains |
 |---|---|---|---|
 | [contract-drift.md](contract-drift.md) | Contract vs implementation mismatches | closed | Resolved 2026-10-14; validator reports 0 mismatches. |
 | [duty-table-verification.md](duty-table-verification.md) | Duty/VAT table audit | closed | Not a blocker. Table stays "indicative, verify with broker"; known coverage gap (only 10 HS chapters). |
 | [e2e-extended-findings.md](e2e-extended-findings.md) | Extended e2e observations | open (minor) | Gateway does not forward `X-Quota-Remaining`; `X-RateLimit-*` only on 429; the compliance-endpoints note is outdated (export/delete now exist, `docs/SECURITY.md` section 7). |
+| [fuzz-findings.md](fuzz-findings.md) | Contract fuzzing (`make fuzz`) | closed (pending re-run) | Control-char paths and huge page/offset fixed earlier; slow `/v1/home` addressed 2026-10-16 by per-section timeout + `degraded`; non-envelope 4xx normalised. Re-run `make fuzz` to confirm. |
 | [gw-msg-notif-qa.md](gw-msg-notif-qa.md) | Gateway / messaging / notifications / assistant QA | open | 403 vs 404 on other users' ids (needs contract revision); per-process messaging hub and typing throttle (needs Redis fan-out). |
 | [logistics-accuracy-review-2026-10.md](logistics-accuracy-review-2026-10.md) | Landed-cost accuracy | closed | Fixes applied. One contract request pending: `docs/requests/logistics-costline-asof.md` (first-class `as_of`/`range` on `CostLine`). |
 | [media-review-2026-10.md](media-review-2026-10.md) | Media service review | open | No PDF path; signed URLs replayable within 5 min; quota counts originals only; peak memory per large image; ICC profiles dropped. |
@@ -25,7 +26,8 @@ _Generated 2026-10-15 by reading every file in `docs/fixes/` (23 files). Status 
 | [security-review-2026-10-i.md](security-review-2026-10-i.md) | Independent review (ReDoS) | closed | All findings fixed with timing-guard tests. |
 | [security-review-2026-10-j.md](security-review-2026-10-j.md) | Review: rfq, messaging, payments | closed | 3 defects fixed; no authz or race hole found. |
 | [security-review-2026-10-k.md](security-review-2026-10-k.md) | Review: gateway + media | open (low) | Upstream `Location` forwarded verbatim; refresh rotation does not compare access `token_version`; WS path check allows empty segments; media served inline (safe because blobs are re-encoded). |
+| [security-review-2026-10-l.md](security-review-2026-10-l.md) | Review: cross-service trust, SSRF, injection, numerics | open (low) | High DoS fixed (unbounded Decimals on public logistics quote/FX; bounds + tests); notifications money pattern bounded. Open: sourcing identity-header guard is a path allow-list, freight attachment URL host spellings, a ruff I001 in payments `db.py`. |
 | [social-qa2.md](social-qa2.md) | Social QA pass 2 | open (low) | Multi-replica quota locks are best-effort; random media signing key per process in dev; blocked user can read pre-block history (by design). |
 | [supply-chain-review-2026-10.md](supply-chain-review-2026-10.md) | Supply chain / infra | open | Pin base images and GitHub Actions by digest/SHA (needs registry access), add a hashed lock file and scheduled `pip-audit`, `read_only` for DB services once on PostgreSQL, commit `pubspec.lock`, TLS reverse proxy in front of the gateway. |
 
-Totals: 6 closed, 17 open (most of the open ones are low severity or need a product decision). Update this file whenever a fixes doc changes status.
+Totals: 7 closed, 18 open (most of the open ones are low severity or need a product decision). Update this file whenever a fixes doc changes status.

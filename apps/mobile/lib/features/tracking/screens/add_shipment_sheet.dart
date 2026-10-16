@@ -12,7 +12,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet: pick reference type, enter number (validated client-side), submit.
 class AddShipmentSheet extends ConsumerStatefulWidget {
-  const AddShipmentSheet({super.key});
+  const AddShipmentSheet({super.key, this.initialReference});
+
+  /// Reference to pre-fill (e.g. from a deal); the type is guessed from it.
+  final String? initialReference;
 
   @override
   ConsumerState<AddShipmentSheet> createState() => _AddShipmentSheetState();
@@ -30,6 +33,19 @@ class _AddShipmentSheetState extends ConsumerState<AddShipmentSheet> {
   CarrierSuggestion? _carrierGuess;
   List<ReferenceCandidate> _detected = const [];
   Timer? _detectTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialReference?.trim();
+    if (initial != null && initial.isNotEmpty) {
+      _ref.text = initial;
+      if (validateReference(ReferenceType.container, initial) != null &&
+          validateReference(ReferenceType.awb, initial) == null) {
+        _type = ReferenceType.awb;
+      }
+    }
+  }
 
   @override
   void dispose() {

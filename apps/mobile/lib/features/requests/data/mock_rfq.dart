@@ -217,6 +217,62 @@ class MockRfqBackend {
     return null;
   }
 
+  List<Offer> myOffers(String requestId, {String userId = kMockUserId}) => [
+        for (final o in offers[requestId] ?? const <Offer>[])
+          if (o.supplierId == userId) o,
+      ];
+
+  /// Mirrors the server rules: 404 unknown request, 403 own request,
+  /// 409 request not live or an active offer already exists.
+  Offer submitOffer(
+    String requestId,
+    OfferDraft d, {
+    String userId = kMockUserId,
+  }) {
+    final idx = requests.indexWhere((r) => r.id == requestId);
+    if (idx < 0) {
+      throw ApiException(status: 404, code: 'not_found', message: 'Request $requestId not found');
+    }
+    final req = requests[idx];
+    if (req.buyerId == userId) {
+      throw ApiException(status: 403, code: 'forbidden', message: 'Own request');
+    }
+    final mine = myOffers(requestId, userId: userId);
+    if (!req.isLive || mine.any((o) => o.status == OfferStatus.active)) {
+      throw ApiException(status: 409, code: 'conflict', message: 'Cannot offer');
+    }
+    _seq++;
+    final offer = Offer(
+      id: 'off_$_seq',
+      requestId: requestId,
+      supplierId: userId,
+      supplierName: d.supplierName,
+      unitPrice: d.price,
+      moq: d.moq,
+      leadTimeDays: d.leadTimeDays,
+      note: d.note,
+      createdAt: DateTime.now().toUtc(),
+    );
+    offers.putIfAbsent(requestId, () => <Offer>[]).add(offer);
+    requests[idx] = req.copyWith(offerCount: req.offerCount + 1);
+    return offer;
+  }
+
+  /// 404 unknown offer, 409 when the offer is no longer active.
+  Offer withdrawOffer(String offerId) {
+    for (final list in offers.values) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id != offerId) continue;
+        if (list[i].status != OfferStatus.active) {
+          throw ApiException(status: 409, code: 'conflict', message: 'Offer not active');
+        }
+        list[i] = list[i].copyWith(status: OfferStatus.withdrawn);
+        return list[i];
+      }
+    }
+    throw ApiException(status: 404, code: 'not_found', message: 'Offer $offerId not found');
+  }
+
   Deal accept(String offerId) {
     final offer = findOffer(offerId);
     if (offer == null) {

@@ -381,6 +381,32 @@ class Offer {
       };
 }
 
+/// Body of POST /v1/requests/{id}/offers (OfferCreate). The price is a
+/// decimal string; optional fields are omitted when null / empty.
+class OfferDraft {
+  const OfferDraft({
+    required this.price,
+    required this.supplierName,
+    this.moq,
+    this.leadTimeDays,
+    this.note = '',
+  });
+
+  final Money price;
+  final String supplierName;
+  final int? moq;
+  final int? leadTimeDays;
+  final String note;
+
+  Map<String, dynamic> toJson() => {
+        'price': price.toJson(),
+        'supplier_name': supplierName,
+        if (moq != null) 'moq': moq,
+        if (leadTimeDays != null) 'lead_time_days': leadTimeDays,
+        if (note.isNotEmpty) 'notes': note,
+      };
+}
+
 /// Per-invoice-kind payment state of a deal (`null` = no invoice reported yet).
 class DealPayment {
   const DealPayment({this.commission, this.dealPayment});

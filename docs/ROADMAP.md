@@ -2,7 +2,7 @@
 
 Each phase closes only when its exit criteria pass QA. Waves inside a phase run agents in parallel.
 
-| Phase | Goal | Exit criteria | Status (2026-10-15) |
+| Phase | Goal | Exit criteria | Status (2026-10-16) |
 |---|---|---|---|
 | **0 — Foundation** | Repo skeleton, contracts, CI, dev environment | `make test` green; CI green; every service answers `/health` | [x] Done (mocks). All services answer `/health`; CI green. |
 | **1 — Core MVP (China → any country)** | Search (mock + China source stubs), landed-cost engine for all modes, geo data, trust score v1, app shell with Discover + Logistics calculator | Search → listing → landed-cost to Baghdad/Istanbul/Dubai/Berlin returns sane, explained options; app runs fully in mock mode | [x] Done on mocks: search, 25 carriers, landed cost for Baghdad/Istanbul/Dubai/Berlin, trust score, app. |
@@ -10,6 +10,8 @@ Each phase closes only when its exit criteria pass QA. Waves inside a phase run 
 | **3 — Retention** | Shipment tracking, watchlist & price alerts, Arabic AI assistant | Track a container end-to-end (mock provider); alert fires on price drop; assistant answers "أريد خط إنتاج معجنات مستعمل من الصين يوصل بغداد" with listings + cost | [x] Done on mocks: tracking, watchlist/alerts, Arabic assistant. Real tracking providers are unverified skeletons. |
 | **4 — Real data & more origins** | First real supplier source via official API/licensed provider; real freight & FX providers; origins USA then Europe | Real results for one category; quotes within ±15% of a forwarder quote on 3 lanes | [ ] Not started with real data: skeletons only (Alibaba, freight rates, ECB FX works free). Blocked on owner input; forwarder-quote override and freight marketplace exist. USA/Europe origins not started. |
 | **5 — Demand matching** | Detect public buy-requests (e.g. Facebook groups), prepare matched offers, publish public replies with human-in-the-loop and strict volume limits | 20 matched replies/day without account warnings; conversion tracked | [~] Built, off by default: draft-only replies, compliance guards, opt-outs, human approval. Nothing measured; the 20/day exit test has not run. |
-| **6 — Payments & launch** | Crypto checkout (USDT) first; card payments after the UK company + Payoneer/Stripe; commission settlement; store release | First paid commission collected; app on Play Store / App Store (TestFlight) | [~] Partial: mock + USDT-TRC20 skeleton, ledger, webhooks done; unverified on TronGrid. No cards, no first commission, no store release (needs real-device test and platform folders). |
+| **6 — Payments & launch** | Crypto checkout (USDT) first; card payments after the UK company + Payoneer/Stripe; commission settlement; store release | First paid commission collected; app on Play Store / App Store (TestFlight) | [~] Partial: mock + USDT-TRC20 skeleton, ledger, webhooks done; unverified on TronGrid. No cards, no first commission, no store release (needs real-device test and platform folders). Release path documented 2026-10-16 (`docs/RELEASE.md`, `mobile-release` workflow, `docs/legal/` drafts, `docs/PROVIDERS_AR.md`); owner steps pending: keystore, Firebase config, public deletion URL. |
+
+**Mobile and perf notes (2026-10-16):** top-10 mobile gaps in `docs/MOBILE_GAPS.md` (seller-side RFQ, runnable build and real push come first). Load test: 0 errors but search p95 2037 ms and assistant p95 3268 ms miss the 2 s gate; search performance is an open item before launch.
 
 Legend: [x] done, [~] partial, [ ] not done. Wave 1 builds Phases 0–3 in parallel against mock adapters. Phases 4–6 replace mocks with real providers.

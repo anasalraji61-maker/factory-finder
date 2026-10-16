@@ -130,6 +130,19 @@ class DealEventList {
   }
 }
 
+/// Shipment reference (container / AWB / vessel) recorded on the deal, taken
+/// from the newest event whose free-form `data` carries `tracking_reference`
+/// (or `reference`). Null when none is present (the contract has no field).
+String? dealTrackingReference(DealEventList events) {
+  for (final e in events.items.reversed) {
+    for (final key in const ['tracking_reference', 'reference']) {
+      final v = e.data[key];
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    }
+  }
+  return null;
+}
+
 /// i18n key for a failed deal-lifecycle call.
 String dealErrorKey(Object e) {
   if (e is! ApiException) return 'deals.err.generic';

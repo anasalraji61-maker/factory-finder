@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import lru_cache
 from itertools import permutations
 
 from .categories import _BY_SLUG, category_labels, expand_category
@@ -78,9 +79,16 @@ AMBIGUOUS_FACTOR = 0.35
 _AMBIGUOUS: frozenset[tuple[str, ...]] = frozenset({tokens("دقيق")})
 
 
+@lru_cache(maxsize=4096)
+def _split_alternatives(term: QueryTerm) -> tuple[tuple[tuple[str, ...], ...], tuple[tuple[str, ...], ...]]:
+    return (
+        tuple(a for a in term.alternatives if a not in _AMBIGUOUS),
+        tuple(a for a in term.alternatives if a in _AMBIGUOUS),
+    )
+
+
 def _term_score(term: QueryTerm, fields) -> float:
-    strong = [a for a in term.alternatives if a not in _AMBIGUOUS]
-    weak = [a for a in term.alternatives if a in _AMBIGUOUS]
+    strong, weak = _split_alternatives(term)
     best = 0.0
     for weight, doc in fields:  # fields are ordered by weight: first exact hit is the best
         if any(contains_phrase(doc, alt) for alt in strong):

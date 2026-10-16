@@ -80,6 +80,8 @@ def create_app(
     async def lifespan(_: FastAPI):
         await store.ensure_ready()
         yield
+        if hasattr(trust, "aclose"):
+            await trust.aclose()
         await engine.dispose()
 
     app = FastAPI(**_docs_kwargs(), title="Factory Finder - sourcing", version=__version__, lifespan=lifespan)

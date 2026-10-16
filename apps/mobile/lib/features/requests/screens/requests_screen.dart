@@ -95,7 +95,17 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     final filter = RfqFilter(mine: _mine);
     final async = ref.watch(rfqListProvider(filter));
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('req.title'))),
+      appBar: AppBar(
+        title: Text(context.tr('req.title')),
+        actions: [
+          IconButton(
+            key: const ValueKey<String>('req-seller-entry'),
+            tooltip: context.tr('req.seller.entry'),
+            icon: const Icon(Icons.storefront_outlined),
+            onPressed: () => context.push('/requests/open'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/requests/new'),
         icon: const Icon(Icons.add),
@@ -191,16 +201,19 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 }
 
 class RequestCard extends StatelessWidget {
-  const RequestCard({super.key, required this.request});
+  const RequestCard({super.key, required this.request, this.onTap});
 
   final RfqRequest request;
+
+  /// Defaults to opening the buyer detail screen.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final r = request;
     final theme = Theme.of(context);
     return AppCard(
-      onTap: () => context.push('/requests/${r.id}'),
+      onTap: onTap ?? () => context.push('/requests/${r.id}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

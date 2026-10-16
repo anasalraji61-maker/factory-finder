@@ -75,7 +75,7 @@ const Map<String, (String, String)> _pairs = {
   'listing.view_supplier': ('عرض صفحة المورد', 'View supplier'),
   'listing.trust_factors': ('عوامل الثقة', 'Trust factors'),
   'listing.trust_hint': ('اضغط لمعرفة كيف حُسب التقييم', 'Tap to see how this score was computed'),
-  'listing.calc_cost': ('احسب الكلفة لحد الباب', 'Calculate door-to-door cost'),
+  'listing.calc_cost': ('احسب الكلفة لباب بيتك', 'Calculate cost to your door'),
   'listing.message_supplier': ('راسل المورد', 'Message supplier'),
   'listing.watch_price': ('تابع السعر', 'Watch price'),
   'listing.watch_added': ('تمت إضافة المنتج لقائمة المتابعة (تجريبي)', 'Added to watchlist (demo)'),

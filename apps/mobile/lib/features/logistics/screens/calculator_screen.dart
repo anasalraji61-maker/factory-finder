@@ -72,29 +72,45 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     }
     final id = widget.listingId;
     if (id != null && id.isNotEmpty) {
-      ref.read(logisticsRepositoryProvider).prefill(id).then((p) {
-        if (!mounted) return;
-        if (p == null) {
-          setState(() => _prefillFailed = true);
-          return;
-        }
-        setState(() {
-          _prefill = p;
-          _prefillFailed = false;
-          _byUnit = true;
-          _unitPrice.text = _fmt(p.unitPrice);
-          _quantity.text = '${p.quantity}';
-          _weight.text = decimalMul(_fmt(p.unitWeightKg), '${p.quantity}');
-          _volume.text = decimalMul(_fmt(p.unitVolumeM3), '${p.quantity}');
-          _hs.text = p.hsCode ?? '';
-          _goodsCurrency = p.currency;
-          _origin = p.origin;
-          _incoterm = p.incoterm;
+      final handed = ref.read(listingPrefillSeedProvider);
+      if (handed != null && handed.listingId == id) {
+        _applyPrefill(handed);
+        Future<void>(() {
+          if (mounted) ref.read(listingPrefillSeedProvider.notifier).state = null;
         });
-      }).catchError((Object _) {
-        if (mounted) setState(() => _prefillFailed = true);
-      });
+      } else {
+        _fetchPrefill(id);
+      }
     }
+  }
+
+  void _fetchPrefill(String id) {
+    ref.read(logisticsRepositoryProvider).prefill(id).then((p) {
+      if (!mounted) return;
+      if (p == null) {
+        setState(() => _prefillFailed = true);
+        return;
+      }
+      setState(() => _applyPrefill(p));
+    }).catchError((Object _) {
+      if (mounted) setState(() => _prefillFailed = true);
+    });
+  }
+
+  /// Fills the form from a listing (quantity = MOQ). No setState: callers
+  /// decide (initState must not call it).
+  void _applyPrefill(ListingPrefill p) {
+    _prefill = p;
+    _prefillFailed = false;
+    _byUnit = true;
+    _unitPrice.text = _fmt(p.unitPrice);
+    _quantity.text = '${p.quantity}';
+    _weight.text = decimalMul(_fmt(p.unitWeightKg), '${p.quantity}');
+    _volume.text = decimalMul(_fmt(p.unitVolumeM3), '${p.quantity}');
+    _hs.text = p.hsCode ?? '';
+    _goodsCurrency = p.currency;
+    _origin = p.origin;
+    _incoterm = p.incoterm;
   }
 
   @override

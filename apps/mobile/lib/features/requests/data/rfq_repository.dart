@@ -66,6 +66,38 @@ class RfqRepository {
     return RfqRequest.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
+  /// The signed-in supplier's own offers on [requestId]. Live: the server
+  /// already limits `GET /v1/requests/{id}/offers` to the caller's offers
+  /// for a supplier; mock: filtered by the mock user.
+  Future<List<Offer>> myOffers(String requestId) async {
+    if (_api.isMock) {
+      await mockDelay(250);
+      return _mock.myOffers(requestId);
+    }
+    final json = await _api.get('/v1/requests/$requestId/offers');
+    return _page(json, Offer.fromJson).items;
+  }
+
+  /// Supplier submits an offer (POST /v1/requests/{id}/offers).
+  Future<Offer> submitOffer(String requestId, OfferDraft draft) async {
+    if (_api.isMock) {
+      await mockDelay(400);
+      return _mock.submitOffer(requestId, draft);
+    }
+    final json = await _api.post('/v1/requests/$requestId/offers', body: draft.toJson());
+    return Offer.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// Supplier withdraws their offer (POST /v1/offers/{id}/withdraw).
+  Future<Offer> withdrawOffer(Offer offer) async {
+    if (_api.isMock) {
+      await mockDelay(300);
+      return _mock.withdrawOffer(offer.id);
+    }
+    final json = await _api.post('/v1/offers/${offer.id}/withdraw');
+    return Offer.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
   Future<Deal> accept(Offer offer) async {
     if (_api.isMock) {
       await mockDelay(400);
@@ -104,6 +136,11 @@ final rfqDetailProvider = FutureProvider.autoDispose.family<RfqRequest, String>(
 
 final rfqOffersProvider = FutureProvider.autoDispose.family<List<Offer>, String>(
   (ref, id) => ref.watch(rfqRepositoryProvider).offers(id),
+);
+
+/// The signed-in supplier's own offers on a request.
+final myOffersProvider = FutureProvider.autoDispose.family<List<Offer>, String>(
+  (ref, id) => ref.watch(rfqRepositoryProvider).myOffers(id),
 );
 
 /// Deals accepted in this session, by request id (the buyer's "Commission &

@@ -7,6 +7,8 @@ import 'package:factory_finder/features/discover/data/discover_repository.dart';
 import 'package:factory_finder/core/api/api_client.dart';
 import 'package:factory_finder/features/discover/widgets/listing_card.dart';
 import 'package:factory_finder/features/discover/widgets/report_sheet.dart';
+import 'package:factory_finder/features/logistics/data/logistics_repository.dart';
+import 'package:factory_finder/features/logistics/data/quote_request.dart';
 import 'package:factory_finder/features/reco/recently_viewed.dart';
 import 'package:factory_finder/features/reco/widgets/price_history_card.dart';
 import 'package:factory_finder/features/reco/widgets/reco_carousel.dart';
@@ -545,8 +547,11 @@ class _ListingBodyState extends ConsumerState<_ListingBody> {
                 child: PrimaryButton(
                   label: context.tr('listing.calc_cost'),
                   icon: Icons.calculate_outlined,
-                  onPressed: () =>
-                      context.push('/logistics/calculator?listing_id=${l.id}'),
+                  onPressed: () {
+                    ref.read(listingPrefillSeedProvider.notifier).state =
+                        ListingPrefill.fromListing(l);
+                    context.push('/logistics/calculator?listing_id=${l.id}');
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),

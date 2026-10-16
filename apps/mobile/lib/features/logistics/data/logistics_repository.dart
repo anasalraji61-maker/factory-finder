@@ -144,18 +144,8 @@ class LogisticsRepository {
       return mockPrefills[listingId];
     }
     final json = await _api.get('/v1/listings/$listingId');
-    final l = Listing.fromJson(Map<String, dynamic>.from(json as Map));
-    return ListingPrefill(
-      title: l.title,
-      unitPrice: (l.price.min.value + l.price.max.value) / 2,
-      currency: l.price.min.currency,
-      quantity: l.moq ?? 1,
-      unitWeightKg: l.unitWeightKg ?? 1,
-      unitVolumeM3: l.unitVolumeM3 ?? 0.01,
-      incoterm: l.incoterm ?? Incoterm.fob,
-      origin: l.origin ?? l.supplier.location,
-      hsCode: l.hsCode,
-    );
+    return ListingPrefill.fromListing(
+        Listing.fromJson(Map<String, dynamic>.from(json as Map)));
   }
 }
 
@@ -169,6 +159,12 @@ final lastQuoteProvider = StateProvider<LandedCostQuote?>((ref) => null);
 /// One-shot hand-over to the calculator (awarded freight quote -> landed cost).
 /// The calculator reads and clears it on open.
 final calculatorSeedProvider = StateProvider<CalculatorSeed?>((ref) => null);
+
+/// One-shot hand-over from a listing detail screen to the calculator: the
+/// already loaded listing, so the form fills instantly for any listing id.
+/// The calculator uses it only when [ListingPrefill.listingId] matches its
+/// `listing_id` query, and clears it on open.
+final listingPrefillSeedProvider = StateProvider<ListingPrefill?>((ref) => null);
 
 final prefillProvider =
     FutureProvider.autoDispose.family<ListingPrefill?, String>(

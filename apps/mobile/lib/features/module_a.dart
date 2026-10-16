@@ -12,8 +12,10 @@ import 'package:factory_finder/features/requests/data/rfq_models.dart';
 import 'package:factory_finder/features/requests/data/rfq_prefill.dart';
 import 'package:factory_finder/features/requests/requests_strings.dart';
 import 'package:factory_finder/features/requests/screens/create_request_screen.dart';
+import 'package:factory_finder/features/requests/screens/open_requests_screen.dart';
 import 'package:factory_finder/features/requests/screens/request_detail_screen.dart';
 import 'package:factory_finder/features/requests/screens/requests_screen.dart';
+import 'package:factory_finder/features/requests/screens/seller_offer_screen.dart';
 import 'package:factory_finder/features/discover/compare_strings.dart';
 import 'package:factory_finder/features/discover/discover_strings.dart';
 import 'package:factory_finder/features/discover/report_strings.dart';
@@ -81,9 +83,20 @@ final FeatureModule featureModuleA = FeatureModule(
             },
           ),
           GoRoute(
+            path: 'open',
+            builder: (context, state) => const OpenRequestsScreen(),
+          ),
+          GoRoute(
             path: ':id',
             builder: (context, state) =>
                 RequestDetailScreen(requestId: state.pathParameters['id']!),
+            routes: [
+              GoRoute(
+                path: 'offer',
+                builder: (context, state) =>
+                    SellerOfferScreen(requestId: state.pathParameters['id']!),
+              ),
+            ],
           ),
         ],
       ),

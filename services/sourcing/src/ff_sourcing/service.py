@@ -71,9 +71,29 @@ class SourcingService:
 
     async def _enrich(self, listings: list[Listing]) -> None:
         ids = sorted({item.supplier.id for item in listings})
-        infos = dict(
-            zip(ids, await asyncio.gather(*(self._trust_for(i) for i in ids)), strict=True)
-        )
+        infos: dict[str, TrustInfo] = {}
+        missing: list[str] = []
+        for i in ids:
+            hit = self._trust_cache.get(i)
+            if hit is not None:
+                infos[i] = hit
+            else:
+                missing.append(i)
+        get_many = getattr(self.trust, "get_many", None)
+        if len(missing) > 1 and get_many is not None:  # one round trip for all cold suppliers
+            try:
+                fetched = await get_many(missing)
+            except Exception:
+                fetched = {}
+            for i in missing:
+                info = fetched.get(i)
+                if info is None:
+                    info = await self._trust_for(i)
+                elif info.band != "unknown":
+                    self._trust_cache.set(i, info)
+                infos[i] = info
+        else:
+            infos.update(zip(missing, await asyncio.gather(*(self._trust_for(i) for i in missing)), strict=True))
         for item in listings:
             info = infos[item.supplier.id]
             item.supplier = item.supplier.model_copy(
