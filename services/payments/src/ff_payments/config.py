@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # when true, a non-on-chain `payment.confirmed` webhook without `amount` goes to review instead of settling
     require_webhook_amount: bool = False
 
+    # review resolution: an amount_mismatch invoice may be settled by hand only when the amount that actually arrived is
+    # within this fraction of the expected amount (0 = exact only) AND the admin explicitly confirms
+    review_amount_tolerance: Decimal = Decimal("0.02")
+
     invoice_ttl_minutes: int = 60
     rfq_url: str = "http://localhost:8105"
     deal_client: str = "http"  # http | mock

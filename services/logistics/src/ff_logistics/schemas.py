@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -8,8 +8,14 @@ Mode = Literal["sea_lcl", "sea_fcl_20", "sea_fcl_40", "sea_fcl_40hc", "air", "ra
 ALL_MODES: list[str] = ["sea_lcl", "sea_fcl_20", "sea_fcl_40", "sea_fcl_40hc", "air", "rail", "road"]
 
 
+# Bounded: an unbounded Decimal such as 1e999999 makes the (public) quote engine spin for minutes.
+Amount = Annotated[Decimal, Field(ge=0, le=Decimal("1e12"), max_digits=20, decimal_places=6)]
+Qty = Annotated[Decimal, Field(gt=0, le=Decimal("1e12"), max_digits=20, decimal_places=6)]
+Weight = Annotated[Decimal, Field(gt=0, le=Decimal("1e9"), max_digits=18, decimal_places=6)]
+
+
 class MoneyIn(BaseModel):
-    amount: Decimal = Field(ge=0)
+    amount: Amount
     currency: str = Field(pattern=r"^[A-Z]{3}$")
 
 
@@ -27,12 +33,12 @@ class LocationIn(BaseModel):
 class GoodsIn(BaseModel):
     listing_id: str | None = None
     description: str = ""
-    quantity: Decimal = Field(default=Decimal(1), gt=0)
+    quantity: Qty = Decimal(1)
     unit: str = "pcs"
     total_value: MoneyIn | None = None
     unit_price: MoneyIn | None = None
-    total_weight_kg: Decimal = Field(gt=0)
-    total_volume_m3: Decimal | None = Field(default=None, gt=0)
+    total_weight_kg: Weight
+    total_volume_m3: Weight | None = None
     hs_code: str | None = None
     category: str | None = None
     dangerous_goods: bool = False
@@ -55,7 +61,7 @@ class LandedCostRequest(BaseModel):
 
 class ConvertRequest(BaseModel):
     model_config = {"populate_by_name": True}
-    amount: Decimal
+    amount: Annotated[Decimal, Field(ge=-Decimal("1e12"), le=Decimal("1e12"), max_digits=20, decimal_places=6)]
     from_currency: str = Field(alias="from", pattern=r"^[A-Z]{3}$")
     to_currency: str = Field(alias="to", pattern=r"^[A-Z]{3}$")
 

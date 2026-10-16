@@ -54,11 +54,16 @@ bool isProtectedPath(String path) {
 
 /// Pure redirect rule (unit-tested). Returns the location to go to, or null
 /// to stay. While the session restore is running nothing is redirected.
+///
+/// First-run gate: until [introDone], every location except `/intro` goes to
+/// `/intro` (before the auth gate, so a fresh install never sees login first).
 String? appRedirect({
   required Uri uri,
   required bool signedIn,
   required bool resolved,
+  bool introDone = true,
 }) {
+  if (!introDone) return uri.path == '/intro' ? null : '/intro';
   if (signedIn || !resolved) return null;
   if (!isProtectedPath(uri.path)) return null;
   final from = sanitizeReturnPath(uri.toString());
@@ -120,6 +125,7 @@ GoRouter createAppRouter({bool showOnboarding = false, AuthGate? auth}) {
               uri: state.uri,
               signedIn: auth.isSignedIn(),
               resolved: auth.isResolved(),
+              introDone: auth.introDone(),
             ),
     initialLocation: showOnboarding ? '/onboarding' : '/discover',
     routes: <RouteBase>[

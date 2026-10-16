@@ -181,7 +181,10 @@ def create_app(
     app.state.home_client = home_client or (
         MockHomeClient()
         if settings.home_client == "mock"
-        else HttpHomeClient(http, settings.upstream_map())
+        else HttpHomeClient(
+            http, settings.upstream_map(),
+            timeout=settings.home_upstream_timeout, cache_ttl=settings.home_cache_ttl_seconds,
+        )
     )
     limiter = build_limit_store(
         clock, settings.rate_limit_max_keys, None, shared_redis

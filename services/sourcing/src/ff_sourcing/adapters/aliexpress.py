@@ -8,6 +8,19 @@ enabling: check the current AliExpress Open Platform docs and replace it with a 
 
 Compliance: official affiliate API with app key/secret + tracking id from env
 (FF_SOURCING_ALIEXPRESS_*). Retail marketplace: items are consumer-scale, MOQ defaults to 1.
+
+EXPECTED OFFICIAL CONTRACT -- *** VERIFY AGAINST OFFICIAL DOCS *** (nothing below is confirmed)
+  Docs link: <PLACEHOLDER: official AliExpress Open Platform affiliate product.query page>
+  Request : GET FF_SOURCING_ALIEXPRESS_API_BASE (default https://api-sg.aliexpress.com/sync)
+            params: method=aliexpress.affiliate.product.query, app_key, timestamp(ms),
+            sign_method=sha256, keywords, tracking_id, page_size(<=50), target_currency=USD, sign
+  Response: aliexpress_affiliate_product_query_response.resp_result.result.products.product[]
+  Item fields read: product_id, product_title, target_sale_price, target_original_price,
+            target_sale_price_currency, shop_id, promotion_link, product_detail_url,
+            product_main_image_url, product_small_image_urls
+  Not provided by the API (adapter defaults): moq=1, unit="piece", supplier name (synthesised
+            from shop_id), city/country.
+  Owner check: `python -m ff_sourcing.adapters.selfcheck aliexpress`.
 """
 
 from __future__ import annotations

@@ -8,7 +8,18 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, TypeDecorator, event, text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+    event,
+    text,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -129,6 +140,24 @@ class OutboxEventRow(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime())
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime())
     delivered_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class ReviewResolutionRow(Base):
+    """Audit trail of admin decisions on the review queue (append-only by convention; one row per resolution)."""
+
+    __tablename__ = "review_resolutions"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    invoice_id: Mapped[str] = mapped_column(String(40), index=True)
+    action: Mapped[str] = mapped_column(String(16))  # settle | refund_flag | dismiss
+    note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    reviewer: Mapped[str] = mapped_column(String(64))
+    previous_reason: Mapped[str] = mapped_column(String(64))
+    invoice_status: Mapped[str] = mapped_column(String(20))  # status after the resolution
+    new_reason: Mapped[str] = mapped_column(String(64))
+    confirm_amount_mismatch: Mapped[bool] = mapped_column(Boolean, default=False)
+    received_amount: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    received_currency: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 class LedgerImmutable(RuntimeError):

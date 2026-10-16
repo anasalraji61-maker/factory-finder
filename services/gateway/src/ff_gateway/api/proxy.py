@@ -245,10 +245,16 @@ async def proxy(full_path: str, request: Request) -> Response:
     else:
         breaker.success()
     out = {k: v for k, v in resp.headers.items() if k.lower() in FORWARD_RESPONSE_HEADERS}
-    if resp.status_code >= 500 and not _is_error_envelope(resp.content):
-        # a crashing upstream (framework debug page, stack trace, plain text) must not leak through the gateway
+    if resp.status_code >= 400 and not _is_error_envelope(resp.content):
+        # a crashing upstream (framework debug page, stack trace, plain text) or a framework-default 4xx body such as
+        # {"detail":"Not Found"} must not leak through the gateway: always the standard envelope
+        if resp.status_code >= 500:
+            code, msg = "upstream_error", "Upstream service error"
+        else:
+            code = {404: "not_found", 405: "method_not_allowed"}.get(resp.status_code, "upstream_error")
+            msg = "Not found" if resp.status_code == 404 else "Upstream request rejected"
         return Response(
-            '{"error":{"code":"upstream_error","message":"Upstream service error","details":{}}}',
+            json.dumps({"error": {"code": code, "message": msg, "details": {}}}),
             status_code=resp.status_code, media_type="application/json",
         )  # fmt: skip
     return Response(content=resp.content, status_code=resp.status_code, headers=out)

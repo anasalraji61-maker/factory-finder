@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Header, Query, Request, Response
 
 from ff_payments.domain.enums import InvoiceStatus
 from ff_payments.domain.errors import Forbidden, Unauthenticated, ValidationFailed
-from ff_payments.schemas import InvoiceCreate
+from ff_payments.schemas import InvoiceCreate, ReviewResolve
 from ff_payments.service import PaymentsService
 
 router = APIRouter(prefix="/v1")
@@ -99,6 +99,12 @@ async def deal_commission(deal_id: str, s: Svc) -> dict[str, Any]:
 @router.get("/payments/review", dependencies=[Depends(admin_only)])
 async def list_review(s: Svc, page: Page = 1, page_size: Size = 20) -> dict[str, Any]:
     return await s.list_review(page, page_size)
+
+
+@router.post("/payments/review/{invoice_id}/resolve", dependencies=[Depends(admin_only)])
+async def resolve_review(invoice_id: str, body: ReviewResolve, s: Svc,
+                         x_reviewer: Annotated[str | None, Header()] = None) -> dict[str, Any]:
+    return await s.resolve_review(invoice_id, body, x_reviewer)
 
 
 @router.post("/payments/sweep", dependencies=[Depends(admin_only)])

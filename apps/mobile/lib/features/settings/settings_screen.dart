@@ -180,6 +180,19 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => context.push('/settings/privacy'),
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          _Section(
+            title: context.tr('intro.about'),
+            child: ListTile(
+              key: const ValueKey<String>('settings-replay-intro'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.replay),
+              title: Text(context.tr('intro.replay')),
+              subtitle: Text(context.tr('intro.replay_sub')),
+              trailing: const Icon(Icons.chevron_right, size: 20),
+              onTap: () => context.push('/intro?replay=1'),
+            ),
+          ),
         ],
       ),
     );

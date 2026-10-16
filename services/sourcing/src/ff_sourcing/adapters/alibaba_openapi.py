@@ -11,6 +11,17 @@ with a REAL recorded response. Nothing here has been verified against Alibaba's 
 Credentials (env only): FF_SOURCING_ALIBABA_APP_KEY, FF_SOURCING_ALIBABA_APP_SECRET,
 FF_SOURCING_ALIBABA_ACCESS_TOKEN. Kill switch: FF_SOURCING_ALIBABA_OPENAPI_DISABLED.
 Terms: use only within the Open Platform agreement; no scraping; honour quotas.
+
+EXPECTED OFFICIAL CONTRACT -- *** VERIFY AGAINST OFFICIAL DOCS *** (nothing below is confirmed)
+  Docs link: <PLACEHOLDER: official Alibaba.com Open Platform "alibaba.icbu.product.search" page>
+  Request : GET https://openapi-api.alibaba.com/sync
+            params: method=alibaba.icbu.product.search, app_key, access_token, sign_method=sha256,
+            timestamp(ms), keywords, page_size(<=50), sign (upper-hex HMAC-SHA256, sorted k+v, secret)
+  Response: alibaba_icbu_product_search_response.products.product[]
+  Item fields read (field_map): product_id, subject, price (text range e.g. "US $12.50-15.00"),
+            currency, supplier.id, supplier.name, supplier.country, supplier.city, detail_url,
+            images[].url, min_order_quantity, unit, supplier.is_verified
+  Owner check: `python -m ff_sourcing.adapters.selfcheck alibaba_openapi`.
 """
 
 from __future__ import annotations

@@ -478,3 +478,54 @@ def test_recommendations_routed_to_sourcing_and_public():
     assert is_public("GET", "/v1/recommendations")
     assert not is_public("POST", "/v1/recommendations")
     assert is_public("GET", "/v1/listings/x/price-history") and is_public("GET", "/v1/listings/x/similar")
+
+
+def test_home_slow_upstream_is_degraded_not_awaited(mock_upstream):
+    import asyncio
+    import time
+
+    import httpx as hx
+    from fastapi.testclient import TestClient
+
+    from ff_gateway.config import Settings
+    from ff_gateway.main import create_app
+
+    async def slow(request):
+        await asyncio.sleep(5)
+        return hx.Response(200, json={})
+
+    app = create_app(
+        Settings(jwt_secret="s" * 40, database_url="sqlite+aiosqlite://", bcrypt_rounds=4,
+                 home_client="http", home_upstream_timeout=0.2),
+        http_client=hx.AsyncClient(),
+    )  # fmt: skip
+    mock_upstream.get("http://localhost:8101/v1/categories").mock(return_value=hx.Response(200, json=[{"id": "c"}]))
+    mock_upstream.get("http://localhost:8101/v1/search").mock(side_effect=slow)
+    mock_upstream.get("http://localhost:8102/v1/fx/rates").mock(side_effect=slow)
+    with TestClient(app) as c:
+        tok = c.post("/v1/auth/register", json={"email": "s@example.com", "password": "password123", "name": "S"}).json()
+        t = time.monotonic()
+        r = c.get("/v1/home", headers={"Authorization": f"Bearer {tok['access_token']}"})
+        elapsed = time.monotonic() - t
+    body = r.json()
+    assert r.status_code == 200 and elapsed < 1.5  # concurrent: one timeout, not two in series
+    assert body["categories"] == [{"id": "c"}] and body["trending"] is None and body["fx"] is None
+    assert sorted(body["degraded"]) == ["fx", "trending"]
+
+
+def test_proxy_normalises_non_envelope_upstream_4xx(client, hdr, mock_upstream):
+    mock_upstream.get("http://localhost:8106/v1/conversations/weird").mock(
+        return_value=httpx.Response(404, json={"detail": "Not Found"})
+    )
+    r = client.get("/v1/conversations/weird", headers=hdr)
+    assert r.status_code == 404
+    assert r.json() == {"error": {"code": "not_found", "message": "Not found", "details": {}}}
+    mock_upstream.get("http://localhost:8106/v1/conversations/teapot").mock(
+        return_value=httpx.Response(409, text="<html>conflict</html>")
+    )
+    r = client.get("/v1/conversations/teapot", headers=hdr)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "upstream_error"
+    mock_upstream.get("http://localhost:8106/v1/conversations/ok").mock(
+        return_value=httpx.Response(404, json={"error": {"code": "conversation_not_found", "message": "m", "details": {}}})
+    )
+    assert client.get("/v1/conversations/ok", headers=hdr).json()["error"]["code"] == "conversation_not_found"

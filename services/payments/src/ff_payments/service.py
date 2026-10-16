@@ -6,6 +6,7 @@ import asyncio
 import base64
 import contextlib
 import json
+import re
 import secrets
 import time
 import uuid
@@ -28,6 +29,7 @@ from ff_payments.db import (
     LedgerEntryRow,
     OutboxEventRow,
     PaymentAttemptRow,
+    ReviewResolutionRow,
     WebhookEventRow,
 )
 from ff_payments.domain import ledger, state
@@ -43,7 +45,7 @@ from ff_payments.domain.errors import (
     ValidationFailed,
 )
 from ff_payments.providers.base import InvoiceSpec, Observation, PaymentProvider, TrackedInvoice
-from ff_payments.schemas import InvoiceCreate, WebhookEvent
+from ff_payments.schemas import InvoiceCreate, ReviewResolve, WebhookEvent
 
 S = InvoiceStatus
 CENT = Decimal("0.01")
@@ -57,6 +59,12 @@ DEAD_DEAL_STATES = frozenset({"refunded", "disputed"})
 REVIEW_LATE = "late_payment_review"  # money arrived for an expired / cancelled invoice: a human decides
 REVIEW_AMOUNT = "amount_mismatch_review"  # a provider says "paid" with an amount that is not the invoice's
 REVIEW_REASONS = (REVIEW_LATE, REVIEW_AMOUNT)
+REVIEW_SETTLED = "review_settled"
+REVIEW_DISMISSED = "review_dismissed"
+REFUND_FLAGGED = "refund_flagged"  # human decided: money goes back to the payer (done off-platform); never auto-settled
+RESOLVED_REASON = {"settle": REVIEW_SETTLED, "dismiss": REVIEW_DISMISSED, "refund_flag": REFUND_FLAGGED}
+MONEY_REASONS = (*REVIEW_REASONS, REFUND_FLAGGED)  # invoices whose records retention must keep
+_REVIEWER_BAD = re.compile(r"[^A-Za-z0-9_.:-]")
 KNOWN_PROVIDERS = ("mock", "usdt_tron")
 
 
@@ -147,11 +155,13 @@ class PaymentsService:
                 await s.refresh(r)
 
     async def _move(self, s: AsyncSession, r: InvoiceRow, target: S, *, reason: str | None = None,
-                    tx_ref: str | None = None, confirmations: int | None = None) -> None:
+                    tx_ref: str | None = None, confirmations: int | None = None,
+                    manual: bool = False) -> None:
         """Apply a validated transition (and its ledger effect). Caller commits."""
         now = self.clock()
         old = r.status
-        state.require(S(old), target, r.id)
+        if not manual:  # manual = an admin's review decision (late / mismatched money), the only bypass of the machine
+            state.require(S(old), target, r.id)
         if r in s.new:
             await s.flush()
         # compare-and-set on the stored status: a concurrent writer (sweep vs webhook vs another worker)
@@ -284,7 +294,7 @@ class PaymentsService:
         async with self.sessions() as s:
             if c.webhook_event_retention_days > 0:
                 money = select(InvoiceRow.id).where(or_(InvoiceRow.status.in_([S.PAID.value, S.REFUNDED.value]),
-                                                        InvoiceRow.status_reason.in_(REVIEW_REASONS)))
+                                                        InvoiceRow.status_reason.in_(MONEY_REASONS)))
                 r = await s.execute(delete(WebhookEventRow).where(
                     WebhookEventRow.received_at < now - timedelta(days=c.webhook_event_retention_days),
                     or_(WebhookEventRow.invoice_id.is_(None), WebhookEventRow.invoice_id.not_in(money))))
@@ -297,7 +307,7 @@ class PaymentsService:
             if c.attempt_retention_days > 0:
                 dead = select(InvoiceRow.id).where(InvoiceRow.status.in_([S.EXPIRED.value, S.FAILED.value]),
                                                   or_(InvoiceRow.status_reason.is_(None),
-                                                      InvoiceRow.status_reason.not_in(REVIEW_REASONS)))
+                                                      InvoiceRow.status_reason.not_in(MONEY_REASONS)))
                 r = await s.execute(delete(PaymentAttemptRow).where(
                     PaymentAttemptRow.updated_at < now - timedelta(days=c.attempt_retention_days),
                     PaymentAttemptRow.invoice_id.in_(dead)))
@@ -577,6 +587,101 @@ class PaymentsService:
             rows = (await s.execute(select(InvoiceRow).where(cond).order_by(InvoiceRow.updated_at, InvoiceRow.id)
                                     .limit(size).offset((page - 1) * size))).scalars().all()
             return {"items": [invoice_dict(r) for r in rows], "total": total, "page": page, "page_size": size}
+
+    @staticmethod
+    def _resolution_dict(x: ReviewResolutionRow) -> dict[str, Any]:
+        return {"id": x.id, "invoice_id": x.invoice_id, "action": x.action, "note": x.note, "reviewer": x.reviewer,
+                "previous_reason": x.previous_reason, "invoice_status": x.invoice_status,
+                "status_reason": x.new_reason, "confirm_amount_mismatch": x.confirm_amount_mismatch,
+                "received_amount": _money(x.received_amount, x.received_currency or "") if x.received_amount else None,
+                "created_at": _iso(x.created_at)}
+
+    async def _replay(self, s: AsyncSession, invoice_id: str, action: str) -> dict[str, Any] | None:
+        last = (await s.execute(select(ReviewResolutionRow).where(ReviewResolutionRow.invoice_id == invoice_id)
+                                .order_by(ReviewResolutionRow.created_at.desc(), ReviewResolutionRow.id.desc())
+                                .limit(1))).scalar_one_or_none()
+        if last is None:
+            return None
+        if last.action != action:
+            raise Conflict("Invoice was already resolved with a different action", code="already_resolved",
+                           details={"action": last.action, "reviewer": last.reviewer})
+        return self._resolution_dict(last)
+
+    def _check_mismatch_settle(self, r: InvoiceRow, body: ReviewResolve) -> ReviewResolve:
+        if not body.note:
+            raise ValidationFailed("A note is required to settle an amount mismatch", code="note_required")
+        if body.confirm_amount_mismatch is not True:
+            raise ValidationFailed("confirm_amount_mismatch must be true to settle an amount mismatch",
+                                   code="amount_mismatch_confirmation_required")
+        want_cur = r.pay_currency or r.currency
+        want = Decimal(r.pay_amount or r.amount)
+        got = body.received_amount
+        if got is None or got.currency != want_cur:
+            raise ValidationFailed(f"received_amount in {want_cur} is required to settle an amount mismatch",
+                                   code="received_amount_required")
+        if abs(got.value - want) > want * self.settings.review_amount_tolerance:
+            raise ValidationFailed("The received amount is outside the configured tolerance; refund or dismiss instead",
+                                   code="amount_outside_tolerance",
+                                   details={"expected": _money(format(want, "f"), want_cur),
+                                            "tolerance": format(self.settings.review_amount_tolerance, "f")})
+        return body
+
+    async def resolve_review(self, invoice_id: str, body: ReviewResolve, reviewer: str | None) -> dict[str, Any]:
+        """Admin decision on a review-queue invoice (reason late_payment_review / amount_mismatch_review).
+
+        settle: money accepted, invoice -> paid (ledger + outbox like a normal settlement). refund_flag: marked to be
+        refunded by hand. dismiss: nothing arrived / not ours. Compare-and-set on the review reason, so two reviewers
+        cannot both act; an identical replay returns the stored result, a different action on a resolved invoice is 409."""
+        who = _REVIEWER_BAD.sub("", reviewer or "")[:64] or "admin"
+        for _ in range(2):
+            async with self.sessions() as s:
+                r = await s.get(InvoiceRow, invoice_id)
+                if r is None:
+                    raise NotFound("Invoice not found", code="invoice_not_found")
+                prev = r.status_reason
+                if prev not in REVIEW_REASONS:
+                    again = await self._replay(s, invoice_id, body.action)
+                    if again is not None:
+                        return again
+                    raise Conflict("Invoice is not in the review queue", code="not_in_review")
+                if body.action == "settle":
+                    if prev == REVIEW_AMOUNT:
+                        self._check_mismatch_settle(r, body)
+                    if S(r.status) not in (*state.OPEN, S.EXPIRED, S.FAILED):
+                        raise InvalidTransition("invoice", r.status, "settle", entity_id=r.id)
+                new = RESOLVED_REASON[body.action]
+                res = await s.execute(update(InvoiceRow).where(InvoiceRow.id == r.id, InvoiceRow.status_reason == prev)
+                                      .values(status_reason=new).execution_options(synchronize_session=False))
+                if res.rowcount != 1:  # someone resolved it first: re-read (replay or conflict)
+                    await s.rollback()
+                    continue
+                r.status_reason = new
+                try:
+                    if body.action == "settle":
+                        await self._move(s, r, S.PAID, manual=True)
+                        r.status_reason = new
+                    mism = body.action == "settle" and prev == REVIEW_AMOUNT
+                    row = ReviewResolutionRow(
+                        id=_uid("rvw"), invoice_id=r.id, action=body.action, note=body.note, reviewer=who,
+                        previous_reason=prev, invoice_status=r.status, new_reason=new,
+                        confirm_amount_mismatch=bool(mism and body.confirm_amount_mismatch),
+                        received_amount=body.received_amount.amount if mism and body.received_amount else None,
+                        received_currency=body.received_amount.currency if mism and body.received_amount else None,
+                        created_at=self.clock())
+                    s.add(row)
+                    r.updated_at = self.clock()
+                    await s.commit()
+                except IntegrityError as exc:  # a unique index refused the settlement (transfer / live invoice taken)
+                    await s.rollback()
+                    raise Conflict("Settlement conflicts with another invoice", code="settlement_conflict") from exc
+                except Conflict:
+                    await s.rollback()
+                    raise
+                out = self._resolution_dict(row)
+            if body.action == "settle":
+                await self._drain_quiet()
+            return out
+        raise Conflict("Invoice changed concurrently; retry", code="concurrent_update")
 
     async def commission_for_deal(self, deal_id: str) -> dict[str, Any]:
         """Platform commission booked for one deal, net of refunds, per currency (from the immutable ledger)."""

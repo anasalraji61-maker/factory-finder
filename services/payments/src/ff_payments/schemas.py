@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr, field_validator
 
 from ff_payments.domain.enums import InvoiceKind, ListingKind
 
@@ -66,3 +66,23 @@ class WebhookEvent(BaseModel):
     tx_ref: str | None = Field(default=None, max_length=128)
     confirmations: StrictInt | None = Field(default=None, ge=0)
     amount: Money | None = None
+
+
+class ReviewResolve(BaseModel):
+    """Admin resolution of one invoice in the review queue."""
+
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["settle", "refund_flag", "dismiss"]
+    note: StrictStr | None = Field(default=None, max_length=500)
+    confirm_amount_mismatch: StrictBool = False
+    received_amount: Money | None = None  # amount_mismatch settle only: what actually arrived
+
+    @field_validator("note")
+    @classmethod
+    def _clean_note(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        if any(ord(c) < 32 and c not in "\n\t" or ord(c) == 127 for c in v):
+            raise ValueError("note contains control characters")
+        return v or None

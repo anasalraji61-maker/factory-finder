@@ -3,6 +3,19 @@
 Compliance: official API only, signed requests, app key/secret from env
 (FF_SOURCING_ALIBABA_APP_KEY / _APP_SECRET). No page scraping. Verify endpoint names against the
 current Open Platform docs before enabling: this is a request/normalization skeleton.
+
+EXPECTED OFFICIAL CONTRACT -- *** VERIFY AGAINST OFFICIAL DOCS *** (nothing below is confirmed)
+  Docs link: <PLACEHOLDER: official Alibaba Open Platform product-search API page>
+  Request : GET {FF_SOURCING_ALIBABA_API_BASE}/products/search  (path is a GUESS; real TOP-style APIs
+            use /sync?method=...)
+            params: app_key, timestamp(ms), sign_method=sha256, keyword, page_size(<=50), sign
+            sign  : upper-hex HMAC-SHA256 over sorted `k1v1k2v2...` with the app secret
+  Response: {"result": {"products": [ {...} ]}}
+  Item fields read: id, subject, price{min,max,currency}, seller_id, seller_name, country, city,
+            detail_url, images[] (https URL strings), moq, unit, verified_supplier
+  Note    : this legacy skeleton and `alibaba_openapi` target the same marketplace; keep only the one
+            whose contract the official docs confirm.
+  Owner check: `python -m ff_sourcing.adapters.selfcheck alibaba` (see selfcheck.py for the guards).
 """
 
 from __future__ import annotations

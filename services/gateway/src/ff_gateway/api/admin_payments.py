@@ -7,6 +7,7 @@ fixed actor id. Client identity/admin headers and bodies are never forwarded; on
 upstream's own page/page_size) query params pass.
 """
 
+import json
 import logging
 import re
 
@@ -50,7 +51,8 @@ def _query(request: Request, allowed: set[str] = _ALLOWED_QUERY) -> list[tuple[s
 
 
 async def _forward(
-    request: Request, method: str, upstream_path: str, params: list[tuple[str, str]], reviewer: str | None = None
+    request: Request, method: str, upstream_path: str, params: list[tuple[str, str]], reviewer: str | None = None,
+    body: dict | None = None,
 ) -> Response:
     token = request.app.state.settings.payments_admin_token
     if not token:
@@ -63,7 +65,7 @@ async def _forward(
     base = request.app.state.settings.upstream_map()["payments"].rstrip("/")
     try:
         resp = await request.app.state.http.request(
-            method, base + upstream_path, params=params, headers=headers
+            method, base + upstream_path, params=params, headers=headers, **({"json": body} if body is not None else {})
         )
     except httpx.TimeoutException as e:
         raise UpstreamTimeout("payments") from e
@@ -102,3 +104,59 @@ async def list_review(request: Request) -> Response:
     reviewer = sanitize_reviewer(request.headers.get("x-reviewer"))
     log.info("admin_action action=payments_review_list reviewer=%s", reviewer)
     return await _forward(request, "GET", "/v1/payments/review", params, reviewer)
+
+
+_RESOLVE_ACTIONS = ("settle", "refund_flag", "dismiss")
+_RESOLVE_KEYS = {"action", "note", "confirm_amount_mismatch", "received_amount"}
+_MAX_RESOLVE_BYTES = 4096
+_MONEY_RE = re.compile(r"^[0-9]{1,12}(\.[0-9]{1,6})?\Z")
+_CUR_RE = re.compile(r"^[A-Z]{3,5}\Z")
+
+
+async def _resolve_body(request: Request) -> dict:
+    """Validate and rebuild the body: only known keys go upstream (payments re-validates everything)."""
+    raw = await request.body()
+    if len(raw) > _MAX_RESOLVE_BYTES:
+        raise StarletteHTTPException(413, "Request body too large")
+    try:
+        data = json.loads(raw or b"null")
+    except ValueError:
+        raise _bad("Body must be JSON") from None
+    if not isinstance(data, dict) or set(data) - _RESOLVE_KEYS:
+        raise _bad("Body must be an object with action, note, confirm_amount_mismatch, received_amount")
+    if data.get("action") not in _RESOLVE_ACTIONS:
+        raise _bad("action must be settle, refund_flag or dismiss")
+    out: dict = {"action": data["action"]}
+    note = data.get("note")
+    if note is not None:
+        if not isinstance(note, str) or len(note) > 500:
+            raise _bad("note must be a string of at most 500 characters")
+        out["note"] = note
+    confirm = data.get("confirm_amount_mismatch", False)
+    if not isinstance(confirm, bool):
+        raise _bad("confirm_amount_mismatch must be a boolean")
+    out["confirm_amount_mismatch"] = confirm
+    got = data.get("received_amount")
+    if got is not None:
+        if (not isinstance(got, dict) or set(got) != {"amount", "currency"} or not isinstance(got["amount"], str)
+                or not isinstance(got["currency"], str) or not _MONEY_RE.match(got["amount"])
+                or not _CUR_RE.match(got["currency"])):
+            raise _bad("received_amount must be {amount: decimal string, currency: ISO code}")
+        out["received_amount"] = {"amount": got["amount"], "currency": got["currency"]}
+    return out
+
+
+@router.post("/v1/admin/payments/review/{invoice_id}/resolve", operation_id="adminPaymentsReviewResolve")
+async def resolve_review(invoice_id: str, request: Request) -> Response:
+    """Resolve a review-queue invoice (settle / refund_flag / dismiss); payments POST /v1/payments/review/{id}/resolve."""
+    require_admin(request)
+    _seg(invoice_id)
+    if not _ID_RE.match(invoice_id):
+        raise StarletteHTTPException(404, "Not Found")
+    if request.query_params:
+        raise _bad("Query parameters are not supported")
+    body = await _resolve_body(request)
+    reviewer = sanitize_reviewer(request.headers.get("x-reviewer"))
+    log.info("admin_action action=payments_review_resolve reviewer=%s invoice=%s resolution=%s confirm_mismatch=%s",
+             reviewer, invoice_id, body["action"], body["confirm_amount_mismatch"])
+    return await _forward(request, "POST", f"/v1/payments/review/{invoice_id}/resolve", [], reviewer, body)

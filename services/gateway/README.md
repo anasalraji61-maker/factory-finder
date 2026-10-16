@@ -18,6 +18,8 @@ Gaps: SMTP adapter is a skeleton (no templates/bounce handling).
 ## Admin payments outbox passthrough
 `GET /v1/admin/payments/review` (same guards and env vars; `limit` -> `page_size`, `cursor`, `page`, `page_size`; `status` and anything else -> 422) proxies payments `GET /v1/payments/review` and returns its `{items, total, page, page_size}` unchanged; `X-Reviewer` is forwarded sanitized (default `admin`) and the call is logged (`ff_gateway.admin`). Payments down -> 502 `upstream_unavailable`, timeout -> 504.
 
+`POST /v1/admin/payments/review/{invoice_id}/resolve` (same guards; id `[A-Za-z0-9_-]{1,64}`, no query string) resolves a review item (`settle` / `refund_flag` / `dismiss`) via payments `POST /v1/payments/review/{id}/resolve`. The body is validated and rebuilt (only `action`, `note` <=500, boolean `confirm_amount_mismatch`, `received_amount {amount, currency}`; anything else 422, over 4 KiB 413); `X-Reviewer` is forwarded sanitized (default `admin`) and logged with the invoice id and resolution (`admin_action action=payments_review_resolve`). Payments status codes (200 / 404 / 409 / 422) pass through; down -> 502, timeout -> 504.
+
 `GET /v1/admin/payments/outbox` (`status` pending|delivered|dead, `limit` -> payments `page_size`, `cursor`, `page`, `page_size`; any other query param -> 422) and `POST /v1/admin/payments/outbox/{id}/requeue` (id `[A-Za-z0-9_-]{1,64}`, no body). Needs `X-Admin-Token` (= `FF_GATEWAY_ADMIN_TOKEN`; 404 unset, 401 wrong) and the gateway-side `FF_PAYMENTS_ADMIN_TOKEN` (404 when unset), which the gateway injects with the internal token and `X-User-Id: admin`; client identity headers and bodies are never forwarded. Upstream status codes (404 unknown, 409 `not_dead`) pass through.
 
 ## Admin demand proxy and console

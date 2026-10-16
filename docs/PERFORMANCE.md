@@ -72,3 +72,22 @@ In-process, SQLite in memory, seeded 5k and 50k rows, best of 3, no network (scr
 - feed trending deep pages (cursor far down) widen the candidate pool towards the whole window, so page N costs up to the old full scan; the first pages (the hot case) are bounded. A `home` feed for a user who follows only rarely-posting suppliers scans `ix_posts_status_created` newest-first until it finds a page.
 - trust `ReportStore.add` still runs about 7 statements per report (rate window, two counts, insert, purge check); fine at current volume.
 - Trending relies on `posts.score` never being lower than the exact external engagement; any new write path that changes likes/comments must keep updating it (existing `_recount`, like/unlike do).
+
+
+## Load test 2026-10-16 (`make load-test` / `python scripts/load_test.py`)
+Mixed workload through the gateway: 50 synthetic users (registered up front), 60 s, 30 concurrent workers, weights search 30 / landed-cost 15 / feed home 15 / rfq list 12 / tracking list 10 / assistant 10 / rfq create 8. The script starts the stack like `scripts/e2e.py` (so run it ALONE), exits 1 on any 5xx / transport error or any endpoint p95 > 2 s. Raising `FF_GATEWAY_REGISTER_PER_HOUR` is the only extra setting (the per-IP signup cap of 10/h would reject the users).
+
+**Caveat:** numbers are for mock adapters, SQLite, one uvicorn process per service, on a 2-core sandbox shared by 15 services plus the load generator. They show relative hot spots and the absence of errors, not production capacity.
+
+| endpoint | n | req/s | p50 ms | p95 ms | p99 ms | 5xx | 4xx |
+|---|---|---|---|---|---|---|---|
+| search | 687 | 11.4 | 805 | 2037 | 4598 | 0 | 0 |
+| landed-cost | 290 | 4.8 | 349 | 751 | 1368 | 0 | 0 |
+| feed home | 355 | 5.9 | 722 | 1242 | 1435 | 0 | 0 |
+| rfq create | 187 | 3.1 | 696 | 1115 | 1244 | 0 | 0 |
+| rfq list (mine) | 252 | 4.2 | 738 | 1099 | 1444 | 0 | 0 |
+| tracking list | 228 | 3.8 | 344 | 1007 | 1315 | 0 | 0 |
+| assistant query | 220 | 3.6 | 1434 | 3268 | 7748 | 0 | 0 |
+| total | 2219 | 36.7 | | | | 0 | 0 |
+
+Result: zero 5xx and zero 4xx; the run FAILS the p95 gate on `search` (2037 ms, marginal) and `assistant` (3268 ms). The box is CPU-saturated at concurrency 30 (every endpoint's p50 rises 5-10x versus concurrency 5: tracking list 45 ms -> 344 ms), so most of the latency is queueing. Findings from a single-client probe: sequential warm search costs 200-600 ms on its own (a broad query like "machine" returns a 21 KB body in ~600 ms) and the first, cold request per query is 1.1-4.7 s; the assistant calls sourcing search plus a landed-cost quote, so it inherits that. Search is the lever to pull next (CPU per request in sourcing ranking / trust enrichment / gateway serialization), not a correctness bug. No service code was changed.

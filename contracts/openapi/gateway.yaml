@@ -413,6 +413,26 @@ paths:
         "422": {$ref: "#/components/responses/Error"}
         "502": {$ref: "#/components/responses/Error"}
         "504": {$ref: "#/components/responses/Error"}
+  /v1/admin/payments/review/{invoice_id}/resolve:
+    post:
+      summary: "Resolve an admin payments review item"
+      operationId: adminPaymentsReviewResolve
+      description: "Admin only (X-Admin-Token; 404 when FF_GATEWAY_ADMIN_TOKEN or FF_PAYMENTS_ADMIN_TOKEN is unset, 401 wrong). Proxied to payments POST /v1/payments/review/{invoice_id}/resolve (see payments.yaml resolvePaymentReview: settle / refund_flag / dismiss, CAS, idempotent replay, amount-mismatch guard). The gateway validates the body (only action, note <=500, confirm_amount_mismatch boolean, received_amount {amount, currency}; anything else 422; body >4 KiB 413), rebuilds it, injects payments' X-Admin-Token and X-Internal-Token (X-User-Id=admin) and forwards X-Reviewer sanitized (charset [A-Za-z0-9_.:-], max 64, default admin); the action is audit-logged (reviewer, invoice, resolution). Query strings and client identity headers are never forwarded. Payments status codes (200, 404, 409, 422) pass through; payments down: 502, timeout: 504."
+      parameters:
+        - {name: invoice_id, in: path, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_-]{1,64}$'}}
+        - {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, additionalProperties: false, required: [action], properties: {action: {type: string, enum: [settle, refund_flag, dismiss]}, note: {type: [string, "null"], maxLength: 500}, confirm_amount_mismatch: {type: boolean}, received_amount: {type: object, required: [amount, currency], additionalProperties: false, properties: {amount: {type: string, pattern: '^[0-9]{1,12}(\.[0-9]{1,6})?$'}, currency: {type: string, pattern: '^[A-Z]{3,5}$'}}}}}}}
+      responses:
+        "200": {description: "Upstream payments ReviewResolution (see payments.yaml)"}
+        "401": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
+        "502": {$ref: "#/components/responses/Error"}
+        "504": {$ref: "#/components/responses/Error"}
   /v1/admin/media/files/{name}:
     get:
       summary: "Get admin media files by name"
@@ -500,6 +520,7 @@ paths:
                   trending: {type: [array, "null"]}
                   fx: {type: [object, "null"]}
                   warnings: {type: array, items: {type: object, properties: {section: {type: string}, message: {type: string}}}}
+                  degraded: {type: array, items: {type: string}, description: "Names of sections dropped because the upstream failed or exceeded FF_GATEWAY_HOME_UPSTREAM_TIMEOUT (default 1.5 s)."}
         "401": {$ref: "#/components/responses/Error"}
   /v1/{proxied_path}:
     x-proxy:

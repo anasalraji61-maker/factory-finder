@@ -1,5 +1,5 @@
 SERVICES := gateway sourcing logistics geo trust rfq messaging tracking notifications assistant demand payments media feed freight
-.PHONY: fuzz venv test lint contract-lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check secrets-scan $(addprefix test-,$(SERVICES))
+.PHONY: load-test fuzz venv test lint contract-lint contract-examples dev down compose-e2e e2e e2e-extended e2e-scenarios e2e-privacy smoke audit compose-check obs-check secrets-scan $(addprefix test-,$(SERVICES))
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q fastapi "uvicorn[standard]" pydantic pydantic-settings httpx sqlalchemy aiosqlite greenlet pyjwt bcrypt email-validator websockets pytest pytest-asyncio respx ruff pyyaml pillow python-multipart
 test:
@@ -23,6 +23,8 @@ compose-e2e:  # build + start the stack detached, run scripts/e2e.py against it,
 	FF_E2E_BASE_URL=http://localhost:8000 .venv/bin/python scripts/e2e.py; rc=$$?; docker compose down -v; exit $$rc
 e2e:
 	.venv/bin/python scripts/e2e.py
+load-test:  # mixed-workload load test on the mock stack (60 s, 30 concurrent, 50 users); run alone
+	.venv/bin/python scripts/load_test.py
 e2e-extended:  # extra flows: moderation, media attachments, email verify, tracking relay, deals, assistant, reviews, prod guard
 	.venv/bin/python scripts/e2e_extended.py
 e2e-scenarios:  # 5 focused edge scenarios: landed-cost labels + geo avoid, tracking typo, concurrent invoice, freight dup, feed hidden unlike

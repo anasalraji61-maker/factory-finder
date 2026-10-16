@@ -3,6 +3,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/features/auth/auth_screens.dart';
 import 'package:factory_finder/features/auth/auth_strings.dart';
 import 'package:factory_finder/features/auth/password_screens.dart';
+import 'package:factory_finder/features/onboarding/intro_screen.dart';
 import 'package:factory_finder/features/onboarding/onboarding_screen.dart';
 import 'package:factory_finder/features/onboarding/onboarding_strings.dart';
 import 'package:factory_finder/features/payments/payments_strings.dart';
@@ -89,6 +90,11 @@ final FeatureModule featureModuleA = FeatureModule(
     ],
   },
   overlayRoutes: [
+    GoRoute(
+      path: '/intro',
+      builder: (context, state) =>
+          IntroScreen(replay: state.uri.queryParameters['replay'] == '1'),
+    ),
     GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),

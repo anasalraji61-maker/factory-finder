@@ -10,6 +10,16 @@ Compliance options, in order of preference:
   2. public pages ONLY if FF_SOURCING_MIC_ALLOW_PUBLIC_PAGES=true, after the site's Terms of Use
      have been reviewed by a human, and only for paths robots.txt allows (enforced by RobotsGuard).
 Never bypass CAPTCHAs, logins or paywalls (a 401/403/429 aborts the call).
+
+EXPECTED CONTRACT -- *** VERIFY AGAINST THE PARTNER'S OFFICIAL DOCS *** (assumed, no public API known)
+  Docs link: <PLACEHOLDER: licensed partner feed specification, if/when a license exists>
+  Request : GET {FF_SOURCING_MIC_API_BASE}/search?q=<keywords>&limit=<=50
+            header Authorization: Bearer <FF_SOURCING_MIC_API_KEY> (public-page mode: robots-checked)
+  Response: {"items": [ {...} ]}
+  Item fields read: id, title, price (text) | price_min/price_max, currency, company_id, company,
+            city, url, images (strings or [{"url"}]), moq, unit, audited
+  Owner check: `python -m ff_sourcing.adapters.selfcheck made_in_china` (public-page mode also
+            makes one robots.txt request).
 """
 
 from __future__ import annotations

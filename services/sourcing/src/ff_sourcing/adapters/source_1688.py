@@ -9,6 +9,17 @@ the fixture with a real recording.
 Compliance: official Open Platform API, app key/secret from env (FF_SOURCING_S1688_*). 1688 is a
 domestic-China wholesale site: prices default to CNY and suppliers may not export; the trust service and
 landed-cost engine must treat results accordingly. No page scraping.
+
+EXPECTED OFFICIAL CONTRACT -- *** VERIFY AGAINST OFFICIAL DOCS *** (nothing below is confirmed)
+  Docs link: <PLACEHOLDER: official 1688 Open Platform alibaba.product.search page>
+  Request : GET {FF_SOURCING_S1688_API_BASE}/param2/1/com.alibaba.product/alibaba.product.search/{app_key}
+            params: keywords (Chinese), pageSize(<=50), _aop_signature (upper-hex HMAC-SHA1 over
+            the URL path + sorted k+v with the app secret)
+  Response: result.toReturn[]
+  Item fields read: offerId, subject, price (text) | priceMin/priceMax, memberId, companyName, city,
+            detailUrl, imageUrl, images[], minOrderQuantity, unit, tpYear
+  Likely also needs an access_token for most 1688 APIs -- not sent today; confirm.
+  Owner check: `python -m ff_sourcing.adapters.selfcheck source_1688`.
 """
 
 from __future__ import annotations

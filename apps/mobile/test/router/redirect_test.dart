@@ -4,6 +4,7 @@ import 'package:factory_finder/core/i18n/tr.dart';
 import 'package:factory_finder/core/router/app_router.dart';
 import 'package:factory_finder/core/router/auth_gate.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/features/onboarding/intro_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,6 +79,7 @@ void main() {
         '/login?from=/deals',
         '/register',
         '/onboarding',
+        '/intro',
         '/%',
       ]) {
         expect(sanitizeReturnPath(bad), isNull, reason: '$bad');
@@ -109,6 +111,28 @@ void main() {
       ]) {
         expect(r(p), isNull, reason: p);
       }
+    });
+
+    test('first run: everything except /intro goes to /intro, before auth', () {
+      String? f(String loc, {bool signedIn = false, bool resolved = true}) =>
+          appRedirect(
+            uri: Uri.parse(loc),
+            signedIn: signedIn,
+            resolved: resolved,
+            introDone: false,
+          );
+      expect(f('/discover'), '/intro');
+      expect(f('/deals'), '/intro'); // not /login: intro comes first
+      expect(f('/login'), '/intro');
+      expect(f('/deals', resolved: false), '/intro');
+      expect(f('/intro'), isNull);
+      expect(f('/intro?replay=1'), isNull);
+    });
+
+    test('intro done: /intro stays reachable and auth rules apply again', () {
+      expect(r('/intro'), isNull);
+      expect(r('/intro?replay=1'), isNull);
+      expect(r('/deals'), '/login?from=%2Fdeals');
     });
 
     test('signed in or still restoring never redirects', () {
@@ -158,8 +182,9 @@ void main() {
 
     testWidgets('login restores the original path', (tester) async {
       final container = ProviderContainer(overrides: [
-        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        keyValueStoreProvider.overrideWithValue(MemoryStore({kIntroDoneKey: '1'})),
         secureStoreProvider.overrideWithValue(MemoryStore()),
+        introDoneProvider.overrideWith((ref) => true),
       ]);
       addTearDown(container.dispose);
       container.read(authResolvedProvider.notifier).state = true;
@@ -191,8 +216,9 @@ void main() {
 
     testWidgets('malicious from is ignored after login', (tester) async {
       final container = ProviderContainer(overrides: [
-        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        keyValueStoreProvider.overrideWithValue(MemoryStore({kIntroDoneKey: '1'})),
         secureStoreProvider.overrideWithValue(MemoryStore()),
+        introDoneProvider.overrideWith((ref) => true),
       ]);
       addTearDown(container.dispose);
       container.read(authResolvedProvider.notifier).state = true;

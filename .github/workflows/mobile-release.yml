@@ -1,0 +1,161 @@
+name: mobile-release
+# Manual release build for Android. Signs with the upload keystore ONLY if all four signing
+# secrets exist; otherwise builds an unsigned-for-store (debug-signed) APK for internal testing.
+# Secrets are never printed. See docs/RELEASE.md.
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Backend base URL, https only (FF_API_BASE_URL)"
+        required: true
+        type: string
+      build_name:
+        description: "Version name, e.g. 0.1.0 (empty = pubspec)"
+        required: false
+        type: string
+      build_number:
+        description: "Version code, integer, must increase every Play upload (empty = pubspec)"
+        required: false
+        type: string
+      build_aab:
+        description: "Also build the AAB (Play Store bundle)"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      API_BASE_URL: ${{ inputs.api_base_url }}
+      BUILD_NAME: ${{ inputs.build_name }}
+      BUILD_NUMBER: ${{ inputs.build_number }}
+      KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate inputs
+        run: |
+          case "$API_BASE_URL" in
+            https://*) ;;
+            *) echo "::error title=api_base_url::must start with https://"; exit 1 ;;
+          esac
+          if [ -n "$BUILD_NUMBER" ] && ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error title=build_number::must be an integer"; exit 1
+          fi
+          if [ -n "$BUILD_NAME" ] && ! [[ "$BUILD_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error title=build_name::must look like 1.2.3"; exit 1
+          fi
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Prepare Android platform folder
+        run: bash apps/mobile/tool/ci_prepare_platforms.sh
+      - name: Detect signing secrets
+        id: sign
+        run: |
+          if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ] && [ -n "$KS_ALIAS" ] && [ -n "$KS_KEY_PASS" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Signing secrets found: building a SIGNED release."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=unsigned::Signing secrets missing: building a debug-signed APK (not for Play Store)."
+          fi
+      - name: Configure release signing
+        if: steps.sign.outputs.enabled == 'true'
+        working-directory: apps/mobile/android
+        run: |
+          umask 077
+          printf '%s' "$KS_B64" | base64 -d > app/upload-keystore.jks
+          {
+            echo "storePassword=$KS_PASS"
+            echo "keyPassword=$KS_KEY_PASS"
+            echo "keyAlias=$KS_ALIAS"
+            echo "storeFile=upload-keystore.jks"
+          } > key.properties
+          python3 - <<'PY'
+          import os, re
+          kts = os.path.exists("app/build.gradle.kts")
+          path = "app/build.gradle.kts" if kts else "app/build.gradle"
+          s = open(path, encoding="utf-8").read()
+          if "key.properties" in s:
+              raise SystemExit(0)
+          if kts:
+              header = ('import java.util.Properties\nimport java.io.FileInputStream\n'
+                        'val ksProps = Properties().apply { load(FileInputStream(rootProject.file("key.properties"))) }\n')
+              cfg = ('    signingConfigs {\n        create("release") {\n'
+                     '            keyAlias = ksProps["keyAlias"] as String\n'
+                     '            keyPassword = ksProps["keyPassword"] as String\n'
+                     '            storeFile = file(ksProps["storeFile"] as String)\n'
+                     '            storePassword = ksProps["storePassword"] as String\n        }\n    }\n')
+              s = header + s
+              s = re.sub(r"(\nandroid\s*\{\n)", lambda m: m.group(1) + cfg, s, count=1)
+              s = re.sub(r'signingConfig\s*=\s*signingConfigs\.getByName\("debug"\)',
+                         'signingConfig = signingConfigs.getByName("release")', s)
+          else:
+              header = ('def ksProps = new Properties()\n'
+                        'ksProps.load(new FileInputStream(rootProject.file("key.properties")))\n')
+              cfg = ('    signingConfigs {\n        release {\n'
+                     '            keyAlias ksProps["keyAlias"]\n'
+                     '            keyPassword ksProps["keyPassword"]\n'
+                     '            storeFile file(ksProps["storeFile"])\n'
+                     '            storePassword ksProps["storePassword"]\n        }\n    }\n')
+              s = header + s
+              s = re.sub(r"(\nandroid\s*\{\n)", lambda m: m.group(1) + cfg, s, count=1)
+              s = re.sub(r"signingConfig\s+signingConfigs\.debug", "signingConfig signingConfigs.release", s)
+          if "signingConfigs.getByName(\"release\")" not in s and "signingConfigs.release" not in s:
+              raise SystemExit("could not wire release signing into gradle file")
+          open(path, "w", encoding="utf-8").write(s)
+          PY
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - name: Build APK
+        working-directory: apps/mobile
+        run: |
+          args=(--release "--dart-define=FF_API_BASE_URL=$API_BASE_URL" --dart-define=FF_MOCK=false)
+          [ -n "$BUILD_NAME" ] && args+=("--build-name=$BUILD_NAME")
+          [ -n "$BUILD_NUMBER" ] && args+=("--build-number=$BUILD_NUMBER")
+          flutter build apk "${args[@]}"
+      - name: Build AAB
+        if: inputs.build_aab && steps.sign.outputs.enabled == 'true'
+        working-directory: apps/mobile
+        run: |
+          args=(--release "--dart-define=FF_API_BASE_URL=$API_BASE_URL" --dart-define=FF_MOCK=false)
+          [ -n "$BUILD_NAME" ] && args+=("--build-name=$BUILD_NAME")
+          [ -n "$BUILD_NUMBER" ] && args+=("--build-number=$BUILD_NUMBER")
+          flutter build appbundle "${args[@]}"
+      - name: Remove keystore material
+        if: always() && steps.sign.outputs.enabled == 'true'
+        run: rm -f apps/mobile/android/key.properties apps/mobile/android/app/upload-keystore.jks
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-finder-apk-${{ steps.sign.outputs.enabled == 'true' && 'signed' || 'debug-signed' }}
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload AAB
+        if: inputs.build_aab && steps.sign.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory-finder-aab-signed
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30

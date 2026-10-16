@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-AMOUNT_PATTERN = r"^-?[0-9]+(\.[0-9]+)?$"
+AMOUNT_PATTERN = r"^-?[0-9]{1,18}(\.[0-9]{1,8})?$"
 CURRENCY_PATTERN = r"^[A-Z]{3}$"
 
 _AMOUNT_RE = re.compile(AMOUNT_PATTERN)

@@ -27,3 +27,7 @@ textarea{inline-size:100%;min-block-size:7rem}input{inline-size:100%}
 label{display:block;margin-block:.5rem .2rem}
 .evid{max-inline-size:160px;max-block-size:160px;border:1px solid var(--bd);border-radius:4px;object-fit:contain}
 table{inline-size:100%;border-collapse:collapse;font-size:.85rem}th,td{border:1px solid var(--bd);padding-block:.25rem;padding-inline:.5rem;text-align:start;overflow-wrap:anywhere}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50}
+.modal{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding-block:1rem;padding-inline:1.2rem;max-inline-size:480px;inline-size:100%;max-block-size:90vh;overflow:auto}
+.big2{font-weight:700;font-size:1.05rem}
+input[type=checkbox]{inline-size:auto}

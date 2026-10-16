@@ -136,6 +136,35 @@ paths:
       responses:
         "200": {description: Page, content: {application/json: {schema: {$ref: "#/components/schemas/InvoicePage"}}}}
         "403": {$ref: "#/components/responses/Error"}
+  /v1/payments/review/{invoice_id}/resolve:
+    post:
+      summary: "Resolve a payments review item"
+      operationId: resolvePaymentReview
+      description: |
+        Admin only (X-Admin-Token). Resolves one invoice of GET /v1/payments/review (status_reason `late_payment_review` /
+        `amount_mismatch_review`). `X-Reviewer` (optional, charset [A-Za-z0-9_.:-], max 64, default `admin`) is stored in
+        the audit row. Compare-and-set on the review reason: only one reviewer can resolve; the invoice then leaves the queue.
+        * `settle` - money accepted: the invoice becomes `paid` (ledger legs + rfq outbox event exactly like a normal settlement,
+          even if it had expired / failed), `status_reason` = `review_settled`.
+        * `refund_flag` - money must go back to the payer (done off-platform): status unchanged, `status_reason` = `refund_flagged`.
+        * `dismiss` - nothing to do: status unchanged, `status_reason` = `review_dismissed`.
+        An `amount_mismatch_review` invoice can only be settled with a non-empty `note`, `confirm_amount_mismatch: true` and
+        `received_amount` (same currency as the expected amount) within FF_PAYMENTS_REVIEW_AMOUNT_TOLERANCE (default 0.02 of the
+        expected amount; 0 = exact only); otherwise 422 `note_required` / `amount_mismatch_confirmation_required` /
+        `received_amount_required` / `amount_outside_tolerance`.
+        Idempotent: repeating the same action on an already resolved invoice returns the stored resolution (200, nothing is booked
+        twice); a different action answers 409 `already_resolved`. 409 `not_in_review` when the invoice was never flagged,
+        409 `settlement_conflict` when a unique index refuses the settlement, 404 `invoice_not_found`.
+      parameters: [{name: invoice_id, in: path, required: true, schema: {type: string}}, {name: X-Reviewer, in: header, required: false, schema: {type: string, maxLength: 64}}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/ReviewResolveRequest"}}}
+      responses:
+        "200": {description: Resolution (audit row), content: {application/json: {schema: {$ref: "#/components/schemas/ReviewResolution"}}}}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+        "422": {$ref: "#/components/responses/Error"}
   /v1/payments/sweep:
     post:
       summary: "Create payments sweep"
@@ -342,6 +371,32 @@ components:
         paid_at: {type: [string, "null"], format: date-time}
         created_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+    ReviewResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action: {type: string, enum: [settle, refund_flag, dismiss]}
+        note: {type: [string, "null"], maxLength: 500, description: "Trimmed; no control characters. Required to settle an amount_mismatch_review."}
+        confirm_amount_mismatch: {type: boolean, default: false, description: "Must be true to settle an amount_mismatch_review."}
+        received_amount: {$ref: "#/components/schemas/Money", description: "Amount that actually arrived; required to settle an amount_mismatch_review (within tolerance)."}
+      example: {action: settle, note: "Customer short-paid bank fees, verified on statement", confirm_amount_mismatch: true, received_amount: {amount: "374.00", currency: USD}}
+    ReviewResolution:
+      type: object
+      required: [id, invoice_id, action, reviewer, previous_reason, invoice_status, status_reason, confirm_amount_mismatch, created_at]
+      properties:
+        id: {type: string}
+        invoice_id: {type: string}
+        action: {type: string, enum: [settle, refund_flag, dismiss]}
+        note: {type: [string, "null"]}
+        reviewer: {type: string}
+        previous_reason: {type: string, enum: [late_payment_review, amount_mismatch_review]}
+        invoice_status: {type: string, description: "Invoice status after the resolution (paid for settle)."}
+        status_reason: {type: string, enum: [review_settled, refund_flagged, review_dismissed]}
+        confirm_amount_mismatch: {type: boolean}
+        received_amount: {oneOf: [{$ref: "#/components/schemas/Money"}, {type: "null"}]}
+        created_at: {type: string, format: date-time}
+      example: {id: rvw_0b1c2d3e4f5a6b7c8d9e, invoice_id: inv_48453497e5d541249f38, action: dismiss, note: "Not ours", reviewer: alice, previous_reason: late_payment_review, invoice_status: expired, status_reason: review_dismissed, confirm_amount_mismatch: false, received_amount: null, created_at: "2026-10-16T10:00:00Z"}
     InvoicePage:
       type: object
       required: [items, total, page, page_size]

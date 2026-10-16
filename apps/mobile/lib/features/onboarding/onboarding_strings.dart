@@ -1,6 +1,8 @@
 import 'package:factory_finder/core/i18n/tr.dart';
+import 'package:factory_finder/features/onboarding/intro_strings.dart';
 
-final Map<String, Map<String, String>> onboardingStrings = bilingual(_pairs);
+final Map<String, Map<String, String>> onboardingStrings =
+    mergeStringTables([bilingual(_pairs), introStrings]);
 
 const Map<String, (String, String)> _pairs = {
   'onb.skip': ('تخطّي', 'Skip'),

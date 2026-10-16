@@ -1,4 +1,5 @@
 import 'package:factory_finder/core/api/auth.dart';
+import 'package:factory_finder/features/onboarding/intro_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +9,7 @@ class AuthGate {
   const AuthGate({
     required this.isSignedIn,
     required this.isResolved,
+    this.introDone = _alwaysDone,
     this.refresh,
   });
 
@@ -17,6 +19,12 @@ class AuthGate {
   /// False while the launch-time session restore is still running.
   final bool Function() isResolved;
 
+  /// False on a fresh install until the first-run intro was seen or skipped.
+  /// Defaults to done so fakes without an intro never get gated.
+  final bool Function() introDone;
+
+  static bool _alwaysDone() => true;
+
   /// Fires when [isSignedIn] / [isResolved] change (feeds `refreshListenable`).
   final Listenable? refresh;
 
@@ -25,9 +33,11 @@ class AuthGate {
     final notifier = _AuthRefresh();
     container.listen<Me?>(authProvider, (_, __) => notifier.poke());
     container.listen<bool>(authResolvedProvider, (_, __) => notifier.poke());
+    container.listen<bool>(introDoneProvider, (_, __) => notifier.poke());
     return AuthGate(
       isSignedIn: () => container.read(authProvider) != null,
       isResolved: () => container.read(authResolvedProvider),
+      introDone: () => container.read(introDoneProvider),
       refresh: notifier,
     );
   }

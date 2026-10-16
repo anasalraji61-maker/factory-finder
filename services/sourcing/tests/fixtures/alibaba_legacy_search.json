@@ -1,0 +1,15 @@
+{
+  "_note": "UNVERIFIED SYNTHETIC fixture for the legacy AlibabaAdapter skeleton. Not a recording.",
+  "result": {
+    "products": [
+      {"id": 7001, "subject": "PP Granules", "price": {"min": "900", "max": "1,100", "currency": "USD"},
+       "seller_id": 3, "seller_name": "ACME Plastics", "country": "CN", "city": "Ningbo",
+       "detail_url": "https://www.alibaba.com/product-detail/7001.html",
+       "images": ["https://s.alicdn.com/a.jpg"], "moq": "20", "unit": "ton", "verified_supplier": true},
+      {"id": 7002, "subject": "Used Extrusion Line", "price": {"min": "25000"},
+       "seller_id": 4, "seller_name": "Suzhou Machinery", "detail_url": "https://www.alibaba.com/product-detail/7002.html",
+       "images": ["https://s.alicdn.com/b.jpg"]},
+      {"id": 7003, "subject": "no price", "price": {}}
+    ]
+  }
+}

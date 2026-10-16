@@ -1,4 +1,4 @@
-const Set<String> _authPaths = <String>{'/login', '/register', '/onboarding'};
+const Set<String> _authPaths = <String>{'/login', '/register', '/onboarding', '/intro'};
 
 /// Returns [raw] only when it is a safe in-app return path, else null.
 /// Open-redirect guard: must start with a single '/', no scheme or authority,

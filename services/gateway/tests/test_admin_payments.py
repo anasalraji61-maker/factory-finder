@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -105,3 +107,69 @@ def test_review_disabled_and_down(make_client, mock_upstream):
     assert c.get("/v1/admin/payments/review", headers=H).status_code == 502
     mock_upstream.route(host="localhost", port=8111, path="/v1/payments/review").mock(side_effect=httpx.ReadTimeout("x"))
     assert c.get("/v1/admin/payments/review", headers=H).status_code == 504
+
+
+RES = "/v1/admin/payments/review/inv_1/resolve"
+RES_UP = "/v1/payments/review/inv_1/resolve"
+
+
+def test_review_resolve_forwards_clean_body_and_audits(make_client, mock_upstream, caplog):
+    c = _c(make_client)
+    out = {"id": "rvw_1", "action": "settle"}
+    route = mock_upstream.route(host="localhost", port=8111, path=RES_UP).mock(return_value=httpx.Response(200, json=out))
+    body = {"action": "settle", "note": "ok", "confirm_amount_mismatch": True,
+            "received_amount": {"amount": "9.50", "currency": "USD"}}
+    assert c.post(RES, json=body).status_code == 401
+    assert not route.called
+    with caplog.at_level("INFO", logger="ff_gateway.admin"):
+        r = c.post(RES, json=body, headers={**H, "X-Reviewer": "bob@x.com", "X-User-Id": "evil"})
+    assert r.status_code == 200 and r.json() == out
+    req = route.calls.last.request
+    assert req.headers["x-admin-token"] == "pay-adm" and req.headers["x-internal-token"] == "int"
+    assert req.headers["x-user-id"] == "admin" and req.headers["x-reviewer"] == "bobx.com"
+    assert json.loads(req.content) == body
+    assert "payments_review_resolve reviewer=bobx.com invoice=inv_1 resolution=settle" in caplog.text
+
+
+def test_review_resolve_upstream_status_passthrough(make_client, mock_upstream):
+    c = _c(make_client)
+    mock_upstream.route(host="localhost", port=8111, path=RES_UP).mock(
+        return_value=httpx.Response(409, json={"error": {"code": "already_resolved"}}))
+    r = c.post(RES, json={"action": "dismiss"}, headers=H)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "already_resolved"
+
+
+@pytest.mark.parametrize("bad", [
+    {}, {"action": "nuke"}, {"action": "dismiss", "x": 1}, {"action": "dismiss", "note": "x" * 501},
+    {"action": "dismiss", "note": 5}, {"action": "settle", "confirm_amount_mismatch": "true"},
+    {"action": "settle", "received_amount": {"amount": 9.5, "currency": "USD"}},
+    {"action": "settle", "received_amount": {"amount": "9.5", "currency": "USD", "x": 1}},
+    {"action": "settle", "received_amount": "9.5"}, [], "dismiss",
+])
+def test_review_resolve_bad_body(make_client, mock_upstream, bad):
+    c = _c(make_client)
+    route = mock_upstream.route(host="localhost", port=8111).mock(return_value=httpx.Response(200, json={}))
+    assert c.post(RES, json=bad, headers=H).status_code == 422
+    assert not route.called
+
+
+def test_review_resolve_misc_guards(make_client, mock_upstream):
+    c = _c(make_client)
+    route = mock_upstream.route(host="localhost", port=8111).mock(return_value=httpx.Response(200, json={}))
+    assert c.post(RES, content=b"{nope", headers={**H, "Content-Type": "application/json"}).status_code == 422
+    assert c.post(RES + "?x=1", json={"action": "dismiss"}, headers=H).status_code == 422
+    big = {"action": "dismiss", "note": "a" * 5000}
+    assert c.post(RES, json=big, headers=H).status_code == 413
+    for bad in ["..", "%2e%2e", "a%2Fb", "a b", "x" * 65]:
+        assert c.post(f"/v1/admin/payments/review/{bad}/resolve", json={"action": "dismiss"}, headers=H).status_code in (404, 400)
+    assert c.get(RES, headers=H).status_code in (404, 405)
+    assert not route.called
+
+
+def test_review_resolve_disabled_and_down(make_client, mock_upstream):
+    assert make_client(admin_token="adm").post(RES, json={"action": "dismiss"}, headers=H).status_code == 404
+    c = _c(make_client)
+    mock_upstream.route(host="localhost", port=8111, path=RES_UP).mock(side_effect=httpx.ConnectError("x"))
+    assert c.post(RES, json={"action": "dismiss"}, headers=H).status_code == 502
+    mock_upstream.route(host="localhost", port=8111, path=RES_UP).mock(side_effect=httpx.ReadTimeout("x"))
+    assert c.post(RES, json={"action": "dismiss"}, headers=H).status_code == 504

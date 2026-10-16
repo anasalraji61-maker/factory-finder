@@ -97,6 +97,9 @@ class Settings(BaseSettings):
         False  # FF_GATEWAY_SERVE_ADMIN: serve apps/admin at /admin (same-origin, no CORS needed)
     )
     admin_dir: str | None = None  # FF_GATEWAY_ADMIN_DIR override (default: <repo>/apps/admin)
+    # GET /v1/home: per-upstream timeout (a slow section is dropped + listed in `degraded`) and short success cache.
+    home_upstream_timeout: float = Field(default=1.5, validation_alias=AliasChoices("FF_GATEWAY_HOME_UPSTREAM_TIMEOUT", "home_upstream_timeout"))
+    home_cache_ttl_seconds: float = 15.0  # 0 = off
     home_client: str = "http"  # http | mock
     bcrypt_rounds: int = 12
     # Rate-limit store: unset -> in-memory (per process). FF_GATEWAY_REDIS_URL=redis://host:6379/0 shares counters

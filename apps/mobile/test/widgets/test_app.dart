@@ -1,6 +1,7 @@
 import 'package:factory_finder/app.dart';
 import 'package:factory_finder/core/router/app_router.dart';
 import 'package:factory_finder/core/storage/key_value_store.dart';
+import 'package:factory_finder/features/onboarding/intro_state.dart';
 import 'package:factory_finder/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,8 +40,9 @@ Future<GoRouter> pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        keyValueStoreProvider.overrideWithValue(MemoryStore()),
+        keyValueStoreProvider.overrideWithValue(MemoryStore({kIntroDoneKey: '1'})),
         secureStoreProvider.overrideWithValue(MemoryStore()),
+        introDoneProvider.overrideWith((ref) => true),
         ...overrides,
       ],
       child: FactoryFinderApp(router: router),
