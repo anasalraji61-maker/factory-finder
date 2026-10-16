@@ -38,6 +38,12 @@
 
 - كل خدمة: `GET /health` (حياة) و`GET /ready` (جاهزية/قاعدة البيانات). البوابة: `/ready` تُظهر `upstreams {name: bool}` وحالة `degraded` إذا سقطت خدمة خلفية؛ تعيد 503 فقط إذا سقطت قاعدة البوابة.
 - من الخارج: `curl -s https://<host>/health` و`/ready`. من الداخل: `docker compose exec <svc> python -c "import urllib.request;print(urllib.request.urlopen('http://localhost:<port>/ready').read())"`.
+
+**Metrics (Prometheus, `GET /metrics`)** — every service, from `obs.py` (no dependency, per-process counters; they reset on restart).
+- Off by default: set `FF_<SVC>_METRICS=1` (e.g. `FF_GATEWAY_METRICS=1`, `FF_SOURCING_METRICS=1`) on the services you want to scrape; otherwise `/metrics` answers 404.
+- Guard: requires `X-Internal-Token` equal to `FF_INTERNAL_TOKEN` (401 otherwise). With no token set it is served only when `FF_ENV` is not `production`; in production without a token it stays 404. Scrape on the internal network only (never publish it; the gateway's `/metrics` is its own, not proxied).
+- Series: `ff_http_requests_total` and `ff_http_request_duration_seconds` (histogram, buckets 5 ms to 10 s) with labels `service`, `method`, `route` (route template, `<unmatched>` for 404s), `status_class` (`2xx`...); `ff_process_uptime_seconds`. No user-supplied values in labels (at most 500 series per process, overflow goes to `route="<other>"`). `/metrics` itself is not counted.
+- Scraping: the guard header is custom (`X-Internal-Token`), so use an agent that can set request headers (Grafana Agent / OTel collector / Prometheus with a header-injecting proxy), or by hand from inside the network: `curl -s -H "X-Internal-Token: $FF_INTERNAL_TOKEN" http://<svc>:<port>/metrics`. Sum across replicas. Suggested alerts: `sum by (service) (rate(ff_http_requests_total{status_class="5xx"}[5m]))` above baseline, and p95 `histogram_quantile(0.95, sum by (le, service) (rate(ff_http_request_duration_seconds_bucket[5m])))`.
 - تتبّع الأخطاء عبر `request_id` (تُمرّر البوابة `X-Request-Id`)؛ السجلات JSON (`FF_LOG_FORMAT=text` للقراءة محلياً).
 
 ## 3. Environment variables per service (المتغيرات حسب الخدمة)

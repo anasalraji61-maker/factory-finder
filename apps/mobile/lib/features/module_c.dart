@@ -7,6 +7,8 @@ import 'package:factory_finder/features/assistant/screens/assistant_screen.dart'
 import 'package:factory_finder/features/checklist/checklist_strings.dart';
 import 'package:factory_finder/features/checklist/import_checklist_screen.dart';
 import 'package:factory_finder/features/feed/feed_module.dart';
+import 'package:factory_finder/features/legal/legal_screen.dart';
+import 'package:factory_finder/features/legal/legal_strings.dart';
 import 'package:factory_finder/features/my_products/my_products_strings.dart';
 import 'package:factory_finder/features/my_products/screens/import_products_screen.dart';
 import 'package:factory_finder/features/my_products/screens/my_products_screen.dart';
@@ -41,6 +43,14 @@ final FeatureModule featureModuleC = FeatureModule(
       builder: (context, state) => const PrivacyScreen(),
     ),
     GoRoute(
+      path: '/legal/privacy',
+      builder: (context, state) => const LegalScreen(kind: LegalKind.privacy),
+    ),
+    GoRoute(
+      path: '/legal/terms',
+      builder: (context, state) => const LegalScreen(kind: LegalKind.terms),
+    ),
+    GoRoute(
       path: '/my-products',
       builder: (context, state) => const MyProductsScreen(),
     ),
@@ -64,5 +74,5 @@ final FeatureModule featureModuleC = FeatureModule(
           ProductEditorScreen(listingId: state.pathParameters['id']),
     ),
   ],
-  strings: mergeStringTables([analyticsStrings, myProductsStrings, assistantStrings, settingsStrings, feedStrings, privacyStrings, checklistStrings]),
+  strings: mergeStringTables([analyticsStrings, myProductsStrings, assistantStrings, settingsStrings, feedStrings, privacyStrings, legalStrings, checklistStrings]),
 );

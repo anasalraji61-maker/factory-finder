@@ -42,6 +42,7 @@ jobs:
       KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       KS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GS_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -124,6 +125,12 @@ jobs:
               raise SystemExit("could not wire release signing into gradle file")
           open(path, "w", encoding="utf-8").write(s)
           PY
+      - name: Enable Firebase (optional, needs GOOGLE_SERVICES_JSON_BASE64)
+        if: env.GS_JSON_B64 != ''
+        run: |
+          umask 077
+          printf '%s' "$GS_JSON_B64" | base64 -d > apps/mobile/android/app/google-services.json
+          bash apps/mobile/tool/ci_enable_firebase.sh
       - run: flutter pub get
         working-directory: apps/mobile
       - name: Build APK
@@ -159,3 +166,6 @@ jobs:
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
+      - name: Remove google-services.json
+        if: always()
+        run: rm -f apps/mobile/android/app/google-services.json

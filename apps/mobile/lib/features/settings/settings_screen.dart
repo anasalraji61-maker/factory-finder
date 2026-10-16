@@ -181,6 +181,30 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                ListTile(
+                  key: const ValueKey<String>('settings-legal-privacy'),
+                  leading: const Icon(Icons.policy_outlined),
+                  title: Text(context.tr('legal.tile.privacy')),
+                  subtitle: Text(context.tr('legal.tile.privacy_sub')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/legal/privacy'),
+                ),
+                ListTile(
+                  key: const ValueKey<String>('settings-legal-terms'),
+                  leading: const Icon(Icons.description_outlined),
+                  title: Text(context.tr('legal.tile.terms')),
+                  subtitle: Text(context.tr('legal.tile.terms_sub')),
+                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  onTap: () => context.push('/legal/terms'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           _Section(
             title: context.tr('intro.about'),
             child: ListTile(

@@ -1,0 +1,50 @@
+// Opt-in Firebase implementation of PushTokenSource.
+// Kept as a .template so the app and analyzer work WITHOUT firebase packages.
+// To enable: see docs/FIREBASE_SETUP.md (rename to firebase_push_token_source.dart).
+import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:factory_finder/features/notify_prefs/push_registration.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+class FirebasePushTokenSource implements PushTokenSource {
+  Future<FirebaseMessaging> _fm() async {
+    if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+    return FirebaseMessaging.instance;
+  }
+
+  static PushPermission _map(AuthorizationStatus s) {
+    switch (s) {
+      case AuthorizationStatus.authorized:
+      case AuthorizationStatus.provisional:
+        return PushPermission.granted;
+      case AuthorizationStatus.denied:
+        return PushPermission.denied;
+      case AuthorizationStatus.notDetermined:
+        return PushPermission.unknown;
+    }
+  }
+
+  @override
+  String get platform => Platform.isIOS ? 'ios' : 'android';
+
+  @override
+  Future<PushPermission> permission() async =>
+      _map((await (await _fm()).getNotificationSettings()).authorizationStatus);
+
+  @override
+  Future<PushPermission> requestPermission() async =>
+      _map((await (await _fm()).requestPermission()).authorizationStatus);
+
+  @override
+  Future<String?> token() async => (await _fm()).getToken();
+
+  @override
+  Future<void> deleteToken() async => (await _fm()).deleteToken();
+
+  @override
+  Stream<String> get onTokenRefresh async* {
+    yield* (await _fm()).onTokenRefresh;
+  }
+}

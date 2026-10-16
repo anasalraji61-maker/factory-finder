@@ -34,6 +34,8 @@ const List<String> _routes = <String>[
   '/settings/change-password',
   '/settings/privacy',
   '/settings/privacy/blocked',
+  '/legal/privacy',
+  '/legal/terms',
   '/supplier-claim',
   '/verification',
   '/compare',
