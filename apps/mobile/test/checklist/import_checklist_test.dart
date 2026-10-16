@@ -1,7 +1,6 @@
 import 'package:factory_finder/core/storage/key_value_store.dart';
 import 'package:factory_finder/features/checklist/checklist_logic.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../widgets/test_app.dart';

@@ -84,14 +84,14 @@ void main() {
           r'-$١٢٫٥٠');
     });
     test('isolateLtr wraps in LRI/PDI and skips empty', () {
-      expect(isolateLtr('USD 1'), '⁦USD 1⁩');
+      expect(isolateLtr('USD 1'), '\u2066USD 1\u2069');
       expect(isolateLtr(''), '');
     });
     test('localized isolated money keeps its isolate marks', () {
       final iso = const Money(amount: '-1500', currency: 'IQD').formatIsolated();
-      expect(iso, '⁦IQD -1,500⁩');
+      expect(iso, '\u2066IQD -1,500\u2069');
       expect(localizeNumber(iso, DigitStyle.arabicIndic),
-          '⁦IQD -١٬٥٠٠⁩');
+          '\u2066IQD -١٬٥٠٠\u2069');
     });
     test('MoneyRange formats and isolates once', () {
       const r = MoneyRange(
@@ -99,15 +99,15 @@ void main() {
         max: Money(amount: '20', currency: 'KWD'),
       );
       expect(r.format(), 'KWD 10.000 – KWD 20.000');
-      expect(r.formatIsolated(), '⁦KWD 10.000 – KWD 20.000⁩');
+      expect(r.formatIsolated(), '\u2066KWD 10.000 – KWD 20.000\u2069');
     });
     test('verbatim: nested and unbalanced markers do not leak', () {
       expect(verbatim(''), '');
       final s = '${verbatim('A1')} 2 ${verbatim('B3')} 4';
       expect(localizeDigits(s, DigitStyle.arabicIndic),
-          '⁨A1⁩ ٢ ⁨B3⁩ ٤');
+          '\u2068A1\u2069 ٢ \u2068B3\u2069 ٤');
       // A stray PDI must not push depth negative and block conversion.
-      expect(localizeDigits('⁩ 7', DigitStyle.arabicIndic), '⁩ ٧');
+      expect(localizeDigits('\u2069 7', DigitStyle.arabicIndic), '\u2069 ٧');
     });
   });
 
